@@ -1,0 +1,33 @@
+import java_gateway
+from py4j.clientserver import ClientServer, JavaParameters, PythonParameters
+from pyspark import SparkConf, SparkContext
+
+def main():
+
+    #logFile = "../spark-2.0.1-bin-hadoop2.7/README.md"
+
+    #gateway = java_gateway.launch_java_gateway()
+    gateway = ClientServer(
+            java_parameters=JavaParameters(), python_parameters=PythonParameters)
+    jvm = gateway.jvm
+
+    path = "../econic.tif"
+
+    conf = SparkConf()
+    conf.setMaster("local")
+    conf.setAppName("test")
+    sc = SparkContext(conf=conf)
+
+    hadoop = jvm.HadoopSpatialSinglebandGeoTiffRDD()
+
+    '''
+
+    singleband = jvm.HadoopSpatialSinglebandRDD(path, sc)
+    
+    splits = singleband.split(25, 25)
+
+    print len(splits)
+    '''
+
+if __name__ == "__main__":
+    main()
