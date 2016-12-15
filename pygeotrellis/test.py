@@ -1,5 +1,5 @@
 from pyspark import SparkConf, SparkContext, RDD
-from pyspark.serializers import Serializer
+from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
 from py4j.java_gateway import java_import
 
 import io
@@ -9,38 +9,61 @@ import sys
 import avro
 import avro.io
 import binascii
+import StringIO
 
 print "VERSION", sys.version
 
-class AvroSerializer(Serializer):
+
+class SpatialKey(object):
+    def __init__(self, col, row):
+        self.col = col
+        self.row = row
+
+    def __repr__(self):
+        return "SpatialKey(%d,%d)" % (self.col, self.row)
+
+
+class AvroSerializer(FramedSerializer):
 
     def __init__(self, schema):
         self._schema = avro.schema.parse(schema)
         self._reader = avro.io.DatumReader(self._schema)
 
-    def dump_stream(self, iterator, stream):
+    def dumps(self, obj):
+        print "DUMPS: ", obj
+        writer = StringIO.StringIO()
+        encoder = avro.io.BinaryEncoder(writer)
+        datum_writer = avro.io.DatumWriter(self._schema)
+        datum = {
+            'col': obj[0].col,
+            'row': obj[0].row
+        }
+        datum_writer.write(datum, encoder)
+        return writer.getvalue()
+
+
         """
-        Serialize an iterator of objects to the output stream.
+        Serialize an object into a byte array.
+        When batching is used, this will be called with an array of objects.
         """
+
         raise NotImplementedError
 
-    def load_stream(self, stream):
-        bytes = stream.read()        
-        print "BYTES: ", binascii.hexlify(bytes)
-        return None
-        
-
-        # reader = avro.io.DatumReader(self._schema)
-        # decoder = avro.io.BinaryDecoder(stream)
-        # return reader.read(decoder).items()
-
-    def _load_stream_without_unbatching(self, stream):
-        return self.load_stream(stream)
-
+    def loads(self, obj):
+        print "Type:",  type(obj)
+        print "OBJ:", binascii.hexlify(obj)    
+        buf = io.BytesIO(obj)
+        reader = avro.io.DatumReader(self._schema)
+        decoder = avro.io.BinaryDecoder(buf)
+        i = reader.read(decoder)
+        return [SpatialKey(i.get('col'), i.get('row'))]
 
 
 if __name__ == "__main__":
-    sc = SparkContext(master="local", appName="python-test")
+    schema = """{"type":"record","name":"SpatialKey","namespace":"geotrellis.spark","fields":[{"name":"col","type":"int"},{"name":"row","type":"int"}]}"""
+    ser = AvroSerializer(schema)
+    sc = SparkContext(master="local", appName="python-test", serializer=ser)
+
 
     java_import(sc._gateway.jvm, "geotrellis.spark.io.hadoop.*")
     java_import(sc._gateway.jvm, "geotrellis.spark.etl.*")
@@ -53,20 +76,19 @@ if __name__ == "__main__":
     # original_splits = hssgr.split(258, 258)
     #print ' THESE ARE THE SPLITS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1'
     #print original_splits
-
+    
 
     testRdd = sc._gateway.jvm.Box.testRdd(sc._jsc.sc())
     encodedRdd = sc._gateway.jvm.Box.encodeRdd(testRdd)
     javaRdd = encodedRdd.toJavaRDD()
-    schema = sc._gateway.jvm.Box.keySchema()
-    print sc._gateway.jvm.Box.encodeRddText(testRdd).collect()
-    
-    print "SCHEMA: ", schema
-    pythonRdd = RDD(javaRdd, sc, AvroSerializer(schema))
+
+    pythonRdd = RDD(javaRdd, sc, AutoBatchedSerializer(ser))
 
     thing = pythonRdd.collect()
     print "THING:", thing
 
+    rdd2 = pythonRdd.map(lambda s: SpatialKey(s.col+1, s.row+1))
+    print "THING2:", rdd2.collect()
 
     # this will fail
     #sc._gateway.jvm.original_splits.map(lambda x: x)
