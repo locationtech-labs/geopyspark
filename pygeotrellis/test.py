@@ -26,36 +26,36 @@ class SpatialKey(object):
 class AvroSerializer(FramedSerializer):
 
     def __init__(self, schema):
-        self._schema = avro.schema.parse(schema)
-        self._reader = avro.io.DatumReader(self._schema)
+        self.schema = avro.schema.parse(schema)
+        self.reader = avro.io.DatumReader(self.schema)
+        self.datum_writer = avro.io.DatumWriter(self.schema)
 
+    """
+    Deserializes a byte array into an object.
+    """
     def dumps(self, obj):
         print "DUMPS: ", obj
         writer = StringIO.StringIO()
         encoder = avro.io.BinaryEncoder(writer)
-        datum_writer = avro.io.DatumWriter(self._schema)
         datum = {
             'col': obj[0].col,
             'row': obj[0].row
         }
-        datum_writer.write(datum, encoder)
+        self.datum_writer.write(datum, encoder)
         return writer.getvalue()
 
 
-        """
-        Serialize an object into a byte array.
-        When batching is used, this will be called with an array of objects.
-        """
-
-        raise NotImplementedError
+    """
+    Serialize an object into a byte array.
+    When batching is used, this will be called with an array of objects.
+    """
 
     def loads(self, obj):
         print "Type:",  type(obj)
-        print "OBJ:", binascii.hexlify(obj)    
+        print "OBJ:", binascii.hexlify(obj)
         buf = io.BytesIO(obj)
-        reader = avro.io.DatumReader(self._schema)
         decoder = avro.io.BinaryDecoder(buf)
-        i = reader.read(decoder)
+        i = self.reader.read(decoder)
         return [SpatialKey(i.get('col'), i.get('row'))]
 
 
