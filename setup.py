@@ -1,13 +1,13 @@
 from distutils.core import setup
 
 setup(
-        description: 'pygeotrellis',
+        description: 'geopyspark',
         author: 'Jacob Bouffard',
-        download_url: 'http://github.com/geotrellis/geotrellis',
+        download_url: 'http://github.com/geotrellis/geopyspark',
         author_email: 'jbouffard@azavea.com',
         version: '0.1',
-        install_requires: ['py4j'],
-        packages: ['pygeotrellis'],
+        install_requires: ['py4j, pyspark'],
+        packages: ['geopyspark'],
         scripts: [],
-        name: 'pygeotrellis'
+        name: 'geopyspark'
         )
