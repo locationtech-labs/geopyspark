@@ -1,5 +1,5 @@
 backend-assembly:
-	cd geopyspark/geopyspark-backend && sbt "project geotrellis-backend" assembly
+	cd geopyspark-backend && sbt "project geotrellis-backend" assembly
 
 run:
 	spark-submit \
