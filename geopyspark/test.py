@@ -1,6 +1,7 @@
 from pyspark import SparkConf, SparkContext, RDD
 from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
 from py4j.java_gateway import java_import
+from spatial_key import SpatialKey
 
 import io
 import zlib
@@ -46,9 +47,6 @@ class AvroSerializer(FramedSerializer):
 
 
 if __name__ == "__main__":
-    sys.path.append("dependencies/python_spatial_key.zip")
-    from spatial_key import SpatialKey
-
     schema = """{"type":"record","name":"SpatialKey","namespace":"geotrellis.spark","fields":[{"name":"col","type":"int"},{"name":"row","type":"int"}]}"""
     ser = AvroSerializer(schema)
     sc = SparkContext(master="local", appName="python-test")
