@@ -11,17 +11,6 @@ import avro.io
 import binascii
 import StringIO
 
-print "VERSION", sys.version
-
-
-class SpatialKey(object):
-    def __init__(self, col, row):
-        self.col = col
-        self.row = row
-
-    def __repr__(self):
-        return "SpatialKey(%d,%d)" % (self.col, self.row)
-
 
 class AvroSerializer(FramedSerializer):
 
@@ -34,7 +23,6 @@ class AvroSerializer(FramedSerializer):
     Deserializes a byte array into an object.
     """
     def dumps(self, obj):
-        print "DUMPS: ", obj
         writer = StringIO.StringIO()
         encoder = avro.io.BinaryEncoder(writer)
         datum = {
@@ -51,8 +39,6 @@ class AvroSerializer(FramedSerializer):
     """
 
     def loads(self, obj):
-        print "Type:",  type(obj)
-        print "OBJ:", binascii.hexlify(obj)
         buf = io.BytesIO(obj)
         decoder = avro.io.BinaryDecoder(buf)
         i = self.reader.read(decoder)
@@ -60,22 +46,14 @@ class AvroSerializer(FramedSerializer):
 
 
 if __name__ == "__main__":
+    sys.path.append("dependencies/python_spatial_key.zip")
+    from spatial_key import SpatialKey
+
     schema = """{"type":"record","name":"SpatialKey","namespace":"geotrellis.spark","fields":[{"name":"col","type":"int"},{"name":"row","type":"int"}]}"""
     ser = AvroSerializer(schema)
-    sc = SparkContext(master="local", appName="python-test", serializer=ser)
+    sc = SparkContext(master="local", appName="python-test")
 
-
-    java_import(sc._gateway.jvm, "geotrellis.spark.io.hadoop.*")
-    java_import(sc._gateway.jvm, "geotrellis.spark.etl.*")
-
-    # path = "/Users/eugene/tmp/HousVacScal_142_675.tif"
-
-    # hssgr = sc._gateway.jvm.HadoopSpatialSinglebandGeoTiffRDD(path, sc._jsc)
-    # crs = hssgr.fromEpsgCode(3355)
-
-    # original_splits = hssgr.split(258, 258)
-    #print ' THESE ARE THE SPLITS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1'
-    #print original_splits
+    java_import(sc._gateway.jvm, "geopyspark.geotrellis.Box")
 
     testRdd = sc._gateway.jvm.Box.testRdd(sc._jsc.sc())
     encodedRdd = sc._gateway.jvm.Box.encodeRdd(testRdd)
@@ -84,16 +62,8 @@ if __name__ == "__main__":
     pythonRdd = RDD(javaRdd, sc, AutoBatchedSerializer(ser))
 
     thing = pythonRdd.collect()
-    print "THING:", thing
+    print "THIS IS THE ITEM HELD WITHIN THE PYTHON RDD:", thing
 
     rdd2 = pythonRdd.map(lambda s: SpatialKey(s.col+1, s.row+1))
-    print "THING2:", rdd2.collect()
-
-    # this will fail
-    #sc._gateway.jvm.original_splits.map(lambda x: x)
-    # reprojected_splits = hssgr.reproject(original_splits, crs)
-
-    # original_value = original_splits.first()
-    # reprojected_value = reprojected_splits.first()
-
-    # print original_value._1(), reprojected_value._1()
+    result = rdd2.collect()
+    print "THIS IS THE RESULT OF THE PYTHON RDD BEING MAPPED OVER:", result
