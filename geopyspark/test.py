@@ -26,8 +26,8 @@ if __name__ == "__main__":
     box_python_rdd = RDD(box_java_rdd, sc, AutoBatchedSerializer(box_ser))
 
     thing = box_python_rdd.collect()
-    print "THIS IS THE ITEM HELD WITHIN THE PYTHON RDD:", thing
+    print("THIS IS THE ITEM HELD WITHIN THE PYTHON RDD:", thing)
 
     rdd2 = box_python_rdd.map(lambda s: SpatialKey(s.col+1, s.row+1))
     result = rdd2.collect()
-    print "THIS IS THE RESULT OF THE PYTHON RDD BEING MAPPED OVER:", result
+    print("THIS IS THE RESULT OF THE PYTHON RDD BEING MAPPED OVER:", result)
