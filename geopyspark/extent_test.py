@@ -7,10 +7,7 @@ from geopyspark.extent import Extent
 from geopyspark.avroserializer import AvroSerializer
 
 import io
-#import zlib
-#import struct
 import sys
-#import array
 
 
 if __name__ == "__main__":
