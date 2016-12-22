@@ -11,3 +11,4 @@ run-pyspark:
 		geopyspark/extent_test.py
 
 run: install backend-assembly run-pyspark
+#run: install run-pyspark
