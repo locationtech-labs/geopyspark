@@ -16,16 +16,19 @@ def get_rdd(pysc):
 
     tup = ew.testOut(sc)
     (java_rdd, schema) = (tup._1(), tup._2())
-    print(type(java_rdd))
-    print(schema)
 
     ser = AvroSerializer(schema)
     return (RDD(java_rdd, pysc, AutoBatchedSerializer(ser)), schema)
 
 def set_rdd(pysc, rdd, schema):
-    ew = pysc._gateway.jvm.ExtentWrapper
+    ser = AvroSerializer(schema)
+    dumped = rdd.map(lambda s: ser.dumps(s, schema))
+    arrs = dumped.map(lambda s: bytearray(s))
 
-    ew.testIn(rdd, schema)
+    java_rdd = arrs._to_java_object_rdd()
+    #ew = pysc._gateway.jvm.ExtentWrapper
+    #raise Exception("HO HO HO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    #ew.testIn(java_rdd.rdd(), schema)
 
 if __name__ == "__main__":
     sc = SparkContext(master="local", appName="extent-test")
@@ -35,6 +38,4 @@ if __name__ == "__main__":
     (extents, schema) = get_rdd(sc)
 
     new_extents = extents.map(lambda s: Extent(s.xmin+1, s.ymin+1, s.xmax+1, s.ymax+1))
-    print(new_extents.count())
-
     set_rdd(sc, new_extents, schema)

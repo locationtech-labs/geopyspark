@@ -19,7 +19,8 @@ object ExtentWrapper {
     PythonTranslator.toPython(testRdd(sc))
 
   def testIn(rdd: RDD[Array[Byte]], schema: String) =
-    PythonTranslator.fromPython[Extent](rdd, Some(schema)).foreach(println)
+    rdd.collect().foreach(println)
+    //PythonTranslator.fromPython[Extent](rdd, Some(schema)).foreach(println)
 
   def testRdd(sc: SparkContext): RDD[Extent] = {
     val arr = Array(

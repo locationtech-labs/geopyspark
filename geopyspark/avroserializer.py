@@ -81,7 +81,7 @@ class AvroSerializer(FramedSerializer):
 
         schema_name = self.schema().name
         if schema_name == EXTENT:
-            return Extent(i.get('xmin'), i.get('ymin'), i.get('xmax'), i.get('ymax'))
+            return [Extent(i.get('xmin'), i.get('ymin'), i.get('xmax'), i.get('ymax'))]
         elif schema_name == SPATIALKEY:
             return SpatialKey(i.get('col'), i.get('row'))
         else:
