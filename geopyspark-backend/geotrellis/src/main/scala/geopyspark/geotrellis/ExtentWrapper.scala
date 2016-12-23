@@ -19,8 +19,7 @@ object ExtentWrapper {
     PythonTranslator.toPython(testRdd(sc))
 
   def testIn(rdd: RDD[Array[Byte]], schema: String) =
-    rdd.collect().foreach(println)
-    //PythonTranslator.fromPython[Extent](rdd, Some(schema)).foreach(println)
+    PythonTranslator.fromPython[Extent](rdd, Some(schema)).foreach(println)
 
   def testRdd(sc: SparkContext): RDD[Extent] = {
     val arr = Array(
@@ -76,7 +75,7 @@ object PythonTranslator {
     val kwWriterSchema = KryoWrapper(schema)
 
     rdd.map { bytes =>
-      AvroEncoder.fromBinary(kwWriterSchema.value.getOrElse(_recordCodec.schema), bytes)(_recordCodec)
+      ExtendedAvroEncoder.fromBinary(kwWriterSchema.value.getOrElse(_recordCodec.schema), bytes)(_recordCodec)
     }
   }
 }
