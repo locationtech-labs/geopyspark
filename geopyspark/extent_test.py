@@ -25,10 +25,10 @@ def set_rdd(pysc, rdd, schema):
     dumped = rdd.map(lambda s: ser.dumps(s, schema))
     arrs = dumped.map(lambda s: bytearray(s))
 
-    java_rdd = arrs._to_java_object_rdd()
-    #ew = pysc._gateway.jvm.ExtentWrapper
-    #raise Exception("HO HO HO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    #ew.testIn(java_rdd.rdd(), schema)
+    new_java_rdd = dumped._to_java_object_rdd()
+    ew = pysc._gateway.jvm.ExtentWrapper
+
+    ew.testIn(new_java_rdd.rdd(), schema)
 
 if __name__ == "__main__":
     sc = SparkContext(master="local", appName="extent-test")
