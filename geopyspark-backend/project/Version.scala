@@ -1,5 +1,5 @@
 object Version {
-  val geopyspark = "0.0.1"
+  val geopyspark = "0.1.0"
   val geotrellis = "1.0.0"
   val scala       = "2.11.8"
   val crossScala  = Seq("2.11.8", "2.10.6")
