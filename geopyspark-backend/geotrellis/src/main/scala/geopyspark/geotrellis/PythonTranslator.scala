@@ -16,7 +16,7 @@ object PythonTranslator {
     val jrdd =
       rdd
         .map { v =>
-          ExtendedAvroEncoder.toBinary(v, deflate = false)
+          AvroEncoder.toBinary(v, deflate = false)
         }
         .toJavaRDD
     (jrdd, implicitly[AvroRecordCodec[T]].schema.toString)
@@ -28,7 +28,7 @@ object PythonTranslator {
     val kwWriterSchema = KryoWrapper(schema)
 
     rdd.map { bytes =>
-      ExtendedAvroEncoder.fromBinary(kwWriterSchema.value.getOrElse(_recordCodec.schema), bytes)(_recordCodec)
+      AvroEncoder.fromBinary(kwWriterSchema.value.getOrElse(_recordCodec.schema), bytes, false)(_recordCodec)
     }
   }
 }

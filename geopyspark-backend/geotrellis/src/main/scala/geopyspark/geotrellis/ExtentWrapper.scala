@@ -34,12 +34,12 @@ object ExtentWrapper {
   }
 
   def encodeRdd(rdd: RDD[Extent]): RDD[Array[Byte]] = {
-    rdd.map { key => ExtendedAvroEncoder.toBinary(key, deflate = false)
+    rdd.map { key => AvroEncoder.toBinary(key, deflate = false)
     }
   }
 
   def encodeRddText(rdd: RDD[Extent]): RDD[String] = {
-      rdd.map { key => ExtendedAvroEncoder.toBinary(key, deflate = false).mkString("")
+      rdd.map { key => AvroEncoder.toBinary(key, deflate = false).mkString("")
       }
     }
 
