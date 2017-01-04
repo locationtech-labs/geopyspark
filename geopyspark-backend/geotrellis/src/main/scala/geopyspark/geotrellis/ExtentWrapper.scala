@@ -57,25 +57,3 @@ object ExtentWrapper {
     println("\n\n\n")
   }
 }
-
-object PythonTranslator {
-  def toPython[T: AvroRecordCodec](rdd: RDD[T]): (JavaRDD[Array[Byte]], String) = {
-    val jrdd =
-      rdd
-        .map { v =>
-          ExtendedAvroEncoder.toBinary(v, deflate = false)
-        }
-        .toJavaRDD
-    (jrdd, implicitly[AvroRecordCodec[T]].schema.toString)
-  }
-
-  def fromPython[T: AvroRecordCodec: ClassTag](rdd: RDD[Array[Byte]], schemaJson: Option[String] = None): RDD[T] = {
-    val schema = schemaJson.map { json => (new Schema.Parser).parse(json) }
-    val _recordCodec = implicitly[AvroRecordCodec[T]]
-    val kwWriterSchema = KryoWrapper(schema)
-
-    rdd.map { bytes =>
-      ExtendedAvroEncoder.fromBinary(kwWriterSchema.value.getOrElse(_recordCodec.schema), bytes)(_recordCodec)
-    }
-  }
-}
