@@ -45,13 +45,19 @@ class AvroSerializer(FramedSerializer):
 
         if self.schema().name in TILES:
             (r, c) = obj.shape
-            string = array.array('B', obj.flatten()).tostring()
+
+            if "Byte" in self.schema().name:
+                values = array.array('B', obj.flatten()).tostring()
+            else:
+                values = obj.flatten().tolist()
+
             datum = {
                     'cols': c,
                     'rows': r,
-                    'cells': string,
+                    'cells': values,
                     'noDataValue': obj.no_data_value
                     }
+
             return datum
 
         elif isinstance(obj, Extent):
