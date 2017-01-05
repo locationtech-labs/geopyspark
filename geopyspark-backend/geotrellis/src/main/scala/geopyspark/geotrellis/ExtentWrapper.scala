@@ -1,18 +1,11 @@
 package geopyspark.geotrellis
 
 import geotrellis.vector.Extent
-import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
-import geotrellis.spark.io.avro._
-import geotrellis.spark.util.KryoWrapper
 
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.api.java.JavaRDD
-import org.apache.avro._
-
-import scala.reflect.ClassTag
 
 object ExtentWrapper extends Wrapper[Extent]{
 
