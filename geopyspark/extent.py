@@ -6,4 +6,8 @@ class Extent(object):
         self.ymax = ymax
 
     def __repr__(self):
-        return "Extent({}, {}, {}, {})".format(self.xmin, self.ymin, self.xmax, self.ymax)
+        return "Extent({}, {}, {}, {})".format(
+                self.xmin,
+                self.ymin,
+                self.xmax,
+                self.ymax)
