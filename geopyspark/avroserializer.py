@@ -18,9 +18,13 @@ EXTENT = 'Extent'
 TILES = ['BitArrayTile', 'ByteArrayTile', 'UByteArrayTile', 'ShortArrayTile',
         'UShortArrayTile', 'IntArrayTile', 'FloatArrayTile', 'DoubleArrayTile']
 
-MULTIBANDTILE = 'MultibandTile'
+ARRAYMULTIBANDTILE = 'ArrayMultibandTile'
 
 SPATIALKEY = 'SpatialKey'
+
+TUPLE = 'Tuple2'
+
+KEYVALUERECORD = 'KeyValueRecord'
 
 
 class AvroSerializer(FramedSerializer):
@@ -90,6 +94,7 @@ class AvroSerializer(FramedSerializer):
             # cols and rows are opposte for GeoTrellis ArrayTiles and Numpy Arrays
             arr = np.array(bytearray(i.get('cells'))).reshape(i.get('rows'), i.get('cols'))
             tile = TileArray(arr, i.get('noDataValue'))
+
             return [tile]
 
         elif schema_name == EXTENT:
