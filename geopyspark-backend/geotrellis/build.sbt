@@ -1,6 +1,10 @@
 name := "geotrellis-backend"
-resolvers ++= Seq("Location Tech GeoTrellis Snapshots" at "https://repo.locationtech.org/content/repositories/geotrellis-snapshots",
-  Resolver.mavenLocal)
+
+resolvers ++= Seq(
+  "Location Tech GeoTrellis Snapshots" at "https://repo.locationtech.org/content/repositories/geotrellis-snapshots",
+  Resolver.mavenLocal
+)
+
 libraryDependencies ++= Seq(
   "org.locationtech.geotrellis" % "geotrellis-spark_2.11" % "1.0.4-SNAPSHOT",
   "org.locationtech.geotrellis" % "geotrellis-spark-etl_2.11" % "1.0.4-SNAPSHOT",
