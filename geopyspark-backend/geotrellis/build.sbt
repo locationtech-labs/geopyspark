@@ -6,9 +6,8 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.locationtech.geotrellis" % "geotrellis-spark_2.11" % "1.0.4-SNAPSHOT",
-  "org.locationtech.geotrellis" % "geotrellis-spark-etl_2.11" % "1.0.4-SNAPSHOT",
-  "org.apache.spark" %% "spark-core" % "1.2.2" % "provided"
+  "org.apache.spark"            %% "spark-core"       % "1.2.2" % "provided",
+  "org.locationtech.geotrellis" %% "geotrellis-spark" % Version.geotrellis
 )
 
 assemblyMergeStrategy in assembly := {
