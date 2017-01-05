@@ -61,6 +61,15 @@ class AvroSerializer(FramedSerializer):
                     'ymin': obj.ymin,
                     'ymax': obj.ymax
                     }
+
+            return datum
+
+        elif isinstance(obj, SpatialKey):
+            datum = {
+                    'col': obj.col,
+                    'row': obj.row
+                    }
+
             return datum
 
         else:
@@ -101,7 +110,7 @@ class AvroSerializer(FramedSerializer):
             return [Extent(i.get('xmin'), i.get('ymin'), i.get('xmax'), i.get('ymax'))]
 
         elif schema_name == SPATIALKEY:
-            return SpatialKey(i.get('col'), i.get('row'))
+            return [SpatialKey(i.get('col'), i.get('row'))]
 
         else:
             raise Exception("COULDN'T FIND THE SCHEMA")
