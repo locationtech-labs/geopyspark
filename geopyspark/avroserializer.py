@@ -7,7 +7,6 @@ from io import StringIO
 import io
 import avro
 import avro.io
-import binascii
 import numpy as np
 import array
 
