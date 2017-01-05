@@ -11,9 +11,9 @@ object UShortArrayTileWrapper extends Wrapper[UShortArrayTile] {
 
   def testRdd(sc: SparkContext): RDD[UShortArrayTile] = {
     val arr = Array(
-      UShortArrayTile(Array[Byte](0, 0, 1, 1), 2, 2),
-      UShortArrayTile(Array[Byte](1, 2, 3, 4), 2, 2),
-      UShortArrayTile(Array[Byte](5, 6, 7, 8), 2, 2))
+      UShortArrayTile(Array[Short](0, 0, 1, 1), 2, 2),
+      UShortArrayTile(Array[Short](1, 2, 3, 4), 2, 2),
+      UShortArrayTile(Array[Short](5, 6, 7, 8), 2, 2))
     println("\n\n\n")
     println("THESE ARE THE ORIGINAL USHORTARRAYTILES")
     arr.foreach(println)
