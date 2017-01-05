@@ -14,12 +14,15 @@ import org.apache.avro._
 
 import scala.reflect.ClassTag
 
-object ExtentWrapper {
+object ExtentWrapper extends Wrapper[Extent]{
+
+  /*
   def testOut(sc: SparkContext) =
     PythonTranslator.toPython(testRdd(sc))
 
   def testIn(rdd: RDD[Array[Byte]], schema: String) =
     PythonTranslator.fromPython[Extent](rdd, Some(schema)).foreach(println)
+  */
 
   def testRdd(sc: SparkContext): RDD[Extent] = {
     val arr = Array(
@@ -33,6 +36,7 @@ object ExtentWrapper {
     sc.parallelize(arr)
   }
 
+  /*
   def encodeRdd(rdd: RDD[Extent]): RDD[Array[Byte]] = {
     rdd.map { key => AvroEncoder.toBinary(key, deflate = false)
     }
@@ -46,6 +50,7 @@ object ExtentWrapper {
   def keySchema: String = {
     implicitly[AvroRecordCodec[Extent]].schema.toString
   }
+  */
 
   def makeRasterExtent(rdd: RDD[Array[Byte]]): Unit = {
     val newRdd: RDD[Extent] = rdd.map(x => ExtendedAvroEncoder.fromBinary[Extent](x))
