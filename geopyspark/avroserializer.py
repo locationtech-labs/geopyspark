@@ -1,22 +1,25 @@
 from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
 from geopyspark.spatial_key import SpatialKey
 from geopyspark.extent import Extent
+from geopyspark.tile import TileArray
+from io import StringIO
 
 import io
 import avro
 import avro.io
 import binascii
-from io import StringIO
+import numpy as np
+import array
 
 # Constants
 
 EXTENT = 'Extent'
 
-'''
-TILE = ['BitArrayTile', 'ByteArrayTile', 'UByteArrayTile', 'ShortArrayTile',
-        'UShortArrayTile', 'IntArrayTile', 'FloatArrayTile', 'DoubleArrayTile',
-        'MultibandTile']
-'''
+TILES = ['BitArrayTile', 'ByteArrayTile', 'UByteArrayTile', 'ShortArrayTile',
+        'UShortArrayTile', 'IntArrayTile', 'FloatArrayTile', 'DoubleArrayTile']
+
+MULTIBANDTILE = 'MultibandTile'
+
 SPATIALKEY = 'SpatialKey'
 
 
@@ -35,7 +38,19 @@ class AvroSerializer(FramedSerializer):
         return avro.io.DatumWriter(self.schema())
 
     def make_datum(self, obj):
-        if isinstance(obj, Extent):
+
+        if self.schema().name in TILES:
+            (r, c) = obj.shape
+            string = array.array('B', obj.flatten()).tostring()
+            datum = {
+                    'cols': c,
+                    'rows': r,
+                    'cells': string,
+                    'noDataValue': obj.no_data_value
+                    }
+            return datum
+
+        elif isinstance(obj, Extent):
             datum = {
                     'xmin': obj.xmin,
                     'xmax': obj.xmax,
@@ -43,6 +58,7 @@ class AvroSerializer(FramedSerializer):
                     'ymax': obj.ymax
                     }
             return datum
+
         else:
             raise Exception("COULD NOT MAKE THE DATUM")
 
@@ -59,17 +75,6 @@ class AvroSerializer(FramedSerializer):
         writer.write(datum, encoder)
 
         return bytes_writer.getvalue()
-        '''
-
-        writer = StringIO.StringIO()
-        encoder = avro.io.BinaryEncoder(writer)
-        datum = self.make_datum(obj)
-        self.datum_writer.write(datum, encoder)
-        result = writer.getvalue()
-        b = bytearray()
-        b.extend(map(ord, result))
-        return b
-        '''
 
     """
     Deserializes a byte array into an object.
@@ -80,9 +85,18 @@ class AvroSerializer(FramedSerializer):
         i = self.reader().read(decoder)
 
         schema_name = self.schema().name
-        if schema_name == EXTENT:
+
+        if schema_name in TILES:
+            # cols and rows are opposte for GeoTrellis ArrayTiles and Numpy Arrays
+            arr = np.array(bytearray(i.get('cells'))).reshape(i.get('rows'), i.get('cols'))
+            tile = TileArray(arr, i.get('noDataValue'))
+            return [tile]
+
+        elif schema_name == EXTENT:
             return [Extent(i.get('xmin'), i.get('ymin'), i.get('xmax'), i.get('ymax'))]
+
         elif schema_name == SPATIALKEY:
             return SpatialKey(i.get('col'), i.get('row'))
+
         else:
             raise Exception("COULDN'T FIND THE SCHEMA")
