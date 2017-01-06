@@ -1,4 +1,8 @@
-from distutils.core import setup
+from setuptools import setup
+import sys
+
+if not sys.version_info[0] >= 3:
+    sys.exit("Python Versions Before 3.0 Are Not Supported")
 
 setup(
         description='geopyspark',
@@ -6,7 +10,7 @@ setup(
         download_url='http://github.com/geotrellis/geopyspark',
         author_email='jbouffard@azavea.com',
         version='0.1',
-        install_requires=['avro-python3'],
+        install_requires=['avro-python3>=1.8', 'numpy>=1'],
         packages=['geopyspark'],
         scripts=[],
         name='geopyspark'

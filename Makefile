@@ -8,7 +8,10 @@ run-pyspark:
 	spark-submit \
 		--master "local[*]" \
 		--jars geopyspark-backend/geotrellis/target/scala-2.11/geotrellis-backend-assembly-0.1.0.jar \
-		geopyspark/extent_test.py
+		geopyspark/tests/tile_test.py
 
-run: install backend-assembly run-pyspark
-#run: install run-pyspark
+run-all: install backend-assembly run-pyspark
+
+run-install: install run-pyspark
+
+run-assembly: backend-assembly run-pyspark
