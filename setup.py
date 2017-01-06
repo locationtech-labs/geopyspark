@@ -6,7 +6,7 @@ setup(
         download_url='http://github.com/geotrellis/geopyspark',
         author_email='jbouffard@azavea.com',
         version='0.1',
-        install_requires=['py4j, pyspark'],
+        install_requires=['avro-python3'],
         packages=['geopyspark'],
         scripts=[],
         name='geopyspark'

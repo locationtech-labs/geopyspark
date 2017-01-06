@@ -5,12 +5,22 @@ import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.avro._
+import geotrellis.spark.util.KryoWrapper
 
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.api.java.JavaRDD
 import org.apache.avro._
 
+import scala.reflect.ClassTag
+
 object ExtentWrapper {
+  def testOut(sc: SparkContext) =
+    PythonTranslator.toPython(testRdd(sc))
+
+  def testIn(rdd: RDD[Array[Byte]], schema: String) =
+    PythonTranslator.fromPython[Extent](rdd, Some(schema)).foreach(println)
+
   def testRdd(sc: SparkContext): RDD[Extent] = {
     val arr = Array(
       Extent(0, 0, 1, 1),
@@ -24,12 +34,12 @@ object ExtentWrapper {
   }
 
   def encodeRdd(rdd: RDD[Extent]): RDD[Array[Byte]] = {
-    rdd.map { key => ExtendedAvroEncoder.toBinary(key, deflate = false)
+    rdd.map { key => AvroEncoder.toBinary(key, deflate = false)
     }
   }
 
   def encodeRddText(rdd: RDD[Extent]): RDD[String] = {
-      rdd.map { key => ExtendedAvroEncoder.toBinary(key, deflate = false).mkString("")
+      rdd.map { key => AvroEncoder.toBinary(key, deflate = false).mkString("")
       }
     }
 

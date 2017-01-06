@@ -1,5 +1,5 @@
 install:
-	python setup.py install --user
+	python3 setup.py install --user
 
 backend-assembly:
 	cd geopyspark-backend && sbt "project geotrellis-backend" assembly
@@ -11,3 +11,4 @@ run-pyspark:
 		geopyspark/extent_test.py
 
 run: install backend-assembly run-pyspark
+#run: install run-pyspark
