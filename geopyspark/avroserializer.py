@@ -34,18 +34,38 @@ class AvroSerializer(FramedSerializer):
     def schema(self):
         return avro.schema.Parse(self._schemaJson)
 
+    def schema_name(self):
+        return self.schema().name
+
     def reader(self):
         return avro.io.DatumReader(self.schema())
 
     def datum_writer(self):
         return avro.io.DatumWriter(self.schema())
 
-    def make_datum(self, obj):
+    """
+    Creates a python dictionary that will be serialized on the python side,
+    and then deserialized on the scala side.
+    """
+    def _make_datum(self, obj):
 
-        if self.schema().name in TILES:
+        if isinstance(obj, tuple):
+            (a, b) = obj
+
+            datum_1 = self._make_datum(a)
+            datum_2 = self._make_datum(b)
+
+            datum = {
+                    '_1': datum_1,
+                    '_2': datum_2
+                    }
+
+            return datum
+
+        if isinstance(obj, TileArray):
             (r, c) = obj.shape
 
-            if "Byte" in self.schema().name:
+            if obj.dtype.type == np.int8 or obj.dtype.type == np.uint8:
                 values = array.array('B', obj.flatten()).tostring()
             else:
                 values = obj.flatten().tolist()
@@ -86,13 +106,41 @@ class AvroSerializer(FramedSerializer):
     """
     def dumps(self, obj, schema):
         s = avro.schema.Parse(schema)
+
         writer = avro.io.DatumWriter(s)
         bytes_writer = io.BytesIO()
+
         encoder = avro.io.BinaryEncoder(bytes_writer)
-        datum = self.make_datum(obj)
+        datum = self._make_datum(obj)
         writer.write(datum, encoder)
 
         return bytes_writer.getvalue()
+
+    """
+    Takes the data from the byte array and turns it into the corresponding
+    python object.
+    """
+    def _make_object(self, i, name=None):
+
+        if name is None:
+            name = self.schema_name()
+
+        if name in TILES:
+            # cols and rows are opposte for GeoTrellis ArrayTiles and Numpy Arrays
+            arr = np.array(bytearray(i.get('cells'))).reshape(i.get('rows'), i.get('cols'))
+            tile = TileArray(arr, i.get('noDataValue'))
+
+            return tile
+
+        elif name == EXTENT:
+            return Extent(i.get('xmin'), i.get('ymin'), i.get('xmax'), i.get('ymax'))
+
+        elif name == SPATIALKEY:
+            return [SpatialKey(i.get('col'), i.get('row'))]
+
+        else:
+            raise Exception("COULDN'T FIND THE SCHEMA")
+
 
     """
     Deserializes a byte array into an object.
@@ -102,20 +150,22 @@ class AvroSerializer(FramedSerializer):
         decoder = avro.io.BinaryDecoder(buf)
         i = self.reader().read(decoder)
 
-        schema_name = self.schema().name
+        if self.schema_name() == TUPLE:
+            import json
 
-        if schema_name in TILES:
-            # cols and rows are opposte for GeoTrellis ArrayTiles and Numpy Arrays
-            arr = np.array(bytearray(i.get('cells'))).reshape(i.get('rows'), i.get('cols'))
-            tile = TileArray(arr, i.get('noDataValue'))
+            schema_1 = i.get('_1')
+            schema_2 = i.get('_2')
 
-            return [tile]
+            schema_dict = json.loads(self._schemaJson)
+            (a, b) = schema_dict['fields']
 
-        elif schema_name == EXTENT:
-            return [Extent(i.get('xmin'), i.get('ymin'), i.get('xmax'), i.get('ymax'))]
+            name_1 = a['type']['name']
+            name_2 = b['type']['name']
 
-        elif schema_name == SPATIALKEY:
-            return [SpatialKey(i.get('col'), i.get('row'))]
+            result = [(self._make_object(schema_1, name=name_1),
+                    self._make_object(schema_2, name=name_2))]
+
+            return result
 
         else:
-            raise Exception("COULDN'T FIND THE SCHEMA")
+            return self._make_object(i)
