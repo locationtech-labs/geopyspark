@@ -127,7 +127,7 @@ class AvroSerializer(FramedSerializer):
 
         if name in TILES:
             # cols and rows are opposte for GeoTrellis ArrayTiles and Numpy Arrays
-            arr = np.array(bytearray(i.get('cells'))).reshape(i.get('rows'), i.get('cols'))
+            arr = np.array(i.get('cells')).reshape(i.get('rows'), i.get('cols'))
             tile = TileArray(arr, i.get('noDataValue'))
 
             return tile
@@ -160,7 +160,10 @@ class AvroSerializer(FramedSerializer):
             (a, b) = schema_dict['fields']
 
             name_1 = a['type']['name']
-            name_2 = b['type']['name']
+            if isinstance(b['type'], list):
+                name_2 = b['type'][0]['name']
+            else:
+                name_2 = b['type']['name']
 
             result = [(self._make_object(schema_1, name=name_1),
                     self._make_object(schema_2, name=name_2))]
