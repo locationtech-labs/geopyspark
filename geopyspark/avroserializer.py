@@ -15,7 +15,7 @@ import array
 EXTENT = 'Extent'
 
 TILES = ['BitArrayTile', 'ByteArrayTile', 'UByteArrayTile', 'ShortArrayTile',
-        'UShortArrayTile', 'IntArrayTile', 'FloatArrayTile', 'DoubleArrayTile']
+        'UShortArrayTile', 'IntArrayTile', 'FloatArrayTile', 'DoubleArrayTile', 'Tile']
 
 ARRAYMULTIBANDTILE = 'ArrayMultibandTile'
 
@@ -49,6 +49,8 @@ class AvroSerializer(FramedSerializer):
     """
     def _make_datum(self, obj):
 
+        # TODO: Find a way to move tuples and ArrayMutlibandTiles somewhere else
+
         if isinstance(obj, tuple):
             (a, b) = obj
 
@@ -58,6 +60,16 @@ class AvroSerializer(FramedSerializer):
             datum = {
                     '_1': datum_1,
                     '_2': datum_2
+                    }
+
+            return datum
+
+        # ArrayMultibandTiles
+        if isinstance(obj, list):
+            tile_datums = [self._make_datum(tile) for tile in obj]
+
+            datum = {
+                    'bands': tile_datums
                     }
 
             return datum
@@ -166,6 +178,12 @@ class AvroSerializer(FramedSerializer):
                     self._make_object(schema_2, name=name_2))]
 
             return result
+
+        elif self.schema_name() == ARRAYMULTIBANDTILE:
+            bands = i.get('bands')
+            objs = [[self._make_object(x, name='Tile') for x in bands]]
+
+            return objs
 
         else:
             return self._make_object(i)
