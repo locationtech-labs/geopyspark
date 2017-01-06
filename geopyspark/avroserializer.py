@@ -185,7 +185,10 @@ class AvroSerializer(FramedSerializer):
             (a, b) = schema_dict['fields']
 
             name_1 = a['type']['name']
-            name_2 = b['type']['name']
+            if isinstance(b['type'], list):
+                name_2 = b['type'][0]['name']
+            else:
+                name_2 = b['type']['name']
 
             result = [(self._make_object(schema_1, name=name_1),
                     self._make_object(schema_2, name=name_2))]
