@@ -1,5 +1,5 @@
 from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
-from geopyspark.spatial_key import SpatialKey
+from geopyspark.keys import SpatialKey, SpaceTimeKey
 from geopyspark.extent import Extent
 from geopyspark.tile import TileArray
 from io import StringIO
@@ -20,6 +20,8 @@ TILES = ['BitArrayTile', 'ByteArrayTile', 'UByteArrayTile', 'ShortArrayTile',
 ARRAYMULTIBANDTILE = 'ArrayMultibandTile'
 
 SPATIALKEY = 'SpatialKey'
+
+SPACETIMEKEY = 'SpaceTimeKey'
 
 TUPLE = 'Tuple2'
 
@@ -109,6 +111,15 @@ class AvroSerializer(FramedSerializer):
 
             return datum
 
+        elif isinstance(obj, SpaceTimeKey):
+            datum = {
+                    'col': obj.col,
+                    'row': obj.row,
+                    'instant': obj.instant
+                    }
+
+            return datum
+
         else:
             raise Exception("COULD NOT MAKE THE DATUM")
 
@@ -139,7 +150,7 @@ class AvroSerializer(FramedSerializer):
 
         if name in TILES:
             # cols and rows are opposte for GeoTrellis ArrayTiles and Numpy Arrays
-            arr = np.array(bytearray(i.get('cells'))).reshape(i.get('rows'), i.get('cols'))
+            arr = np.array(i.get('cells')).reshape(i.get('rows'), i.get('cols'))
             tile = TileArray(arr, i.get('noDataValue'))
 
             return tile
@@ -148,11 +159,13 @@ class AvroSerializer(FramedSerializer):
             return Extent(i.get('xmin'), i.get('ymin'), i.get('xmax'), i.get('ymax'))
 
         elif name == SPATIALKEY:
-            return [SpatialKey(i.get('col'), i.get('row'))]
+            return SpatialKey(i.get('col'), i.get('row'))
+
+        elif name == SPACETIMEKEY:
+            return [SpaceTimeKey(i['col'], i['row'], i['instant'])]
 
         else:
             raise Exception("COULDN'T FIND THE SCHEMA")
-
 
     """
     Deserializes a byte array into an object.
