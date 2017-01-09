@@ -149,8 +149,13 @@ class AvroSerializer(FramedSerializer):
             name = self.schema_name()
 
         if name in TILES:
+            cells = i.get('cells')
+
+            if isinstance(cells, bytes):
+                cells = bytearray(cells)
+
             # cols and rows are opposte for GeoTrellis ArrayTiles and Numpy Arrays
-            arr = np.array(i.get('cells')).reshape(i.get('rows'), i.get('cols'))
+            arr = np.array(cells).reshape(i.get('rows'), i.get('cols'))
             tile = TileArray(arr, i.get('noDataValue'))
 
             return tile
@@ -167,6 +172,26 @@ class AvroSerializer(FramedSerializer):
         else:
             raise Exception("COULDN'T FIND THE SCHEMA")
 
+    def _make_tuple(self, i):
+        import json
+
+        schema_1 = i.get('_1')
+        schema_2 = i.get('_2')
+
+        schema_dict = json.loads(self._schemaJson)
+        (a, b) = schema_dict['fields']
+
+        name_1 = a['type']['name']
+        if isinstance(b['type'], list):
+            name_2 = b['type'][0]['name']
+        else:
+            name_2 = b['type']['name']
+
+        result = [(self._make_object(schema_1, name=name_1),
+                self._make_object(schema_2, name=name_2))]
+
+        return result
+
     """
     Deserializes a byte array into an object.
     """
@@ -175,25 +200,18 @@ class AvroSerializer(FramedSerializer):
         decoder = avro.io.BinaryDecoder(buf)
         i = self.reader().read(decoder)
 
+        if self.schema_name() == KEYVALUERECORD:
+            pairs = i.get('pairs')
+            print("THESE ARE THE PAIRS")
+            print(pairs)
+            objs = [[self._make_tuple(x) for x in pairs]]
+
+            return objs
+
         if self.schema_name() == TUPLE:
-            import json
+            objs = self._make_tuple(i)
 
-            schema_1 = i.get('_1')
-            schema_2 = i.get('_2')
-
-            schema_dict = json.loads(self._schemaJson)
-            (a, b) = schema_dict['fields']
-
-            name_1 = a['type']['name']
-            if isinstance(b['type'], list):
-                name_2 = b['type'][0]['name']
-            else:
-                name_2 = b['type']['name']
-
-            result = [(self._make_object(schema_1, name=name_1),
-                    self._make_object(schema_2, name=name_2))]
-
-            return result
+            return objs
 
         elif self.schema_name() == ARRAYMULTIBANDTILE:
             bands = i.get('bands')
