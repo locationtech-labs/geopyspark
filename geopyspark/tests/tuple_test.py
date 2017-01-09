@@ -34,7 +34,7 @@ def set_rdd(pysc, rdd, schema):
     ew.testIn(new_java_rdd.rdd(), schema)
 
 if __name__ == "__main__":
-    sc = SparkContext(master="local", appName="byte-tile-test")
+    sc = SparkContext(master="local", appName="tuple-test")
 
     java_import(sc._gateway.jvm, "geopyspark.geotrellis.TupleWrapper")
 
