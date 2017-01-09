@@ -40,7 +40,6 @@ if __name__ == "__main__":
 
     (arrays, schema) = get_rdd(sc)
 
-    adder = lambda x: x + 1
-    new_arrays = arrays.map(lambda s: TileArray(np.array([adder(x1) for x1 in s]), s.no_data_value))
+    new_arrays = arrays.map(lambda s: s + 1)
 
     set_rdd(sc, new_arrays, schema)
