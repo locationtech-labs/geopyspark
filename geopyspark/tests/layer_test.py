@@ -6,6 +6,9 @@ from pyspark import SparkConf, SparkContext, RDD
 from pyspark.serializers import AutoBatchedSerializer
 from geopyspark.avroserializer import AvroSerializer
 
+import time
+import calendar
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 3:
@@ -29,3 +32,7 @@ if __name__ == "__main__":
     serializer = AvroSerializer(schema)
     rdd = RDD(jrdd, sc, AutoBatchedSerializer(serializer))
     print(rdd.take(1))
+
+    writer_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
+    writer = writer_factory.build("hdfs", uri, sc._jsc.sc())
+    writer.write(layer_name + "-" + str(calendar.timegm(time.gmtime())), 0, rdd._jrdd, schema, layer_name, layer_zoom)

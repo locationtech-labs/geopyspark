@@ -25,6 +25,7 @@ class HadoopLayerReaderWrapper(uri: String, sc: SparkContext)
 
   def query(name: String, zoom: Int): (JavaRDD[Array[Byte]], String) = {
     val id = LayerId(name, zoom)
+    // val results = layerReader.read[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](id)
     val subset = Extent(-87.1875, 34.43409789359469, -78.15673828125, 39.87601941962116)
     val results = layerReader
       .query[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](id)
