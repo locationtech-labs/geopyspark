@@ -202,8 +202,6 @@ class AvroSerializer(FramedSerializer):
 
         if self.schema_name() == KEYVALUERECORD:
             pairs = i.get('pairs')
-            print("THESE ARE THE PAIRS")
-            print(pairs)
             objs = [[self._make_tuple(x) for x in pairs]]
 
             return objs
@@ -220,4 +218,4 @@ class AvroSerializer(FramedSerializer):
             return objs
 
         else:
-            return self._make_object(i)
+            return [self._make_object(i)]
