@@ -9,7 +9,7 @@ import org.apache.spark._
 
 abstract class AttributeStoreWrapper {
   def header(name: String, zoom: Int): Array[String]
-  def cellType(name: String, zoom: Int): String
+  def metadata(name: String, zoom: Int): TileLayerMetadataWrapper[SpatialKey]
 }
 
 class HadoopAttributeStoreWrapper(uri: String, sc: SparkContext)
@@ -22,19 +22,10 @@ class HadoopAttributeStoreWrapper(uri: String, sc: SparkContext)
     Array[String](h.keyClass, h.valueClass, h.path.toString)
   }
 
-  def cellType(name: String, zoom: Int): String = {
+  def metadata(name: String, zoom: Int): TileLayerMetadataWrapper[SpatialKey] = {
     val id = LayerId(name, zoom)
-    val h = attributeStore.readHeader[HadoopLayerHeader](id)
-
-    h.keyClass match {
-      case "geotrellis.spark.SpatialKey" => {
-        attributeStore.readMetadata[TileLayerMetadata[SpatialKey]](id).cellType.toString
-      }
-      case "geotrellis.spark.SpaceTimeKey" => {
-        attributeStore.readMetadata[TileLayerMetadata[SpaceTimeKey]](id).cellType.toString
-      }
-      case _ => throw new Exception
-    }
+    val md = attributeStore.readMetadata[TileLayerMetadata[SpatialKey]](id)
+    new TileLayerMetadataWrapper(md)
   }
 }
 

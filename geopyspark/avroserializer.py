@@ -183,7 +183,14 @@ class AvroSerializer(FramedSerializer):
 
         name_1 = a['type']['name']
         if isinstance(b['type'], list):
-            name_2 = b['type'][0]['name']
+            # The 'name' parameter does not effect the handling of
+            # tiles in _make_object, so any name will do.  If type is
+            # an array but this is not a tile, then undefined
+            # behavior.
+            if b['type'][0]['name'] in TILES:
+                name_2 = b['type'][0]['name']
+            else:
+                name_2 = None
         else:
             name_2 = b['type']['name']
 
