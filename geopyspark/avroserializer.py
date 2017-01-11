@@ -167,7 +167,7 @@ class AvroSerializer(FramedSerializer):
             return SpatialKey(i.get('col'), i.get('row'))
 
         elif name == SPACETIMEKEY:
-            return [SpaceTimeKey(i['col'], i['row'], i['instant'])]
+            return SpaceTimeKey(i['col'], i['row'], i['instant'])
 
         else:
             raise Exception("COULDN'T FIND THE SCHEMA")
