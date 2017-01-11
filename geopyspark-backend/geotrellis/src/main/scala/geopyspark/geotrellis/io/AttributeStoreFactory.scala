@@ -7,11 +7,20 @@ import geotrellis.spark.io.hadoop._
 import org.apache.spark._
 
 
+/**
+  * Base wrapper class for various types of attribute stores.
+  */
 abstract class AttributeStoreWrapper {
   def header(name: String, zoom: Int): Array[String]
   def metadata(name: String, zoom: Int): TileLayerMetadataWrapper[SpatialKey]
 }
 
+/**
+  * HadoopAttributeStore wrapper.
+  *
+  * @param  uri  The URI where the catalog is located
+  * @param  sc   The SparkContext
+  */
 class HadoopAttributeStoreWrapper(uri: String, sc: SparkContext)
     extends AttributeStoreWrapper {
 
@@ -29,6 +38,10 @@ class HadoopAttributeStoreWrapper(uri: String, sc: SparkContext)
   }
 }
 
+/**
+  * Interface for requesting attribute store wrappers.  This object is
+  * easily accessible from PySpark.
+  */
 object AttributeStoreFactory {
   def build(backend: String, uri: String, sc: SparkContext): AttributeStoreWrapper = {
     backend match {
