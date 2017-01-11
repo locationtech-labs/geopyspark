@@ -53,6 +53,16 @@ class AvroSerializer(FramedSerializer):
 
         # TODO: Find a way to move tuples and ArrayMutlibandTiles somewhere else
 
+        if isinstance(obj, list) and isinstance(obj[0], tuple):
+            tuple_datums = [self._make_datum(tup) for tup in obj]
+
+            datum = {
+                    'pairs': tuple_datums
+                    }
+
+            return datum
+
+
         if isinstance(obj, tuple):
             (a, b) = obj
 
@@ -67,7 +77,7 @@ class AvroSerializer(FramedSerializer):
             return datum
 
         # ArrayMultibandTiles
-        if isinstance(obj, list):
+        elif isinstance(obj, list):
             tile_datums = [self._make_datum(tile) for tile in obj]
 
             datum = {
@@ -172,13 +182,17 @@ class AvroSerializer(FramedSerializer):
         else:
             raise Exception("COULDN'T FIND THE SCHEMA")
 
-    def _make_tuple(self, i):
-        import json
+    def _make_tuple(self, i, schema=None):
 
         schema_1 = i.get('_1')
         schema_2 = i.get('_2')
 
-        schema_dict = json.loads(self._schemaJson)
+        if schema is None:
+            import json
+            schema_dict = json.loads(self._schemaJson)
+        else:
+            schema_dict = schema
+
         (a, b) = schema_dict['fields']
 
         name_1 = a['type']['name']
@@ -194,10 +208,13 @@ class AvroSerializer(FramedSerializer):
         else:
             name_2 = b['type']['name']
 
-        result = [(self._make_object(schema_1, name=name_1),
-                self._make_object(schema_2, name=name_2))]
+        result = (self._make_object(schema_1, name=name_1),
+                self._make_object(schema_2, name=name_2))
 
-        return result
+        if schema is None:
+            return [result]
+        else:
+            return result
 
     """
     Deserializes a byte array into an object.
@@ -208,12 +225,17 @@ class AvroSerializer(FramedSerializer):
         i = self.reader().read(decoder)
 
         if self.schema_name() == KEYVALUERECORD:
+            import json
+
+            schema_dict = json.loads(self._schemaJson)
+            fields = schema_dict['fields'][0]['type']['items']
             pairs = i.get('pairs')
-            objs = [[self._make_tuple(x) for x in pairs]]
+
+            objs = [[self._make_tuple(x, schema=fields) for x in pairs]]
 
             return objs
 
-        if self.schema_name() == TUPLE:
+        elif self.schema_name() == TUPLE:
             objs = self._make_tuple(i)
 
             return objs
