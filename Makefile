@@ -1,5 +1,5 @@
 install:
-	python3 setup.py install --user
+	python3 setup.py install --user --force
 
 backend-assembly:
 	(cd geopyspark-backend ; ./sbt "project geotrellis-backend" assembly)
