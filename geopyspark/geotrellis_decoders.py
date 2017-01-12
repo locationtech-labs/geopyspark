@@ -1,29 +1,11 @@
-from geopyspark.keys import SpatialKey, SpaceTimeKey
-from geopyspark.extent import Extent
-from geopyspark.tile import TileArray
+from geopyspark.serialization_constants import *
 
 import numpy as np
 
 
-# Constants
-
-EXTENT = 'Extent'
-
-TILES = ['BitArrayTile', 'ByteArrayTile', 'UByteArrayTile', 'ShortArrayTile',
-        'UShortArrayTile', 'IntArrayTile', 'FloatArrayTile', 'DoubleArrayTile', 'Tile']
-
-ARRAYMULTIBANDTILE = 'ArrayMultibandTile'
-
-SPATIALKEY = 'SpatialKey'
-
-SPACETIMEKEY = 'SpaceTimeKey'
-
-TUPLE = 'Tuple2'
-
-KEYVALUERECORD = 'KeyValueRecord'
-
-
 def tile_decoder(i):
+    from geopyspark.tile import TileArray
+
     cells = i['cells']
 
     if isinstance(cells, bytes):
@@ -36,12 +18,18 @@ def tile_decoder(i):
     return tile
 
 def extent_decoder(i):
+    from geopyspark.extent import Extent
+
     return Extent(i['xmin'], i['ymin'], i['xmax'], i['ymax'])
 
 def spatial_key_decoder(i):
+    from geopyspark.keys import SpatialKey
+
     return SpatialKey(i['col'], i['row'])
 
 def spacetime_key_decoder(i):
+    from geopyspark.keys import SpaceTimeKey
+
     return SpaceTimeKey(i['col'], i['row'], i['instant'])
 
 def multiband_decoder(i):
@@ -112,4 +100,4 @@ def get_decoder(name, custom_name=None, custom_decoder=None):
         return spacetime_key_decoder
 
     else:
-        raise Exception("COULDN'T FIND THE SCHEMA")
+        raise Exception("Could not find a decoder for", name)
