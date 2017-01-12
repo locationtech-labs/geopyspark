@@ -30,11 +30,11 @@ KEYVALUERECORD = 'KeyValueRecord'
 
 class AvroSerializer(FramedSerializer):
 
-    def __init__(self, schemaJson):
-        self._schemaJson = schemaJson
+    def __init__(self, schema_json):
+        self._schema_json = schema_json
 
     def schema(self):
-        return avro.schema.Parse(self._schemaJson)
+        return avro.schema.Parse(self._schema_json)
 
     def schema_name(self):
         return self.schema().name
@@ -133,6 +133,8 @@ class AvroSerializer(FramedSerializer):
         else:
             raise Exception("COULD NOT MAKE THE DATUM")
 
+    def _make_collection_datum(self, obj):
+
     """
     Serialize an object into a byte array.
     When batching is used, this will be called with an array of objects.
@@ -159,22 +161,22 @@ class AvroSerializer(FramedSerializer):
             name = self.schema_name()
 
         if name in TILES:
-            cells = i.get('cells')
+            cells = i['cells']
 
             if isinstance(cells, bytes):
                 cells = bytearray(cells)
 
             # cols and rows are opposte for GeoTrellis ArrayTiles and Numpy Arrays
-            arr = np.array(cells).reshape(i.get('rows'), i.get('cols'))
-            tile = TileArray(arr, i.get('noDataValue'))
+            arr = np.array(cells).reshape(i['rows'], i['cols'])
+            tile = TileArray(arr, i['noDataValue'])
 
             return tile
 
         elif name == EXTENT:
-            return Extent(i.get('xmin'), i.get('ymin'), i.get('xmax'), i.get('ymax'))
+            return Extent(i['xmin'], i['ymin'], i['xmax'], i['ymax'])
 
         elif name == SPATIALKEY:
-            return SpatialKey(i.get('col'), i.get('row'))
+            return SpatialKey(i['col'], i['row'])
 
         elif name == SPACETIMEKEY:
             return SpaceTimeKey(i['col'], i['row'], i['instant'])
@@ -184,12 +186,12 @@ class AvroSerializer(FramedSerializer):
 
     def _make_tuple(self, i, schema=None):
 
-        schema_1 = i.get('_1')
-        schema_2 = i.get('_2')
+        schema_1 = i['_1']
+        schema_2 = i['_2']
 
         if schema is None:
             import json
-            schema_dict = json.loads(self._schemaJson)
+            schema_dict = json.loads(self._schema_json)
         else:
             schema_dict = schema
 
@@ -216,20 +218,13 @@ class AvroSerializer(FramedSerializer):
         else:
             return result
 
-    """
-    Deserializes a byte array into an object.
-    """
-    def loads(self, obj):
-        buf = io.BytesIO(obj)
-        decoder = avro.io.BinaryDecoder(buf)
-        i = self.reader().read(decoder)
-
+    def _make_collection(self, i):
         if self.schema_name() == KEYVALUERECORD:
             import json
 
-            schema_dict = json.loads(self._schemaJson)
+            schema_dict = json.loads(self._schema_json)
             fields = schema_dict['fields'][0]['type']['items']
-            pairs = i.get('pairs')
+            pairs = i['pairs']
 
             objs = [[self._make_tuple(x, schema=fields) for x in pairs]]
 
@@ -241,10 +236,23 @@ class AvroSerializer(FramedSerializer):
             return objs
 
         elif self.schema_name() == ARRAYMULTIBANDTILE:
-            bands = i.get('bands')
+            bands = i['bands']
             objs = [[self._make_object(x, name='Tile') for x in bands]]
 
             return objs
 
         else:
             return [self._make_object(i)]
+
+
+    """
+    Deserializes a byte array into a collection of python objects.
+    """
+    def loads(self, obj):
+        buf = io.BytesIO(obj)
+        decoder = avro.io.BinaryDecoder(buf)
+        i = self.reader().read(decoder)
+
+        python_obj_collection = self._make_collection(i)
+
+        return python_obj_collection
