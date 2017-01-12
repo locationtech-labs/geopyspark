@@ -30,8 +30,10 @@ KEYVALUERECORD = 'KeyValueRecord'
 
 class AvroSerializer(FramedSerializer):
 
-    def __init__(self, schema_json):
+    def __init__(self, schema_json, custom_decoder=None, custom_encoder=None):
         self._schema_json = schema_json
+        self.custom_decoder = custom_decoder
+        self.custom_encoder = custom_encoder
 
     def schema(self):
         return avro.schema.Parse(self._schema_json)
@@ -133,8 +135,6 @@ class AvroSerializer(FramedSerializer):
         else:
             raise Exception("COULD NOT MAKE THE DATUM")
 
-    def _make_collection_datum(self, obj):
-
     """
     Serialize an object into a byte array.
     When batching is used, this will be called with an array of objects.
@@ -155,12 +155,12 @@ class AvroSerializer(FramedSerializer):
     Takes the data from the byte array and turns it into the corresponding
     python object.
     """
-    def _make_object(self, i, name=None):
+    def _make_decoder(self, name=None):
 
         if name is None:
             name = self.schema_name()
 
-        if name in TILES:
+        def make_tile_decoder(i):
             cells = i['cells']
 
             if isinstance(cells, bytes):
@@ -172,14 +172,26 @@ class AvroSerializer(FramedSerializer):
 
             return tile
 
-        elif name == EXTENT:
+        def make_extent_decoder(i):
             return Extent(i['xmin'], i['ymin'], i['xmax'], i['ymax'])
 
-        elif name == SPATIALKEY:
+        def make_spatial_key_decoder(i):
             return SpatialKey(i['col'], i['row'])
 
-        elif name == SPACETIMEKEY:
+        def make_spacetime_key_decoder(i):
             return SpaceTimeKey(i['col'], i['row'], i['instant'])
+
+        if name in TILES:
+            return make_tile_decoder
+
+        elif name == EXTENT:
+            return make_extent_decoder
+
+        elif name == SPATIALKEY:
+            return make_spatial_key_decoder
+
+        elif name == SPACETIMEKEY:
+            return make_spacetime_key_decoder
 
         else:
             raise Exception("COULDN'T FIND THE SCHEMA")
@@ -210,8 +222,10 @@ class AvroSerializer(FramedSerializer):
         else:
             name_2 = b['type']['name']
 
-        result = (self._make_object(schema_1, name=name_1),
-                self._make_object(schema_2, name=name_2))
+        decoder_1 = self._make_decoder(name=name_1)
+        decoder_2 = self._make_decoder(name=name_2)
+
+        result = (decoder_1(schema_1), decoder_2(schema_2))
 
         if schema is None:
             return [result]
@@ -219,6 +233,7 @@ class AvroSerializer(FramedSerializer):
             return result
 
     def _make_collection(self, i):
+
         if self.schema_name() == KEYVALUERECORD:
             import json
 
@@ -237,12 +252,15 @@ class AvroSerializer(FramedSerializer):
 
         elif self.schema_name() == ARRAYMULTIBANDTILE:
             bands = i['bands']
-            objs = [[self._make_object(x, name='Tile') for x in bands]]
+
+            decoder = self._make_decoder(name='Tile')
+            objs = [[decoder(x) for x in bands]]
 
             return objs
 
         else:
-            return [self._make_object(i)]
+            decoder = self._make_decoder()
+            return [decoder(i)]
 
 
     """
