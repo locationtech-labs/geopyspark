@@ -2,6 +2,7 @@ from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSeriali
 from geopyspark.keys import SpatialKey, SpaceTimeKey
 from geopyspark.extent import Extent
 from geopyspark.tile import TileArray
+from geopyspark.geotrellis_decoders import *
 from io import StringIO
 
 import io
@@ -27,19 +28,32 @@ TUPLE = 'Tuple2'
 
 KEYVALUERECORD = 'KeyValueRecord'
 
+COLLECTIONS = ['Tuple2', 'KeyValueRecord']
+
 
 class AvroSerializer(FramedSerializer):
 
-    def __init__(self, schema_json, custom_decoder=None, custom_encoder=None):
+    def __init__(self,
+            schema_json,
+            custom_decoder=None,
+            custom_encoder=None,
+            custom_name=None):
+
         self._schema_json = schema_json
         self.custom_decoder = custom_decoder
         self.custom_encoder = custom_encoder
+        self.custom_name = custom_name
 
     def schema(self):
         return avro.schema.Parse(self._schema_json)
 
     def schema_name(self):
         return self.schema().name
+
+    def schema_dict(self):
+        import json
+
+        return json.loads(self._schema_json)
 
     def reader(self):
         return avro.io.DatumReader(self.schema())
@@ -155,6 +169,8 @@ class AvroSerializer(FramedSerializer):
     Takes the data from the byte array and turns it into the corresponding
     python object.
     """
+
+    '''
     def _make_decoder(self, name=None):
 
         if name is None:
@@ -261,6 +277,7 @@ class AvroSerializer(FramedSerializer):
         else:
             decoder = self._make_decoder()
             return [decoder(i)]
+    '''
 
 
     """
@@ -271,6 +288,13 @@ class AvroSerializer(FramedSerializer):
         decoder = avro.io.BinaryDecoder(buf)
         i = self.reader().read(decoder)
 
-        python_obj_collection = self._make_collection(i)
+        decoder = get_decoder(name=self.schema_name(),
+                custom_name=self.custom_name,
+                custom_decoder=self.custom_decoder)
 
-        return python_obj_collection
+        if self.schema_name() in COLLECTIONS:
+            result = decoder(i, self.schema_dict())
+        else:
+            result = decoder(i)
+
+        return [result]
