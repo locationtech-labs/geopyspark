@@ -81,8 +81,6 @@ def key_value_record_encoder(obj):
 
     return datum
 
- # TODO: Find a better of checking for custom types
-
 def get_encoded_object(obj, custom_class=None, custom_encoder=None):
 
     if isinstance(obj, type(custom_class)):
