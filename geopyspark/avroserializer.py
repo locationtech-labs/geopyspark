@@ -1,4 +1,4 @@
-from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
+from pyspark.serializers import Serializer, FramedSerializer
 from geopyspark.geotrellis_decoders import get_decoder
 from geopyspark.geotrellis_encoders import get_encoded_object
 from geopyspark.serialization_constants import COLLECTIONS

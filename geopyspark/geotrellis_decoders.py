@@ -1,10 +1,9 @@
 from geopyspark.serialization_constants import *
 
-import numpy as np
-
 
 def tile_decoder(i):
     from geopyspark.tile import TileArray
+    import numpy as np
 
     cells = i['cells']
 

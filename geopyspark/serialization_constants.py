@@ -19,4 +19,4 @@ TUPLE = 'Tuple2'
 
 KEYVALUERECORD = 'KeyValueRecord'
 
-COLLECTIONS = ['Tuple2', 'KeyValueRecord']
+COLLECTIONS = [TUPLE, KEYVALUERECORD]
