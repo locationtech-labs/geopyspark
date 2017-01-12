@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     store_factory = sc._gateway.jvm.geopyspark.geotrellis.io.AttributeStoreFactory
     store = store_factory.build("hdfs", uri, sc._jsc.sc())
-    metadata = store.metadata(layer_name, layer_zoom)
+    metadata = store.metadataSpatial(layer_name, layer_zoom)
 
     reader_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerReaderFactory
     reader = reader_factory.build("hdfs", uri, sc._jsc.sc())
@@ -39,4 +39,5 @@ if __name__ == "__main__":
 
     writer_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
     writer = writer_factory.build("hdfs", uri, sc._jsc.sc())
-    writer.write(layer_name + "-" + str(calendar.timegm(time.gmtime())), 0, rdd._jrdd, schema, metadata)
+    new_layer_name = layer_name + "-" + str(calendar.timegm(time.gmtime()))
+    writer.write("spatial", "singleband", "", new_layer_name, 0, rdd._jrdd, schema, metadata)

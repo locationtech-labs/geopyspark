@@ -30,7 +30,7 @@ class TileLayerMetadataWrapper[K](private val _md: TileLayerMetadata[K]) {
     crs = CRS.fromName(name)
   }
 
-  def md(): TileLayerMetadata[K] = {
+  def get(): TileLayerMetadata[K] = {
     TileLayerMetadata[K](cellType, layout, extent, crs, bounds)
   }
 }

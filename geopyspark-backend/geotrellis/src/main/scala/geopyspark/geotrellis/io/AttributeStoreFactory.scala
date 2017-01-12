@@ -12,7 +12,8 @@ import org.apache.spark._
   */
 abstract class AttributeStoreWrapper {
   def header(name: String, zoom: Int): Array[String]
-  def metadata(name: String, zoom: Int): TileLayerMetadataWrapper[SpatialKey]
+  def metadataSpatial(name: String, zoom: Int): TileLayerMetadataWrapper[SpatialKey]
+  def metadataSpaceTime(name: String, zoom: Int): TileLayerMetadataWrapper[SpaceTimeKey]
 }
 
 /**
@@ -31,9 +32,15 @@ class HadoopAttributeStoreWrapper(uri: String, sc: SparkContext)
     Array[String](h.keyClass, h.valueClass, h.path.toString)
   }
 
-  def metadata(name: String, zoom: Int): TileLayerMetadataWrapper[SpatialKey] = {
+  def metadataSpatial(name: String, zoom: Int): TileLayerMetadataWrapper[SpatialKey] = {
     val id = LayerId(name, zoom)
     val md = attributeStore.readMetadata[TileLayerMetadata[SpatialKey]](id)
+    new TileLayerMetadataWrapper(md)
+  }
+
+  def metadataSpaceTime(name: String, zoom: Int): TileLayerMetadataWrapper[SpaceTimeKey] = {
+    val id = LayerId(name, zoom)
+    val md = attributeStore.readMetadata[TileLayerMetadata[SpaceTimeKey]](id)
     new TileLayerMetadataWrapper(md)
   }
 }
