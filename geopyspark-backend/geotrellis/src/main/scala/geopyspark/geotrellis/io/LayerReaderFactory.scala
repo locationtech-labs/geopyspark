@@ -4,6 +4,7 @@ import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.hadoop._
+import geotrellis.spark.io.s3._
 import geotrellis.vector._
 import geotrellis.vector.io.wkt.WKT
 
@@ -176,13 +177,23 @@ abstract class FilteringLayerReaderWrapper()
 }
 
 /**
-  * Wrapper for the HadoopLayerReader class.
+  * Wrapper for the S3LayerReader class.
   */
-class HadoopLayerReaderWrapper(uri: String, sc: SparkContext)
+class S3LayerReaderWrapper(as: S3AttributeStore, sc: SparkContext)
     extends FilteringLayerReaderWrapper {
 
-  val attributeStore = HadoopAttributeStore(uri)(sc)
-  val layerReader = HadoopLayerReader(uri)(sc)
+  val attributeStore = as
+  val layerReader = S3LayerReader(as)(sc)
+}
+
+/**
+  * Wrapper for the HadoopLayerReader class.
+  */
+class HadoopLayerReaderWrapper(as: HadoopAttributeStore, sc: SparkContext)
+    extends FilteringLayerReaderWrapper {
+
+  val attributeStore = as
+  val layerReader = HadoopLayerReader(attributeStore)(sc)
 }
 
 /**
@@ -191,18 +202,22 @@ class HadoopLayerReaderWrapper(uri: String, sc: SparkContext)
   */
 object LayerReaderFactory {
 
-  /**
-    * Build the reader object.
-    *
-    * @param  backend  The name of backend that should be used (e.g. "hdfs")
-    * @param  uri      The URI of the catalog (given as a string)
-    * @param  sc       The SparkContext
-    */
-  def build(backend: String, uri: String, sc: SparkContext): LayerReaderWrapper = {
-    backend match {
-      case "hdfs" => new HadoopLayerReaderWrapper(uri, sc)
-      case _ => throw new Exception
-    }
+  def buildHadoop(uri: String, sc: SparkContext) = {
+    val as = HadoopAttributeStore(uri)(sc)
+    new HadoopLayerReaderWrapper(as, sc)
+  }
+
+  def buildHadoop(hasw: HadoopAttributeStoreWrapper) = {
+    new HadoopLayerReaderWrapper(hasw.attributeStore, hasw.sparkContext)
+  }
+
+  def buildS3(bucket: String, root: String, sc: SparkContext) = {
+    val as = S3AttributeStore(bucket, root)
+    new S3LayerReaderWrapper(as, sc)
+  }
+
+  def buildS3(s3asw: S3AttributeStoreWrapper, sc: SparkContext) = {
+    new S3LayerReaderWrapper(s3asw.attributeStore, sc)
   }
 
 }

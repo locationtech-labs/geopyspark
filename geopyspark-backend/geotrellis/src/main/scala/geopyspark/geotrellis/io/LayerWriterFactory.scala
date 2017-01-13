@@ -5,6 +5,7 @@ import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.index.ZCurveKeyIndexMethod
+import geotrellis.spark.io.s3._
 import geotrellis.vector._
 
 import org.apache.spark._
@@ -78,13 +79,23 @@ abstract class LayerWriterWrapper {
 }
 
 /**
-  * Wrapper for the HadoopLayerReader class.
+  * Wrapper for the S3LayerReader class.
   */
-class HadoopLayerWriterWrapper(uri: String, sc: SparkContext)
+class S3LayerWriterWrapper(as: S3AttributeStore)
     extends LayerWriterWrapper {
 
-  val attributeStore = HadoopAttributeStore(uri)(sc)
-  val layerWriter = HadoopLayerWriter(uri)(sc)
+  val attributeStore = as
+  val layerWriter = S3LayerWriter(as)
+}
+
+/**
+  * Wrapper for the HadoopLayerReader class.
+  */
+class HadoopLayerWriterWrapper(as: HadoopAttributeStore)
+    extends LayerWriterWrapper {
+
+  val attributeStore = as
+  val layerWriter = HadoopLayerWriter(as.rootPath, as)
 }
 
 /**
@@ -92,10 +103,22 @@ class HadoopLayerWriterWrapper(uri: String, sc: SparkContext)
   * easily accessible from PySpark.
   */
 object LayerWriterFactory {
-  def build(backend: String, uri: String, sc: SparkContext): LayerWriterWrapper = {
-    backend match {
-      case "hdfs" => new HadoopLayerWriterWrapper(uri, sc)
-      case _ => throw new Exception
-    }
+
+  def buildHadoop(uri: String, sc: SparkContext) = {
+    val as = HadoopAttributeStore(uri)(sc)
+    new HadoopLayerWriterWrapper(as)
+  }
+
+  def buildHadoop(hasw: HadoopAttributeStoreWrapper) = {
+    new HadoopLayerWriterWrapper(hasw.attributeStore)
+  }
+
+  def buildS3(bucket: String, root: String) = {
+    val as = S3AttributeStore(bucket, root)
+    new S3LayerWriterWrapper(as)
+  }
+
+  def buildS3(s3asw: S3AttributeStoreWrapper) = {
+    new S3LayerWriterWrapper(s3asw.attributeStore)
   }
 }
