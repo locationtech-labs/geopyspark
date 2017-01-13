@@ -14,12 +14,19 @@ def tile_encoder(obj):
     else:
         values = obj.flatten().tolist()
 
-    datum = {
-            'cols': c,
-            'rows': r,
-            'cells': values,
-            'noDataValue': obj.no_data_value
-            }
+    if isinstance(obj, TileArray):
+        datum = {
+                'cols': c,
+                'rows': r,
+                'cells': values,
+                'noDataValue': obj.no_data_value
+                }
+    else:
+        datum = {
+                'cols': c,
+                'rows': r,
+                'cells': values
+                }
 
     return datum
 
@@ -96,7 +103,7 @@ def get_encoded_object(obj, custom_class=None, custom_encoder=None):
     elif isinstance(obj, list):
         return multiband_encoder(obj)
 
-    elif isinstance(obj, TileArray):
+    elif isinstance(obj, TileArray) or isinstance(obj, np.ndarray):
         return tile_encoder(obj)
 
     elif isinstance(obj, Extent):
