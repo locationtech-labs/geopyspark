@@ -83,8 +83,9 @@ def key_value_record_encoder(obj):
 
 def get_encoded_object(obj, custom_class=None, custom_encoder=None):
 
-    if isinstance(obj, custom_class):
-        return custom_encoder(obj)
+    if custom_class is not None and custom_encoder is not None:
+        if isinstance(obj, custom_class):
+            return custom_encoder(obj)
 
     elif isinstance(obj, list) and isinstance(obj[0], tuple):
         return key_value_record_encoder(obj)
