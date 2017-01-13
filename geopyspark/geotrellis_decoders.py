@@ -12,7 +12,11 @@ def tile_decoder(i):
 
     # cols and rows are opposte for GeoTrellis ArrayTiles and Numpy Arrays
     arr = np.array(cells).reshape(i['rows'], i['cols'])
-    tile = TileArray(arr, i['noDataValue'])
+
+    if 'noDataValue' in i:
+        tile = TileArray(arr, i['noDataValue'])
+    else:
+        tile = arr
 
     return tile
 
