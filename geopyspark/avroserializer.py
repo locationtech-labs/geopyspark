@@ -9,7 +9,6 @@ import avro.io
 
 
 class AvroSerializer(FramedSerializer):
-
     def __init__(self,
             schema_json,
             custom_name=None,
@@ -24,6 +23,8 @@ class AvroSerializer(FramedSerializer):
 
         self.custom_class = custom_class
         self.custom_encoder = custom_encoder
+
+        self._decoding_method = None
 
     def schema(self):
         return avro.schema.Parse(self._schema_json)
@@ -68,13 +69,14 @@ class AvroSerializer(FramedSerializer):
         decoder = avro.io.BinaryDecoder(buf)
         i = self.reader().read(decoder)
 
-        decoder = get_decoder(name=self.schema_name(),
-                custom_name=self.custom_name,
-                custom_decoder=self.custom_decoder)
+        if self._decoding_method is None:
+            self._decoding_method = get_decoder(name=self.schema_name(),
+                    custom_name=self.custom_name,
+                    custom_decoder=self.custom_decoder)
 
         if self.schema_name() in COLLECTIONS:
-            result = decoder(i, self.schema_dict())
+            result = self._decoding_method(i, self.schema_dict())
         else:
-            result = decoder(i)
+            result = self._decoding_method(i)
 
         return [result]
