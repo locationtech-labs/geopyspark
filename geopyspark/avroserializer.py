@@ -1,6 +1,6 @@
 from pyspark.serializers import Serializer, FramedSerializer
 from geopyspark.geotrellis_decoders import get_decoder
-from geopyspark.geotrellis_encoders import get_encoded_object
+from geopyspark.geotrellis_encoders import get_encoder
 from geopyspark.serialization_constants import COLLECTIONS
 
 import io
@@ -25,6 +25,7 @@ class AvroSerializer(FramedSerializer):
         self.custom_encoder = custom_encoder
 
         self._decoding_method = None
+        self._encoding_method = None
 
     def schema(self):
         return avro.schema.Parse(self._schema_json)
@@ -54,9 +55,13 @@ class AvroSerializer(FramedSerializer):
         bytes_writer = io.BytesIO()
 
         encoder = avro.io.BinaryEncoder(bytes_writer)
-        datum = get_encoded_object(obj,
-                custom_class=self.custom_class,
-                custom_encoder=self.custom_encoder)
+
+        if self._encoding_method is None:
+            self._encoding_method = get_encoder(obj,
+                    custom_class=self.custom_class,
+                    custom_encoder=self.custom_encoder)
+
+        datum = self._encoding_method(obj)
         writer.write(datum, encoder)
 
         return bytes_writer.getvalue()
@@ -71,12 +76,10 @@ class AvroSerializer(FramedSerializer):
 
         if self._decoding_method is None:
             self._decoding_method = get_decoder(name=self.schema_name(),
+                    schema_dict=self.schema_dict(),
                     custom_name=self.custom_name,
                     custom_decoder=self.custom_decoder)
 
-        if self.schema_name() in COLLECTIONS:
-            result = self._decoding_method(i, self.schema_dict())
-        else:
-            result = self._decoding_method(i)
+        result = self._decoding_method(i)
 
         return [result]
