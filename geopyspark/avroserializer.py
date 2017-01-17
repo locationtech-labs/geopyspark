@@ -1,7 +1,6 @@
 from pyspark.serializers import Serializer, FramedSerializer
 from geopyspark.geotrellis_decoders import get_decoder
 from geopyspark.geotrellis_encoders import get_encoder
-from geopyspark.serialization_constants import COLLECTIONS
 
 import io
 import avro
