@@ -1,5 +1,7 @@
 from geopyspark.serialization_constants import *
 
+from functools import partial
+
 
 def tile_decoder(i):
     from geopyspark.tile import TileArray
@@ -41,11 +43,28 @@ def multiband_decoder(i):
 
     return objs
 
-def tuple_decoder(i, schema_dict):
+def tuple_decoder(i, decoders):
 
-    schema_1 = i['_1']
-    schema_2 = i['_2']
+    (schema_1, schema_2) = (i['_1'], i['_2'])
+    (decoder_1, decoder_2) = decoders
 
+    result = (decoder_1(schema_1), decoder_2(schema_2))
+
+    return result
+
+def key_value_record_decoder(i, schema_dict, custom_name=None, custom_decoder=None):
+    tuple2 = schema_dict['fields'][0]['type']['items']
+    pairs = i['pairs']
+
+    decoder = tuple_decoder_creator(schema_dict=tuple2,
+            custom_name=custom_name,
+            custom_decoder=custom_decoder)
+
+    objs = [decoder(x) for x in pairs]
+
+    return objs
+
+def tuple_decoder_creator(schema_dict, custom_name=None, custom_decoder=None):
     (a, b) = schema_dict['fields']
 
     name_1 = a['type']['name']
@@ -61,31 +80,33 @@ def tuple_decoder(i, schema_dict):
     else:
         name_2 = b['type']['name']
 
-    decoder_1 = get_decoder(name=name_1)
-    decoder_2 = get_decoder(name=name_2)
+    decoder_1 = get_decoder(name=name_1,
+            schema_dict=schema_dict,
+            custom_name=custom_name,
+            custom_decoder=custom_decoder)
 
-    result = (decoder_1(schema_1), decoder_2(schema_2))
+    decoder_2 = get_decoder(name=name_2,
+            schema_dict=schema_dict,
+            custom_name=custom_name,
+            custom_decoder=custom_decoder)
 
-    return result
+    return partial(tuple_decoder, decoders=(decoder_1, decoder_2))
 
-def key_value_record_decoder(i, schema_dict):
-    tuple2 = schema_dict['fields'][0]['type']['items']
-    pairs = i['pairs']
-
-    objs = [tuple_decoder(x, schema_dict=tuple2) for x in pairs]
-
-    return objs
-
-def get_decoder(name, custom_name=None, custom_decoder=None):
+def get_decoder(name, schema_dict, custom_name=None, custom_decoder=None):
 
     if name == custom_name:
         return custom_decoder
 
     elif name == KEYVALUERECORD:
-        return key_value_record_decoder
+        return partial(key_value_record_decoder,
+                schema_dict=schema_dict,
+                custom_name=custom_name,
+                custom_decoder=custom_decoder)
 
     elif name == TUPLE:
-        return tuple_decoder
+        return tuple_decoder_creator(schema_dict=schema_dict,
+                custom_name=custom_name,
+                custom_decoder=custom_decoder)
 
     elif name == ARRAYMULTIBANDTILE:
         return multiband_decoder
