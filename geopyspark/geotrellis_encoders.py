@@ -2,6 +2,8 @@ from geopyspark.keys import SpatialKey, SpaceTimeKey
 from geopyspark.extent import Extent
 from geopyspark.tile import TileArray
 
+from functools import partial
+
 import numpy as np
 import array
 
@@ -66,11 +68,12 @@ def multiband_encoder(obj):
 
     return datum
 
-def tuple_encoder(obj):
+def tuple_encoder(obj, encoders):
     (a, b) = obj
+    (encoder_1, encoder_2) = encoders
 
-    datum_1 = get_encoded_object(a)
-    datum_2 = get_encoded_object(b)
+    datum_1 = encoder_1(a)
+    datum_2 = encoder_2(b)
 
     datum = {
             '_1': datum_1,
@@ -79,8 +82,12 @@ def tuple_encoder(obj):
 
     return datum
 
-def key_value_record_encoder(obj):
-    tuple_datums = [tuple_encoder(tup) for tup in obj]
+def key_value_record_encoder(obj, custom_class=None, custom_encoder=None):
+    encoder = tuple_encoder_creator(obj[0],
+            custom_class=custom_class,
+            custom_encoder=custom_encoder)
+
+    tuple_datums = [encoder(tup) for tup in obj]
 
     datum = {
             'pairs': tuple_datums
@@ -88,32 +95,50 @@ def key_value_record_encoder(obj):
 
     return datum
 
-def get_encoded_object(obj, custom_class=None, custom_encoder=None):
+def tuple_encoder_creator(obj, custom_class=None, custom_encoder=None):
+    (a, b) = obj
+
+    # TODO: FIND A BETTER WAY TO CHECK FOR CUSTOM TYPES IN TUPLES
+    encoder_1 = get_encoder(a,
+            custom_class=custom_class,
+            custom_encoder=custom_encoder)
+
+    encoder_2 = get_encoder(b,
+            custom_class=custom_class,
+            custom_encoder=custom_encoder)
+
+    return partial(tuple_encoder, encoders=(encoder_1, encoder_2))
+
+def get_encoder(obj, custom_class=None, custom_encoder=None):
 
     if custom_class is not None and custom_encoder is not None:
         if isinstance(obj, custom_class):
-            return custom_encoder(obj)
+            return custom_encoder
 
     elif isinstance(obj, list) and isinstance(obj[0], tuple):
-        return key_value_record_encoder(obj)
+        return partial(key_value_record_encoder,
+                custom_class=custom_class,
+                custom_encoder=custom_encoder)
 
     elif isinstance(obj, tuple):
-        return tuple_encoder(obj)
+        return tuple_encoder_creator(obj,
+                custom_class=custom_class,
+                custom_encoder=custom_encoder)
 
     elif isinstance(obj, list):
-        return multiband_encoder(obj)
+        return multiband_encoder
 
     elif isinstance(obj, TileArray) or isinstance(obj, np.ndarray):
-        return tile_encoder(obj)
+        return tile_encoder
 
     elif isinstance(obj, Extent):
-        return extent_encoder(obj)
+        return extent_encoder
 
     elif isinstance(obj, SpatialKey):
-        return spatial_key_encoder(obj)
+        return spatial_key_encoder
 
     elif isinstance(obj, SpaceTimeKey):
-        return spacetime_key_encoder(obj)
+        return spacetime_key_encoder
 
     else:
         raise Exception('Could not find encoder for', obj)
