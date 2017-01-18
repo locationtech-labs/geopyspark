@@ -2,6 +2,7 @@ package geopyspark.geotrellis.io
 
 import geotrellis.spark._
 import geotrellis.spark.io._
+import geotrellis.spark.io.cassandra._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.s3._
@@ -27,6 +28,27 @@ abstract class AttributeStoreWrapper {
     val id = LayerId(name, zoom)
     val md = attributeStore.readMetadata[TileLayerMetadata[SpaceTimeKey]](id)
     new TileLayerMetadataWrapper(md)
+  }
+}
+
+/**
+  * CassandraAttributeStore wrapper.
+  */
+class CassandraAttributeStoreWrapper(
+  instance: CassandraInstance,
+  attributeKeySpace: String,
+  attributeTable: String
+) extends AttributeStoreWrapper {
+
+  val attributeStore = CassandraAttributeStore(instance, attributeKeySpace, attributeTable)
+
+  def keySpace: String = attributeKeySpace
+
+  def table: String = attributeTable
+
+  def header(name: String, zoom: Int): Array[String] = {
+    val h = attributeStore.readHeader[CassandraLayerHeader](LayerId(name, zoom))
+    Array[String](h.keyClass, h.valueClass, h.keyspace, h.tileTable)
   }
 }
 
@@ -95,4 +117,39 @@ object AttributeStoreFactory {
 
   def buildFile(path: String): AttributeStoreWrapper =
     new FileAttributeStoreWrapper(path)
+
+  def buildCassandra(
+    hosts: String,
+    username: String,
+    password: String,
+    replicationStrategy: String,
+    replicationFactor: Int,
+    localDc: String,
+    usedHostsPerRemoteDc: Int,
+    allowRemoteDCsForLocalConsistencyLevel: Int,
+    attributeKeySpace: String,
+    attributeTable: String
+  ) = {
+
+    val instance = BaseCassandraInstance(
+      hosts.split(","),
+      username,
+      password,
+      if (replicationStrategy != "") replicationStrategy; else Cassandra.cfg.getString("replicationStrategy"),
+      if (replicationFactor > -1) replicationFactor; else Cassandra.cfg.getInt("replicationFactor"),
+      if (localDc != "") localDc; else Cassandra.cfg.getString("localDc"),
+      if (usedHostsPerRemoteDc > -1) usedHostsPerRemoteDc; else Cassandra.cfg.getInt("usedHostsPerRemoteDc"),
+      allowRemoteDCsForLocalConsistencyLevel match {
+        case 1 => true
+        case 0 => false
+        case _ => Cassandra.cfg.getBoolean("allowRemoteDCsForLocalConsistencyLevel")
+      })
+
+    new CassandraAttributeStoreWrapper(
+      instance,
+      if (attributeKeySpace != "") attributeKeySpace; else Cassandra.cfg.getString("keyspace"),
+      if (attributeTable != "") attributeTable; else Cassandra.cfg.getString("catalog")
+    )
+  }
+
 }

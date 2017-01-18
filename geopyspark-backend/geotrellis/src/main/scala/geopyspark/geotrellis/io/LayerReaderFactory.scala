@@ -3,6 +3,7 @@ package geopyspark.geotrellis.io
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
+import geotrellis.spark.io.cassandra._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.s3._
@@ -178,6 +179,16 @@ abstract class FilteringLayerReaderWrapper()
 }
 
 /**
+  * Wrapper for the CassandraLayerReader class.
+  */
+class CassandraLayerReaderWrapper(as: CassandraAttributeStore, sc: SparkContext)
+    extends FilteringLayerReaderWrapper {
+
+  val attributeStore = as
+  val layerReader = CassandraLayerReader(as)(sc)
+}
+
+/**
   * Wrapper for the FileLayerReader class.
   */
 class FileLayerReaderWrapper(as: FileAttributeStore, sc: SparkContext)
@@ -218,26 +229,25 @@ object LayerReaderFactory {
     new HadoopLayerReaderWrapper(as, sc)
   }
 
-  def buildHadoop(hasw: HadoopAttributeStoreWrapper) = {
+  def buildHadoop(hasw: HadoopAttributeStoreWrapper) =
     new HadoopLayerReaderWrapper(hasw.attributeStore, hasw.sparkContext)
-  }
 
   def buildS3(bucket: String, root: String, sc: SparkContext) = {
     val as = S3AttributeStore(bucket, root)
     new S3LayerReaderWrapper(as, sc)
   }
 
-  def buildS3(s3asw: S3AttributeStoreWrapper, sc: SparkContext) = {
+  def buildS3(s3asw: S3AttributeStoreWrapper, sc: SparkContext) =
     new S3LayerReaderWrapper(s3asw.attributeStore, sc)
-  }
 
   def buildFile(path: String, sc: SparkContext) = {
     val as = FileAttributeStore(path)
     new FileLayerReaderWrapper(as, sc)
   }
 
-  def buildFile(fasw: FileAttributeStoreWrapper, sc: SparkContext) = {
+  def buildFile(fasw: FileAttributeStoreWrapper, sc: SparkContext) =
     new FileLayerReaderWrapper(fasw.attributeStore, sc)
-  }
 
+  def buildCassandra(casw: CassandraAttributeStoreWrapper, sc: SparkContext) =
+    new CassandraLayerReaderWrapper(casw.attributeStore, sc)
 }

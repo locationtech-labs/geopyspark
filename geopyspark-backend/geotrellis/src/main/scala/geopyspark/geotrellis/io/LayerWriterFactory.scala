@@ -3,6 +3,7 @@ package geopyspark.geotrellis.io
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
+import geotrellis.spark.io.cassandra._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.index.ZCurveKeyIndexMethod
@@ -80,6 +81,19 @@ abstract class LayerWriterWrapper {
 }
 
 /**
+  * Wrapper for the CassandraLayerReader class.
+  */
+class CassandraLayerWriterWrapper(
+  as: CassandraAttributeStore,
+  ks: String,
+  table: String
+) extends LayerWriterWrapper {
+
+  val attributeStore = as
+  val layerWriter = CassandraLayerWriter(as, ks, table)
+}
+
+/**
   * Wrapper for the FileLayerReader class.
   */
 class FileLayerWriterWrapper(as: FileAttributeStore)
@@ -120,25 +134,29 @@ object LayerWriterFactory {
     new HadoopLayerWriterWrapper(as)
   }
 
-  def buildHadoop(hasw: HadoopAttributeStoreWrapper) = {
+  def buildHadoop(hasw: HadoopAttributeStoreWrapper) =
     new HadoopLayerWriterWrapper(hasw.attributeStore)
-  }
 
   def buildS3(bucket: String, root: String) = {
     val as = S3AttributeStore(bucket, root)
     new S3LayerWriterWrapper(as)
   }
 
-  def buildS3(s3asw: S3AttributeStoreWrapper) = {
+  def buildS3(s3asw: S3AttributeStoreWrapper) =
     new S3LayerWriterWrapper(s3asw.attributeStore)
-  }
 
   def buildFile(path: String, sc: SparkContext) = {
     val as = FileAttributeStore(path)
     new FileLayerWriterWrapper(as)
   }
 
-  def buildFile(fasw: FileAttributeStoreWrapper) = {
+  def buildFile(fasw: FileAttributeStoreWrapper) =
     new FileLayerWriterWrapper(fasw.attributeStore)
-  }
+
+  def buildCassandra(casw: CassandraAttributeStoreWrapper) =
+    new CassandraLayerWriterWrapper(
+      casw.attributeStore,
+      casw.keySpace,
+      casw.table
+    )
 }
