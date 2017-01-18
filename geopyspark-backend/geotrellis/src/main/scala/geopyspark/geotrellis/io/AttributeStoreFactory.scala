@@ -5,6 +5,7 @@ import geotrellis.spark.io._
 import geotrellis.spark.io.cassandra._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
+import geotrellis.spark.io.hbase._
 import geotrellis.spark.io.s3._
 
 import org.apache.spark._
@@ -28,6 +29,24 @@ abstract class AttributeStoreWrapper {
     val id = LayerId(name, zoom)
     val md = attributeStore.readMetadata[TileLayerMetadata[SpaceTimeKey]](id)
     new TileLayerMetadataWrapper(md)
+  }
+}
+
+/**
+  * HBase wrapper.
+  */
+class HBaseAttributeStoreWrapper(
+  instance: HBaseInstance,
+  attributeTable: String
+) extends AttributeStoreWrapper {
+
+  val attributeStore = HBaseAttributeStore(instance, attributeTable)
+
+  def table: String = attributeTable
+
+  def header(name: String, zoom: Int): Array[String] = {
+    val h = attributeStore.readHeader[CassandraLayerHeader](LayerId(name, zoom))
+    Array[String](h.keyClass, h.valueClass, h.format, h.tileTable)
   }
 }
 
@@ -130,7 +149,6 @@ object AttributeStoreFactory {
     attributeKeySpace: String,
     attributeTable: String
   ) = {
-
     val instance = BaseCassandraInstance(
       hosts.split(","),
       username,
@@ -150,6 +168,21 @@ object AttributeStoreFactory {
       if (attributeKeySpace != "") attributeKeySpace; else Cassandra.cfg.getString("keyspace"),
       if (attributeTable != "") attributeTable; else Cassandra.cfg.getString("catalog")
     )
+  }
+
+  def buildHBase(
+    zookeepers: String,
+    master: String,
+    clientPort: String,
+    attributeTable: String
+  ) = {
+    val instance = HBaseInstance(
+      zookeepers.split(","),
+      master,
+      clientPort
+    )
+
+    new HBaseAttributeStoreWrapper(instance, attributeTable)
   }
 
 }

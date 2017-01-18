@@ -6,6 +6,7 @@ import geotrellis.spark.io._
 import geotrellis.spark.io.cassandra._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
+import geotrellis.spark.io.hbase._
 import geotrellis.spark.io.s3._
 import geotrellis.vector._
 import geotrellis.vector.io.wkt.WKT
@@ -179,6 +180,16 @@ abstract class FilteringLayerReaderWrapper()
 }
 
 /**
+  * Wrapper for the HBaseLayerReader class.
+  */
+class HBaseLayerReaderWrapper(as: HBaseAttributeStore, sc: SparkContext)
+    extends FilteringLayerReaderWrapper {
+
+  val attributeStore = as
+  val layerReader = HBaseLayerReader(as)(sc)
+}
+
+/**
   * Wrapper for the CassandraLayerReader class.
   */
 class CassandraLayerReaderWrapper(as: CassandraAttributeStore, sc: SparkContext)
@@ -250,4 +261,7 @@ object LayerReaderFactory {
 
   def buildCassandra(casw: CassandraAttributeStoreWrapper, sc: SparkContext) =
     new CassandraLayerReaderWrapper(casw.attributeStore, sc)
+
+  def buildHBase(hbasw: HBaseAttributeStoreWrapper, sc: SparkContext) =
+    new HBaseLayerReaderWrapper(hbasw.attributeStore, sc)
 }

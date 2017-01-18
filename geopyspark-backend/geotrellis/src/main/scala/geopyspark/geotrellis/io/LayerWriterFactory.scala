@@ -6,6 +6,7 @@ import geotrellis.spark.io._
 import geotrellis.spark.io.cassandra._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
+import geotrellis.spark.io.hbase._
 import geotrellis.spark.io.index.ZCurveKeyIndexMethod
 import geotrellis.spark.io.s3._
 import geotrellis.vector._
@@ -78,6 +79,18 @@ abstract class LayerWriterWrapper {
       }
     }
   }
+}
+
+/**
+  * Wrapper for the HBaseLayerReader class.
+  */
+class HBaseLayerWriterWrapper(
+  as: HBaseAttributeStore,
+  table: String
+) extends LayerWriterWrapper {
+
+  val attributeStore = as
+  val layerWriter = HBaseLayerWriter(as, table)
 }
 
 /**
@@ -159,4 +172,7 @@ object LayerWriterFactory {
       casw.keySpace,
       casw.table
     )
+
+  def buildHBase(hbasw: HBaseAttributeStoreWrapper) =
+    new HBaseLayerWriterWrapper(hbasw.attributeStore, hbasw.table)
 }
