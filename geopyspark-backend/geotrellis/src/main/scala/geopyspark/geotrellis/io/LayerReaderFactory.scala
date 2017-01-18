@@ -3,6 +3,7 @@ package geopyspark.geotrellis.io
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
+import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.s3._
 import geotrellis.vector._
@@ -177,6 +178,16 @@ abstract class FilteringLayerReaderWrapper()
 }
 
 /**
+  * Wrapper for the FileLayerReader class.
+  */
+class FileLayerReaderWrapper(as: FileAttributeStore, sc: SparkContext)
+    extends FilteringLayerReaderWrapper {
+
+  val attributeStore = as
+  val layerReader = FileLayerReader(as)(sc)
+}
+
+/**
   * Wrapper for the S3LayerReader class.
   */
 class S3LayerReaderWrapper(as: S3AttributeStore, sc: SparkContext)
@@ -218,6 +229,15 @@ object LayerReaderFactory {
 
   def buildS3(s3asw: S3AttributeStoreWrapper, sc: SparkContext) = {
     new S3LayerReaderWrapper(s3asw.attributeStore, sc)
+  }
+
+  def buildFile(path: String, sc: SparkContext) = {
+    val as = FileAttributeStore(path)
+    new FileLayerReaderWrapper(as, sc)
+  }
+
+  def buildFile(fasw: FileAttributeStoreWrapper, sc: SparkContext) = {
+    new FileLayerReaderWrapper(fasw.attributeStore, sc)
   }
 
 }

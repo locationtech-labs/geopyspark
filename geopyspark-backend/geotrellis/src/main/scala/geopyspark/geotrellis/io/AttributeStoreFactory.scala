@@ -2,6 +2,7 @@ package geopyspark.geotrellis.io
 
 import geotrellis.spark._
 import geotrellis.spark.io._
+import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.s3._
 
@@ -26,6 +27,22 @@ abstract class AttributeStoreWrapper {
     val id = LayerId(name, zoom)
     val md = attributeStore.readMetadata[TileLayerMetadata[SpaceTimeKey]](id)
     new TileLayerMetadataWrapper(md)
+  }
+}
+
+/**
+  * FileAttributeStore wrapper.
+  *
+  * @param  path  The local-filesystem location of the catalog
+  */
+class FileAttributeStoreWrapper(path: String)
+    extends AttributeStoreWrapper {
+
+  val attributeStore = FileAttributeStore(path)
+
+  def header(name: String, zoom: Int): Array[String] = {
+    val h = attributeStore.readHeader[FileLayerHeader](LayerId(name, zoom))
+    Array[String](h.keyClass, h.valueClass, h.path)
   }
 }
 
@@ -75,4 +92,7 @@ object AttributeStoreFactory {
 
   def buildS3(bucket: String, root: String): AttributeStoreWrapper =
     new S3AttributeStoreWrapper(bucket, root)
+
+  def buildFile(path: String): AttributeStoreWrapper =
+    new FileAttributeStoreWrapper(path)
 }

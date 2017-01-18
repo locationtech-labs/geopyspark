@@ -3,6 +3,7 @@ package geopyspark.geotrellis.io
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
+import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.index.ZCurveKeyIndexMethod
 import geotrellis.spark.io.s3._
@@ -79,6 +80,16 @@ abstract class LayerWriterWrapper {
 }
 
 /**
+  * Wrapper for the FileLayerReader class.
+  */
+class FileLayerWriterWrapper(as: FileAttributeStore)
+    extends LayerWriterWrapper {
+
+  val attributeStore = as
+  val layerWriter = FileLayerWriter(as)
+}
+
+/**
   * Wrapper for the S3LayerReader class.
   */
 class S3LayerWriterWrapper(as: S3AttributeStore)
@@ -120,5 +131,14 @@ object LayerWriterFactory {
 
   def buildS3(s3asw: S3AttributeStoreWrapper) = {
     new S3LayerWriterWrapper(s3asw.attributeStore)
+  }
+
+  def buildFile(path: String, sc: SparkContext) = {
+    val as = FileAttributeStore(path)
+    new FileLayerWriterWrapper(as)
+  }
+
+  def buildFile(fasw: FileAttributeStoreWrapper) = {
+    new FileLayerWriterWrapper(fasw.attributeStore)
   }
 }
