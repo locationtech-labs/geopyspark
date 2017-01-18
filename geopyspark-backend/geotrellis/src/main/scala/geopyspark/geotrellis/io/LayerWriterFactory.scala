@@ -3,6 +3,7 @@ package geopyspark.geotrellis.io
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
+import geotrellis.spark.io.accumulo._
 import geotrellis.spark.io.cassandra._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
@@ -82,6 +83,19 @@ abstract class LayerWriterWrapper {
 }
 
 /**
+  * Wrapper for the AccumuloLayerReader class.
+  */
+class AccumuloLayerWriterWrapper(
+  in: AccumuloInstance,
+  as: AccumuloAttributeStore,
+  table: String
+) extends LayerWriterWrapper {
+
+  val attributeStore = as
+  val layerWriter = AccumuloLayerWriter(in, as, table)
+}
+
+/**
   * Wrapper for the HBaseLayerReader class.
   */
 class HBaseLayerWriterWrapper(
@@ -158,7 +172,7 @@ object LayerWriterFactory {
   def buildS3(s3asw: S3AttributeStoreWrapper) =
     new S3LayerWriterWrapper(s3asw.attributeStore)
 
-  def buildFile(path: String, sc: SparkContext) = {
+  def buildFile(path: String) = {
     val as = FileAttributeStore(path)
     new FileLayerWriterWrapper(as)
   }
@@ -175,4 +189,7 @@ object LayerWriterFactory {
 
   def buildHBase(hbasw: HBaseAttributeStoreWrapper) =
     new HBaseLayerWriterWrapper(hbasw.attributeStore, hbasw.table)
+
+  def buildAccumulo(aasw: AccumuloAttributeStoreWrapper) =
+    new AccumuloLayerWriterWrapper(aasw.instance, aasw.attributeStore, aasw.table)
 }

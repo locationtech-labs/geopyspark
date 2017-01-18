@@ -2,12 +2,14 @@ package geopyspark.geotrellis.io
 
 import geotrellis.spark._
 import geotrellis.spark.io._
+import geotrellis.spark.io.accumulo._
 import geotrellis.spark.io.cassandra._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.hbase._
 import geotrellis.spark.io.s3._
 
+import org.apache.accumulo.core.client.security.tokens.PasswordToken
 import org.apache.spark._
 
 
@@ -29,6 +31,26 @@ abstract class AttributeStoreWrapper {
     val id = LayerId(name, zoom)
     val md = attributeStore.readMetadata[TileLayerMetadata[SpaceTimeKey]](id)
     new TileLayerMetadataWrapper(md)
+  }
+}
+
+/**
+  * Accumulo wrapper.
+  */
+class AccumuloAttributeStoreWrapper(
+  _instance: AccumuloInstance,
+  attributeTable: String
+) extends AttributeStoreWrapper {
+
+  val attributeStore = AccumuloAttributeStore(instance, attributeTable)
+
+  def instance: AccumuloInstance = _instance
+
+  def table: String = attributeTable
+
+  def header(name: String, zoom: Int): Array[String] = {
+    val h = attributeStore.readHeader[CassandraLayerHeader](LayerId(name, zoom))
+    Array[String](h.keyClass, h.valueClass, h.format, h.tileTable)
   }
 }
 
@@ -162,7 +184,6 @@ object AttributeStoreFactory {
         case 0 => false
         case _ => Cassandra.cfg.getBoolean("allowRemoteDCsForLocalConsistencyLevel")
       })
-
     new CassandraAttributeStoreWrapper(
       instance,
       if (attributeKeySpace != "") attributeKeySpace; else Cassandra.cfg.getString("keyspace"),
@@ -181,8 +202,23 @@ object AttributeStoreFactory {
       master,
       clientPort
     )
-
     new HBaseAttributeStoreWrapper(instance, attributeTable)
+  }
+
+  def buildAccumulo(
+    zookeepers: String,
+    instanceName: String,
+    user: String,
+    password: String,
+    attributeTable: String
+  ) = {
+    val instance = AccumuloInstance(
+      instanceName,
+      zookeepers,
+      user,
+      new PasswordToken(password)
+    )
+    new AccumuloAttributeStoreWrapper(instance, attributeTable)
   }
 
 }

@@ -3,6 +3,7 @@ package geopyspark.geotrellis.io
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
+import geotrellis.spark.io.accumulo._
 import geotrellis.spark.io.cassandra._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
@@ -180,6 +181,19 @@ abstract class FilteringLayerReaderWrapper()
 }
 
 /**
+  * Wrapper for the AccumuloLayerReader class.
+  */
+class AccumuloLayerReaderWrapper(
+  in: AccumuloInstance,
+  as: AccumuloAttributeStore,
+  sc: SparkContext
+) extends FilteringLayerReaderWrapper {
+
+  val attributeStore = as
+  val layerReader = AccumuloLayerReader(in)(sc)
+}
+
+/**
   * Wrapper for the HBaseLayerReader class.
   */
 class HBaseLayerReaderWrapper(as: HBaseAttributeStore, sc: SparkContext)
@@ -264,4 +278,7 @@ object LayerReaderFactory {
 
   def buildHBase(hbasw: HBaseAttributeStoreWrapper, sc: SparkContext) =
     new HBaseLayerReaderWrapper(hbasw.attributeStore, sc)
+
+  def buildAccumulo(aasw: AccumuloAttributeStoreWrapper, sc: SparkContext) =
+    new AccumuloLayerReaderWrapper(aasw.instance, aasw.attributeStore, sc)
 }
