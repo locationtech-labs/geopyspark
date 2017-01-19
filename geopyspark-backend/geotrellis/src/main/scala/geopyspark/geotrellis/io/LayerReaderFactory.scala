@@ -241,7 +241,7 @@ class HadoopLayerReaderWrapper(as: HadoopAttributeStore, sc: SparkContext)
     extends FilteringLayerReaderWrapper {
 
   val attributeStore = as
-  val layerReader = HadoopLayerReader(attributeStore)(sc)
+  val layerReader = HadoopLayerReader(as)(sc)
 }
 
 /**

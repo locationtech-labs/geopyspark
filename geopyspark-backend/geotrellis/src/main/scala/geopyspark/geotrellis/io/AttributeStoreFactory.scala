@@ -42,9 +42,9 @@ class AccumuloAttributeStoreWrapper(
   attributeTable: String
 ) extends AttributeStoreWrapper {
 
-  val attributeStore = AccumuloAttributeStore(instance, attributeTable)
+  val attributeStore = AccumuloAttributeStore(_instance, attributeTable)
 
-  def instance: AccumuloInstance = _instance
+  def instance = _instance
 
   def table: String = attributeTable
 
