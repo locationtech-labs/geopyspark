@@ -156,26 +156,11 @@ class HadoopLayerWriterWrapper(as: HadoopAttributeStore)
   */
 object LayerWriterFactory {
 
-  def buildHadoop(uri: String, sc: SparkContext) = {
-    val as = HadoopAttributeStore(uri)(sc)
-    new HadoopLayerWriterWrapper(as)
-  }
-
   def buildHadoop(hasw: HadoopAttributeStoreWrapper) =
     new HadoopLayerWriterWrapper(hasw.attributeStore)
 
-  def buildS3(bucket: String, root: String) = {
-    val as = S3AttributeStore(bucket, root)
-    new S3LayerWriterWrapper(as)
-  }
-
   def buildS3(s3asw: S3AttributeStoreWrapper) =
     new S3LayerWriterWrapper(s3asw.attributeStore)
-
-  def buildFile(path: String) = {
-    val as = FileAttributeStore(path)
-    new FileLayerWriterWrapper(as)
-  }
 
   def buildFile(fasw: FileAttributeStoreWrapper) =
     new FileLayerWriterWrapper(fasw.attributeStore)
