@@ -6,9 +6,9 @@ import geotrellis.spark._
 import geotrellis.vector._
 
 
-class TileLayerMetadataWrapper[K](val md: TileLayerMetadata[K]) {
+class TileLayerMetadataWrapper[K](private val _md: TileLayerMetadata[K]) {
 
-  var TileLayerMetadata(cellType, layout, extent, crs, bounds) = md
+  var TileLayerMetadata(cellType, layout, extent, crs, bounds) = _md
 
   def mutateCellType(ct: String): Unit = {
     cellType = CellType.fromString(ct)
@@ -30,4 +30,7 @@ class TileLayerMetadataWrapper[K](val md: TileLayerMetadata[K]) {
     crs = CRS.fromName(name)
   }
 
+  def get(): TileLayerMetadata[K] = {
+    TileLayerMetadata[K](cellType, layout, extent, crs, bounds)
+  }
 }
