@@ -13,7 +13,7 @@ import numpy as np
 
 def get_rdd(pysc):
     sc = pysc._jsc.sc()
-    ew = pysc._gateway.jvm.ByteArrayTileWrapper
+    ew = pysc._gateway.jvm.KeyValueRecordWrapper
 
     tup = ew.testOut(sc)
     (java_rdd, schema) = (tup._1(), tup._2())
@@ -29,17 +29,16 @@ def set_rdd(pysc, rdd, schema):
     arrs = dumped.map(lambda s: bytearray(s))
 
     new_java_rdd = dumped._to_java_object_rdd()
-    ew = pysc._gateway.jvm.ByteArrayTileWrapper
+    ew = pysc._gateway.jvm.KeyValueRecordWrapper
 
     ew.testIn(new_java_rdd.rdd(), schema)
 
 if __name__ == "__main__":
-    sc = SparkContext(master="local", appName="byte-tile-test")
+    sc = SparkContext(master="local", appName="key-value-test")
 
-    java_import(sc._gateway.jvm, "geopyspark.geotrellis.ByteArrayTileWrapper")
+    java_import(sc._gateway.jvm, "geopyspark.geotrellis.KeyValueRecordWrapper")
 
-    (arrays, schema) = get_rdd(sc)
+    (tuples, schema) = get_rdd(sc)
 
-    new_arrays = arrays.map(lambda s: s + 1)
-
-    set_rdd(sc, new_arrays, schema)
+    new_tuples = tuples.map(lambda s: [(x[0] + 1, x[1]) for x in s])
+    set_rdd(sc, new_tuples, schema)

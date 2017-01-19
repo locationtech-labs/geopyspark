@@ -1,5 +1,5 @@
 from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
-from geopyspark.spatial_key import SpatialKey
+from geopyspark.keys import SpatialKey, SpaceTimeKey
 from geopyspark.extent import Extent
 from geopyspark.tile import TileArray
 from io import StringIO
@@ -15,11 +15,13 @@ import array
 EXTENT = 'Extent'
 
 TILES = ['BitArrayTile', 'ByteArrayTile', 'UByteArrayTile', 'ShortArrayTile',
-        'UShortArrayTile', 'IntArrayTile', 'FloatArrayTile', 'DoubleArrayTile']
+        'UShortArrayTile', 'IntArrayTile', 'FloatArrayTile', 'DoubleArrayTile', 'Tile']
 
 ARRAYMULTIBANDTILE = 'ArrayMultibandTile'
 
 SPATIALKEY = 'SpatialKey'
+
+SPACETIMEKEY = 'SpaceTimeKey'
 
 TUPLE = 'Tuple2'
 
@@ -34,18 +36,60 @@ class AvroSerializer(FramedSerializer):
     def schema(self):
         return avro.schema.Parse(self._schemaJson)
 
+    def schema_name(self):
+        return self.schema().name
+
     def reader(self):
         return avro.io.DatumReader(self.schema())
 
     def datum_writer(self):
         return avro.io.DatumWriter(self.schema())
 
-    def make_datum(self, obj):
+    """
+    Creates a python dictionary that will be serialized on the python side,
+    and then deserialized on the scala side.
+    """
+    def _make_datum(self, obj):
 
-        if self.schema().name in TILES:
+        # TODO: Find a way to move tuples and ArrayMutlibandTiles somewhere else
+
+        if isinstance(obj, list) and isinstance(obj[0], tuple):
+            tuple_datums = [self._make_datum(tup) for tup in obj]
+
+            datum = {
+                    'pairs': tuple_datums
+                    }
+
+            return datum
+
+
+        if isinstance(obj, tuple):
+            (a, b) = obj
+
+            datum_1 = self._make_datum(a)
+            datum_2 = self._make_datum(b)
+
+            datum = {
+                    '_1': datum_1,
+                    '_2': datum_2
+                    }
+
+            return datum
+
+        # ArrayMultibandTiles
+        elif isinstance(obj, list):
+            tile_datums = [self._make_datum(tile) for tile in obj]
+
+            datum = {
+                    'bands': tile_datums
+                    }
+
+            return datum
+
+        if isinstance(obj, TileArray):
             (r, c) = obj.shape
 
-            if "Byte" in self.schema().name:
+            if obj.dtype.type == np.int8 or obj.dtype.type == np.uint8:
                 values = array.array('B', obj.flatten()).tostring()
             else:
                 values = obj.flatten().tolist()
@@ -77,6 +121,15 @@ class AvroSerializer(FramedSerializer):
 
             return datum
 
+        elif isinstance(obj, SpaceTimeKey):
+            datum = {
+                    'col': obj.col,
+                    'row': obj.row,
+                    'instant': obj.instant
+                    }
+
+            return datum
+
         else:
             raise Exception("COULD NOT MAKE THE DATUM")
 
@@ -86,13 +139,82 @@ class AvroSerializer(FramedSerializer):
     """
     def dumps(self, obj, schema):
         s = avro.schema.Parse(schema)
+
         writer = avro.io.DatumWriter(s)
         bytes_writer = io.BytesIO()
+
         encoder = avro.io.BinaryEncoder(bytes_writer)
-        datum = self.make_datum(obj)
+        datum = self._make_datum(obj)
         writer.write(datum, encoder)
 
         return bytes_writer.getvalue()
+
+    """
+    Takes the data from the byte array and turns it into the corresponding
+    python object.
+    """
+    def _make_object(self, i, name=None):
+
+        if name is None:
+            name = self.schema_name()
+
+        if name in TILES:
+            cells = i.get('cells')
+
+            if isinstance(cells, bytes):
+                cells = bytearray(cells)
+
+            # cols and rows are opposte for GeoTrellis ArrayTiles and Numpy Arrays
+            arr = np.array(cells).reshape(i.get('rows'), i.get('cols'))
+            tile = TileArray(arr, i.get('noDataValue'))
+
+            return tile
+
+        elif name == EXTENT:
+            return Extent(i.get('xmin'), i.get('ymin'), i.get('xmax'), i.get('ymax'))
+
+        elif name == SPATIALKEY:
+            return SpatialKey(i.get('col'), i.get('row'))
+
+        elif name == SPACETIMEKEY:
+            return SpaceTimeKey(i['col'], i['row'], i['instant'])
+
+        else:
+            raise Exception("COULDN'T FIND THE SCHEMA")
+
+    def _make_tuple(self, i, schema=None):
+
+        schema_1 = i.get('_1')
+        schema_2 = i.get('_2')
+
+        if schema is None:
+            import json
+            schema_dict = json.loads(self._schemaJson)
+        else:
+            schema_dict = schema
+
+        (a, b) = schema_dict['fields']
+
+        name_1 = a['type']['name']
+        if isinstance(b['type'], list):
+            # The 'name' parameter does not effect the handling of
+            # tiles in _make_object, so any name will do.  If type is
+            # an array but this is not a tile, then undefined
+            # behavior.
+            if b['type'][0]['name'] in TILES:
+                name_2 = b['type'][0]['name']
+            else:
+                name_2 = None
+        else:
+            name_2 = b['type']['name']
+
+        result = (self._make_object(schema_1, name=name_1),
+                self._make_object(schema_2, name=name_2))
+
+        if schema is None:
+            return [result]
+        else:
+            return result
 
     """
     Deserializes a byte array into an object.
@@ -102,20 +224,27 @@ class AvroSerializer(FramedSerializer):
         decoder = avro.io.BinaryDecoder(buf)
         i = self.reader().read(decoder)
 
-        schema_name = self.schema().name
+        if self.schema_name() == KEYVALUERECORD:
+            import json
 
-        if schema_name in TILES:
-            # cols and rows are opposte for GeoTrellis ArrayTiles and Numpy Arrays
-            arr = np.array(bytearray(i.get('cells'))).reshape(i.get('rows'), i.get('cols'))
-            tile = TileArray(arr, i.get('noDataValue'))
+            schema_dict = json.loads(self._schemaJson)
+            fields = schema_dict['fields'][0]['type']['items']
+            pairs = i.get('pairs')
 
-            return [tile]
+            objs = [[self._make_tuple(x, schema=fields) for x in pairs]]
 
-        elif schema_name == EXTENT:
-            return [Extent(i.get('xmin'), i.get('ymin'), i.get('xmax'), i.get('ymax'))]
+            return objs
 
-        elif schema_name == SPATIALKEY:
-            return [SpatialKey(i.get('col'), i.get('row'))]
+        elif self.schema_name() == TUPLE:
+            objs = self._make_tuple(i)
+
+            return objs
+
+        elif self.schema_name() == ARRAYMULTIBANDTILE:
+            bands = i.get('bands')
+            objs = [[self._make_object(x, name='Tile') for x in bands]]
+
+            return objs
 
         else:
-            raise Exception("COULDN'T FIND THE SCHEMA")
+            return [self._make_object(i)]

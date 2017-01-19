@@ -1,10 +1,13 @@
 name := "geotrellis-backend"
-resolvers ++= Seq("Location Tech GeoTrellis Snapshots" at "https://repo.locationtech.org/content/repositories/geotrellis-snapshots",
-  Resolver.mavenLocal)
+
+resolvers ++= Seq(
+  "Location Tech GeoTrellis Snapshots" at "https://repo.locationtech.org/content/repositories/geotrellis-snapshots",
+  Resolver.mavenLocal
+)
+
 libraryDependencies ++= Seq(
-  "org.locationtech.geotrellis" % "geotrellis-spark_2.11" % Version.geotrellis,
-  "org.locationtech.geotrellis" % "geotrellis-spark-etl_2.11" % Version.geotrellis,
-  "org.apache.spark" %% "spark-core" % "1.2.2" % "provided"
+  "org.apache.spark"            %% "spark-core"       % "1.2.2" % "provided",
+  "org.locationtech.geotrellis" %% "geotrellis-spark" % Version.geotrellis
 )
 
 assemblyMergeStrategy in assembly := {
