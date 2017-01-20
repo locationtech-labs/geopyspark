@@ -146,4 +146,5 @@ class Multiband(GeoTiffIOTest, unittest.TestCase):
 
 
 if __name__ == "__main__":
+    check_directory()
     unittest.main()

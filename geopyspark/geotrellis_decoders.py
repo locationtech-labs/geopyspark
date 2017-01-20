@@ -137,7 +137,7 @@ def get_decoder(name, schema_dict, custom_name=None, custom_decoder=None):
     elif name == PROJECTEDEXTENT:
         return projected_extent_decoder
 
-    elif name == TEMPORLAPROJECTEDEXTENT:
+    elif name == TEMPORALPROJECTEDEXTENT:
         return temporal_projected_extent_decoder
 
     elif name == SPATIALKEY:

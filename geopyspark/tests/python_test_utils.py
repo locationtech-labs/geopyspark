@@ -6,14 +6,11 @@ import os
 
 
 def test_path(string):
-    return "geopyspark/tests/data_files/geotiff_test_files/" + string
+    return "".join(["geopyspark/tests/data_files/geotiff_test_files/", string])
 
 def check_directory():
-    path = "geopyspark/tests/data_files/geotiff_test_files"
-    if not path.exists(path):
-        zip_files = zipped(path)
-        for f in zip_files:
-            if f.endswith('/'):
-                os.makedirs(f)
-            else:
-                zipped.extract(f)
+    test_path = "geopyspark/tests/data_files/geotiff_test_files/"
+    if not path.exists(test_path):
+        zip_files = zipped('geopyspark/tests/data_files/geotiff_test_files.zip')
+        zip_files.extractall('geopyspark/tests/data_files/')
+        zip_files.close()
