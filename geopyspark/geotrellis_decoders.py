@@ -27,6 +27,23 @@ def extent_decoder(i):
 
     return Extent(i['xmin'], i['ymin'], i['xmax'], i['ymax'])
 
+def projected_extent_decoder(i):
+    from geopyspark.projected_extent import ProjectedExtent
+
+    extent = extent_decoder(i['extent'])
+    epsg = i['epsg']
+
+    return ProjectedExtent(extent, epsg)
+
+def temporal_projected_extent_decoder(i):
+    from geopyspark.temporal_projected_extent import TemporalProjectedExtent
+
+    extent = extent_decoder(i['extent'])
+    epsg = i['epsg']
+    instant = i['instant']
+
+    return TemporalProjectedExtent(extent, epsg, instant)
+
 def spatial_key_decoder(i):
     from geopyspark.keys import SpatialKey
 
@@ -116,6 +133,12 @@ def get_decoder(name, schema_dict, custom_name=None, custom_decoder=None):
 
     elif name == EXTENT:
         return extent_decoder
+
+    elif name == PROJECTEDEXTENT:
+        return projected_extent_decoder
+
+    elif name == TEMPORLAPROJECTEDEXTENT:
+        return temporal_projected_extent_decoder
 
     elif name == SPATIALKEY:
         return spatial_key_decoder

@@ -1,6 +1,8 @@
 from geopyspark.keys import SpatialKey, SpaceTimeKey
 from geopyspark.extent import Extent
 from geopyspark.tile import TileArray
+from geopyspark.projected_extent import ProjectedExtent
+from geopyspark.temporal_projected_extent import TemporalProjectedExtent
 
 from functools import partial
 
@@ -38,6 +40,23 @@ def extent_encoder(obj):
             'xmax': obj.xmax,
             'ymin': obj.ymin,
             'ymax': obj.ymax
+            }
+
+    return datum
+
+def projected_extent_encoder(obj):
+    datum = {
+            'extent': extent_encoder(obj.extent),
+            'epsg': obj.epsg_code
+            }
+
+    return datum
+
+def temporal_projected_extent_encoder(obj):
+    datum = {
+            'extent': extent_encoder(obj.extent),
+            'epsg': obj.epsg_code,
+            'instant': obj.instant
             }
 
     return datum
@@ -133,6 +152,12 @@ def get_encoder(obj, custom_class=None, custom_encoder=None):
 
     elif isinstance(obj, Extent):
         return extent_encoder
+
+    elif isinstance(obj, ProjectedExtent):
+        return projected_extent_encoder
+
+    elif isinstance(obj, TemporalProjectedExtent):
+        return temporal_projected_extent_encoder
 
     elif isinstance(obj, SpatialKey):
         return spatial_key_encoder
