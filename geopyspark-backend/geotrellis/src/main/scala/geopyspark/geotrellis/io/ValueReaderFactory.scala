@@ -31,17 +31,34 @@ abstract class ValueReaderWrapper() {
   def attributeStore: AttributeStore
   def valueReader: ValueReader[LayerId]
 
-  def reader(k: String, v: String, id: LayerId) = {
-    (k, v) match {
-      case ("spatial", "singleband") =>
-        (valueReader.reader[SpatialKey, Tile](id).read)_
-      case ("spacetime", "singleband") =>
-        (valueReader.reader[SpaceTimeKey, Tile](id).read)_
-      case ("spatial", "multiband") =>
-        (valueReader.reader[SpatialKey, MultibandTile](id).read)_
-      case ("spacetime", "multiband") =>
-        (valueReader.reader[SpaceTimeKey, MultibandTile](id).read)_
-    }
+  def readSpatialSingleband(layerName: String, zoom: Int, col: Int, row: Int) = {
+    val id = LayerId(layerName, zoom)
+    val key = SpatialKey(col, row)
+    valueReader.reader[SpatialKey, Tile](id).read(key)
+  }
+
+  def readSpatialMultiband(layerName: String, zoom: Int, col: Int, row: Int) = {
+    val id = LayerId(layerName, zoom)
+    val key = SpatialKey(col, row)
+    valueReader.reader[SpatialKey, MultibandTile](id).read(key)
+  }
+
+  def readSpacetimeSingleband(
+    layerName: String, zoom: Int,
+    col: Int, row: Int, zdt: String
+  ) = {
+    val id = LayerId(layerName, zoom)
+    val key = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
+    valueReader.reader[SpaceTimeKey, Tile](id).read(key)
+  }
+
+  def readSpacetimeMultiband(
+    layerName: String, zoom: Int,
+    col: Int, row: Int, zdt: String
+  ) = {
+    val id = LayerId(layerName, zoom)
+    val key = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
+    valueReader.reader[SpaceTimeKey, MultibandTile](id).read(key)
   }
 
 }
@@ -49,83 +66,49 @@ abstract class ValueReaderWrapper() {
 /**
   * Wrapper for the AccumuloValueReader class.
   */
-class AccumuloValueReaderWrapper(
-  k: String, v: String,
-  id: LayerId,
-  in: AccumuloInstance,
-  as: AccumuloAttributeStore
-) extends ValueReaderWrapper {
+class AccumuloValueReaderWrapper(in: AccumuloInstance, as: AccumuloAttributeStore) extends ValueReaderWrapper {
   val attributeStore = as
   val valueReader = new AccumuloValueReader(in, as)
-  val read = reader(k, v, id)
 }
 
 /**
   * Wrapper for the HBaseValueReader class.
   */
-class HBaseValueReaderWrapper(
-  k: String, v: String,
-  id: LayerId,
-  in: HBaseInstance,
-  as: HBaseAttributeStore
-) extends ValueReaderWrapper {
+class HBaseValueReaderWrapper(in: HBaseInstance, as: HBaseAttributeStore) extends ValueReaderWrapper {
   val attributeStore = as
   val valueReader = new HBaseValueReader(in, as)
-  val read = reader(k, v, id)
 }
 
 /**
   * Wrapper for the CassandraValueReader class.
   */
-class CassandraValueReaderWrapper(
-  k: String, v: String,
-  id: LayerId,
-  in: CassandraInstance,
-  as: CassandraAttributeStore
-) extends ValueReaderWrapper {
+class CassandraValueReaderWrapper(in: CassandraInstance, as: CassandraAttributeStore) extends ValueReaderWrapper {
   val attributeStore = as
   val valueReader = new CassandraValueReader(in, as)
-  val read = reader(k, v, id)
 }
 
 /**
   * Wrapper for the FileValueReader class.
   */
-class FileValueReaderWrapper(
-  k: String, v: String,
-  id: LayerId,
-  path: String,
-  as: FileAttributeStore
-) extends ValueReaderWrapper {
+class FileValueReaderWrapper(path: String, as: FileAttributeStore) extends ValueReaderWrapper {
   val attributeStore = as
   val valueReader = new FileValueReader(as, path)
-  val read = reader(k, v, id)
 }
 
 /**
   * Wrapper for the S3ValueReader class.
   */
-class S3ValueReaderWrapper(
-  k: String, v: String,
-  id: LayerId,
-  as: S3AttributeStore
-) extends ValueReaderWrapper {
+class S3ValueReaderWrapper(as: S3AttributeStore) extends ValueReaderWrapper {
   val attributeStore = as
   val valueReader = new S3ValueReader(as)
-  val read = reader(k, v, id)
 }
 
 /**
   * Wrapper for the HadoopValueReader class.
   */
-class HadoopValueReaderWrapper(
-  k: String, v: String,
-  id: LayerId,
-  as: HadoopAttributeStore
-) extends ValueReaderWrapper {
+class HadoopValueReaderWrapper(as: HadoopAttributeStore) extends ValueReaderWrapper {
   val attributeStore = as
   val valueReader = new HadoopValueReader(as, as.hadoopConfiguration)
-  val read = reader(k, v, id)
 }
 
 /**
@@ -134,57 +117,30 @@ class HadoopValueReaderWrapper(
   */
 object ValueReaderFactory {
 
-  def buildHadoop(
-    k: String, v: String,
-    layerName: String, zoom: Int,
-    hasw: HadoopAttributeStoreWrapper) = {
-    val id = LayerId(layerName, zoom)
-    new HadoopValueReaderWrapper(k, v, id, hasw.attributeStore)
-  }
+  def buildHadoop(hasw: HadoopAttributeStoreWrapper) =
+    new HadoopValueReaderWrapper(hasw.attributeStore)
 
-  def buildS3(
-    k: String, v: String,
-    layerName: String, zoom: Int,
-    s3asw: S3AttributeStoreWrapper) = {
-    val id = LayerId(layerName, zoom)
-    new S3ValueReaderWrapper(k, v, id, s3asw.attributeStore)
-  }
+  def buildS3(s3asw: S3AttributeStoreWrapper) =
+    new S3ValueReaderWrapper(s3asw.attributeStore)
 
-  def buildFile(
-    k: String, v: String,
-    layerName: String, zoom: Int,
-    fasw: FileAttributeStoreWrapper) = {
+  def buildFile(fasw: FileAttributeStoreWrapper) = {
     val attributeStore = fasw.attributeStore
     val path = attributeStore.catalogPath
-    val id = LayerId(layerName, zoom)
-    new FileValueReaderWrapper(k, v, id, path, attributeStore)
+    new FileValueReaderWrapper(path, attributeStore)
   }
 
-  def buildCassandra(
-    k: String, v: String,
-    layerName: String, zoom: Int,
-    casw: CassandraAttributeStoreWrapper) = {
+  def buildCassandra(casw: CassandraAttributeStoreWrapper) = {
     val attributeStore = casw.attributeStore
     val instance = attributeStore.instance
-    val id = LayerId(layerName, zoom)
-    new CassandraValueReaderWrapper(k, v, id, instance, attributeStore)
+    new CassandraValueReaderWrapper(instance, attributeStore)
   }
 
-  def buildHBase(
-    k: String, v: String,
-    layerName: String, zoom: Int,
-    hbasw: HBaseAttributeStoreWrapper) = {
+  def buildHBase(hbasw: HBaseAttributeStoreWrapper) = {
     val attributeStore = hbasw.attributeStore
     val instance = attributeStore.instance
-    val id = LayerId(layerName, zoom)
-    new HBaseValueReaderWrapper(k, v, id, instance, attributeStore)
+    new HBaseValueReaderWrapper(instance, attributeStore)
   }
 
-  def buildAccumulo(
-    k: String, v: String,
-    layerName: String, zoom: Int,
-    aasw: AccumuloAttributeStoreWrapper) = {
-    val id = LayerId(layerName, zoom)
-    new AccumuloValueReaderWrapper(k, v, id, aasw.instance, aasw.attributeStore)
-  }
+  def buildAccumulo(aasw: AccumuloAttributeStoreWrapper) =
+    new AccumuloValueReaderWrapper(aasw.instance, aasw.attributeStore)
 }
