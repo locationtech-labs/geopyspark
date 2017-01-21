@@ -22,6 +22,9 @@ object PythonTranslator {
     (jrdd, implicitly[AvroRecordCodec[T]].schema.toString)
   }
 
+  def toPython[T : AvroRecordCodec](tile: T): Array[Byte] =
+    AvroEncoder.toBinary(tile, deflate = false)
+
   def fromPython[T: AvroRecordCodec: ClassTag](rdd: RDD[Array[Byte]], schemaJson: Option[String] = None): RDD[T] = {
     val schema = schemaJson.map { json => (new Schema.Parser).parse(json) }
     val _recordCodec = implicitly[AvroRecordCodec[T]]
