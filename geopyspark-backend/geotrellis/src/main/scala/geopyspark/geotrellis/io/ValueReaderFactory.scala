@@ -34,7 +34,7 @@ abstract class ValueReaderWrapper() {
   def readSpatialSingleband(
     layerName: String, zoom: Int,
     col: Int, row: Int
-  ): Array[Byte] = {
+  ): (Array[Byte], String) = {
     val id = LayerId(layerName, zoom)
     val key = SpatialKey(col, row)
     PythonTranslator.toPython(valueReader.reader[SpatialKey, Tile](id).read(key))
@@ -43,7 +43,7 @@ abstract class ValueReaderWrapper() {
   def readSpatialMultiband(
     layerName: String, zoom: Int,
     col: Int, row: Int
-  ): Array[Byte] = {
+  ): (Array[Byte], String) = {
     val id = LayerId(layerName, zoom)
     val key = SpatialKey(col, row)
     PythonTranslator.toPython(valueReader.reader[SpatialKey, MultibandTile](id).read(key))
@@ -52,7 +52,7 @@ abstract class ValueReaderWrapper() {
   def readSpacetimeSingleband(
     layerName: String, zoom: Int,
     col: Int, row: Int, zdt: String
-  ): Array[Byte] = {
+  ): (Array[Byte], String) = {
     val id = LayerId(layerName, zoom)
     val key = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
     PythonTranslator.toPython(valueReader.reader[SpaceTimeKey, Tile](id).read(key))
@@ -61,7 +61,7 @@ abstract class ValueReaderWrapper() {
   def readSpacetimeMultiband(
     layerName: String, zoom: Int,
     col: Int, row: Int, zdt: String
-  ): Array[Byte] = {
+  ): (Array[Byte], String) = {
     val id = LayerId(layerName, zoom)
     val key = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
     PythonTranslator.toPython(valueReader.reader[SpaceTimeKey, MultibandTile](id).read(key))
