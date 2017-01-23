@@ -6,8 +6,6 @@ from geopyspark.temporal_projected_extent import TemporalProjectedExtent
 
 from functools import partial
 
-from functools import partial
-
 import numpy as np
 import array
 
