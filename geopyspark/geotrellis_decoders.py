@@ -56,7 +56,7 @@ def spacetime_key_decoder(i):
 
 def multiband_decoder(i):
     bands = i['bands']
-    objs = [tile_decoder(x) for x in bands]
+    objs = list(map(tile_decoder, bands))
 
     return objs
 
@@ -77,7 +77,7 @@ def key_value_record_decoder(i, schema_dict, custom_name=None, custom_decoder=No
             custom_name=custom_name,
             custom_decoder=custom_decoder)
 
-    objs = [decoder(x) for x in pairs]
+    objs = list(map(decoder, pairs))
 
     return objs
 

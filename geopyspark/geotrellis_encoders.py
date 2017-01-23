@@ -79,7 +79,7 @@ def spacetime_key_encoder(obj):
     return datum
 
 def multiband_encoder(obj):
-    tile_datums = [tile_encoder(tile) for tile in obj]
+    tile_datums = list(map(tile_encoder, obj))
 
     datum = {
             'bands': tile_datums
@@ -106,7 +106,7 @@ def key_value_record_encoder(obj, custom_class=None, custom_encoder=None):
             custom_class=custom_class,
             custom_encoder=custom_encoder)
 
-    tuple_datums = [encoder(tup) for tup in obj]
+    tuple_datums = list(map(encoder, obj))
 
     datum = {
             'pairs': tuple_datums
