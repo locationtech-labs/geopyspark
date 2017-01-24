@@ -91,3 +91,14 @@ class HadoopCatalog(Catalog):
         self.reader = reader_factory.buildHadoop(self.store)
         writer_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
         self.writer = writer_factory.buildHadoop(self.store)
+
+class S3Catalog(Catalog):
+
+    def __init__(self, bucket, root, sc):
+        self.sc = sc
+        store_factory = sc._gateway.jvm.geopyspark.geotrellis.io.AttributeStoreFactory
+        self.store = store_factory.buildS3(bucket, root)
+        reader_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerReaderFactory
+        self.reader = reader_factory.buildS3(self.store, sc._jsc.sc())
+        writer_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
+        self.writer = writer_factory.buildS3(self.store)
