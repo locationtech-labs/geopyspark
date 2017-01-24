@@ -16,6 +16,7 @@ class Metadata:
         self.schema = schema
         self.jmetadata = jmetadata
 
+
 class Catalog:
 
     def query(self, key_type, value_type, layer_name, layer_zoom, intersects=None):
@@ -81,6 +82,7 @@ class Catalog:
         # write the data
         self.writer.write(key_type, value_type, layer_name, layer_zoom, rdd._jrdd, jmetadata, schema, time_unit, index_strategy)
 
+
 class HadoopCatalog(Catalog):
 
     def __init__(self, uri, sc):
@@ -92,6 +94,7 @@ class HadoopCatalog(Catalog):
         writer_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
         self.writer = writer_factory.buildHadoop(self.store)
 
+
 class S3Catalog(Catalog):
 
     def __init__(self, bucket, root, sc):
@@ -102,3 +105,15 @@ class S3Catalog(Catalog):
         self.reader = reader_factory.buildS3(self.store, sc._jsc.sc())
         writer_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
         self.writer = writer_factory.buildS3(self.store)
+
+
+class FileCatalog(Catalog):
+
+    def __init__(self, path, sc):
+        self.sc = sc
+        store_factory = sc._gateway.jvm.geopyspark.geotrellis.io.AttributeStoreFactory
+        self.store = store_factory.buildFile(path)
+        reader_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerReaderFactory
+        self.reader = reader_factory.buildFile(self.store, sc._jsc.sc())
+        writer_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
+        self.writer = writer_factory.buildFile(self.store)
