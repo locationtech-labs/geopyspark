@@ -129,3 +129,15 @@ class CassandraCatalog(Catalog):
         self.reader = reader_factory.buildCassandra(self.store, sc._jsc.sc())
         writer_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
         self.writer = writer_factory.buildCassandra(self.store, attributeKeySpace, attributeTable)
+
+
+class HBaseCatalog(Catalog):
+
+    def __init__(self, zookeepers, master, clientPort, attributeTable, sc):
+        self.sc = sc
+        store_factory = sc._gateway.jvm.geopyspark.geotrellis.io.AttributeStoreFactory
+        self.store = store_factory.buildHBase(zookeepers, master, clientPort, attributeTable)
+        reader_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerReaderFactory
+        self.reader = reader_factory.buildHBase(self.store, sc._jsc.sc())
+        writer_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
+        self.writer = writer_factory.buildHBase(self.store, attributeTable)
