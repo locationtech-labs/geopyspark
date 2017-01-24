@@ -61,7 +61,6 @@ def multiband_decoder(i):
     return objs
 
 def tuple_decoder(i, decoders):
-
     (schema_1, schema_2) = (i['_1'], i['_2'])
     (decoder_1, decoder_2) = decoders
 
