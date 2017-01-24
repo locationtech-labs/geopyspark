@@ -11,7 +11,8 @@ import numpy as np
 import unittest
 
 
-TILETYPES = ['Bit', 'Short', 'UShort', 'Byte', 'UByte', 'Int', 'Float', 'Double']
+# TODO: CLEANUP THESE TESTS TO MAKE IT MORE DRY
+
 
 class TileSchemaTest(unittest.TestCase):
     pysc = SparkContext(master="local", appName="tile-test")
@@ -354,5 +355,4 @@ class FloatTileSchemaTest(TileSchemaTest):
 
 
 if __name__ == "__main__":
-    #ByteTileSchemaTest().test_encoded_tiles()
     unittest.main()
