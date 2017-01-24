@@ -1,6 +1,8 @@
 from geopyspark.keys import SpatialKey, SpaceTimeKey
 from geopyspark.extent import Extent
 from geopyspark.tile import TileArray
+from geopyspark.projected_extent import ProjectedExtent
+from geopyspark.temporal_projected_extent import TemporalProjectedExtent
 
 from functools import partial
 
@@ -42,6 +44,23 @@ def extent_encoder(obj):
 
     return datum
 
+def projected_extent_encoder(obj):
+    datum = {
+            'extent': extent_encoder(obj.extent),
+            'epsg': obj.epsg_code
+            }
+
+    return datum
+
+def temporal_projected_extent_encoder(obj):
+    datum = {
+            'extent': extent_encoder(obj.extent),
+            'epsg': obj.epsg_code,
+            'instant': obj.instant
+            }
+
+    return datum
+
 def spatial_key_encoder(obj):
     datum = {
             'col': obj.col,
@@ -60,7 +79,7 @@ def spacetime_key_encoder(obj):
     return datum
 
 def multiband_encoder(obj):
-    tile_datums = [tile_encoder(tile) for tile in obj]
+    tile_datums = list(map(tile_encoder, obj))
 
     datum = {
             'bands': tile_datums
@@ -87,7 +106,7 @@ def key_value_record_encoder(obj, custom_class=None, custom_encoder=None):
             custom_class=custom_class,
             custom_encoder=custom_encoder)
 
-    tuple_datums = [encoder(tup) for tup in obj]
+    tuple_datums = list(map(encoder, obj))
 
     datum = {
             'pairs': tuple_datums
@@ -133,6 +152,12 @@ def get_encoder(obj, custom_class=None, custom_encoder=None):
 
     elif isinstance(obj, Extent):
         return extent_encoder
+
+    elif isinstance(obj, ProjectedExtent):
+        return projected_extent_encoder
+
+    elif isinstance(obj, TemporalProjectedExtent):
+        return temporal_projected_extent_encoder
 
     elif isinstance(obj, SpatialKey):
         return spatial_key_encoder

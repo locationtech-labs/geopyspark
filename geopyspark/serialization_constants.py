@@ -18,3 +18,7 @@ SPACETIMEKEY = 'SpaceTimeKey'
 TUPLE = 'Tuple2'
 
 KEYVALUERECORD = 'KeyValueRecord'
+
+PROJECTEDEXTENT = 'ProjectedExtent'
+
+TEMPORALPROJECTEDEXTENT = 'TemporalProjectedExtent'
