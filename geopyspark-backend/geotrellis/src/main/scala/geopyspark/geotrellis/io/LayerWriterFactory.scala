@@ -40,13 +40,13 @@ abstract class LayerWriterWrapper {
     * @param  metadata  The metadata associated with the layer
     */
   def write(
-    k: String, v: String, unit: String,
+    k: String, v: String,
     name: String, zoom: Int,
-    jrdd: JavaRDD[Array[Byte]], schema: String,
-    metadata: TileLayerMetadataWrapper[Any]
+    jrdd: JavaRDD[Array[Byte]], metadata: TileLayerMetadataWrapper[Any], schema: String,
+    timeUnit: String, indexStrategy: String
   ): Unit = {
     val id = LayerId(name, zoom)
-    val indexMethod = unit match {
+    val indexMethod = timeUnit match {
       case "millis" => ZCurveKeyIndexMethod.byMilliseconds(1)
       case "seconds" => ZCurveKeyIndexMethod.bySecond
       case "minutes" => ZCurveKeyIndexMethod.byMinute
