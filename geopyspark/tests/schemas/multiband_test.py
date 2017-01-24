@@ -4,41 +4,63 @@ from pyspark import SparkConf, SparkContext, RDD
 from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
+from geopyspark.tile import TileArray
+from geopyspark.geotrellis_encoders import multiband_encoder, tile_encoder
 
+import numpy as np
+import unittest
 
-def main(sc):
+class MultibandSchemaTest(unittest.TestCase):
+    pysc = SparkContext(master="local", appName="multibandtile-test")
     path = "geopyspark.geotrellis.tests.schemas.ArrayMultibandTileWrapper"
-    java_import(sc._gateway.jvm, path)
+    java_import(pysc._gateway.jvm, path)
 
-    (multiband_arrays, schema) = get_rdd(sc)
+    arr = TileArray(np.array(bytearray([0, 0, 1, 1])).reshape(2, 2), -128)
+    multiband_tile = [arr, arr, arr]
 
-    new_multiband_arrays = multiband_arrays.map(lambda s: [x + 3 for x in s])
+    def get_rdd(self):
+        sc = self.pysc._jsc.sc()
+        mw = self.pysc._gateway.jvm.ArrayMultibandTileWrapper
 
-    set_rdd(sc, new_multiband_arrays, schema)
+        tup = mw.testOut(sc)
+        (java_rdd, schema) = (tup._1(), tup._2())
 
-def get_rdd(pysc):
-    sc = pysc._jsc.sc()
-    mw = pysc._gateway.jvm.ArrayMultibandTileWrapper
+        ser = AvroSerializer(schema)
+        return (RDD(java_rdd, self.pysc, AutoBatchedSerializer(ser)), schema)
 
-    tup = mw.testOut(sc)
-    (java_rdd, schema) = (tup._1(), tup._2())
+    def get_multibands(self):
+        (multibands, schema) = self.get_rdd()
 
-    ser = AvroSerializer(schema)
-    return (RDD(java_rdd, pysc, AutoBatchedSerializer(ser)), schema)
+        return multibands.collect()
 
-def set_rdd(pysc, rdd, schema):
-    ser = AvroSerializer(schema)
-    dumped = rdd.map(lambda s: ser.dumps(s, schema))
-    dumped.collect()
+    def test_encoded_multibands(self):
+        (rdd, schema) = self.get_rdd()
+        encoded = rdd.map(lambda s: multiband_encoder(s))
 
-    arrs = dumped.map(lambda s: bytearray(s))
+        actual_encoded = encoded.collect()
 
-    new_java_rdd = dumped._to_java_object_rdd()
-    mw = pysc._gateway.jvm.ArrayMultibandTileWrapper
+        expected_encoded = [
+                {'bands': [tile_encoder(x) for x in self.multiband_tile]},
+                {'bands': [tile_encoder(x) for x in self.multiband_tile]},
+                {'bands': [tile_encoder(x) for x in self.multiband_tile]},
+                ]
 
-    mw.testIn(new_java_rdd.rdd(), schema)
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
+
+    def test_decoded_multibands(self):
+        actual_multibands = self.get_multibands()
+
+        expected_multibands = [
+                self.multiband_tile,
+                self.multiband_tile,
+                self.multiband_tile
+                ]
+
+        for actual_tiles, expected_tiles in zip(actual_multibands, expected_multibands):
+            for actual, expected in zip(actual_tiles, expected_tiles):
+                self.assertTrue((actual == expected).all())
+
 
 if __name__ == "__main__":
-    sc = SparkContext(master="local", appName="multibandtile-test")
-    main(sc)
-
+    unittest.main()

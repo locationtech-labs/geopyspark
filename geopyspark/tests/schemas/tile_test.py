@@ -4,72 +4,355 @@ from pyspark import SparkConf, SparkContext, RDD
 from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
+from geopyspark.geotrellis_encoders import tile_encoder
+from geopyspark.tile import TileArray
+
+import numpy as np
+import unittest
 
 
 TILETYPES = ['Bit', 'Short', 'UShort', 'Byte', 'UByte', 'Int', 'Float', 'Double']
 
-def main(sc):
-
-    for x in TILETYPES:
-        path = "geopyspark.geotrellis.tests.schemas." + x + "ArrayTileWrapper"
-
-        java_import(sc._gateway.jvm, path)
-
-        (tile_array, schema) = get_rdd(sc, x)
-
-        new_tile_array = tile_array.map(lambda s: s + 1)
-
-        set_rdd(sc, new_tile_array, schema, x)
+class TileSchemaTest(unittest.TestCase):
+    pysc = SparkContext(master="local", appName="tile-test")
 
 
-def get_rdd(pysc, tile_type):
-    sc = pysc._jsc.sc()
+class ShortTileSchemaTest(TileSchemaTest):
+    path = "geopyspark.geotrellis.tests.schemas.ShortArrayTileWrapper"
+    java_import(TileSchemaTest.pysc._gateway.jvm, path)
 
-    tw = get_wrapper(pysc, tile_type)
+    tiles = [
+            TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), -32768),
+            TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), -32768),
+            TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), -32768)
+            ]
 
-    tup = tw.testOut(sc)
-    (java_rdd, schema) = (tup._1(), tup._2())
+    def get_rdd(self):
+        sc = TileSchemaTest.pysc._jsc.sc()
+        tw = TileSchemaTest.pysc._gateway.jvm.ShortArrayTileWrapper
 
-    ser = AvroSerializer(schema)
-    return (RDD(java_rdd, pysc, AutoBatchedSerializer(ser)), schema)
+        tup = tw.testOut(sc)
+        (java_rdd, schema) = (tup._1(), tup._2())
 
-def set_rdd(pysc, rdd, schema, tile_type):
-    ser = AvroSerializer(schema)
-    dumped = rdd.map(lambda s: ser.dumps(s, schema))
-    dumped.collect()
+        ser = AvroSerializer(schema)
+        return (RDD(java_rdd, self.pysc, AutoBatchedSerializer(ser)), schema)
 
-    arrs = dumped.map(lambda s: bytearray(s))
+    def get_tiles(self):
+        (tiles, schema) = self.get_rdd()
 
-    new_java_rdd = dumped._to_java_object_rdd()
-    tw = get_wrapper(pysc, tile_type)
+        return tiles.collect()
 
-    tw.testIn(new_java_rdd.rdd(), schema)
+    def test_encoded_tiles(self):
+        (rdd, schema) = self.get_rdd()
+        encoded = rdd.map(lambda s: tile_encoder(s))
 
-def get_wrapper(pysc, tile_type):
-    if tile_type is 'Bit':
-        return pysc._gateway.jvm.BitArrayTileWrapper
+        actual_encoded = encoded.collect()
 
-    elif tile_type is 'Short':
-        return pysc._gateway.jvm.ShortArrayTileWrapper
+        expected_encoded = [
+                {'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': -32768},
+                {'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': -32768},
+                {'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': -32768}
+                ]
 
-    elif tile_type is 'UShort':
-        return pysc._gateway.jvm.UShortArrayTileWrapper
+        self.assertEqual(actual_encoded, expected_encoded)
 
-    elif tile_type is 'Byte':
-        return pysc._gateway.jvm.ByteArrayTileWrapper
+    def test_decoded_tiles(self):
+        actual_tiles = self.get_tiles()
 
-    elif tile_type is 'UByte':
-        return pysc._gateway.jvm.UByteArrayTileWrapper
+        expected_tiles = self.tiles
 
-    elif tile_type is 'Int':
-        return pysc._gateway.jvm.IntArrayTileWrapper
+        for actual, expected in zip(actual_tiles, expected_tiles):
+            self.assertTrue((actual == expected).all())
 
-    elif tile_type is 'Float':
-        return pysc._gateway.jvm.FloatArrayTileWrapper
 
-    else:
-        return pysc._gateway.jvm.DoubleArrayTileWrapper
+class UShortTileSchemaTest(TileSchemaTest):
+    path = "geopyspark.geotrellis.tests.schemas.UShortArrayTileWrapper"
+    java_import(TileSchemaTest.pysc._gateway.jvm, path)
+
+    tiles = [
+            TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), 0),
+            TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), 0),
+            TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), 0)
+            ]
+
+    def get_rdd(self):
+        sc = TileSchemaTest.pysc._jsc.sc()
+        tw = TileSchemaTest.pysc._gateway.jvm.UShortArrayTileWrapper
+
+        tup = tw.testOut(sc)
+        (java_rdd, schema) = (tup._1(), tup._2())
+
+        ser = AvroSerializer(schema)
+        return (RDD(java_rdd, self.pysc, AutoBatchedSerializer(ser)), schema)
+
+    def get_tiles(self):
+        (tiles, schema) = self.get_rdd()
+
+        return tiles.collect()
+
+    def test_encoded_tiles(self):
+        (rdd, schema) = self.get_rdd()
+        encoded = rdd.map(lambda s: tile_encoder(s))
+
+        actual_encoded = encoded.collect()
+
+        expected_encoded = [
+                {'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': 0},
+                {'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': 0},
+                {'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': 0}
+                ]
+
+        self.assertEqual(actual_encoded, expected_encoded)
+
+    def test_decoded_tiles(self):
+        actual_tiles = self.get_tiles()
+
+        expected_tiles = self.tiles
+
+        for actual, expected in zip(actual_tiles, expected_tiles):
+            self.assertTrue((actual == expected).all())
+
+
+class ByteTileSchemaTest(TileSchemaTest):
+    path = "geopyspark.geotrellis.tests.schemas.ByteArrayTileWrapper"
+    java_import(TileSchemaTest.pysc._gateway.jvm, path)
+
+    tiles = [
+            TileArray(np.array(bytearray([0, 0, 1, 1])).reshape(2, 2), -128),
+            TileArray(np.array(bytearray([1, 2, 3, 4])).reshape(2, 2), -128),
+            TileArray(np.array(bytearray([5, 6, 7, 8])).reshape(2, 2), -128)
+            ]
+
+    def get_rdd(self):
+        sc = TileSchemaTest.pysc._jsc.sc()
+        tw = TileSchemaTest.pysc._gateway.jvm.ByteArrayTileWrapper
+
+        tup = tw.testOut(sc)
+        (java_rdd, schema) = (tup._1(), tup._2())
+
+        ser = AvroSerializer(schema)
+        return (RDD(java_rdd, self.pysc, AutoBatchedSerializer(ser)), schema)
+
+    def get_tiles(self):
+        (tiles, schema) = self.get_rdd()
+
+        return tiles.collect()
+
+    def test_encoded_tiles(self):
+        (rdd, schema) = self.get_rdd()
+        encoded = rdd.map(lambda s: tile_encoder(s))
+
+        actual_encoded = encoded.collect()
+
+        expected_encoded = [
+                {'cols': 2, 'rows': 2, 'cells': bytearray([0, 0, 1, 1]), 'noDataValue': -128},
+                {'cols': 2, 'rows': 2, 'cells': bytearray([1, 2, 3, 4]), 'noDataValue': -128},
+                {'cols': 2, 'rows': 2, 'cells': bytearray([5, 6, 7, 8]), 'noDataValue': -128}
+                ]
+
+        self.assertEqual(actual_encoded, expected_encoded)
+
+    def test_decoded_tiles(self):
+        actual_tiles = self.get_tiles()
+
+        expected_tiles = self.tiles
+
+        for actual, expected in zip(actual_tiles, expected_tiles):
+            self.assertTrue((actual == expected).all())
+
+
+class UByteTileSchemaTest(TileSchemaTest):
+    path = "geopyspark.geotrellis.tests.schemas.UByteArrayTileWrapper"
+    java_import(TileSchemaTest.pysc._gateway.jvm, path)
+
+    tiles = [
+            TileArray(np.array(bytearray([0, 0, 1, 1])).reshape(2, 2), 0),
+            TileArray(np.array(bytearray([1, 2, 3, 4])).reshape(2, 2), 0),
+            TileArray(np.array(bytearray([5, 6, 7, 8])).reshape(2, 2), 0)
+            ]
+
+    def get_rdd(self):
+        sc = TileSchemaTest.pysc._jsc.sc()
+        tw = TileSchemaTest.pysc._gateway.jvm.UByteArrayTileWrapper
+
+        tup = tw.testOut(sc)
+        (java_rdd, schema) = (tup._1(), tup._2())
+
+        ser = AvroSerializer(schema)
+        return (RDD(java_rdd, self.pysc, AutoBatchedSerializer(ser)), schema)
+
+    def get_tiles(self):
+        (tiles, schema) = self.get_rdd()
+
+        return tiles.collect()
+
+    def test_encoded_tiles(self):
+        (rdd, schema) = self.get_rdd()
+        encoded = rdd.map(lambda s: tile_encoder(s))
+
+        actual_encoded = encoded.collect()
+
+        expected_encoded = [
+                {'cols': 2, 'rows': 2, 'cells': bytearray([0, 0, 1, 1]), 'noDataValue': 0},
+                {'cols': 2, 'rows': 2, 'cells': bytearray([1, 2, 3, 4]), 'noDataValue': 0},
+                {'cols': 2, 'rows': 2, 'cells': bytearray([5, 6, 7, 8]), 'noDataValue': 0}
+                ]
+
+        self.assertEqual(actual_encoded, expected_encoded)
+
+    def test_decoded_tiles(self):
+        actual_tiles = self.get_tiles()
+
+        expected_tiles = self.tiles
+
+        for actual, expected in zip(actual_tiles, expected_tiles):
+            self.assertTrue((actual == expected).all())
+
+
+class IntTileSchemaTest(TileSchemaTest):
+    path = "geopyspark.geotrellis.tests.schemas.IntArrayTileWrapper"
+    java_import(TileSchemaTest.pysc._gateway.jvm, path)
+
+    tiles = [
+            TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), -2147483648),
+            TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), -2147483648),
+            TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), -2147483648)
+            ]
+
+    def get_rdd(self):
+        sc = TileSchemaTest.pysc._jsc.sc()
+        tw = TileSchemaTest.pysc._gateway.jvm.IntArrayTileWrapper
+
+        tup = tw.testOut(sc)
+        (java_rdd, schema) = (tup._1(), tup._2())
+
+        ser = AvroSerializer(schema)
+        return (RDD(java_rdd, self.pysc, AutoBatchedSerializer(ser)), schema)
+
+    def get_tiles(self):
+        (tiles, schema) = self.get_rdd()
+
+        return tiles.collect()
+
+    def test_encoded_tiles(self):
+        (rdd, schema) = self.get_rdd()
+        encoded = rdd.map(lambda s: tile_encoder(s))
+
+        actual_encoded = encoded.collect()
+
+        expected_encoded = [
+                {'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': -2147483648},
+                {'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': -2147483648},
+                {'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': -2147483648}
+                ]
+
+        self.assertEqual(actual_encoded, expected_encoded)
+
+    def test_decoded_tiles(self):
+        actual_tiles = self.get_tiles()
+
+        expected_tiles = self.tiles
+
+        for actual, expected in zip(actual_tiles, expected_tiles):
+            self.assertTrue((actual == expected).all())
+
+
+class DoubleTileSchemaTest(TileSchemaTest):
+    path = "geopyspark.geotrellis.tests.schemas.DoubleArrayTileWrapper"
+    java_import(TileSchemaTest.pysc._gateway.jvm, path)
+
+    tiles = [
+            TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), True),
+            TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), True),
+            TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), True)
+            ]
+
+    def get_rdd(self):
+        sc = TileSchemaTest.pysc._jsc.sc()
+        tw = TileSchemaTest.pysc._gateway.jvm.DoubleArrayTileWrapper
+
+        tup = tw.testOut(sc)
+        (java_rdd, schema) = (tup._1(), tup._2())
+
+        ser = AvroSerializer(schema)
+        return (RDD(java_rdd, self.pysc, AutoBatchedSerializer(ser)), schema)
+
+    def get_tiles(self):
+        (tiles, schema) = self.get_rdd()
+
+        return tiles.collect()
+
+    def test_encoded_tiles(self):
+        (rdd, schema) = self.get_rdd()
+        encoded = rdd.map(lambda s: tile_encoder(s))
+
+        actual_encoded = encoded.collect()
+
+        expected_encoded = [
+                {'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': True},
+                {'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': True},
+                {'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': True}
+                ]
+
+        self.assertEqual(actual_encoded, expected_encoded)
+
+    def test_decoded_tiles(self):
+        actual_tiles = self.get_tiles()
+
+        expected_tiles = self.tiles
+
+        for actual, expected in zip(actual_tiles, expected_tiles):
+            self.assertTrue((actual == expected).all())
+
+
+class FloatTileSchemaTest(TileSchemaTest):
+    path = "geopyspark.geotrellis.tests.schemas.FloatArrayTileWrapper"
+    java_import(TileSchemaTest.pysc._gateway.jvm, path)
+
+    tiles = [
+            TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), True),
+            TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), True),
+            TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), True)
+            ]
+
+    def get_rdd(self):
+        sc = TileSchemaTest.pysc._jsc.sc()
+        tw = TileSchemaTest.pysc._gateway.jvm.FloatArrayTileWrapper
+
+        tup = tw.testOut(sc)
+        (java_rdd, schema) = (tup._1(), tup._2())
+
+        ser = AvroSerializer(schema)
+        return (RDD(java_rdd, self.pysc, AutoBatchedSerializer(ser)), schema)
+
+    def get_tiles(self):
+        (tiles, schema) = self.get_rdd()
+
+        return tiles.collect()
+
+    def test_encoded_tiles(self):
+        (rdd, schema) = self.get_rdd()
+        encoded = rdd.map(lambda s: tile_encoder(s))
+
+        actual_encoded = encoded.collect()
+
+        expected_encoded = [
+                {'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': True},
+                {'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': True},
+                {'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': True}
+                ]
+
+        self.assertEqual(actual_encoded, expected_encoded)
+
+    def test_decoded_tiles(self):
+        actual_tiles = self.get_tiles()
+
+        expected_tiles = self.tiles
+
+        for actual, expected in zip(actual_tiles, expected_tiles):
+            self.assertTrue((actual == expected).all())
+
 
 if __name__ == "__main__":
-    sc = SparkContext(master="local", appName="tile-test")
-    main(sc)
+    #ByteTileSchemaTest().test_encoded_tiles()
+    unittest.main()
