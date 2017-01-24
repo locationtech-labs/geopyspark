@@ -117,3 +117,15 @@ class FileCatalog(Catalog):
         self.reader = reader_factory.buildFile(self.store, sc._jsc.sc())
         writer_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
         self.writer = writer_factory.buildFile(self.store)
+
+
+class CassandraCatalog(Catalog):
+
+    def __init__(self, hosts, username, password, replicationStrategy, replicationFactor, localDc, usedHostsPerRemoteDc, allowRemoteDCsForLocalConsistencyLevel, attributeKeySpace, attributeTable, sc):
+        self.sc = sc
+        store_factory = sc._gateway.jvm.geopyspark.geotrellis.io.AttributeStoreFactory
+        self.store = store_factory.buildCassandra(hosts, username, password, replicationStrategy, replicationFactor, localDc, usedHostsPerRemoteDc, allowRemoteDCsForLocalConsistencyLevel, attributeKeySpace, attributeTable)
+        reader_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerReaderFactory
+        self.reader = reader_factory.buildCassandra(self.store, sc._jsc.sc())
+        writer_factory = sc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
+        self.writer = writer_factory.buildCassandra(self.store, attributeKeySpace, attributeTable)
