@@ -16,7 +16,7 @@ setup(
             'shapely>=1.6b3',
             'rasterio>=0.36.0'
             ],
-        packages=['geopyspark'],
+        packages=['geopyspark', 'geopyspark.geotrellis'],
         scripts=[],
         name='geopyspark'
         )
