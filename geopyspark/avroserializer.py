@@ -1,6 +1,11 @@
 from pyspark.serializers import Serializer, FramedSerializer
 from geopyspark.geotrellis_decoders import get_decoder
+<<<<<<< 700fe9b093d7ab3bc518e21bc99b85d6ce8c00c2
 from geopyspark.geotrellis_encoders import get_encoder
+=======
+from geopyspark.geotrellis_encoders import get_encoded_object
+from geopyspark.serialization_constants import COLLECTIONS
+>>>>>>> AvroSerializer now depends on geotrellis_encoders for serialization
 
 import io
 import avro
@@ -24,7 +29,10 @@ class AvroSerializer(FramedSerializer):
         self.custom_encoder = custom_encoder
 
         self._decoding_method = None
+<<<<<<< 700fe9b093d7ab3bc518e21bc99b85d6ce8c00c2
         self._encoding_method = None
+=======
+>>>>>>> AvroSerializer now depends on geotrellis_encoders for serialization
 
     def schema(self):
         return avro.schema.Parse(self._schema_json)
@@ -80,5 +88,7 @@ class AvroSerializer(FramedSerializer):
                     custom_decoder=self.custom_decoder)
 
         result = self._decoding_method(i)
+                    custom_name=self.custom_name,
+                    custom_decoder=self.custom_decoder)
 
         return [result]
