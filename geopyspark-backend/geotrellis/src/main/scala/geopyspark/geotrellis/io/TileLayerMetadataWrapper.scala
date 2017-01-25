@@ -1,12 +1,14 @@
 package geopyspark.geotrellis.io
 
+import scala.reflect.ClassTag
+
 import geotrellis.proj4._
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.vector._
 
 
-class TileLayerMetadataWrapper[K](private val _md: TileLayerMetadata[K]) {
+class TileLayerMetadataWrapper[K: ClassTag](private val _md: TileLayerMetadata[K]) {
 
   var TileLayerMetadata(cellType, layout, extent, crs, bounds) = _md
 
@@ -33,4 +35,13 @@ class TileLayerMetadataWrapper[K](private val _md: TileLayerMetadata[K]) {
   def get(): TileLayerMetadata[K] = {
     TileLayerMetadata[K](cellType, layout, extent, crs, bounds)
   }
+
+  def keyType(): String = {
+    implicitly[ClassTag[K]].toString match {
+      case "geotrellis.spark.SpatialKey" => "spatial"
+      case "geotrellis.spark.SpaceTimeKey" => "spacetime"
+      case _ => throw new Exception
+    }
+  }
+
 }
