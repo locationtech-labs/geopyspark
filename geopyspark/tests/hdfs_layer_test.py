@@ -23,4 +23,4 @@ if __name__ == "__main__":
     catalog = HadoopCatalog(uri, sc)
     (rdd, metadata) = catalog.query("spatial", "singleband", layer_name, layer_zoom, polygon)
     new_layer_name = layer_name + "-" + str(calendar.timegm(time.gmtime()))
-    catalog.write(new_layer_name, layer_zoom, rdd, metadata)
+    catalog.write(new_layer_name, layer_zoom, rdd, metadata, index_strategy="zorder")
