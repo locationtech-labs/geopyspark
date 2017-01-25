@@ -9,7 +9,7 @@ run-pyspark:
 	spark-submit \
 		--master "local[*]" \
 		--jars geopyspark-backend/geotrellis/target/scala-2.11/geotrellis-backend-assembly-0.1.0.jar \
-		geopyspark/tests/geotiff_rdd_io_test.py
+		geopyspark/tests/hadoop_geotiff_rdd_test.py
 
 run-all: install backend-assembly run-pyspark
 
