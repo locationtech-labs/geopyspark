@@ -1,4 +1,4 @@
-package geopyspark.geotrellis
+package geopyspark.geotrellis.tests.schemas
 
 import geotrellis.raster._
 import geotrellis.vector.Extent
@@ -21,7 +21,7 @@ object KeyValueRecordWrapper {
     toPython(testRdd(sc))
 
   def testIn(rdd: RDD[Array[Byte]], schema: String) =
-    fromPython(rdd, Some(schema)).foreach(println)
+    fromPython(rdd, Some(schema))
 
   def encodeRdd(rdd: RDD[Vector[(ByteArrayTile, Extent)]]): RDD[Array[Byte]] = {
     rdd.map { key => AvroEncoder.toBinary(key, deflate = false)(codec)

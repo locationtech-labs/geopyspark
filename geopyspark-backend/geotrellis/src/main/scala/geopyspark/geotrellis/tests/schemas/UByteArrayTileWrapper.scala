@@ -1,5 +1,6 @@
-package geopyspark.geotrellis
+package geopyspark.geotrellis.tests.schemas
 
+import geopyspark.geotrellis.testkit._
 import geotrellis.raster._
 import geotrellis.spark._
 
@@ -13,10 +14,6 @@ object UByteArrayTileWrapper extends Wrapper[UByteArrayTile] {
       UByteArrayTile(Array[Byte](0, 0, 1, 1), 2, 2),
       UByteArrayTile(Array[Byte](1, 2, 3, 4), 2, 2),
       UByteArrayTile(Array[Byte](5, 6, 7, 8), 2, 2))
-    println("\n\n\n")
-    println("THESE ARE THE ORIGINAL UBYTEARRAYTILES")
-    arr.foreach(println)
-    println("\n\n\n")
     sc.parallelize(arr)
   }
 }

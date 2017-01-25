@@ -1,7 +1,7 @@
-package geopyspark.geotrellis
+package geopyspark.geotrellis.tests.schemas
 
+import geopyspark.geotrellis.testkit._
 import geotrellis.spark._
-import geotrellis.spark.io._
 
 import org.apache.spark._
 import org.apache.spark.rdd.RDD

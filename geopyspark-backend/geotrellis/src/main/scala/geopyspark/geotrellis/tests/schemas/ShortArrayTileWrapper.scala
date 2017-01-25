@@ -1,5 +1,6 @@
-package geopyspark.geotrellis
+package geopyspark.geotrellis.tests.schemas
 
+import geopyspark.geotrellis.testkit._
 import geotrellis.raster._
 import geotrellis.spark._
 
@@ -13,11 +14,6 @@ object ShortArrayTileWrapper extends Wrapper[ShortArrayTile] {
       ShortArrayTile(Array[Short](0, 0, 1, 1), 2, 2),
       ShortArrayTile(Array[Short](1, 2, 3, 4), 2, 2),
       ShortArrayTile(Array[Short](5, 6, 7, 8), 2, 2))
-    println("\n\n\n")
-    println("THESE ARE THE ORIGINAL SHORTARRAYTILES")
-    arr.foreach(println)
-    println("\n\n\n")
     sc.parallelize(arr)
   }
 }
-

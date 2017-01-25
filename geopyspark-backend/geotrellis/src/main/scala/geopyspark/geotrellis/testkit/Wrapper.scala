@@ -1,20 +1,19 @@
-package geopyspark.geotrellis
+package geopyspark.geotrellis.testkit
 
+import geopyspark.geotrellis._
 import geotrellis.spark._
 import geotrellis.spark.io.avro._
 
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
-import org.apache.avro._
 
 import scala.reflect.ClassTag
 
 abstract class Wrapper[T: AvroRecordCodec: ClassTag] {
-  def testOut(sc: SparkContext) =
-    PythonTranslator.toPython(testRdd(sc))
+  def testOut(sc: SparkContext) = PythonTranslator.toPython(testRdd(sc))
 
   def testIn(rdd: RDD[Array[Byte]], schema: String) =
-    PythonTranslator.fromPython[T](rdd, Some(schema)).foreach(println)
+    PythonTranslator.fromPython[T](rdd, Some(schema))
 
   def testRdd(sc: SparkContext): RDD[T]
 
@@ -28,7 +27,5 @@ abstract class Wrapper[T: AvroRecordCodec: ClassTag] {
       }
     }
 
-  def keySchema: String = {
-    implicitly[AvroRecordCodec[T]].schema.toString
-  }
+  def keySchema: String = implicitly[AvroRecordCodec[T]].schema.toString
 }

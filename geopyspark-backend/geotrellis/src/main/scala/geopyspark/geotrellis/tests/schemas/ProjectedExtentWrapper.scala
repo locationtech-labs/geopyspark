@@ -1,4 +1,6 @@
-package geopyspark.geotrellis
+package geopyspark.geotrellis.tests.schemas
+
+import geopyspark.geotrellis.testkit._
 
 import geotrellis.proj4._
 import geotrellis.vector._
