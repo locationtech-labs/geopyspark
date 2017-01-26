@@ -5,7 +5,7 @@ from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSeriali
 from py4j.java_gateway import java_import
 from geopyspark.keys import SpatialKey, SpaceTimeKey
 from geopyspark.avroserializer import AvroSerializer
-from geopyspark.geotrellis_encoders import spatial_key_encoder, spacetime_key_encoder
+from geopyspark.geotrellis_encoders import GeoTrellisEncoder
 
 import unittest
 
@@ -35,7 +35,7 @@ class SpatialKeySchemaTest(KeySchemaTest):
 
     def test_encoded_skeys(self):
         (rdd, schema) = self.get_rdd()
-        encoded = rdd.map(lambda s: spatial_key_encoder(s))
+        encoded = rdd.map(lambda s: GeoTrellisEncoder().spatial_key_encoder(s))
 
         actual_encoded = encoded.collect()
 
@@ -78,7 +78,7 @@ class SpaceTimeKeySchemaTest(KeySchemaTest):
 
     def test_encoded_skeys(self):
         (rdd, schema) = self.get_rdd()
-        encoded = rdd.map(lambda s: spacetime_key_encoder(s))
+        encoded = rdd.map(lambda s: GeoTrellisEncoder().spacetime_key_encoder(s))
 
         actual_encoded = encoded.collect()
 
