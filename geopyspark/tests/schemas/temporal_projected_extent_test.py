@@ -6,7 +6,7 @@ from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.extent import Extent
 from geopyspark.temporal_projected_extent import TemporalProjectedExtent
-from geopyspark.geotrellis_encoders import temporal_projected_extent_encoder, extent_encoder
+from geopyspark.geotrellis_encoders import GeoTrellisEncoder
 
 import unittest
 
@@ -34,14 +34,17 @@ class TemporalProjectedExtentSchemaTest(unittest.TestCase):
 
     def test_encoded_tpextents(self):
         (rdd, schema) = self.get_rdd()
-        encoded = rdd.map(lambda s: temporal_projected_extent_encoder(s))
+
+        ge = GeoTrellisEncoder()
+
+        encoded = rdd.map(lambda s: ge.temporal_projected_extent_encoder(s))
 
         actual_encoded = encoded.collect()
 
         expected_encoded = [
-                {'instant': 0, 'epsg': 2004, 'extent': extent_encoder(self.extents[0])},
-                {'instant': 1, 'epsg': 2004, 'extent': extent_encoder(self.extents[1])},
-                {'instant': 2, 'epsg': 2004, 'extent': extent_encoder(self.extents[2])}
+                {'instant': 0, 'epsg': 2004, 'extent': ge.extent_encoder(self.extents[0])},
+                {'instant': 1, 'epsg': 2004, 'extent': ge.extent_encoder(self.extents[1])},
+                {'instant': 2, 'epsg': 2004, 'extent': ge.extent_encoder(self.extents[2])}
                 ]
 
         for actual, expected in zip(actual_encoded, expected_encoded):

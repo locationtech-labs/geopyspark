@@ -5,19 +5,9 @@ from geopyspark.avroserializer import AvroSerializer
 
 
 class HadoopGeoTiffRDD(object):
-    def __init__(self,
-            pysc,
-            custom_name=None,
-            custom_decoder=None,
-            custom_class=None,
-            custom_encoder=None):
+    def __init__(self, pysc):
 
         self.pysc = pysc
-        self.custom_name = custom_name,
-        self.custom_decoder = custom_decoder,
-        self.custom_class = custom_class,
-        self.custom_encoder = custom_encoder
-
         self._sc = self.pysc._jsc.sc()
 
         java_import(self.pysc._gateway.jvm,
@@ -25,12 +15,25 @@ class HadoopGeoTiffRDD(object):
 
         self._hadoop_wrapper = self.pysc._gateway.jvm.HadoopGeoTiffRDDWrapper
 
+        self.custom_class = None
+
+    def set_custom_class(self, custom_class):
+        self.custom_class = custom_class
+
     def _return_rdd(self, java_rdd, schema):
-        ser = AvroSerializer(schema,
-                self.custom_name,
-                self.custom_decoder,
-                self.custom_class,
-                self.custom_encoder)
+        if self.custom_class is None:
+            ser = AvroSerializer(schema)
+        else:
+            from geopyspark.geotrellis_decoders import GeoTrellisDecoder
+            from geopyspark.geotrellis_encoders import GeoTrellisEncoder
+
+            geotrellis_decoder = GeoTrellisDecoder(self.custom_class.name,
+                    self.custom_class.custom_decoder)
+
+            geotrellis_encoder = GeoTrellisEncoder(self.custom_class,
+                    self.custom_class.custom_encoder)
+
+            ser = AvroSerializer(schema, geotrellis_decoder, geotrellis_encoder)
 
         return RDD(java_rdd, self.pysc, AutoBatchedSerializer(ser))
 
