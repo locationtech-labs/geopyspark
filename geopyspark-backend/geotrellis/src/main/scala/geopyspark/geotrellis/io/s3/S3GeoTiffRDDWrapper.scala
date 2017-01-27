@@ -6,7 +6,7 @@ import geotrellis.proj4._
 import geotrellis.raster._
 import geotrellis.vector._
 import geotrellis.spark.io.s3._
-//import geotrellis.spark.io.avro._
+import geotrellis.spark.io.s3.testkit._
 
 import scala.collection.JavaConverters._
 import java.util.Map
@@ -22,7 +22,7 @@ object S3GeoTiffRDDOptions {
   def setValues(javaMap: java.util.Map[String, Any]): S3GeoTiffRDD.Options = {
     //TODO: Find a better way of creating Options from python
 
-    val stringValues = List("timeTag", "timeFormat")
+    val stringValues = List("timeTag", "timeFormat", "s3Client")
     val scalaMap = javaMap.asScala
 
     val intMap =
@@ -39,13 +39,26 @@ object S3GeoTiffRDDOptions {
       else
         None
 
+    val getS3Client: () => S3Client =
+      stringMap.get("s3Client") match {
+        case Some(client) =>
+          if (client == "default")
+            default.getS3Client
+          else if (client == "mock")
+            () => new MockS3Client
+          else
+            throw new Error(s"Could not find the given S3Client, $client")
+        case None => default.getS3Client
+      }
+
     S3GeoTiffRDD.Options(
       crs = crs,
       timeTag = stringMap.getOrElse("timeTag", default.timeTag),
       timeFormat = stringMap.getOrElse("timeFormat", default.timeFormat),
       maxTileSize = intMap.get("maxTileSize"),
       numPartitions = intMap.get("numPartitions"),
-      chunkSize = intMap.get("chunkSize"))
+      chunkSize = intMap.get("chunkSize"),
+      getS3Client = getS3Client)
   }
 }
 
