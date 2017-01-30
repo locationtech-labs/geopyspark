@@ -6,7 +6,7 @@ from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.extent import Extent
 from geopyspark.tile import TileArray
-from geopyspark.geotrellis_encoders import GeoTrellisEncoder
+from geopyspark.geotrellis_encoders import tile_encoder, extent_encoder, tuple_encoder
 
 import numpy as np
 import unittest
@@ -42,16 +42,13 @@ class TupleSchemaTest(unittest.TestCase):
     def test_encoded_tuples(self):
         (rdd, schema) = self.get_rdd()
 
-        ge = GeoTrellisEncoder()
-
-        encoded = rdd.map(lambda s: ge.tuple_encoder(s, ge.tile_encoder, ge.extent_encoder))
-
+        encoded = rdd.map(lambda s: tuple_encoder(s, tile_encoder, extent_encoder))
         actual_encoded = encoded.collect()
 
         expected_encoded = [
-                {'_1': ge.tile_encoder(self.arrs[0]), '_2': ge.extent_encoder(self.extents[0])},
-                {'_1': ge.tile_encoder(self.arrs[1]), '_2': ge.extent_encoder(self.extents[1])},
-                {'_1': ge.tile_encoder(self.arrs[2]), '_2': ge.extent_encoder(self.extents[2])}
+                {'_1': tile_encoder(self.arrs[0]), '_2': extent_encoder(self.extents[0])},
+                {'_1': tile_encoder(self.arrs[1]), '_2': extent_encoder(self.extents[1])},
+                {'_1': tile_encoder(self.arrs[2]), '_2': extent_encoder(self.extents[2])}
                 ]
 
         for actual, expected in zip(actual_encoded, expected_encoded):
