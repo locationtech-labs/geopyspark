@@ -45,7 +45,7 @@ object S3GeoTiffRDDOptions {
           if (client == "default")
             default.getS3Client
           else if (client == "mock")
-            () => new MockS3Client
+            () => new MockS3Client()
           else
             throw new Error(s"Could not find the given S3Client, $client")
         case None => default.getS3Client
