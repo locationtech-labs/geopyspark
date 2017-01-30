@@ -112,47 +112,47 @@ def key_value_record_encoder(obj):
 
     return datum
 
-def tuple_encoder_creator(self, obj):
+def tuple_encoder_creator(obj):
     (a, b) = obj
 
     encoder_1 = get_encoder(a)
     encoder_2 = get_encoder(b)
 
-    return partial(self.tuple_encoder,
+    return partial(tuple_encoder,
             encoder_1=encoder_1,
             encoder_2=encoder_2)
 
-def get_encoder(self, obj):
+def get_encoder(obj):
 
     if type(obj).__name__ in custom_encoders.keys():
         return custom_encoders[type(obj).__name__]
 
     elif isinstance(obj, list) and isinstance(obj[0], tuple):
-        return self.key_value_record_encoder
+        return key_value_record_encoder
 
     elif isinstance(obj, tuple):
-        return self.tuple_encoder_creator
+        return tuple_encoder_creator
 
     elif isinstance(obj, list):
-        return self.multiband_encoder
+        return multiband_encoder
 
     elif isinstance(obj, TileArray) or isinstance(obj, np.ndarray):
-        return self.tile_encoder
+        return tile_encoder
 
     elif isinstance(obj, Extent):
-        return self.extent_encoder
+        return extent_encoder
 
     elif isinstance(obj, ProjectedExtent):
-        return self.projected_extent_encoder
+        return projected_extent_encoder
 
     elif isinstance(obj, TemporalProjectedExtent):
-        return self.temporal_projected_extent_encoder
+        return temporal_projected_extent_encoder
 
     elif isinstance(obj, SpatialKey):
-        return self.spatial_key_encoder
+        return spatial_key_encoder
 
     elif isinstance(obj, SpaceTimeKey):
-        return self.spacetime_key_encoder
+        return spacetime_key_encoder
 
     else:
         raise Exception('Could not find encoder for', obj)
