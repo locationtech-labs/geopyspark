@@ -1,0 +1,94 @@
+from pyspark import SparkConf, SparkContext, RDD
+from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
+from py4j.java_gateway import java_import
+
+from geopyspark.extent import Extent
+from geopyspark.tile import TileArray
+from geopyspark.avroregistry import add_decoder, add_encoder
+
+from geopyspark.geotrellis_decoders import (
+        tuple_decoder,
+        tile_decoder,
+        extent_decoder,
+        get_decoder
+        )
+
+from geopyspark.geotrellis_encoders import (
+        tuple_encoder,
+        tile_encoder,
+        extent_encoder,
+        get_encoder
+        )
+
+import unittest
+import numpy as np
+
+
+class MyCustomClass(object):
+    def __init__(self, extents, tile):
+        self.extents = extents
+        self.tile = tile
+
+    @staticmethod
+    def decoding_method(i):
+        extents = tuple_decoder(i['extents'], extent_decoder, extent_decoder)
+        tile = tile_decoder(i['tile'])
+
+        return MyCustomClass(extents, tile)
+
+    @staticmethod
+    def encoding_method(obj):
+        extents = tuple_encoder(obj.extents, extent_encoder, extent_encoder)
+        tile = tile_encoder(obj.tile)
+
+        datum = {
+                'extents': extents,
+                'tile': tile
+                }
+
+        return datum
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+    def __ne__(self, other):
+        if isinstance(other, self.__class__):
+            return not self.__eq__(other)
+        return NotImplemented
+
+    def __repr__(self):
+        return "MyCustomClass(Extents: {}, Tile: {}".format(self.extents, self.tile)
+
+
+class TestCustomClass(unittest.TestCase):
+    e1 = Extent(0, 1, 2, 3)
+    e2 = Extent(4, 5, 6, 7)
+    tile = TileArray(np.array([0, 1, 2, 3, 4, 5]).reshape(2, 3), no_data_value=-5)
+
+    custom_cls = MyCustomClass((e1, e2), tile)
+    custom_cls_schema = custom_cls.encoding_method(custom_cls)
+
+    def test_encoding(self):
+        add_encoder(self.custom_cls, self.custom_cls.encoding_method)
+
+        encoder = get_encoder(self.custom_cls)
+        actual_encoded = encoder(self.custom_cls)
+        expected_encoded = self.custom_cls.encoding_method(self.custom_cls)
+
+        self.assertEqual(actual_encoded, expected_encoded)
+
+    def test_decoding(self):
+        add_decoder(self.custom_cls, self.custom_cls.decoding_method)
+
+        decoder = get_decoder('MyCustomClass', self.custom_cls_schema)
+        actual_decoded = decoder(self.custom_cls_schema)
+        expected_decoded = self.custom_cls.decoding_method(self.custom_cls_schema)
+
+        self.assertEqual(actual_decoded.extents, expected_decoded.extents)
+        self.assertTrue((actual_decoded.tile == expected_decoded.tile).all())
+
+
+if __name__ == "__main__":
+    unittest.main()
