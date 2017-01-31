@@ -4,7 +4,7 @@ from pyspark import SparkConf, SparkContext, RDD
 from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
-from geopyspark.geotrellis_encoders import tile_encoder
+from geopyspark.avroregistry import AvroRegistry
 from geopyspark.tile import TileArray
 
 import numpy as np
@@ -45,7 +45,7 @@ class ShortTileSchemaTest(TileSchemaTest):
 
     def test_encoded_tiles(self):
         (rdd, schema) = self.get_rdd()
-        encoded = rdd.map(lambda s: tile_encoder(s))
+        encoded = rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
         actual_encoded = encoded.collect()
 
@@ -93,7 +93,7 @@ class UShortTileSchemaTest(TileSchemaTest):
 
     def test_encoded_tiles(self):
         (rdd, schema) = self.get_rdd()
-        encoded = rdd.map(lambda s: tile_encoder(s))
+        encoded = rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
         actual_encoded = encoded.collect()
 
@@ -141,7 +141,7 @@ class ByteTileSchemaTest(TileSchemaTest):
 
     def test_encoded_tiles(self):
         (rdd, schema) = self.get_rdd()
-        encoded = rdd.map(lambda s: tile_encoder(s))
+        encoded = rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
         actual_encoded = encoded.collect()
 
@@ -189,7 +189,7 @@ class UByteTileSchemaTest(TileSchemaTest):
 
     def test_encoded_tiles(self):
         (rdd, schema) = self.get_rdd()
-        encoded = rdd.map(lambda s: tile_encoder(s))
+        encoded = rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
         actual_encoded = encoded.collect()
 
@@ -237,7 +237,7 @@ class IntTileSchemaTest(TileSchemaTest):
 
     def test_encoded_tiles(self):
         (rdd, schema) = self.get_rdd()
-        encoded = rdd.map(lambda s: tile_encoder(s))
+        encoded = rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
         actual_encoded = encoded.collect()
 
@@ -285,7 +285,7 @@ class DoubleTileSchemaTest(TileSchemaTest):
 
     def test_encoded_tiles(self):
         (rdd, schema) = self.get_rdd()
-        encoded = rdd.map(lambda s: tile_encoder(s))
+        encoded = rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
         actual_encoded = encoded.collect()
 
@@ -333,7 +333,7 @@ class FloatTileSchemaTest(TileSchemaTest):
 
     def test_encoded_tiles(self):
         (rdd, schema) = self.get_rdd()
-        encoded = rdd.map(lambda s: tile_encoder(s))
+        encoded = rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
         actual_encoded = encoded.collect()
 

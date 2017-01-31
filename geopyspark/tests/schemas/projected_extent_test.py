@@ -6,7 +6,7 @@ from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.extent import Extent
 from geopyspark.projected_extent import ProjectedExtent
-from geopyspark.geotrellis_encoders import projected_extent_encoder, extent_encoder
+from geopyspark.avroregistry import AvroRegistry
 
 import unittest
 
@@ -35,13 +35,13 @@ class ProjectedExtentSchemaTest(unittest.TestCase):
     def test_encoded_pextents(self):
         (rdd, schema) = self.get_rdd()
 
-        encoded = rdd.map(lambda s: projected_extent_encoder(s))
+        encoded = rdd.map(lambda s: AvroRegistry.projected_extent_encoder(s))
         actual_encoded = encoded.collect()
 
         expected_encoded = [
-                {'epsg': 2004, 'extent': extent_encoder(self.extents[0])},
-                {'epsg': 2004, 'extent': extent_encoder(self.extents[1])},
-                {'epsg': 2004, 'extent': extent_encoder(self.extents[2])}
+                {'epsg': 2004, 'extent': AvroRegistry.extent_encoder(self.extents[0])},
+                {'epsg': 2004, 'extent': AvroRegistry.extent_encoder(self.extents[1])},
+                {'epsg': 2004, 'extent': AvroRegistry.extent_encoder(self.extents[2])}
                 ]
 
         for actual, expected in zip(actual_encoded, expected_encoded):

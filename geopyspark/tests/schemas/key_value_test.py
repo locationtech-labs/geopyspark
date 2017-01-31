@@ -6,11 +6,7 @@ from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.extent import Extent
 from geopyspark.tile import TileArray
-from geopyspark.geotrellis_encoders import (
-        key_value_record_encoder,
-        tuple_encoder,
-        extent_encoder,
-        tile_encoder)
+from geopyspark.avroregistry import AvroRegistry
 
 import numpy as np
 import unittest
@@ -52,11 +48,13 @@ class KeyValueRecordSchemaTest(unittest.TestCase):
     def test_encoded_kvs(self):
         (rdd, schema) = self.get_rdd()
 
-        encoded = rdd.map(lambda s: key_value_record_encoder(s))
+        encoded = rdd.map(lambda s: AvroRegistry().key_value_record_encoder(s))
 
         actual_encoded = encoded.collect()
 
-        pairs = [tuple_encoder(x, tile_encoder, extent_encoder) for x in self.tuple_list]
+        pairs = [AvroRegistry.tuple_encoder(x,
+            AvroRegistry.tile_encoder,
+            AvroRegistry.extent_encoder) for x in self.tuple_list]
 
         expected_encoded = [
                 {'pairs': pairs},

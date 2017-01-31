@@ -4,21 +4,7 @@ from py4j.java_gateway import java_import
 
 from geopyspark.extent import Extent
 from geopyspark.tile import TileArray
-from geopyspark.avroregistry import add_decoder, add_encoder
-
-from geopyspark.geotrellis_decoders import (
-        tuple_decoder,
-        tile_decoder,
-        extent_decoder,
-        get_decoder
-        )
-
-from geopyspark.geotrellis_encoders import (
-        tuple_encoder,
-        tile_encoder,
-        extent_encoder,
-        get_encoder
-        )
+from geopyspark.avroregistry import AvroRegistry
 
 import unittest
 import numpy as np
@@ -31,15 +17,21 @@ class MyCustomClass(object):
 
     @staticmethod
     def decoding_method(i):
-        extents = tuple_decoder(i['extents'], extent_decoder, extent_decoder)
-        tile = tile_decoder(i['tile'])
+        extents = AvroRegistry.tuple_decoder(i['extents'],
+                AvroRegistry.extent_decoder,
+                AvroRegistry.extent_decoder)
+
+        tile = AvroRegistry.tile_decoder(i['tile'])
 
         return MyCustomClass(extents, tile)
 
     @staticmethod
     def encoding_method(obj):
-        extents = tuple_encoder(obj.extents, extent_encoder, extent_encoder)
-        tile = tile_encoder(obj.tile)
+        extents = AvroRegistry.tuple_encoder(obj.extents,
+                AvroRegistry.extent_encoder,
+                AvroRegistry.extent_encoder)
+
+        tile = AvroRegistry.tile_encoder(obj.tile)
 
         datum = {
                 'extents': extents,
@@ -70,19 +62,21 @@ class TestCustomClass(unittest.TestCase):
     custom_cls = MyCustomClass((e1, e2), tile)
     custom_cls_schema = custom_cls.encoding_method(custom_cls)
 
-    def test_encoding(self):
-        add_encoder(self.custom_cls, self.custom_cls.encoding_method)
+    ar = AvroRegistry()
 
-        encoder = get_encoder(self.custom_cls)
+    def test_encoding(self):
+        self.ar.add_encoder(self.custom_cls, self.custom_cls.encoding_method)
+
+        encoder = self.ar.get_encoder(self.custom_cls)
         actual_encoded = encoder(self.custom_cls)
         expected_encoded = self.custom_cls.encoding_method(self.custom_cls)
 
         self.assertEqual(actual_encoded, expected_encoded)
 
     def test_decoding(self):
-        add_decoder(self.custom_cls, self.custom_cls.decoding_method)
+        self.ar.add_decoder(self.custom_cls, self.custom_cls.decoding_method)
 
-        decoder = get_decoder('MyCustomClass', self.custom_cls_schema)
+        decoder = self.ar.get_decoder('MyCustomClass', self.custom_cls_schema)
         actual_decoded = decoder(self.custom_cls_schema)
         expected_decoded = self.custom_cls.decoding_method(self.custom_cls_schema)
 
