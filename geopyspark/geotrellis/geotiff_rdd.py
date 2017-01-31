@@ -5,23 +5,8 @@ from geopyspark.avroserializer import AvroSerializer
 
 
 class GeoTiffRDD:
-    def set_custom_class(self, custom_class):
-        self.custom_class = custom_class
-
-    def _decode_java_rdd(self, java_rdd, schema):
-        if self.custom_class is None:
-            ser = AvroSerializer(schema)
-        else:
-            from geopyspark.geotrellis_decoders import GeoTrellisDecoder
-            from geopyspark.geotrellis_encoders import GeoTrellisEncoder
-
-            geotrellis_decoder = GeoTrellisDecoder(self.custom_class.name,
-                    self.custom_class.custom_decoder)
-
-            geotrellis_encoder = GeoTrellisEncoder(self.custom_class,
-                    self.custom_class.custom_encoder)
-
-            ser = AvroSerializer(schema, geotrellis_decoder, geotrellis_encoder)
+    def _return_rdd(self, java_rdd, schema):
+        ser = AvroSerializer(schema)
 
         return RDD(java_rdd, self.pysc, AutoBatchedSerializer(ser))
 
@@ -36,8 +21,6 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
                 "geopyspark.geotrellis.io.hadoop.HadoopGeoTiffRDDWrapper")
 
         self._hadoop_wrapper = self.pysc._gateway.jvm.HadoopGeoTiffRDDWrapper
-
-        self.custom_class = None
 
     def get_spatial(self, path, options=None):
         if options is None:
@@ -82,8 +65,6 @@ class S3GeoTiffRDD(GeoTiffRDD):
                 "geopyspark.geotrellis.io.s3.S3GeoTiffRDDWrapper")
 
         self._s3_wrapper = self.pysc._gateway.jvm.S3GeoTiffRDDWrapper
-
-        self.custom_class = None
 
     def get_spatial(self, bucket, prefix, options=None):
         if options is None:
