@@ -108,7 +108,7 @@ def tuple_decoder_creator(schema_dict):
 def get_decoder(name, schema_dict):
 
     if name in custom_decoders.keys():
-        return custom_decoder[name]
+        return custom_decoders[name]
 
     elif name == KEYVALUERECORD:
         return partial(key_value_record_decoder,

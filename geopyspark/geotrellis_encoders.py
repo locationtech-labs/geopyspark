@@ -131,7 +131,7 @@ def get_encoder(obj):
         return key_value_record_encoder
 
     elif isinstance(obj, tuple):
-        return tuple_encoder_creator
+        return tuple_encoder_creator(obj)
 
     elif isinstance(obj, list):
         return multiband_encoder
