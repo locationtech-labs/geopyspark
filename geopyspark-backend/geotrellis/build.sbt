@@ -11,6 +11,7 @@ libraryDependencies ++= Seq(
   "org.locationtech.geotrellis" %% "geotrellis-cassandra" % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-hbase"     % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-s3"        % Version.geotrellis,
+  "org.locationtech.geotrellis" %% "geotrellis-s3-testkit"        % "1.0.0",
   "org.locationtech.geotrellis" %% "geotrellis-spark"     % Version.geotrellis
 )
 

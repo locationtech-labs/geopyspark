@@ -1,7 +1,7 @@
 #!/bin/env python3
 
 from pyspark import SparkContext
-from geopyspark.geotrellis.hadoop_geotiff_rdd import HadoopGeoTiffRDD
+from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
 from python_test_utils import *
 from os import walk, path
 
