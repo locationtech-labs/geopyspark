@@ -30,33 +30,33 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
 
     def get_spatial(self, path, options=None):
         if options is None:
-            result = self._hadoop_wrapper.spatial(path, self._sc)
+            result = self._hadoop_wrapper.readSpatialSingleband(path, self._sc)
         else:
-            result = self._hadoop_wrapper.spatial(path, options, self._sc)
+            result = self._hadoop_wrapper.readSpatialSingleband(path, options, self._sc)
 
         return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
 
     def get_spatial_multiband(self, path, options=None):
         if options is None:
-            result = self._hadoop_wrapper.spatialMultiband(path, self._sc)
+            result = self._hadoop_wrapper.readSpatialMultiband(path, self._sc)
         else:
-            result = self._hadoop_wrapper.spatialMultiband(path, options, self._sc)
+            result = self._hadoop_wrapper.readSpatialMultiband(path, options, self._sc)
 
         return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
 
-    def get_temporal(self, path, options=None):
+    def get_spacetime(self, path, options=None):
         if options is None:
-            result = self._hadoop_wrapper.temporal(path, self._sc)
+            result = self._hadoop_wrapper.readSpaceTimeSingleband(path, self._sc)
         else:
-            result = self._hadoop_wrapper.temporal(path, options, self._sc)
+            result = self._hadoop_wrapper.readSpaceTimeSingleband(path, options, self._sc)
 
         return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
 
-    def get_temporal_multiband(self, path, options=None):
+    def get_spacetime_multiband(self, path, options=None):
         if options is None:
-            result = self._hadoop_wrapper.temporalMultiband(path, self._sc)
+            result = self._hadoop_wrapper.readSpaceTimeMultiband(path, self._sc)
         else:
-            result = self._hadoop_wrapper.temporalMultiband(path, options, self._sc)
+            result = self._hadoop_wrapper.readSpaceTimeMultiband(path, options, self._sc)
 
         return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
 
@@ -76,32 +76,32 @@ class S3GeoTiffRDD(GeoTiffRDD):
 
     def get_spatial(self, bucket, prefix, options=None):
         if options is None:
-            result = self._s3_wrapper.spatial(bucket, prefix, self._sc)
+            result = self._s3_wrapper.readSpatialSingleband(bucket, prefix, self._sc)
         else:
-            result = self._s3_wrapper.spatial(bucket, prefix, options, self._sc)
+            result = self._s3_wrapper.readSpatialSingleband(bucket, prefix, options, self._sc)
 
         return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
 
     def get_spatial_multiband(self, bucket, prefix, options=None):
         if options is None:
-            result = self._s3_wrapper.spatialMultiband(bucket, prefix, self._sc)
+            result = self._s3_wrapper.readSpatialMultiband(bucket, prefix, self._sc)
         else:
-            result = self._s3_wrapper.spatialMultiband(bucket, prefix, options, self._sc)
+            result = self._s3_wrapper.readSpatialMultiband(bucket, prefix, options, self._sc)
 
         return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
 
-    def get_temporal(self, bucket, prefix, options=None):
+    def get_spacetime(self, bucket, prefix, options=None):
         if options is None:
-            result = self._s3_wrapper.temporal(bucket, prefix, self._sc)
+            result = self._s3_wrapper.readSpaceTimeSingleband(bucket, prefix, self._sc)
         else:
-            result = self._s3_wrapper.temporal(bucket, prefix, options, self._sc)
+            result = self._s3_wrapper.readSpaceTimeSingleband(bucket, prefix, options, self._sc)
 
         return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
 
-    def get_temporal_multiband(self, bucket, prefix, options=None):
+    def get_spacetime_multiband(self, bucket, prefix, options=None):
         if options is None:
-            result = self._s3_wrapper.temporalMultiband(bucket, prefix, self._sc)
+            result = self._s3_wrapper.readSpaceTimeMultiband(bucket, prefix, self._sc)
         else:
-            result = self._s3_wrapper.temporalMultiband(bucket, prefix, options, self._sc)
+            result = self._s3_wrapper.readSpaceTimeMultiband(bucket, prefix, options, self._sc)
 
         return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)

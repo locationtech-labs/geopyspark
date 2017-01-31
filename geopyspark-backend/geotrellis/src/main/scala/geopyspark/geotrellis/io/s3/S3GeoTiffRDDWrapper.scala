@@ -64,13 +64,13 @@ object S3GeoTiffRDDOptions {
 
 
 object S3GeoTiffRDDWrapper {
-  def spatial(
+  def readSpatialSingleband(
     bucket: String,
     prefix: String,
     sc: SparkContext): (JavaRDD[Array[Byte]], String) =
       PythonTranslator.toPython(S3GeoTiffRDD.spatial(bucket, prefix)(sc))
 
-  def spatial(bucket: String,
+  def readSpatialSingleband(bucket: String,
     prefix: String,
     options: java.util.Map[String, Any],
     sc: SparkContext): (JavaRDD[Array[Byte]], String) = {
@@ -79,13 +79,13 @@ object S3GeoTiffRDDWrapper {
       PythonTranslator.toPython(S3GeoTiffRDD.spatial(bucket, prefix, s3Options)(sc))
   }
 
-  def spatialMultiband(
+  def readSpatialMultiband(
     bucket: String,
     prefix: String,
     sc: SparkContext): (JavaRDD[Array[Byte]], String) =
       PythonTranslator.toPython(S3GeoTiffRDD.spatialMultiband(bucket, prefix)(sc))
 
-  def spatialMultiband(
+  def readSpatialMultiband(
     bucket: String,
     prefix: String,
     options: java.util.Map[String, Any],
@@ -95,13 +95,13 @@ object S3GeoTiffRDDWrapper {
       PythonTranslator.toPython(S3GeoTiffRDD.spatialMultiband(bucket, prefix, s3Options)(sc))
   }
 
-  def temporal(
+  def readSpaceTimeSingleband(
     bucket: String,
     prefix: String,
     sc: SparkContext): (JavaRDD[Array[Byte]], String) =
       PythonTranslator.toPython(S3GeoTiffRDD.temporal(bucket, prefix)(sc))
 
-  def temporal(
+  def readSpaceTimeSingleband(
     bucket: String,
     prefix: String,
     options: java.util.Map[String, Any],
@@ -111,13 +111,13 @@ object S3GeoTiffRDDWrapper {
       PythonTranslator.toPython(S3GeoTiffRDD.temporal(bucket, prefix, s3Options)(sc))
   }
 
-  def temporalMultiband(
+  def readSpaceTimeMultiband(
     bucket: String,
     prefix: String,
     sc: SparkContext): (JavaRDD[Array[Byte]], String) =
       PythonTranslator.toPython(S3GeoTiffRDD.temporalMultiband(bucket, prefix)(sc))
 
-  def temporalMultiband(
+  def readSpaceTimeMultiband(
     bucket: String,
     prefix: String,
     options: java.util.Map[String, Any],
