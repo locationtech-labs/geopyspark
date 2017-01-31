@@ -8,7 +8,7 @@ class GeoTiffRDD:
     def set_custom_class(self, custom_class):
         self.custom_class = custom_class
 
-    def _return_rdd(self, java_rdd, schema):
+    def _decode_java_rdd(self, java_rdd, schema):
         if self.custom_class is None:
             ser = AvroSerializer(schema)
         else:
@@ -45,7 +45,7 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
         else:
             result = self._hadoop_wrapper.spatial(path, options, self._sc)
 
-        return self._return_rdd(result._1(), result._2())
+        return self._decode_java_rdd(result._1(), result._2())
 
     def get_spatial_multiband(self, path, options=None):
         if options is None:
@@ -53,7 +53,7 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
         else:
             result = self._hadoop_wrapper.spatialMultiband(path, options, self._sc)
 
-        return self._return_rdd(result._1(), result._2())
+        return self._decode_java_rdd(result._1(), result._2())
 
     def get_temporal(self, path, options=None):
         if options is None:
@@ -61,7 +61,7 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
         else:
             result = self._hadoop_wrapper.temporal(path, options, self._sc)
 
-        return self._return_rdd(result._1(), result._2())
+        return self._decode_java_rdd(result._1(), result._2())
 
     def get_temporal_multiband(self, path, options=None):
         if options is None:
@@ -69,7 +69,7 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
         else:
             result = self._hadoop_wrapper.temporalMultiband(path, options, self._sc)
 
-        return self._return_rdd(result._1(), result._2())
+        return self._decode_java_rdd(result._1(), result._2())
 
 
 class S3GeoTiffRDD(GeoTiffRDD):
@@ -91,7 +91,7 @@ class S3GeoTiffRDD(GeoTiffRDD):
         else:
             result = self._s3_wrapper.spatial(bucket, prefix, options, self._sc)
 
-        return self._return_rdd(result._1(), result._2())
+        return self._decode_java_rdd(result._1(), result._2())
 
     def get_spatial_multiband(self, bucket, prefix, options=None):
         if options is None:
@@ -99,7 +99,7 @@ class S3GeoTiffRDD(GeoTiffRDD):
         else:
             result = self._s3_wrapper.spatialMultiband(bucket, prefix, options, self._sc)
 
-        return self._return_rdd(result._1(), result._2())
+        return self._decode_java_rdd(result._1(), result._2())
 
     def get_temporal(self, bucket, prefix, options=None):
         if options is None:
@@ -107,7 +107,7 @@ class S3GeoTiffRDD(GeoTiffRDD):
         else:
             result = self._s3_wrapper.temporal(bucket, prefix, options, self._sc)
 
-        return self._return_rdd(result._1(), result._2())
+        return self._decode_java_rdd(result._1(), result._2())
 
     def get_temporal_multiband(self, bucket, prefix, options=None):
         if options is None:
@@ -115,4 +115,4 @@ class S3GeoTiffRDD(GeoTiffRDD):
         else:
             result = self._s3_wrapper.temporalMultiband(bucket, prefix, options, self._sc)
 
-        return self._return_rdd(result._1(), result._2())
+        return self._decode_java_rdd(result._1(), result._2())
