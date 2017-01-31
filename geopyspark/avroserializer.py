@@ -1,6 +1,5 @@
 from pyspark.serializers import Serializer, FramedSerializer
-from geopyspark.geotrellis_decoders import get_decoder
-from geopyspark.geotrellis_encoders import get_encoder
+from geopyspark.avroregistry import AvroRegistry
 
 import io
 import avro
@@ -8,9 +7,12 @@ import avro.io
 
 
 class AvroSerializer(FramedSerializer):
-    def __init__(self, schema_json):
+    def __init__(self,
+            schema_json,
+            avroregistry=AvroRegistry()):
 
         self._schema_json = schema_json
+        self.avroregistry = avroregistry
 
         self._decoding_method = None
         self._encoding_method = None
@@ -45,7 +47,7 @@ class AvroSerializer(FramedSerializer):
         encoder = avro.io.BinaryEncoder(bytes_writer)
 
         if self._encoding_method is None:
-            self._encoding_method = get_encoder(obj)
+            self._encoding_method = self.avroregistry.get_encoder(obj)
 
         datum = self._encoding_method(obj)
         writer.write(datum, encoder)
@@ -61,7 +63,7 @@ class AvroSerializer(FramedSerializer):
         i = self.reader().read(decoder)
 
         if self._decoding_method is None:
-            self._decoding_method = get_decoder(name=self.schema_name(),
+            self._decoding_method = self.avroregistry.get_decoder(name=self.schema_name(),
                     schema_dict=self.schema_dict())
 
         result = self._decoding_method(i)
