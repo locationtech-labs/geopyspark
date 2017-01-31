@@ -2,8 +2,8 @@ from pyspark import SparkConf, SparkContext, RDD
 from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
 from py4j.java_gateway import java_import
 
-from geopyspark.extent import Extent
-from geopyspark.tile import TileArray
+from geopyspark.geotrellis.extent import Extent
+from geopyspark.geotrellis.tile import TileArray
 from geopyspark.avroregistry import AvroRegistry
 
 import unittest

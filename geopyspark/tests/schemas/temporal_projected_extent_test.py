@@ -1,11 +1,9 @@
-#!/bin/env python3
-
 from pyspark import SparkConf, SparkContext, RDD
 from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
-from geopyspark.extent import Extent
-from geopyspark.temporal_projected_extent import TemporalProjectedExtent
+from geopyspark.geotrellis.extent import Extent
+from geopyspark.geotrellis.temporal_projected_extent import TemporalProjectedExtent
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.avroregistry import AvroRegistry
 
