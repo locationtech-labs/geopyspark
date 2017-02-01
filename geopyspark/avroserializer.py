@@ -9,10 +9,14 @@ import avro.io
 class AvroSerializer(FramedSerializer):
     def __init__(self,
             schema_json,
-            avroregistry=AvroRegistry()):
+            avroregistry=None):
 
         self._schema_json = schema_json
-        self.avroregistry = avroregistry
+
+        if avroregistry is None:
+            self.avroregistry = avroregistry
+        else:
+            self.avroregistry = AvroRegistry()
 
         self._decoding_method = None
         self._encoding_method = None
