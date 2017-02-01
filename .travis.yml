@@ -1,0 +1,41 @@
+language: python
+
+python:
+  - "3.2"
+  - "3.3"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+
+branches:
+  only:
+    travis
+
+addons:
+  apt:
+    packages:
+      - gdal-bin
+      - libproj-dev
+      - libhdf5-serial-dev
+      - libpng12-dev
+      - libgdal-dev
+      - libatlas-dev
+      - libatlas-base-dev
+      - gfortran
+      - oracle-java8-set-default
+
+install:
+  - pip3 install -r requirements.txt
+  - pip3 install .
+
+notifications:
+  email:
+    recipients:
+      - jbouffard@azavea.com
+
+script:
+  - "wget http://apache.mirrors.pair.com/spark/spark-2.1.0/spark-2.1.0-bin-hadoop2.7.tgz"
+  - "tar -xvf spark-2.1.0-bin-hadoop2.7.tgz"
+  - "export SPARK_HOME=./spark-2.1.0-bin-hadoop2.7/"
+  - cd geopyspark-backend && ./sbt "project geotrellis-backend" assembly
+  - cd .. && pytest -s geopyspark/tests/hadoop_geotiff_rdd_test.py

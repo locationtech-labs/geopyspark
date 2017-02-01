@@ -21,6 +21,8 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
         self.pysc = pysc
         self.avroregistry = avroregistry
 
+        print(self.pysc)
+
         self._sc = self.pysc._jsc.sc()
 
         java_import(self.pysc._gateway.jvm,
@@ -30,6 +32,9 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
 
     def get_spatial(self, path, options=None):
         if options is None:
+            #print(self, options, path, self.pysc)
+            #print(self._hadoop_wrapper)
+            #print(self._hadoop_wrapper.readSpatialSingleband)
             result = self._hadoop_wrapper.readSpatialSingleband(path, self._sc)
         else:
             result = self._hadoop_wrapper.readSpatialSingleband(path, options, self._sc)

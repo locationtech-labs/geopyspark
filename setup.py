@@ -17,7 +17,8 @@ setup(
             'avro-python3>=1.8',
             'numpy>=1',
             'shapely>=1.6b3',
-            'rasterio>=0.36.0'
+            'rasterio>=0.36.0',
+            'py4j>=0.10.4'
             ],
         packages=['geopyspark', 'geopyspark.geotrellis', 'geopyspark.tests'],
         scripts=[],

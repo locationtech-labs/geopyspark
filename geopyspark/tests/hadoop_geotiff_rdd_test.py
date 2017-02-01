@@ -1,22 +1,24 @@
 #!/bin/env python3
 
+from .python_test_utils import *
+add_spark_path()
 from pyspark import SparkContext
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
-from python_test_utils import *
 from os import walk, path
 
 import rasterio
 import unittest
 
-
 class GeoTiffIOTest(unittest.TestCase):
-    pysc = SparkContext(master="local", appName="hadoop-geotiff-test")
 
-    hadoop_geotiff = HadoopGeoTiffRDD(pysc)
+    options = {'maxTileSize': 256}
 
-    options = {
-            'maxTileSize': 256,
-            }
+    def setUp(self):
+        self.pysc = SparkContext(master="local", appName="hadoop-geotiff-test")
+        self.hadoop_geotiff = HadoopGeoTiffRDD(self.pysc)
+
+    def tearDown(self):
+        self.pysc.stop()
 
     def get_filepaths(self, dir_path):
         files = []
@@ -46,7 +48,7 @@ class GeoTiffIOTest(unittest.TestCase):
 
 
 class Singleband(GeoTiffIOTest):
-    dir_path = test_path("one-month-tiles/")
+    dir_path = tst_path("one-month-tiles/")
 
     def read_singleband_geotrellis(self, options=None):
         if options is None:
@@ -57,7 +59,6 @@ class Singleband(GeoTiffIOTest):
         return [tile[1] for tile in result.collect()]
 
     def test_whole_tiles(self):
-
         geotrellis_tiles = self.read_singleband_geotrellis()
 
         file_paths = self.get_filepaths(self.dir_path)
@@ -82,7 +83,7 @@ class Singleband(GeoTiffIOTest):
 
 
 class Multiband(GeoTiffIOTest):
-    dir_path = test_path("one-month-tiles-multiband/")
+    dir_path = tst_path("one-month-tiles-multiband/")
 
     def read_multiband_geotrellis(self, options=None):
         if options is None:
