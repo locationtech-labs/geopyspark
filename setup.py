@@ -19,7 +19,7 @@ setup(
             'shapely>=1.6b3',
             'rasterio>=0.36.0'
             ],
-        packages=['geopyspark', 'geopyspark.geotrellis'],
+        packages=['geopyspark', 'geopyspark.geotrellis', 'geopyspark.tests'],
         scripts=[],
         classifiers=[
             'Development Status :: 2 - Pre-Alpha',
