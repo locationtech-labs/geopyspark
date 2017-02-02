@@ -5,7 +5,7 @@ from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSeriali
 from py4j.java_gateway import java_import
 from geopyspark.extent import Extent
 from geopyspark.avroserializer import AvroSerializer
-from geopyspark.geotrellis_encoders import GeoTrellisEncoder
+from geopyspark.avroregistry import AvroRegistry
 
 import unittest
 
@@ -31,8 +31,8 @@ class ExtentSchemaTest(unittest.TestCase):
 
     def test_encoded_extents(self):
         (rdd, schema) = self.get_rdd()
-        encoded = rdd.map(lambda s: GeoTrellisEncoder().extent_encoder(s))
 
+        encoded = rdd.map(lambda s: AvroRegistry.extent_encoder(s))
         actual_encoded = encoded.collect()
 
         expected_encoded = [

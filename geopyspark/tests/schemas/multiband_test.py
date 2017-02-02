@@ -5,7 +5,7 @@ from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSeriali
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.tile import TileArray
-from geopyspark.geotrellis_encoders import GeoTrellisEncoder
+from geopyspark.avroregistry import AvroRegistry
 
 import numpy as np
 import unittest
@@ -36,16 +36,13 @@ class MultibandSchemaTest(unittest.TestCase):
     def test_encoded_multibands(self):
         (rdd, schema) = self.get_rdd()
 
-        ge = GeoTrellisEncoder()
-
-        encoded = rdd.map(lambda s: ge.multiband_encoder(s))
-
+        encoded = rdd.map(lambda s: AvroRegistry.multiband_encoder(s))
         actual_encoded = encoded.collect()
 
         expected_encoded = [
-                {'bands': [ge.tile_encoder(x) for x in self.multiband_tile]},
-                {'bands': [ge.tile_encoder(x) for x in self.multiband_tile]},
-                {'bands': [ge.tile_encoder(x) for x in self.multiband_tile]},
+                {'bands': [AvroRegistry.tile_encoder(x) for x in self.multiband_tile]},
+                {'bands': [AvroRegistry.tile_encoder(x) for x in self.multiband_tile]},
+                {'bands': [AvroRegistry.tile_encoder(x) for x in self.multiband_tile]},
                 ]
 
         for actual, expected in zip(actual_encoded, expected_encoded):
