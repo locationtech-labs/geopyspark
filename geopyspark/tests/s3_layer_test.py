@@ -1,5 +1,8 @@
 #!/bin/env python3
 
+ # TODO: Make this work under new test framework
+
+'''
 import sys
 import calendar
 import time
@@ -35,3 +38,4 @@ if __name__ == "__main__":
     (rdd, metadata) = catalog.query("spatial", "singleband", layer_name, layer_zoom, polygon)
     print(rdd.take(1))
     print(rdd.count())
+'''

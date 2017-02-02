@@ -8,21 +8,18 @@ import logging
 import sys
 
 
-
 def add_spark_path():
-    jar_path = "geopyspark-backend/geotrellis/target/scala-2.11/geotrellis-backend-assembly-0.1.0.jar"
-    if not os.path.isfile(jar_path):
-        raise Exception("HEY THIS DOESN'T EXIST!!!!!!!!!!!!!!")
-    os.environ["PYSPARK_PYTHON"] = "python3"
-    os.environ["PYSPARK_DRIVER_PYTHON"] = "python3"
-    os.environ["PYSPARK_SUBMIT_ARGS"] = "--jars {} \
-            --driver-class-path {} \
-            pyspark-shell".format(jar_path, jar_path)
     spark_home = os.environ['SPARK_HOME']
     sys.path.append(os.path.join(spark_home, 'python'))
 
-def tst_path(string):
-    return "".join(["geopyspark/tests/data_files/geotiff_test_files/", string])
+def geotiff_test_path(file_test_path):
+    root_geotiff_dir = "geopyspark/tests/data_files/geotiff_test_files/"
+    result = os.path.abspath(os.path.join(root_geotiff_dir, file_test_path))
+
+    if not os.path.exists(result):
+        raise Exception('The resulting file does not exists {}'.format(result))
+
+    return result
 
 def check_directory():
     test_path = "geopyspark/tests/data_files/geotiff_test_files/"

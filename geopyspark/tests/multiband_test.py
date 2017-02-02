@@ -1,5 +1,8 @@
-from pyspark import SparkConf, SparkContext, RDD
-from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
+from geopyspark.tests.python_test_utils import add_spark_path
+add_spark_path()
+
+from pyspark import SparkContext, RDD
+from pyspark.serializers import AutoBatchedSerializer
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.geotrellis.tile import TileArray
@@ -7,14 +10,23 @@ from geopyspark.avroregistry import AvroRegistry
 
 import numpy as np
 import unittest
+import pytest
+
 
 class MultibandSchemaTest(unittest.TestCase):
-    pysc = SparkContext(master="local", appName="multibandtile-test")
-    path = "geopyspark.geotrellis.tests.schemas.ArrayMultibandTileWrapper"
-    java_import(pysc._gateway.jvm, path)
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="multibandtile-test")
+        self.path = "geopyspark.geotrellis.tests.schemas.ArrayMultibandTileWrapper"
+        java_import(self.pysc._gateway.jvm, self.path)
 
-    arr = TileArray(np.array(bytearray([0, 0, 1, 1])).reshape(2, 2), -128)
-    multiband_tile = [arr, arr, arr]
+        self.arr = TileArray(np.array(bytearray([0, 0, 1, 1])).reshape(2, 2), -128)
+        self.multiband_tile = [self.arr, self.arr, self.arr]
+
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
 
     def get_rdd(self):
         sc = self.pysc._jsc.sc()

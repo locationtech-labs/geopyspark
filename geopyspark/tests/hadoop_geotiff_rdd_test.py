@@ -1,25 +1,18 @@
-#!/bin/env python3
-
-from .python_test_utils import *
+from geopyspark.tests.python_test_utils import *
 add_spark_path()
+check_directory()
+
 from pyspark import SparkContext
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
 from os import walk, path
 
 import rasterio
 import unittest
+import pytest
+import os
 
-class GeoTiffIOTest(unittest.TestCase):
 
-    options = {'maxTileSize': 256}
-
-    def setUp(self):
-        self.pysc = SparkContext(master="local", appName="hadoop-geotiff-test")
-        self.hadoop_geotiff = HadoopGeoTiffRDD(self.pysc)
-
-    def tearDown(self):
-        self.pysc.stop()
-
+class GeoTiffIOTest(object):
     def get_filepaths(self, dir_path):
         files = []
 
@@ -47,8 +40,19 @@ class GeoTiffIOTest(unittest.TestCase):
         return rasterio_tiles
 
 
-class Singleband(GeoTiffIOTest):
-    dir_path = tst_path("one-month-tiles/")
+class Singleband(GeoTiffIOTest, unittest.TestCase):
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="hadoop-singleband-geotiff-test")
+        self.hadoop_geotiff = HadoopGeoTiffRDD(self.pysc)
+
+        self.dir_path = geotiff_test_path("one-month-tiles/")
+        self.options = {'maxTileSize': 256}
+
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
 
     def read_singleband_geotrellis(self, options=None):
         if options is None:
@@ -82,8 +86,18 @@ class Singleband(GeoTiffIOTest):
             self.assertTrue((x == y).all())
 
 
-class Multiband(GeoTiffIOTest):
-    dir_path = tst_path("one-month-tiles-multiband/")
+class Multiband(GeoTiffIOTest, unittest.TestCase):
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="hadoop-multiband-geotiff-test")
+        self.hadoop_geotiff = HadoopGeoTiffRDD(self.pysc)
+        self.dir_path = geotiff_test_path("one-month-tiles-multiband/")
+        self.options = {'maxTileSize': 256}
+
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
 
     def read_multiband_geotrellis(self, options=None):
         if options is None:
@@ -119,5 +133,4 @@ class Multiband(GeoTiffIOTest):
 
 
 if __name__ == "__main__":
-    check_directory()
     unittest.main()

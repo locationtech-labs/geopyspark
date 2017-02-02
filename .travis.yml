@@ -1,11 +1,9 @@
 language: python
 
 python:
-  - "3.2"
   - "3.3"
   - "3.4"
   - "3.5"
-  - "3.6"
 
 branches:
   only:
@@ -23,6 +21,7 @@ addons:
       - libatlas-base-dev
       - gfortran
       - oracle-java8-set-default
+        #- oracle-java8-installer
 
 install:
   - pip3 install -r requirements.txt
@@ -34,8 +33,9 @@ notifications:
       - jbouffard@azavea.com
 
 script:
-  - "wget http://apache.mirrors.pair.com/spark/spark-2.1.0/spark-2.1.0-bin-hadoop2.7.tgz"
-  - "tar -xvf spark-2.1.0-bin-hadoop2.7.tgz"
-  - "export SPARK_HOME=./spark-2.1.0-bin-hadoop2.7/"
+  - "wget http://d3kbcqa49mib13.cloudfront.net/spark-2.0.1-bin-hadoop2.7.tgz"
+  - "tar -xvf spark-2.0.1-bin-hadoop2.7.tgz"
+  - "export SPARK_HOME=./spark-2.0.1-bin-hadoop2.7/"
+  - "export JAVA_HOME=/usr/lib/jvm/java-8-oracle"
   - cd geopyspark-backend && ./sbt "project geotrellis-backend" assembly
-  - cd .. && pytest -s geopyspark/tests/hadoop_geotiff_rdd_test.py
+  - "cd .. && pytest -s geopyspark/tests/hadoop_geotiff_rdd_test.py"

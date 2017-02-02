@@ -1,5 +1,8 @@
 #!/bin/env python3
 
+ # TODO: Make this work under the new test framework
+
+'''
 import sys
 import calendar
 import time
@@ -24,3 +27,4 @@ if __name__ == "__main__":
     (rdd, metadata) = catalog.query("spatial", "singleband", layer_name, layer_zoom, polygon)
     new_layer_name = layer_name + "-" + str(calendar.timegm(time.gmtime()))
     catalog.write(new_layer_name, layer_zoom, rdd, metadata, index_strategy="zorder")
+'''

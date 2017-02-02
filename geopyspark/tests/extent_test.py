@@ -1,16 +1,29 @@
-from pyspark import SparkConf, SparkContext, RDD
-from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
+from geopyspark.tests.python_test_utils import add_spark_path
+add_spark_path()
+
+from pyspark import SparkContext, RDD
+from pyspark.serializers import AutoBatchedSerializer
 from py4j.java_gateway import java_import
 from geopyspark.geotrellis.extent import Extent
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.avroregistry import AvroRegistry
 
 import unittest
+import pytest
+
 
 class ExtentSchemaTest(unittest.TestCase):
-    pysc = SparkContext(master="local", appName="extent-test")
-    path = "geopyspark.geotrellis.tests.schemas.ExtentWrapper"
-    java_import(pysc._gateway.jvm, path)
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="extent-test")
+        self.path = "geopyspark.geotrellis.tests.schemas.ExtentWrapper"
+        java_import(self.pysc._gateway.jvm, self.path)
+
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
+
 
     def get_rdd(self):
         sc = self.pysc._jsc.sc()
