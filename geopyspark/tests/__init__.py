@@ -1,8 +1,9 @@
 import os
 
 jar_path = "geopyspark-backend/geotrellis/target/scala-2.11/geotrellis-backend-assembly-0.1.0.jar"
+
 if not os.path.isfile(jar_path):
-    raise Exception("HEY THIS DOESN'T EXIST!!!!!!!!!!!!!!")
+    raise Exception("Could not locate assembly jar file at {}".format(jar_path))
 
 os.environ["PYSPARK_PYTHON"] = "python3"
 os.environ["PYSPARK_DRIVER_PYTHON"] = "python3"

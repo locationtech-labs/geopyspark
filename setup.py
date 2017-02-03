@@ -1,11 +1,8 @@
 from setuptools import setup
 import sys
-import os
 
 if not sys.version_info[0] >= 3:
     sys.exit("GeoPySpark Does Not Support Python Versions Before 3.0")
-
-ROOT = os.path.abspath(os.getcwd() + "/")
 
 setup(
         name='geopyspark',
@@ -30,11 +27,8 @@ setup(
             'Development Status :: 2 - Pre-Alpha',
             'License :: OSI Approved :: Apache Software License',
             'Topic :: Scientific/Engineering :: GIS',
-            'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.2',
             'Programming Language :: Python :: 3.3',
             'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 3.5',
-            'Programming Language :: Python :: 3.6'
             ]
         )
