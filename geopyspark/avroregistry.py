@@ -43,7 +43,7 @@ class AvroRegistry(object):
 
     @staticmethod
     def tile_decoder(i):
-        from geopyspark.tile import TileArray
+        from geopyspark.geotrellis.tile import TileArray
         import numpy as np
 
         cells = i['cells']
@@ -63,13 +63,13 @@ class AvroRegistry(object):
 
     @staticmethod
     def extent_decoder(i):
-        from geopyspark.extent import Extent
+        from geopyspark.geotrellis.extent import Extent
 
         return Extent(i['xmin'], i['ymin'], i['xmax'], i['ymax'])
 
     @classmethod
     def projected_extent_decoder(cls, i):
-        from geopyspark.projected_extent import ProjectedExtent
+        from geopyspark.geotrellis.projected_extent import ProjectedExtent
 
         extent = cls.extent_decoder(i['extent'])
         epsg = i['epsg']
@@ -78,7 +78,7 @@ class AvroRegistry(object):
 
     @classmethod
     def temporal_projected_extent_decoder(cls, i):
-        from geopyspark.temporal_projected_extent import TemporalProjectedExtent
+        from geopyspark.geotrellis.temporal_projected_extent import TemporalProjectedExtent
 
         extent = cls.extent_decoder(i['extent'])
         epsg = i['epsg']
@@ -88,13 +88,13 @@ class AvroRegistry(object):
 
     @staticmethod
     def spatial_key_decoder(i):
-        from geopyspark.keys import SpatialKey
+        from geopyspark.geotrellis.keys import SpatialKey
 
         return SpatialKey(i['col'], i['row'])
 
     @staticmethod
     def spacetime_key_decoder(i):
-        from geopyspark.keys import SpaceTimeKey
+        from geopyspark.geotrellis.keys import SpaceTimeKey
 
         return SpaceTimeKey(i['col'], i['row'], i['instant'])
 
