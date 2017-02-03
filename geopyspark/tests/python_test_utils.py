@@ -1,10 +1,7 @@
 from os import path
 from zipfile import ZipFile as zipped
 
-import numpy as np
 import os
-import subprocess
-import logging
 import sys
 
 
@@ -15,9 +12,6 @@ def add_spark_path():
 def geotiff_test_path(file_test_path):
     root_geotiff_dir = "geopyspark/tests/data_files/geotiff_test_files/"
     result = os.path.abspath(os.path.join(root_geotiff_dir, file_test_path))
-
-    if not os.path.exists(result):
-        raise Exception('The resulting file does not exists {}'.format(result))
 
     return result
 
