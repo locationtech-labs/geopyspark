@@ -1,20 +1,28 @@
-from pyspark import SparkConf, SparkContext, RDD
-from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
+from geopyspark.tests.python_test_utils import add_spark_path
+add_spark_path()
+
+from pyspark import SparkContext, RDD
+from pyspark.serializers import AutoBatchedSerializer
 from py4j.java_gateway import java_import
 from geopyspark.geotrellis.keys import SpatialKey, SpaceTimeKey
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.avroregistry import AvroRegistry
 
 import unittest
+import pytest
 
 
-class KeySchemaTest(unittest.TestCase):
-    pysc = SparkContext(master="local", appName="keys-test")
+class SpatialKeySchemaTest(unittest.TestCase):
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="spatial-key-test")
+        self.path = "geopyspark.geotrellis.tests.schemas.SpatialKeyWrapper"
+        java_import(self.pysc._gateway.jvm, self.path)
 
-
-class SpatialKeySchemaTest(KeySchemaTest):
-    path = "geopyspark.geotrellis.tests.schemas.SpatialKeyWrapper"
-    java_import(KeySchemaTest.pysc._gateway.jvm, path)
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
 
     def get_rdd(self):
         sc = self.pysc._jsc.sc()
@@ -55,11 +63,18 @@ class SpatialKeySchemaTest(KeySchemaTest):
             self.assertEqual(actual, expected)
 
 
-class SpaceTimeKeySchemaTest(KeySchemaTest):
-    path = "geopyspark.geotrellis.tests.schemas.SpaceTimeKeyWrapper"
-    java_import(KeySchemaTest.pysc._gateway.jvm, path)
+class SpaceTimeKeySchemaTest(unittest.TestCase):
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="spacetime-key-test")
+        self.path = "geopyspark.geotrellis.tests.schemas.SpaceTimeKeyWrapper"
+        java_import(self.pysc._gateway.jvm, self.path)
+
+    def tearDown(self):
+        self.pysc.stop()
+        self.pysc._gateway.close()
 
     def get_rdd(self):
+        java_import(self.pysc._gateway.jvm, self.path)
         sc = self.pysc._jsc.sc()
         ew = self.pysc._gateway.jvm.SpaceTimeKeyWrapper
 

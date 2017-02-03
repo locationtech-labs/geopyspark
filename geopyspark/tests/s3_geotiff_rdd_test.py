@@ -1,26 +1,18 @@
-from pyspark import SparkConf, SparkContext, RDD
+from geopyspark.tests.python_test_utils import *
+add_spark_path()
+check_directory()
+
+from pyspark import SparkContext
 from geopyspark.geotrellis.geotiff_rdd import S3GeoTiffRDD
 from py4j.java_gateway import java_import
-from python_test_utils import *
 from os import walk, path
 
 import rasterio
 import unittest
+import pytest
 
 
- # TODO: Clean up these tests
-
-
-class S3GeoTiffIOTest(unittest.TestCase):
-    pysc = SparkContext(appName="s3-geotiff-test")
-
-    java_import(pysc._gateway.jvm,
-            "geopyspark.geotrellis.testkit.MockS3ClientWrapper")
-
-    mock_wrapper = pysc._gateway.jvm.MockS3ClientWrapper
-
-    s3_geotiff = S3GeoTiffRDD(pysc)
-
+class S3GeoTiffIOTest(object):
     def get_filepaths(self, dir_path):
         files = []
 
@@ -48,22 +40,37 @@ class S3GeoTiffIOTest(unittest.TestCase):
         return rasterio_tiles
 
 
-class Singleband(S3GeoTiffIOTest):
+class Singleband(S3GeoTiffIOTest, unittest.TestCase):
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="s3-singlebandgeotiff-test")
+
+        java_import(self.pysc._gateway.jvm,
+                "geopyspark.geotrellis.testkit.MockS3ClientWrapper")
+
+        self.mock_wrapper = self.pysc._gateway.jvm.MockS3ClientWrapper
+        self.client = self.mock_wrapper.mockClient()
+
+        self.s3_geotiff = S3GeoTiffRDD(self.pysc)
+
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
+
     key = "one-month-tiles/test-200506000000_0_0.tif"
     bucket = "test"
-    file_path = test_path(key)
-    client = S3GeoTiffIOTest.mock_wrapper.mockClient()
+    file_path = geotiff_test_path(key)
 
     in_file = open(file_path, "rb")
     data = in_file.read()
     in_file.close()
 
-    client.putObject(bucket, key, data)
-
     options = {"s3Client": "mock"}
 
     def read_singleband_geotrellis(self, opt=options):
-        result = S3GeoTiffIOTest.s3_geotiff.get_spatial(self.bucket, self.key, opt)
+        self.client.putObject(self.bucket, self.key, self.data)
+        result = self.s3_geotiff.get_spatial(self.bucket, self.key, opt)
 
         return [tile[1] for tile in result.collect()]
 
@@ -88,22 +95,36 @@ class Singleband(S3GeoTiffIOTest):
             self.assertTrue((x == y).all())
 
 
-class Multiband(S3GeoTiffIOTest):
+class Multiband(S3GeoTiffIOTest, unittest.TestCase):
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="s3-multibandgeotiff-test")
+
+        java_import(self.pysc._gateway.jvm,
+                "geopyspark.geotrellis.testkit.MockS3ClientWrapper")
+
+        self.mock_wrapper = self.pysc._gateway.jvm.MockS3ClientWrapper
+        self.client = self.mock_wrapper.mockClient()
+
+        self.s3_geotiff = S3GeoTiffRDD(self.pysc)
+
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
+
     key = "one-month-tiles-multiband/result.tif"
     bucket = "test"
-    file_path = test_path(key)
-
-    client = S3GeoTiffIOTest.mock_wrapper.mockClient()
+    file_path = geotiff_test_path(key)
     options = {"s3Client": "mock"}
 
     in_file = open(file_path, "rb")
     data = in_file.read()
     in_file.close()
 
-    client.putObject(bucket, key, data)
-
     def read_multiband_geotrellis(self, opt=options):
-        result = S3GeoTiffIOTest.s3_geotiff.get_spatial_multiband(self.bucket, self.key, opt)
+        self.client.putObject(self.bucket, self.key, self.data)
+        result = self.s3_geotiff.get_spatial_multiband(self.bucket, self.key, opt)
 
         return [tile[1] for tile in result.collect()]
 

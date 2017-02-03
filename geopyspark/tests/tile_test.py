@@ -1,5 +1,8 @@
-from pyspark import SparkConf, SparkContext, RDD
-from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
+from geopyspark.tests.python_test_utils import add_spark_path
+add_spark_path()
+
+from pyspark import SparkContext, RDD
+from pyspark.serializers import AutoBatchedSerializer
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.avroregistry import AvroRegistry
@@ -7,28 +10,33 @@ from geopyspark.geotrellis.tile import TileArray
 
 import numpy as np
 import unittest
+import pytest
 
 
 # TODO: CLEANUP THESE TESTS TO MAKE IT MORE DRY
 
 
-class TileSchemaTest(unittest.TestCase):
-    pysc = SparkContext(master="local", appName="tile-test")
+class ShortTileSchemaTest(unittest.TestCase):
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="short-tile-test")
+        self.path = "geopyspark.geotrellis.tests.schemas.ShortArrayTileWrapper"
+        java_import(self.pysc._gateway.jvm, self.path)
 
+        self.tiles = [
+                TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), -32768),
+                TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), -32768),
+                TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), -32768)
+                ]
 
-class ShortTileSchemaTest(TileSchemaTest):
-    path = "geopyspark.geotrellis.tests.schemas.ShortArrayTileWrapper"
-    java_import(TileSchemaTest.pysc._gateway.jvm, path)
-
-    tiles = [
-            TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), -32768),
-            TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), -32768),
-            TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), -32768)
-            ]
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
 
     def get_rdd(self):
-        sc = TileSchemaTest.pysc._jsc.sc()
-        tw = TileSchemaTest.pysc._gateway.jvm.ShortArrayTileWrapper
+        sc = self.pysc._jsc.sc()
+        tw = self.pysc._gateway.jvm.ShortArrayTileWrapper
 
         tup = tw.testOut(sc)
         (java_rdd, schema) = (tup._1(), tup._2())
@@ -64,19 +72,27 @@ class ShortTileSchemaTest(TileSchemaTest):
             self.assertTrue((actual == expected).all())
 
 
-class UShortTileSchemaTest(TileSchemaTest):
-    path = "geopyspark.geotrellis.tests.schemas.UShortArrayTileWrapper"
-    java_import(TileSchemaTest.pysc._gateway.jvm, path)
+class UShortTileSchemaTest(unittest.TestCase):
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="ushort-tile-test")
+        self.path = "geopyspark.geotrellis.tests.schemas.UShortArrayTileWrapper"
+        java_import(self.pysc._gateway.jvm, self.path)
 
-    tiles = [
-            TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), 0),
-            TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), 0),
-            TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), 0)
-            ]
+        self.tiles = [
+                TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), 0),
+                TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), 0),
+                TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), 0)
+                ]
+
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
 
     def get_rdd(self):
-        sc = TileSchemaTest.pysc._jsc.sc()
-        tw = TileSchemaTest.pysc._gateway.jvm.UShortArrayTileWrapper
+        sc = self.pysc._jsc.sc()
+        tw = self.pysc._gateway.jvm.UShortArrayTileWrapper
 
         tup = tw.testOut(sc)
         (java_rdd, schema) = (tup._1(), tup._2())
@@ -112,19 +128,27 @@ class UShortTileSchemaTest(TileSchemaTest):
             self.assertTrue((actual == expected).all())
 
 
-class ByteTileSchemaTest(TileSchemaTest):
-    path = "geopyspark.geotrellis.tests.schemas.ByteArrayTileWrapper"
-    java_import(TileSchemaTest.pysc._gateway.jvm, path)
+class ByteTileSchemaTest(unittest.TestCase):
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="byte-tile-test")
+        self.path = "geopyspark.geotrellis.tests.schemas.ByteArrayTileWrapper"
+        java_import(self.pysc._gateway.jvm, self.path)
 
-    tiles = [
-            TileArray(np.array(bytearray([0, 0, 1, 1])).reshape(2, 2), -128),
-            TileArray(np.array(bytearray([1, 2, 3, 4])).reshape(2, 2), -128),
-            TileArray(np.array(bytearray([5, 6, 7, 8])).reshape(2, 2), -128)
-            ]
+        self.tiles = [
+                TileArray(np.array(bytearray([0, 0, 1, 1])).reshape(2, 2), -128),
+                TileArray(np.array(bytearray([1, 2, 3, 4])).reshape(2, 2), -128),
+                TileArray(np.array(bytearray([5, 6, 7, 8])).reshape(2, 2), -128)
+                ]
+
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
 
     def get_rdd(self):
-        sc = TileSchemaTest.pysc._jsc.sc()
-        tw = TileSchemaTest.pysc._gateway.jvm.ByteArrayTileWrapper
+        sc = self.pysc._jsc.sc()
+        tw = self.pysc._gateway.jvm.ByteArrayTileWrapper
 
         tup = tw.testOut(sc)
         (java_rdd, schema) = (tup._1(), tup._2())
@@ -160,19 +184,27 @@ class ByteTileSchemaTest(TileSchemaTest):
             self.assertTrue((actual == expected).all())
 
 
-class UByteTileSchemaTest(TileSchemaTest):
-    path = "geopyspark.geotrellis.tests.schemas.UByteArrayTileWrapper"
-    java_import(TileSchemaTest.pysc._gateway.jvm, path)
+class UByteTileSchemaTest(unittest.TestCase):
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="ubyte-tile-test")
+        self.path = "geopyspark.geotrellis.tests.schemas.UByteArrayTileWrapper"
+        java_import(self.pysc._gateway.jvm, self.path)
 
-    tiles = [
-            TileArray(np.array(bytearray([0, 0, 1, 1])).reshape(2, 2), 0),
-            TileArray(np.array(bytearray([1, 2, 3, 4])).reshape(2, 2), 0),
-            TileArray(np.array(bytearray([5, 6, 7, 8])).reshape(2, 2), 0)
-            ]
+        self.tiles = [
+                TileArray(np.array(bytearray([0, 0, 1, 1])).reshape(2, 2), 0),
+                TileArray(np.array(bytearray([1, 2, 3, 4])).reshape(2, 2), 0),
+                TileArray(np.array(bytearray([5, 6, 7, 8])).reshape(2, 2), 0)
+                ]
+
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
 
     def get_rdd(self):
-        sc = TileSchemaTest.pysc._jsc.sc()
-        tw = TileSchemaTest.pysc._gateway.jvm.UByteArrayTileWrapper
+        sc = self.pysc._jsc.sc()
+        tw = self.pysc._gateway.jvm.UByteArrayTileWrapper
 
         tup = tw.testOut(sc)
         (java_rdd, schema) = (tup._1(), tup._2())
@@ -208,19 +240,27 @@ class UByteTileSchemaTest(TileSchemaTest):
             self.assertTrue((actual == expected).all())
 
 
-class IntTileSchemaTest(TileSchemaTest):
-    path = "geopyspark.geotrellis.tests.schemas.IntArrayTileWrapper"
-    java_import(TileSchemaTest.pysc._gateway.jvm, path)
+class IntTileSchemaTest(unittest.TestCase):
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="int-tile-test")
+        self.path = "geopyspark.geotrellis.tests.schemas.IntArrayTileWrapper"
+        java_import(self.pysc._gateway.jvm, self.path)
 
-    tiles = [
-            TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), -2147483648),
-            TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), -2147483648),
-            TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), -2147483648)
-            ]
+        self.tiles = [
+                TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), -2147483648),
+                TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), -2147483648),
+                TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), -2147483648)
+                ]
+
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
 
     def get_rdd(self):
-        sc = TileSchemaTest.pysc._jsc.sc()
-        tw = TileSchemaTest.pysc._gateway.jvm.IntArrayTileWrapper
+        sc = self.pysc._jsc.sc()
+        tw = self.pysc._gateway.jvm.IntArrayTileWrapper
 
         tup = tw.testOut(sc)
         (java_rdd, schema) = (tup._1(), tup._2())
@@ -256,19 +296,27 @@ class IntTileSchemaTest(TileSchemaTest):
             self.assertTrue((actual == expected).all())
 
 
-class DoubleTileSchemaTest(TileSchemaTest):
-    path = "geopyspark.geotrellis.tests.schemas.DoubleArrayTileWrapper"
-    java_import(TileSchemaTest.pysc._gateway.jvm, path)
+class DoubleTileSchemaTest(unittest.TestCase):
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="double-tile-test")
+        self.path = "geopyspark.geotrellis.tests.schemas.DoubleArrayTileWrapper"
+        java_import(self.pysc._gateway.jvm, self.path)
 
-    tiles = [
-            TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), True),
-            TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), True),
-            TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), True)
-            ]
+        self.tiles = [
+                TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), True),
+                TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), True),
+                TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), True)
+                ]
+
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
 
     def get_rdd(self):
-        sc = TileSchemaTest.pysc._jsc.sc()
-        tw = TileSchemaTest.pysc._gateway.jvm.DoubleArrayTileWrapper
+        sc = self.pysc._jsc.sc()
+        tw = self.pysc._gateway.jvm.DoubleArrayTileWrapper
 
         tup = tw.testOut(sc)
         (java_rdd, schema) = (tup._1(), tup._2())
@@ -304,19 +352,27 @@ class DoubleTileSchemaTest(TileSchemaTest):
             self.assertTrue((actual == expected).all())
 
 
-class FloatTileSchemaTest(TileSchemaTest):
-    path = "geopyspark.geotrellis.tests.schemas.FloatArrayTileWrapper"
-    java_import(TileSchemaTest.pysc._gateway.jvm, path)
+class FloatTileSchemaTest(unittest.TestCase):
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="float-tile-test")
+        self.path = "geopyspark.geotrellis.tests.schemas.FloatArrayTileWrapper"
+        java_import(self.pysc._gateway.jvm, self.path)
 
-    tiles = [
-            TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), True),
-            TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), True),
-            TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), True)
-            ]
+        self.tiles = [
+                TileArray(np.array([0, 0, 1, 1]).reshape(2, 2), True),
+                TileArray(np.array([1, 2, 3, 4]).reshape(2, 2), True),
+                TileArray(np.array([5, 6, 7, 8]).reshape(2, 2), True)
+                ]
+
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
 
     def get_rdd(self):
-        sc = TileSchemaTest.pysc._jsc.sc()
-        tw = TileSchemaTest.pysc._gateway.jvm.FloatArrayTileWrapper
+        sc = self.pysc._jsc.sc()
+        tw = self.pysc._gateway.jvm.FloatArrayTileWrapper
 
         tup = tw.testOut(sc)
         (java_rdd, schema) = (tup._1(), tup._2())

@@ -1,7 +1,6 @@
 from functools import partial
 
 
-
 class AvroRegistry(object):
     __slots__ = ['decoders', 'encoders']
 

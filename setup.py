@@ -15,18 +15,20 @@ setup(
         license='LICENSE.txt',
         install_requires=[
             'avro-python3>=1.8',
-            'numpy>=1',
+            'numpy>=1.8',
             'shapely>=1.6b3',
-            'rasterio>=0.36.0'
+            'rasterio>=0.36.0',
+            'py4j>=0.10.4'
             ],
-        packages=['geopyspark', 'geopyspark.geotrellis'],
+        test_requires=['pytest>=3.0.6'],
+        packages=['geopyspark', 'geopyspark.geotrellis', 'geopyspark.tests'],
         scripts=[],
         classifiers=[
             'Development Status :: 2 - Pre-Alpha',
             'License :: OSI Approved :: Apache Software License',
             'Topic :: Scientific/Engineering :: GIS',
-            'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.3',
             'Programming Language :: Python :: 3.4',
-            'Programming Language :: Python :: 3.5'
+            'Programming Language :: Python :: 3.5',
             ]
         )

@@ -1,5 +1,8 @@
-from pyspark import SparkConf, SparkContext, RDD
-from pyspark.serializers import Serializer, FramedSerializer, AutoBatchedSerializer
+from geopyspark.tests.python_test_utils import add_spark_path
+add_spark_path()
+
+from pyspark import SparkContext, RDD
+from pyspark.serializers import AutoBatchedSerializer
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.geotrellis.extent import Extent
@@ -7,13 +10,22 @@ from geopyspark.geotrellis.projected_extent import ProjectedExtent
 from geopyspark.avroregistry import AvroRegistry
 
 import unittest
+import pytest
 
 
 class ProjectedExtentSchemaTest(unittest.TestCase):
-    pysc = SparkContext(master="local", appName="projectedextent-test")
-    java_import(pysc._gateway.jvm, "geopyspark.geotrellis.tests.schemas.ProjectedExtentWrapper")
+    def setUp(self):
+        self.pysc = SparkContext(master="local[*]", appName="projectedextent-test")
+        self.path = "geopyspark.geotrellis.tests.schemas.ProjectedExtentWrapper"
+        java_import(self.pysc._gateway.jvm, self.path)
 
-    extents = [Extent(0, 0, 1, 1), Extent(1, 2, 3, 4), Extent(5, 6, 7, 8)]
+        self.extents = [Extent(0, 0, 1, 1), Extent(1, 2, 3, 4), Extent(5, 6, 7, 8)]
+
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        self.pysc.stop()
+        self.pysc._gateway.close()
 
     def get_rdd(self):
         sc = self.pysc._jsc.sc()

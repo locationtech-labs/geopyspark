@@ -13,7 +13,7 @@ class AvroSerializer(FramedSerializer):
 
         self._schema_json = schema_json
 
-        if avroregistry is None:
+        if avroregistry:
             self.avroregistry = avroregistry
         else:
             self.avroregistry = AvroRegistry()
