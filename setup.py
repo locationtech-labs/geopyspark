@@ -20,7 +20,6 @@ setup(
             'rasterio>=0.36.0',
             'py4j>=0.10.4'
             ],
-        test_requires=['pytest>=3.0.6'],
         packages=['geopyspark', 'geopyspark.geotrellis', 'geopyspark.tests'],
         scripts=[],
         classifiers=[
