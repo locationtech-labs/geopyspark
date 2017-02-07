@@ -1,13 +1,9 @@
-from pyspark import SparkConf, SparkContext, RDD
+from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from geopyspark.avroserializer import AvroSerializer
-from geopyspark.avroregistry import AvroRegistry
 
-from shapely.geometry import Point, Polygon
-from shapely.wkt import dumps, loads
-
-import time
-import calendar
+from shapely.geometry import Polygon
+from shapely.wkt import dumps
 
 
 class Metadata:
@@ -18,7 +14,7 @@ class Metadata:
         self.jmetadata = jmetadata
 
 
-class Catalog:
+class _Catalog:
 
     @property
     def store_factory(self):
@@ -288,7 +284,7 @@ class Catalog:
                 index_strategy)
 
 
-class HadoopCatalog(Catalog):
+class HadoopCatalog(_Catalog):
 
     def __init__(self, pysc, avroregistry=None):
         self.pysc = pysc
@@ -437,7 +433,7 @@ class HadoopCatalog(Catalog):
                 index_strategy)
 
 
-class S3Catalog(Catalog):
+class S3Catalog(_Catalog):
 
     def __init__(self, pysc, avroregistry=None):
         self.pysc = pysc
@@ -593,7 +589,7 @@ class S3Catalog(Catalog):
                 index_strategy)
 
 
-class FileCatalog(Catalog):
+class FileCatalog(_Catalog):
 
     def __init__(self, pysc, avroregistry=None):
         self.pysc = pysc
@@ -734,7 +730,7 @@ class FileCatalog(Catalog):
                 index_strategy)
 
 
-class CassandraCatalog(Catalog):
+class CassandraCatalog(_Catalog):
 
     def __init__(self,
             pysc,
@@ -927,7 +923,7 @@ class CassandraCatalog(Catalog):
                 index_strategy)
 
 
-class HBaseCatalog(Catalog):
+class HBaseCatalog(_Catalog):
 
     def __init__(self, pysc, zookeepers, master, client_port, avroregistry=None):
         self.pysc = pysc
@@ -1080,7 +1076,7 @@ class HBaseCatalog(Catalog):
                 index_strategy)
 
 
-class AccumuloCatalog(Catalog):
+class AccumuloCatalog(_Catalog):
 
     def __init__(self, pysc, zookeepers, instance_name, user, password, avroregistry=None):
         self.pysc = pysc
