@@ -1,5 +1,6 @@
 from geopyspark.tests.python_test_utils import *
 add_spark_path()
+check_directory()
 
 from pyspark import SparkContext
 from shapely.geometry import Polygon
