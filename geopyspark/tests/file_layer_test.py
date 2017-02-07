@@ -32,7 +32,6 @@ class FileLayerTest(unittest.TestCase):
         result = self.file_catalog.query_spatial_singleband(self.path, self.name, self.zoom)
         result[0].collect()
 
-    '''
     def test_writer(self):
         result = self.file_catalog.query_spatial_singleband(self.path, self.name, self.zoom)
 
@@ -50,24 +49,7 @@ class FileLayerTest(unittest.TestCase):
                 path=new_path)
 
         shutil.rmtree(new_path)
-    '''
 
 
 if __name__ == "__main__":
     unittest.main()
-
-
-    '''
-    if len(sys.argv) > 3:
-        path = sys.argv[1]
-        layer_name = sys.argv[2]
-        layer_zoom = int(sys.argv[3])
-    else:
-        exit(-1)
-
-    sc = SparkContext(appName="file-layer-test")
-    catalog = FileCatalog(path, sc)
-    (rdd, metadata) = catalog.query("spatial", "singleband", layer_name, layer_zoom)
-    new_layer_name = layer_name + "-" + str(calendar.timegm(time.gmtime()))
-    catalog.write(new_layer_name, layer_zoom, rdd, metadata)
-    '''
