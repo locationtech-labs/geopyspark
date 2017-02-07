@@ -18,7 +18,7 @@ class FileLayerTest(unittest.TestCase):
     def setUp(self):
         self.pysc = SparkContext(master="local[*]", appName="file-layer-test")
         self.file_catalog = FileCatalog(self.pysc)
-        self.path = "/tmp/catalog/"
+        self.path = geotiff_test_path("catalog/file/")
         self.name = "ned"
         self.zoom = 0
 
