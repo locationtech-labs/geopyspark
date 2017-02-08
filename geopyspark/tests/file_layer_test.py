@@ -15,6 +15,7 @@ import os
 import shutil
 
 
+'''
 class FileLayerTest(unittest.TestCase):
     def setUp(self):
         self.pysc = SparkContext(master="local[*]", appName="file-layer-test")
@@ -54,3 +55,4 @@ class FileLayerTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+'''
