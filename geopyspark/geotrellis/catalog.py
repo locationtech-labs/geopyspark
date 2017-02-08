@@ -6,7 +6,7 @@ from shapely.geometry import Polygon
 from shapely.wkt import dumps
 
 
-class Metadata:
+class Metadata(object):
     def __init__(self, key_type, value_type, schema, jmetadata):
         self.key_type = key_type
         self.value_type = value_type
@@ -14,7 +14,11 @@ class Metadata:
         self.jmetadata = jmetadata
 
 
-class _Catalog:
+class _Catalog(object):
+
+    def __init__(self, pysc, avroregistry):
+        self.pysc = pysc
+        self.avroregistry = avroregistry
 
     @property
     def store_factory(self):
@@ -28,11 +32,11 @@ class _Catalog:
     def writer_factory(self):
         return self.pysc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
 
-    def _get_spatial_jmetadata(self, layer_name, layer_zoom):
-        return self._store.metadataSpatial(layer_name, layer_zoom)
+    def _get_spatial_jmetadata(self, store, layer_name, layer_zoom):
+        return store.metadataSpatial(layer_name, layer_zoom)
 
-    def _get_spacetime_jmetadata(self, layer_name, layer_zoom):
-        return self._store.metadataSpaceTime(layer_name, layer_zoom)
+    def _get_spacetime_jmetadata(self, store, layer_name, layer_zoom):
+        return store.metadataSpaceTime(layer_name, layer_zoom)
 
     def _construct_return(self, java_rdd, schema, metadata):
         serializer = AvroSerializer(schema, self.avroregistry)
@@ -41,11 +45,12 @@ class _Catalog:
         return (rdd, metadata)
 
     def _read_fully(self,
-            key_type,
-            value_type,
-            reader_method,
-            layer_name,
-            layer_zoom):
+                    key_type,
+                    value_type,
+                    reader_method,
+                    layer_name,
+                    layer_zoom):
+
         tup = reader_method(layer_name, layer_zoom)
         schema = tup._2()
 
@@ -59,11 +64,12 @@ class _Catalog:
         return self._construct_return(tup._1(), schema, metadata)
 
     def _query_spatial(self,
-            reader_method,
-            value_type,
-            layer_name,
-            layer_zoom,
-            intersects):
+                       reader_method,
+                       value_type,
+                       layer_name,
+                       layer_zoom,
+                       intersects):
+
         if isinstance(intersects, Polygon):
             tup = reader_method(layer_name, layer_zoom, dumps(intersects))
         elif isinstance(intersects, str):
@@ -79,17 +85,24 @@ class _Catalog:
         return self._construct_return(tup._1(), schema, metadata)
 
     def _query_spacetime(self,
-            reader_method,
-            value_type,
-            layer_name,
-            layer_zoom,
-            intersects,
-            time_intervals):
+                         reader_method,
+                         value_type,
+                         layer_name,
+                         layer_zoom,
+                         intersects,
+                         time_intervals):
 
         if isinstance(intersects, Polygon):
-            tup = reader_method(layer_name, layer_zoom, dumps(intersects), time_intervals)
+            tup = reader_method(layer_name,
+                                layer_zoom,
+                                dumps(intersects),
+                                time_intervals)
+
         elif isinstance(intersects, str):
-            tup = reader_method(layer_name, layer_zoom, intersects, time_intervals)
+            tup = reader_method(layer_name,
+                                layer_zoom,
+                                intersects,
+                                time_intervals)
         else:
             raise BaseException("Bad polygon")
 
@@ -101,31 +114,31 @@ class _Catalog:
         return self._construct_return(tup._1(), self.schema, metadata)
 
     def _write_spatial(self,
-            writer_method,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy):
+                       writer_method,
+                       layer_name,
+                       layer_zoom,
+                       rdd,
+                       metadata,
+                       index_strategy):
 
         schema = metadata.schema
         jmetadata = metadata.jmetadata
 
         writer_method(layer_name,
-                layer_zoom,
-                rdd._jrdd,
-                jmetadata,
-                schema,
-                index_strategy)
+                      layer_zoom,
+                      rdd._jrdd,
+                      jmetadata,
+                      schema,
+                      index_strategy)
 
     def _write_spacetime(self,
-            writer_method,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit,
-            index_strategy):
+                         writer_method,
+                         layer_name,
+                         layer_zoom,
+                         rdd,
+                         metadata,
+                         time_unit,
+                         index_strategy):
 
         schema = metadata.schema
         jmetadata = metadata.jmetadata
@@ -133,155 +146,153 @@ class _Catalog:
         if not time_unit:
             time_unit = ""
 
-        writer.writeSpaceTimeSingleband(layer_name,
-                layer_zoom,
-                rdd._jrdd,
-                jmetadata,
-                schema,
-                time_unit,
-                index_strategy)
+        writer_method(layer_name,
+                      layer_zoom,
+                      rdd._jrdd,
+                      jmetadata,
+                      schema,
+                      time_unit,
+                      index_strategy)
 
-    def _query_spatial_singleband(self, layer_name, layer_zoom, intersects):
+    def _query_spatial_singleband(self,
+                                  layer_name,
+                                  layer_zoom,
+                                  intersects):
         if intersects is None:
             reader_method = self._reader.readSpatialSingleband
-            return self._read_fully(
-                    "spatial",
-                    "singleband",
-                    reader_method,
-                    layer_name,
-                    layer_zoom)
+            return self._read_fully("spatial",
+                                    "singleband",
+                                    reader_method,
+                                    layer_name,
+                                    layer_zoom)
         else:
             reader_method = self._reader.querySpatialSingleband
-            return self._query_spatial(
-                    reader_method,
-                    layer_name,
-                    layer_zoom,
-                    intersects)
+            return self._query_spatial(reader_method,
+                                       layer_name,
+                                       layer_zoom,
+                                       intersects)
 
     def _query_spatial_multiband(self, layer_name, layer_zoom, intersects):
+
         if intersects is None:
             reader_method = self._reader.readSpatialMultiband
-            return self._read_fully(
-                    "spatial",
-                    "multiband",
-                    reader_method,
-                    layer_name,
-                    layer_zoom)
+            return self._read_fully("spatial",
+                                    "multiband",
+                                    reader_method,
+                                    layer_name,
+                                    layer_zoom)
         else:
             reader_method = self._reader.querySpatialMultiband
-            return self._query_spatial(
-                    reader_method,
-                    layer_name,
-                    layer_zoom,
-                    intersects)
+            return self._query_spatial(reader_method,
+                                       layer_name,
+                                       layer_zoom,
+                                       intersects)
 
-    def _query_spacetime_singleband(self, layer_name, layer_zoom, intersects, time_intervals):
+    def _query_spacetime_singleband(self,
+                                    layer_name,
+                                    layer_zoom,
+                                    intersects,
+                                    time_intervals):
         if intersects is None:
             reader_method = self._reader.readSpaceTimeSingleband
-            return self._read_fully(
-                    "spacetime",
-                    "singleband",
-                    reader_method,
-                    layer_name,
-                    layer_zoom,
-                    time_intervals)
+            return self._read_fully("spacetime",
+                                    "singleband",
+                                    reader_method,
+                                    layer_name,
+                                    layer_zoom,
+                                    time_intervals)
         else:
             reader_method = self._reader.querySpaceTimeSingleband
-            return self._query_spacetime(
-                    reader_method,
-                    layer_name,
-                    layer_zoom,
-                    intersects,
-                    time_intervals)
+            return self._query_spacetime(reader_method,
+                                         layer_name,
+                                         layer_zoom,
+                                         intersects,
+                                         time_intervals)
 
-    def _query_spacetime_multiband(self, layer_name, layer_zoom, intersects, time_intervals):
+    def _query_spacetime_multiband(self,
+                                   layer_name,
+                                   layer_zoom,
+                                   intersects,
+                                   time_intervals):
+
         if intersects is None:
             reader_method = self._reader.readSpaceTimeMultiband
-            return self._read_fully(
-                    "spacetime",
-                    "multiband",
-                    reader_method,
-                    layer_name,
-                    layer_zoom,
-                    time_intervals)
+            return self._read_fully("spacetime",
+                                    "multiband",
+                                    reader_method,
+                                    layer_name,
+                                    layer_zoom,
+                                    time_intervals)
         else:
             reader_method = self._reader.querySpaceTimeMultiband
-            return self._query_spacetime(
-                    reader_method,
-                    layer_name,
-                    layer_zoom,
-                    intersects,
-                    time_intervals)
+            return self._query_spacetime(reader_method,
+                                         layer_name,
+                                         layer_zoom,
+                                         intersects,
+                                         time_intervals)
 
-    def _write_spatial_singleband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy):
+    def _write_spatial_singleband(self,
+                                  layer_name,
+                                  layer_zoom,
+                                  rdd,
+                                  metadata,
+                                  index_strategy):
 
         writer_method = self._writer.writeSpatialSingleband
-        self._write_spatial(
-                writer_method,
-                layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+        self._write_spatial(writer_method,
+                            layer_name,
+                            layer_zoom,
+                            rdd,
+                            metadata,
+                            index_strategy)
 
     def _write_spatial_multiband(self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy):
+                                 layer_name,
+                                 layer_zoom,
+                                 rdd,
+                                 metadata,
+                                 index_strategy):
 
         writer_method = self._writer.writeSpatialMultiband
-        self._write_spatial(
-                writer_method,
-                layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+        self._write_spatial(writer_method,
+                            layer_name,
+                            layer_zoom,
+                            rdd,
+                            metadata,
+                            index_strategy)
 
-    def _write_spacetime_singleband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit,
-            index_strategy):
+    def _write_spacetime_singleband(self,
+                                    layer_name,
+                                    layer_zoom,
+                                    rdd,
+                                    metadata,
+                                    time_unit,
+                                    index_strategy):
 
         writer_method = self._writer.writeSpaceTimeSingleband
-        self._write_spacetime(
-                writer_method,
-                layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                time_unit,
-                index_strategy)
+        self._write_spacetime(writer_method,
+                              layer_name,
+                              layer_zoom,
+                              rdd,
+                              metadata,
+                              time_unit,
+                              index_strategy)
 
-    def _write_spacetime_multiband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit,
-            index_strategy):
+    def _write_spacetime_multiband(self,
+                                   layer_name,
+                                   layer_zoom,
+                                   rdd,
+                                   metadata,
+                                   time_unit,
+                                   index_strategy):
 
         writer_method = self._writer.writeSpaceTimeMultiband
-        self._write_spacetime(
-                writer_method,
-                layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+        self._write_spacetime(writer_method,
+                              layer_name,
+                              layer_zoom,
+                              rdd,
+                              metadata,
+                              index_strategy)
 
 
 class HadoopCatalog(_Catalog):
@@ -312,125 +323,126 @@ class HadoopCatalog(_Catalog):
         self._writer = self.writer_factory.buildHadoop(self._store)
 
     def query_spatial_singleband(self,
-            uri,
-            layer_name,
-            layer_zoom,
-            intersects=None):
+                                 uri,
+                                 layer_name,
+                                 layer_zoom,
+                                 intersects=None):
+
         self._construct_catalog(uri)
 
         return self._query_spatial_singleband(layer_name,
-                layer_zoom,
-                intersects)
+                                              layer_zoom,
+                                              intersects)
 
     def query_spatial_multiband(self,
-            uri,
-            layer_name,
-            layer_zoom,
-            intersects=None):
+                                uri,
+                                layer_name,
+                                layer_zoom,
+                                intersects=None):
+
         self._construct_catalog(uri)
 
         return self._query_spatial_multiband(layer_name, layer_zoom, intersects)
 
     def query_spacetime_singleband(self,
-            uri,
-            layer_name,
-            layer_zoom,
-            intersects=None,
-            time_intervals=[]):
+                                   uri,
+                                   layer_name,
+                                   layer_zoom,
+                                   intersects=None,
+                                   time_intervals=[]):
+
         self._construct_catalog(uri)
 
         return self._query_spacetime_singleband(layer_name,
-                layer_zoom,
-                intersects,
-                time_intervals)
+                                                layer_zoom,
+                                                intersects,
+                                                time_intervals)
 
     def query_spacetime_multiband(self,
-            uri,
-            layer_name,
-            layer_zoom,
-            intersects=None,
-            time_intervals=[]):
+                                  uri,
+                                  layer_name,
+                                  layer_zoom,
+                                  intersects=None,
+                                  time_intervals=[]):
+
         self._construct_catalog(uri)
 
         return self._query_spacetime_multiband(layer_name,
-                layer_zoom,
-                intersects,
-                time_intervals)
+                                               layer_zoom,
+                                               intersects,
+                                               time_intervals)
 
-    def write_spatial_singleband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy="zorder",
-            uri=None):
+    def write_spatial_singleband(self,
+                                 layer_name,
+                                 layer_zoom,
+                                 rdd,
+                                 metadata,
+                                 index_strategy="zorder",
+                                 uri=None):
 
         if uri is not None:
             self._construct_catalog(uri)
 
         self._write_spatial_singleband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+                                       layer_zoom,
+                                       rdd,
+                                       metadata,
+                                       index_strategy)
 
     def write_spatial_multiband(self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy="zorder",
-            uri=None):
+                                layer_name,
+                                layer_zoom,
+                                rdd,
+                                metadata,
+                                index_strategy="zorder",
+                                uri=None):
 
         if uri is not None:
             self._construct_catalog(uri)
 
         self._write_spatial_multiband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+                                      layer_zoom,
+                                      rdd,
+                                      metadata,
+                                      index_strategy)
 
-    def write_spacetime_singleband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit=None,
-            index_strategy="zorder",
-            uri=None):
+    def write_spacetime_singleband(self,
+                                   layer_name,
+                                   layer_zoom,
+                                   rdd,
+                                   metadata,
+                                   time_unit=None,
+                                   index_strategy="zorder",
+                                   uri=None):
 
         if uri is not None:
             self._construct_catalog(uri)
 
         self._write_spacetime_singleband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                time_unit,
-                index_strategy)
+                                         layer_zoom,
+                                         rdd,
+                                         metadata,
+                                         time_unit,
+                                         index_strategy)
 
-    def write_spacetime_multiband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit=None,
-            index_strategy="zorder",
-            uri=None):
+    def write_spacetime_multiband(self,
+                                  layer_name,
+                                  layer_zoom,
+                                  rdd,
+                                  metadata,
+                                  time_unit=None,
+                                  index_strategy="zorder",
+                                  uri=None):
 
         if uri is not None:
             self._construct_catalog(uri)
 
         self._write_spacetime_multiband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                time_unit,
-                index_strategy)
+                                        layer_zoom,
+                                        rdd,
+                                        metadata,
+                                        time_unit,
+                                        index_strategy)
 
 
 class S3Catalog(_Catalog):
@@ -442,7 +454,7 @@ class S3Catalog(_Catalog):
         self.avroregistry = avroregistry
 
         self.bucket = None
-        sefl.prefix = None
+        self.prefix = None
 
         self._store = None
         self._reader = None
@@ -453,9 +465,8 @@ class S3Catalog(_Catalog):
         prefix = new_prefix != self.prefix and new_prefix is not None
 
         if bucket or prefix:
-            self.new_bucket = new_bucket
-            self.new_prefix = new_prefix
-
+            self.bucket = new_bucket
+            self.prefix = new_prefix
             self._store = self.store_factory.buildS3(self.bucket, self.prefix)
             self._construct_reader()
             self._construct_writer()
@@ -467,126 +478,132 @@ class S3Catalog(_Catalog):
         self._writer = self.writer_factory.buildS3(self._store)
 
     def query_spatial_singleband(self,
-            bucket,
-            prefix,
-            layer_name,
-            layer_zoom,
-            intersects=None):
+                                 bucket,
+                                 prefix,
+                                 layer_name,
+                                 layer_zoom,
+                                 intersects=None):
+
         self._construct_catalog(bucket, prefix)
 
         return self._query_spatial_singleband(layer_name, layer_zoom, intersects)
 
-
     def query_spatial_multiband(self,
-            bucket,
-            prefix,
-            layer_name,
-            layer_zoom,
-            intersects=None):
+                                bucket,
+                                prefix,
+                                layer_name,
+                                layer_zoom,
+                                intersects=None):
+
         self._construct_catalog(bucket, prefix)
 
         return self._query_spatial_multiband(layer_name, layer_zoom, intersects)
 
     def query_spacetime_singleband(self,
-            bucket,
-            prefix,
-            layer_name,
-            layer_zoom,
-            intersects=None,
-            time_intervals=[]):
+                                   bucket,
+                                   prefix,
+                                   layer_name,
+                                   layer_zoom,
+                                   intersects=None,
+                                   time_intervals=[]):
+
         self._construct_catalog(bucket, prefix)
 
-        return self._query_spacetime_singleband(layer_name, layer_zoom, intersects, time_intervals)
+        return self._query_spacetime_singleband(layer_name,
+                                                layer_zoom,
+                                                intersects,
+                                                time_intervals)
 
     def query_spacetime_multiband(self,
-            bucket,
-            prefix,
-            layer_name,
-            layer_zoom,
-            intersects=None,
-            time_intervals=[]):
+                                  bucket,
+                                  prefix,
+                                  layer_name,
+                                  layer_zoom,
+                                  intersects=None,
+                                  time_intervals=[]):
+
         self._construct_catalog(bucket, prefix)
 
-        return self._query_spacetime_multiband(layer_name, layer_zoom, intersects, time_intervals)
+        return self._query_spacetime_multiband(layer_name,
+                                               layer_zoom,
+                                               intersects,
+                                               time_intervals)
 
-    def write_spatial_singleband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy="zorder",
-            bucket=None,
-            prefix=None):
+    def write_spatial_singleband(self,
+                                 layer_name,
+                                 layer_zoom,
+                                 rdd,
+                                 metadata,
+                                 index_strategy="zorder",
+                                 bucket=None,
+                                 prefix=None):
 
         if bucket is not None or prefix is not None:
             self._construct_catalog(bucket, prefix)
 
         self._write_spatial_singleband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+                                       layer_zoom,
+                                       rdd,
+                                       metadata,
+                                       index_strategy)
 
     def write_spatial_multiband(self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy="zorder",
-            bucket=None,
-            prefix=None):
+                                layer_name,
+                                layer_zoom,
+                                rdd,
+                                metadata,
+                                index_strategy="zorder",
+                                bucket=None,
+                                prefix=None):
 
         if bucket is not None or prefix is not None:
             self._construct_catalog(bucket, prefix)
 
         self._write_spatial_multiband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+                                      layer_zoom,
+                                      rdd,
+                                      metadata,
+                                      index_strategy)
 
-    def write_spacetime_singleband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit=None,
-            index_strategy="zorder",
-            bucket=None,
-            prefix=None):
-
-        if bucket is not None or prefix is not None:
-            self._construct_catalog(bucket, prefix)
-
-        self._write_spacetime_singleband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                time_unit,
-                index_strategy)
-
-    def write_spacetime_multiband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit=None,
-            index_strategy="zorder",
-            bucket=None,
-            prefix=None):
+    def write_spacetime_singleband(self,
+                                   layer_name,
+                                   layer_zoom,
+                                   rdd,
+                                   metadata,
+                                   time_unit=None,
+                                   index_strategy="zorder",
+                                   bucket=None,
+                                   prefix=None):
 
         if bucket is not None or prefix is not None:
             self._construct_catalog(bucket, prefix)
 
         self._write_spacetime_singleband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                time_unit,
-                index_strategy)
+                                         layer_zoom,
+                                         rdd,
+                                         metadata,
+                                         time_unit,
+                                         index_strategy)
+
+    def write_spacetime_multiband(self,
+                                  layer_name,
+                                  layer_zoom,
+                                  rdd,
+                                  metadata,
+                                  time_unit=None,
+                                  index_strategy="zorder",
+                                  bucket=None,
+                                  prefix=None):
+
+        if bucket is not None or prefix is not None:
+            self._construct_catalog(bucket, prefix)
+
+        self._write_spacetime_singleband(layer_name,
+                                         layer_zoom,
+                                         rdd,
+                                         metadata,
+                                         time_unit,
+                                         index_strategy)
 
 
 class FileCatalog(_Catalog):
@@ -617,132 +634,139 @@ class FileCatalog(_Catalog):
         self._writer = self.writer_factory.buildFile(self._store)
 
     def query_spatial_singleband(self,
-            path,
-            layer_name,
-            layer_zoom,
-            intersects=None):
+                                 path,
+                                 layer_name,
+                                 layer_zoom,
+                                 intersects=None):
+
         self._construct_catalog(path)
 
         return self._query_spatial_singleband(layer_name, layer_zoom, intersects)
 
     def query_spatial_multiband(self,
-            path,
-            layer_name,
-            layer_zoom,
-            intersects=None):
+                                path,
+                                layer_name,
+                                layer_zoom,
+                                intersects=None):
+
         self._construct_catalog(path)
 
         return self._query_spatial_multiband(layer_name, layer_zoom, intersects)
 
     def query_spacetime_singleband(self,
-            path,
-            layer_name,
-            layer_zoom,
-            intersects=None,
-            time_intervals=[]):
+                                   path,
+                                   layer_name,
+                                   layer_zoom,
+                                   intersects=None,
+                                   time_intervals=[]):
+
         self._construct_catalog(path)
 
-        return self._query_spacetime_singleband(layer_name, layer_zoom, intersects, time_intervals)
+        return self._query_spacetime_singleband(layer_name,
+                                                layer_zoom,
+                                                intersects,
+                                                time_intervals)
 
     def query_spacetime_multiband(self,
-            path,
-            layer_name,
-            layer_zoom,
-            intersects=None,
-            time_intervals=[]):
+                                  path,
+                                  layer_name,
+                                  layer_zoom,
+                                  intersects=None,
+                                  time_intervals=[]):
+
         self._construct_catalog(path)
 
-        return self._query_spacetime_multiband(layer_name, layer_zoom, intersects, time_intervals)
+        return self._query_spacetime_multiband(layer_name,
+                                               layer_zoom,
+                                               intersects,
+                                               time_intervals)
 
-    def write_spatial_singleband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy="zorder",
-            path=None):
+    def write_spatial_singleband(self,
+                                 layer_name,
+                                 layer_zoom,
+                                 rdd,
+                                 metadata,
+                                 index_strategy="zorder",
+                                 path=None):
 
         if path is not None:
             self._construct_catalog(path)
 
         self._write_spatial_singleband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+                                       layer_zoom,
+                                       rdd,
+                                       metadata,
+                                       index_strategy)
 
     def write_spatial_multiband(self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy="zorder",
-            path=None):
+                                layer_name,
+                                layer_zoom,
+                                rdd,
+                                metadata,
+                                index_strategy="zorder",
+                                path=None):
 
         if path is not None:
             self._construct_catalog(path)
 
         self._write_spatial_multiband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+                                      layer_zoom,
+                                      rdd,
+                                      metadata,
+                                      index_strategy)
 
-    def write_spacetime_singleband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit=None,
-            index_strategy="zorder",
-            path=None):
+    def write_spacetime_singleband(self,
+                                   layer_name,
+                                   layer_zoom,
+                                   rdd,
+                                   metadata,
+                                   time_unit=None,
+                                   index_strategy="zorder",
+                                   path=None):
 
         if path is not None:
             self._construct_catalog(path)
 
         self._write_spacetime_singleband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                time_unit,
-                index_strategy)
+                                         layer_zoom,
+                                         rdd,
+                                         metadata,
+                                         time_unit,
+                                         index_strategy)
 
-    def write_spacetime_multiband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit=None,
-            index_strategy="zorder",
-            path=None):
+    def write_spacetime_multiband(self,
+                                  layer_name,
+                                  layer_zoom,
+                                  rdd,
+                                  metadata,
+                                  time_unit=None,
+                                  index_strategy="zorder",
+                                  path=None):
 
         if path is not None:
             self._construct_catalog(path)
 
         self._write_spacetime_multiband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                time_unit,
-                index_strategy)
+                                        layer_zoom,
+                                        rdd,
+                                        metadata,
+                                        time_unit,
+                                        index_strategy)
 
 
 class CassandraCatalog(_Catalog):
 
     def __init__(self,
-            pysc,
-            hosts,
-            username,
-            password,
-            replication_strategy,
-            replication_factor,
-            local_dc,
-            uhprd,
-            allow_remote_dcs_for_lcl,
-            avroregistry=None):
+                 pysc,
+                 hosts,
+                 username,
+                 password,
+                 replication_strategy,
+                 replication_factor,
+                 local_dc,
+                 uhprd,
+                 allow_remote_dcs_for_lcl,
+                 avroregistry=None):
 
         self.pysc = pysc
         self._sc = self.pysc._jsc.sc()
@@ -753,7 +777,7 @@ class CassandraCatalog(_Catalog):
         self.replication_strategy = replication_strategy
         self.replication_factor = replication_factor
         self.local_dc = local_dc
-        self.uhpd = uhpd
+        self.uhpd = uhprd
         self.allow_remote_dcs_for_lcl = allow_remote_dcs_for_lcl
         self.avroregistry = avroregistry
 
@@ -766,26 +790,26 @@ class CassandraCatalog(_Catalog):
 
     def _construct_catalog(self, new_attribute_key_space, new_attribute_table):
         is_old_key = new_attribute_key_space != self.attribute_key_space
-        is_none_key = new_attibute_key_space is not None
+        is_none_key = new_attribute_key_space is not None
 
         is_old_table = new_attribute_table != self.attribute_table
-        is_none_table = new_attibute_table is not None
+        is_none_table = new_attribute_table is not None
 
         if (is_old_key and is_none_key) or (is_old_table and is_none_table):
             self.attribute_key_space = new_attribute_key_space
             self.attribute_table = new_attribute_table
 
             self._store = self.store_factory.buildCassandra(
-                    self.hosts,
-                    self.username,
-                    self.password,
-                    self.replication_strategy,
-                    self.replication_factor,
-                    self.local_dc,
-                    self.uhpd,
-                    self.allow_remote_dcs_for_lcl,
-                    self.attribute_key_space,
-                    self.attribute_table)
+                self.hosts,
+                self.username,
+                self.password,
+                self.replication_strategy,
+                self.replication_factor,
+                self.local_dc,
+                self.uhpd,
+                self.allow_remote_dcs_for_lcl,
+                self.attribute_key_space,
+                self.attribute_table)
 
             self._construct_reader()
             self._construct_writer()
@@ -797,130 +821,136 @@ class CassandraCatalog(_Catalog):
     def _construct_writer(self):
         self._writer = \
                 self.writer_factory.buildCassandra(self._store,
-                        self.attribute_key_space,
-                        self.attribute_table)
+                                                   self.attribute_key_space,
+                                                   self.attribute_table)
 
     def query_spatial_singleband(self,
-            attribute_key_space,
-            attribute_table,
-            layer_name,
-            layer_zoom,
-            intersects=None):
+                                 attribute_key_space,
+                                 attribute_table,
+                                 layer_name,
+                                 layer_zoom,
+                                 intersects=None):
+
         self._construct_catalog(attribute_key_space, attribute_table)
 
         return self._query_spatial_singleband(layer_name, layer_zoom, intersects)
 
     def query_spatial_multiband(self,
-            attribute_key_space,
-            attribute_table,
-            layer_name,
-            layer_zoom,
-            intersects=None):
+                                attribute_key_space,
+                                attribute_table,
+                                layer_name,
+                                layer_zoom,
+                                intersects=None):
+
         self._construct_catalog(attribute_key_space, attribute_table)
-        self._construct_catalog(attribute_table)
 
         return self._query_spatial_multiband(layer_name, layer_zoom, intersects)
 
     def query_spacetime_singleband(self,
-            attribute_key_space,
-            attribute_table,
-            layer_name,
-            layer_zoom,
-            intersects=None,
-            time_intervals=[]):
+                                   attribute_key_space,
+                                   attribute_table,
+                                   layer_name,
+                                   layer_zoom,
+                                   intersects=None,
+                                   time_intervals=[]):
+
         self._construct_catalog(attribute_key_space, attribute_table)
 
-        return self._query_spacetime_singleband(layer_name, layer_zoom, intersects, time_intervals)
+        return self._query_spacetime_singleband(layer_name,
+                                                layer_zoom,
+                                                intersects,
+                                                time_intervals)
 
     def query_spacetime_multiband(self,
-            attribute_key_space,
-            attribute_table,
-            layer_name,
-            layer_zoom,
-            intersects=None,
-            time_intervals=[]):
+                                  attribute_key_space,
+                                  attribute_table,
+                                  layer_name,
+                                  layer_zoom,
+                                  intersects=None,
+                                  time_intervals=[]):
+
         self._construct_catalog(attribute_key_space, attribute_table)
 
-        return self._query_spacetime_multiband(layer_name, layer_zoom, intersects, time_intervals)
+        return self._query_spacetime_multiband(layer_name,
+                                               layer_zoom,
+                                               intersects,
+                                               time_intervals)
 
-    def write_spatial_singleband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy="zorder",
-            attribute_key_space=None,
-            attribute_table=None):
+    def write_spatial_singleband(self,
+                                 layer_name,
+                                 layer_zoom,
+                                 rdd,
+                                 metadata,
+                                 index_strategy="zorder",
+                                 attribute_key_space=None,
+                                 attribute_table=None):
 
         if attribute_key_space is not None or attribute_table is not None:
             self._construct_catalog(attribute_key_space, attribute_table)
 
         self._write_spatial_singleband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+                                       layer_zoom,
+                                       rdd,
+                                       metadata,
+                                       index_strategy)
 
     def write_spatial_multiband(self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy="zorder",
-            attribute_key_space=None,
-            attribute_table=None):
+                                layer_name,
+                                layer_zoom,
+                                rdd,
+                                metadata,
+                                index_strategy="zorder",
+                                attribute_key_space=None,
+                                attribute_table=None):
 
         if attribute_key_space is not None or attribute_table is not None:
             self._construct_catalog(attribute_key_space, attribute_table)
 
         self._write_spatial_multiband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+                                      layer_zoom,
+                                      rdd,
+                                      metadata,
+                                      index_strategy)
 
-    def write_spacetime_singleband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit=None,
-            index_strategy="zorder",
-            attribute_key_space=None,
-            attribute_table=None):
+    def write_spacetime_singleband(self,
+                                   layer_name,
+                                   layer_zoom,
+                                   rdd,
+                                   metadata,
+                                   time_unit=None,
+                                   index_strategy="zorder",
+                                   attribute_key_space=None,
+                                   attribute_table=None):
 
         if attribute_key_space is not None or attribute_table is not None:
             self._construct_catalog(attribute_key_space, attribute_table)
 
         self._write_spacetime_singleband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                time_unit,
-                index_strategy)
+                                         layer_zoom,
+                                         rdd,
+                                         metadata,
+                                         time_unit,
+                                         index_strategy)
 
-    def write_spacetime_multiband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit=None,
-            index_strategy="zorder",
-            attribute_key_space=None,
-            attribute_table=None):
+    def write_spacetime_multiband(self,
+                                  layer_name,
+                                  layer_zoom,
+                                  rdd,
+                                  metadata,
+                                  time_unit=None,
+                                  index_strategy="zorder",
+                                  attribute_key_space=None,
+                                  attribute_table=None):
 
         if attribute_key_space is not None or attribute_table is not None:
             self._construct_catalog(attribute_key_space, attribute_table)
 
         self._write_spacetime_multiband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                time_unit,
-                index_strategy)
+                                        layer_zoom,
+                                        rdd,
+                                        metadata,
+                                        time_unit,
+                                        index_strategy)
 
 
 class HBaseCatalog(_Catalog):
@@ -943,14 +973,14 @@ class HBaseCatalog(_Catalog):
 
     def _construct_catalog(self, new_attribute_table):
         is_old = new_attribute_table != self.attribute_table
-        is_none = new_attibute_table is not None
+        is_none = new_attribute_table is not None
 
         if is_old and is_none:
             self.attribute_table = new_attribute_table
             self._store = self.store_factory.buildHBase(self.zookeepers,
-                    self.master,
-                    self.client_port,
-                    self.attribute_table)
+                                                        self.master,
+                                                        self.client_port,
+                                                        self.attribute_table)
             self._construct_reader()
             self._construct_writer()
 
@@ -963,122 +993,134 @@ class HBaseCatalog(_Catalog):
                 self.writer_factory.buildHBase(self._store, self.attribute_table)
 
     def query_spatial_singleband(self,
-            attribute_table,
-            layer_name,
-            layer_zoom,
-            intersects=None):
+                                 attribute_table,
+                                 layer_name,
+                                 layer_zoom,
+                                 intersects=None):
+
         self._construct_catalog(attribute_table)
 
         return self._query_spatial_singleband(layer_name, layer_zoom, intersects)
 
     def query_spatial_multiband(self,
-            attribute_table,
-            layer_name,
-            layer_zoom,
-            intersects=None):
+                                attribute_table,
+                                layer_name,
+                                layer_zoom,
+                                intersects=None):
+
         self._construct_catalog(attribute_table)
 
         return self._query_spatial_multiband(layer_name, layer_zoom, intersects)
 
     def query_spacetime_singleband(self,
-            attribute_table,
-            layer_name,
-            layer_zoom,
-            intersects=None,
-            time_intervals=[]):
+                                   attribute_table,
+                                   layer_name,
+                                   layer_zoom,
+                                   intersects=None,
+                                   time_intervals=[]):
+
         self._construct_catalog(attribute_table)
 
-        return self._query_spacetime_singleband(layer_name, layer_zoom, intersects, time_intervals)
+        return self._query_spacetime_singleband(layer_name,
+                                                layer_zoom,
+                                                intersects,
+                                                time_intervals)
 
     def query_spacetime_multiband(self,
-            attribute_table,
-            layer_name,
-            layer_zoom,
-            intersects=None,
-            time_intervals=[]):
+                                  attribute_table,
+                                  layer_name,
+                                  layer_zoom,
+                                  intersects=None,
+                                  time_intervals=[]):
+
         self._construct_catalog(attribute_table)
 
-        return self._query_spacetime_multiband(layer_name, layer_zoom, intersects, time_intervals)
+        return self._query_spacetime_multiband(layer_name,
+                                               layer_zoom,
+                                               intersects,
+                                               time_intervals)
 
-    def write_spatial_singleband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy="zorder",
-            attribute_table=None):
+    def write_spatial_singleband(self,
+                                 layer_name,
+                                 layer_zoom,
+                                 rdd, metadata,
+                                 index_strategy="zorder",
+                                 attribute_table=None):
 
         if attribute_table is not None:
             self._construct_catalog(attribute_table)
 
         self._write_spatial_singleband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+                                       layer_zoom,
+                                       rdd,
+                                       metadata,
+                                       index_strategy)
 
     def write_spatial_multiband(self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy="zorder",
-            attribute_table=None):
+                                layer_name,
+                                layer_zoom,
+                                rdd,
+                                metadata,
+                                index_strategy="zorder",
+                                attribute_table=None):
 
         if attribute_table is not None:
             self._construct_catalog(attribute_table)
 
         self._write_spatial_singleband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+                                       layer_zoom,
+                                       rdd,
+                                       metadata,
+                                       index_strategy)
 
-    def write_spacetime_singleband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit=None,
-            index_strategy="zorder",
-            attribute_table=None):
+    def write_spacetime_singleband(self,
+                                   layer_name,
+                                   layer_zoom,
+                                   rdd, metadata,
+                                   time_unit=None,
+                                   index_strategy="zorder",
+                                   attribute_table=None):
 
         if attribute_table is not None:
             self._construct_catalog(attribute_table)
 
         self._write_spacetime_singleband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                time_unit,
-                index_strategy)
+                                         layer_zoom,
+                                         rdd,
+                                         metadata,
+                                         time_unit,
+                                         index_strategy)
 
-    def write_spacetime_multiband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit=None,
-            index_strategy="zorder",
-            attribute_table=None):
+    def write_spacetime_multiband(self,
+                                  layer_name,
+                                  layer_zoom,
+                                  rdd,
+                                  metadata,
+                                  time_unit=None,
+                                  index_strategy="zorder",
+                                  attribute_table=None):
 
         if attribute_table is not None:
             self._construct_catalog(attribute_table)
 
         self._write_spacetime_multiband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                time_unit,
-                index_strategy)
+                                        layer_zoom,
+                                        rdd,
+                                        metadata,
+                                        time_unit,
+                                        index_strategy)
 
 
 class AccumuloCatalog(_Catalog):
 
-    def __init__(self, pysc, zookeepers, instance_name, user, password, avroregistry=None):
+    def __init__(self,
+                 pysc,
+                 zookeepers,
+                 instance_name,
+                 user,
+                 password,
+                 avroregistry=None):
+
         self.pysc = pysc
         self._sc = self.pysc._jsc.sc()
 
@@ -1097,135 +1139,146 @@ class AccumuloCatalog(_Catalog):
 
     def _construct_catalog(self, new_attribute_table):
         is_old = new_attribute_table != self.attribute_table
-        is_none = new_attibute_table is not None
+        is_none = new_attribute_table is not None
 
         if is_old and is_none:
             self.attribute_table = new_attribute_table
             self._store = self.store_factory.buildAccumulo(self.zookeepers,
-                    self.instance_name,
-                    self.user,
-                    self.password,
-                    self.attribute_table)
+                                                           self.instance_name,
+                                                           self.user,
+                                                           self.password,
+                                                           self.attribute_table)
             self._construct_reader()
             self._construct_writer()
 
     def _construct_reader(self):
         self._reader = \
-                self.reader_factory.buildAccumulo(self.isntance_name, self._store, self._sc)
+                self.reader_factory.buildAccumulo(self.instance_name,
+                                                  self._store,
+                                                  self._sc)
 
     def _construct_writer(self):
         self._writer = \
-                self.writer_factory.buildAccumulo(self.instance_name, self._store, self.attribute_table)
+                self.writer_factory.buildAccumulo(self.instance_name,
+                                                  self._store,
+                                                  self.attribute_table)
 
     def query_spatial_singleband(self,
-            attribute_table,
-            layer_name,
-            layer_zoom,
-            intersects=None):
+                                 attribute_table,
+                                 layer_name,
+                                 layer_zoom,
+                                 intersects=None):
+
         self._construct_catalog(attribute_table)
 
         return self._query_spatial_singleband(layer_name, layer_zoom, intersects)
 
     def query_spatial_multiband(self,
-            attribute_table,
-            layer_name,
-            layer_zoom,
-            intersects=None):
+                                attribute_table,
+                                layer_name,
+                                layer_zoom,
+                                intersects=None):
+
         self._construct_catalog(attribute_table)
 
         return self._query_spatial_multiband(layer_name, layer_zoom, intersects)
 
     def query_spacetime_singleband(self,
-            attribute_table,
-            layer_name,
-            layer_zoom,
-            intersects=None,
-            time_intervals=[]):
+                                   attribute_table,
+                                   layer_name,
+                                   layer_zoom,
+                                   intersects=None,
+                                   time_intervals=[]):
+
         self._construct_catalog(attribute_table)
 
-        return self._query_spacetime_singleband(layer_name, layer_zoom, intersects, time_intervals)
+        return self._query_spacetime_singleband(layer_name,
+                                                layer_zoom,
+                                                intersects,
+                                                time_intervals)
 
     def query_spacetime_multiband(self,
-            attribute_table,
-            layer_name,
-            layer_zoom,
-            intersects=None,
-            time_intervals=[]):
+                                  attribute_table,
+                                  layer_name,
+                                  layer_zoom,
+                                  intersects=None,
+                                  time_intervals=[]):
+
         self._construct_catalog(attribute_table)
 
-        return self._query_spacetime_multiband(layer_name, layer_zoom, intersects, time_intervals)
+        return self._query_spacetime_multiband(layer_name,
+                                               layer_zoom,
+                                               intersects,
+                                               time_intervals)
 
-    def write_spatial_singleband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy="zorder",
-            attribute_table=None):
+    def write_spatial_singleband(self,
+                                 layer_name,
+                                 layer_zoom,
+                                 rdd,
+                                 metadata,
+                                 index_strategy="zorder",
+                                 attribute_table=None):
 
         if attribute_table is not None:
             self._construct_catalog(attribute_table)
 
         self._write_spatial_singleband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+                                       layer_zoom,
+                                       rdd,
+                                       metadata,
+                                       index_strategy)
 
     def write_spatial_multiband(self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            index_strategy="zorder",
-            attribute_table=None):
+                                layer_name,
+                                layer_zoom,
+                                rdd,
+                                metadata,
+                                index_strategy="zorder",
+                                attribute_table=None):
 
         if attribute_table is not None:
             self._construct_catalog(attribute_table)
 
         self._write_spatial_multiband(layer_name,
-                layer_zoom,
-                rdd,
-                metadata,
-                index_strategy)
+                                      layer_zoom,
+                                      rdd,
+                                      metadata,
+                                      index_strategy)
 
-    def write_spacetime_singleband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit=None,
-            index_strategy="zorder",
-            attribute_table=None):
-
-        if attribute_table is not None:
-            self._construct_catalog(attribute_table)
-
-        self._wrtie_spacetime_singleband(layer_name,
-                layer_zoom,
-                rdd, metadata,
-                attribute_table,
-                time_unit,
-                index_strategy)
-
-    def write_spacetime_multiband(
-            self,
-            layer_name,
-            layer_zoom,
-            rdd,
-            metadata,
-            time_unit=None,
-            index_strategy="zorder",
-            attribute_table=None):
+    def write_spacetime_singleband(self,
+                                   layer_name,
+                                   layer_zoom,
+                                   rdd,
+                                   metadata,
+                                   time_unit=None,
+                                   index_strategy="zorder",
+                                   attribute_table=None):
 
         if attribute_table is not None:
             self._construct_catalog(attribute_table)
 
-        self._wrtie_spacetime_multiband(layer_name,
-                layer_zoom,
-                rdd, metadata,
-                attribute_table,
-                time_unit,
-                index_strategy)
+        self._write_spacetime_singleband(layer_name,
+                                         layer_zoom,
+                                         rdd, metadata,
+                                         attribute_table,
+                                         time_unit,
+                                         index_strategy)
+
+    def write_spacetime_multiband(self,
+                                  layer_name,
+                                  layer_zoom,
+                                  rdd,
+                                  metadata,
+                                  time_unit=None,
+                                  index_strategy="zorder",
+                                  attribute_table=None):
+
+        if attribute_table is not None:
+            self._construct_catalog(attribute_table)
+
+        self._write_spacetime_multiband(layer_name,
+                                        layer_zoom,
+                                        rdd, metadata,
+                                        attribute_table,
+                                        time_unit,
+                                        index_strategy)
