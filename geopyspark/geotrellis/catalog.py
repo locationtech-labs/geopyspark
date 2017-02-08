@@ -307,6 +307,13 @@ class _Catalog(object):
 
 class HadoopCatalog(_Catalog):
 
+    __slots__ = ["pysc",
+                 "avrogregistry",
+                 "store",
+                 "reader",
+                 "writer",
+                 "uri"]
+
     def __init__(self, pysc, avroregistry=None):
 
         super().__init__(pysc, avroregistry)
@@ -460,6 +467,14 @@ class HadoopCatalog(_Catalog):
 
 
 class S3Catalog(_Catalog):
+
+    __slots__ = ["pysc",
+                 "avrogregistry",
+                 "store",
+                 "reader",
+                 "writer",
+                 "bucket",
+                 "prefix"]
 
     def __init__(self, pysc, avroregistry=None):
 
@@ -628,6 +643,13 @@ class S3Catalog(_Catalog):
 
 class FileCatalog(_Catalog):
 
+    __slots__ = ["pysc",
+                 "avrogregistry",
+                 "store",
+                 "reader",
+                 "writer",
+                 "path"]
+
     def __init__(self, pysc, avroregistry=None):
 
         super().__init__(pysc, avroregistry)
@@ -782,6 +804,22 @@ class FileCatalog(_Catalog):
 
 class CassandraCatalog(_Catalog):
 
+    __slots__ = ["pysc",
+                 "avrogregistry",
+                 "store",
+                 "reader",
+                 "writer",
+                 "hosts",
+                 "username",
+                 "password",
+                 "replication_strategy",
+                 "replication_factor",
+                 "local_dc",
+                 "uhprd",
+                 "allow_remote_dcs_for_lcl",
+                 "attribute_key_space",
+                 "attribute_table"]
+
     def __init__(self,
                  pysc,
                  hosts,
@@ -838,12 +876,12 @@ class CassandraCatalog(_Catalog):
             self._construct_writer()
 
     def _construct_reader(self):
-        self._reader = \
+        self.reader = \
                 self.reader_factory.buildCassandra(self.store,
                                                    self._sc)
 
     def _construct_writer(self):
-        self._writer = \
+        self.writer = \
                 self.writer_factory.buildCassandra(self.store,
                                                    self.attribute_key_space,
                                                    self.attribute_table)
@@ -983,6 +1021,16 @@ class CassandraCatalog(_Catalog):
 
 class HBaseCatalog(_Catalog):
 
+    __slots__ = ["pysc",
+                 "avrogregistry",
+                 "store",
+                 "reader",
+                 "writer",
+                 "zookeepers",
+                 "master",
+                 "client_port",
+                 "attribute_table"]
+
     def __init__(self,
                  pysc,
                  zookeepers,
@@ -1017,11 +1065,11 @@ class HBaseCatalog(_Catalog):
             self._construct_writer()
 
     def _construct_reader(self):
-        self._reader = \
+        self.reader = \
                 self.reader_factory.buildHBase(self.store, self._sc)
 
     def _construct_writer(self):
-        self._writer = \
+        self.writer = \
                 self.writer_factory.buildHBase(self.store,
                                                self.attribute_table)
 
@@ -1150,6 +1198,17 @@ class HBaseCatalog(_Catalog):
 
 class AccumuloCatalog(_Catalog):
 
+    __slots__ = ["pysc",
+                 "avrogregistry",
+                 "store",
+                 "reader",
+                 "writer",
+                 "zookeepers",
+                 "instance_name",
+                 "user",
+                 "password",
+                 "attribute_table"]
+
     def __init__(self,
                  pysc,
                  zookeepers,
@@ -1187,13 +1246,13 @@ class AccumuloCatalog(_Catalog):
             self._construct_writer()
 
     def _construct_reader(self):
-        self._reader = \
+        self.reader = \
                 self.reader_factory.buildAccumulo(self.instance_name,
                                                   self.store,
                                                   self._sc)
 
     def _construct_writer(self):
-        self._writer = \
+        self.writer = \
                 self.writer_factory.buildAccumulo(self.instance_name,
                                                   self.store,
                                                   self.attribute_table)
@@ -1298,8 +1357,8 @@ class AccumuloCatalog(_Catalog):
 
         self._write_spacetime_singleband(layer_name,
                                          layer_zoom,
-                                         rdd, metadata,
-                                         attribute_table,
+                                         rdd,
+                                         metadata,
                                          time_unit,
                                          index_strategy)
 
@@ -1317,7 +1376,7 @@ class AccumuloCatalog(_Catalog):
 
         self._write_spacetime_multiband(layer_name,
                                         layer_zoom,
-                                        rdd, metadata,
-                                        attribute_table,
+                                        rdd,
+                                        metadata,
                                         time_unit,
                                         index_strategy)
