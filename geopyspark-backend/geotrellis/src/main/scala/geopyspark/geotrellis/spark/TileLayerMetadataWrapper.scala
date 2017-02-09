@@ -7,6 +7,7 @@ import geotrellis.proj4._
 import geotrellis.raster._
 import geotrellis.vector._
 import geotrellis.spark._
+import geotrellis.spark.io.avro._
 import geotrellis.spark.tiling._
 
 import org.apache.spark._
@@ -15,6 +16,8 @@ import org.apache.spark.rdd.RDD
 import scala.collection.JavaConverters._
 import collection.JavaConversions._
 import java.util.Map
+
+import scala.reflect.ClassTag
 
 
 object TileLayerMetadataWrapper {
@@ -93,7 +96,11 @@ object TileLayerMetadataWrapper {
     formatMetadata(metadata)
   }
 
-  def collectSpatialSinglebandMetadata(
+  def collectPythonMetadata[
+    K: GetComponent[?, ProjectedExtent]: (? => TilerKeyMethods[K, K2]): AvroRecordCodec: ClassTag,
+    T <: CellGrid: AvroRecordCodec: ClassTag,
+    K2: Boundable: SpatialComponent
+  ](
     javaRDD: RDD[Array[Byte]],
     schemaJson: String,
     pythonExtent: (Int, Int, Int, Int),
@@ -101,47 +108,8 @@ object TileLayerMetadataWrapper {
     crsJavaMap: java.util.Map[_ <: String, _ <: String]
     ): java.util.Map[String, Any] = {
     val rdd =
-      PythonTranslator.fromPython[(ProjectedExtent, Tile)](javaRDD, Some(schemaJson))
+      PythonTranslator.fromPython[(K, T)](javaRDD, Some(schemaJson))
 
-    createCollection(rdd, pythonExtent, pythonTileLayout, crsJavaMap)
-  }
-
-  def collectSpatialMultibandMetadata(
-    javaRDD: RDD[Array[Byte]],
-    schemaJson: String,
-    pythonExtent: (Int, Int, Int, Int),
-    pythonTileLayout: (Int, Int, Int, Int),
-    crsJavaMap: java.util.Map[_ <: String, _ <: String]
-    ): java.util.Map[String, Any] = {
-    val rdd =
-      PythonTranslator.fromPython[(ProjectedExtent, MultibandTile)](javaRDD, Some(schemaJson))
-
-    createCollection(rdd, pythonExtent, pythonTileLayout, crsJavaMap)
-  }
-
-  def collectSpaceTimeSinglebandMetadata(
-    javaRDD: RDD[Array[Byte]],
-    schemaJson: String,
-    pythonExtent: (Int, Int, Int, Int),
-    pythonTileLayout: (Int, Int, Int, Int),
-    crsJavaMap: java.util.Map[_ <: String, _ <: String]
-    ): java.util.Map[String, Any] = {
-    val rdd =
-      PythonTranslator.fromPython[(TemporalProjectedExtent, Tile)](javaRDD, Some(schemaJson))
-
-    createCollection[TemporalProjectedExtent, Tile, SpaceTimeKey](rdd, pythonExtent, pythonTileLayout, crsJavaMap)
-  }
-
-  def collectSpaceTimeMultibandMetadata(
-    javaRDD: RDD[Array[Byte]],
-    schemaJson: String,
-    pythonExtent: (Int, Int, Int, Int),
-    pythonTileLayout: (Int, Int, Int, Int),
-    crsJavaMap: java.util.Map[_ <: String, _ <: String]
-    ): java.util.Map[String, Any] = {
-    val rdd =
-      PythonTranslator.fromPython[(TemporalProjectedExtent, MultibandTile)](javaRDD, Some(schemaJson))
-
-    createCollection[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](rdd, pythonExtent, pythonTileLayout, crsJavaMap)
+    createCollection[K, T, K2](rdd, pythonExtent, pythonTileLayout, crsJavaMap)
   }
 }
