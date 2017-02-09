@@ -211,6 +211,10 @@ class _Catalog(object):
                                     layer_zoom)
         else:
             reader_method = self.reader.querySpaceTimeSingleband
+
+            if time_intervals is None:
+                time_intervals = []
+
             return self._query_spacetime(reader_method,
                                          "singleband",
                                          layer_name,
@@ -233,6 +237,10 @@ class _Catalog(object):
                                     layer_zoom)
         else:
             reader_method = self.reader.querySpaceTimeMultiband
+
+            if time_intervals is None:
+                time_intervals = []
+
             return self._query_spacetime(reader_method,
                                          "multiband",
                                          layer_name,
@@ -370,7 +378,7 @@ class HadoopCatalog(_Catalog):
                                    layer_name,
                                    layer_zoom,
                                    intersects=None,
-                                   time_intervals=[]):
+                                   time_intervals=None):
 
         self._construct_catalog(uri)
 
@@ -384,7 +392,7 @@ class HadoopCatalog(_Catalog):
                                   layer_name,
                                   layer_zoom,
                                   intersects=None,
-                                  time_intervals=[]):
+                                  time_intervals=None):
 
         self._construct_catalog(uri)
 
@@ -540,7 +548,7 @@ class S3Catalog(_Catalog):
                                    layer_name,
                                    layer_zoom,
                                    intersects=None,
-                                   time_intervals=[]):
+                                   time_intervals=None):
 
         self._construct_catalog(bucket, prefix)
 
@@ -555,7 +563,7 @@ class S3Catalog(_Catalog):
                                   layer_name,
                                   layer_zoom,
                                   intersects=None,
-                                  time_intervals=[]):
+                                  time_intervals=None):
 
         self._construct_catalog(bucket, prefix)
 
@@ -706,7 +714,7 @@ class FileCatalog(_Catalog):
                                    layer_name,
                                    layer_zoom,
                                    intersects=None,
-                                   time_intervals=[]):
+                                   time_intervals=None):
 
         self._construct_catalog(path)
 
@@ -720,7 +728,7 @@ class FileCatalog(_Catalog):
                                   layer_name,
                                   layer_zoom,
                                   intersects=None,
-                                  time_intervals=[]):
+                                  time_intervals=None):
 
         self._construct_catalog(path)
 
@@ -918,7 +926,7 @@ class CassandraCatalog(_Catalog):
                                    layer_name,
                                    layer_zoom,
                                    intersects=None,
-                                   time_intervals=[]):
+                                   time_intervals=None):
 
         self._construct_catalog(attribute_key_space, attribute_table)
 
@@ -933,7 +941,7 @@ class CassandraCatalog(_Catalog):
                                   layer_name,
                                   layer_zoom,
                                   intersects=None,
-                                  time_intervals=[]):
+                                  time_intervals=None):
 
         self._construct_catalog(attribute_key_space, attribute_table)
 
@@ -1102,7 +1110,7 @@ class HBaseCatalog(_Catalog):
                                    layer_name,
                                    layer_zoom,
                                    intersects=None,
-                                   time_intervals=[]):
+                                   time_intervals=None):
 
         self._construct_catalog(attribute_table)
 
@@ -1116,7 +1124,7 @@ class HBaseCatalog(_Catalog):
                                   layer_name,
                                   layer_zoom,
                                   intersects=None,
-                                  time_intervals=[]):
+                                  time_intervals=None):
 
         self._construct_catalog(attribute_table)
 
@@ -1286,7 +1294,7 @@ class AccumuloCatalog(_Catalog):
                                    layer_name,
                                    layer_zoom,
                                    intersects=None,
-                                   time_intervals=[]):
+                                   time_intervals=None):
 
         self._construct_catalog(attribute_table)
 
@@ -1300,7 +1308,7 @@ class AccumuloCatalog(_Catalog):
                                   layer_name,
                                   layer_zoom,
                                   intersects=None,
-                                  time_intervals=[]):
+                                  time_intervals=None):
 
         self._construct_catalog(attribute_table)
 
