@@ -42,8 +42,6 @@ class TileLayerMetadataTest(unittest.TestCase):
         (rows, cols) = value[1].shape
         layout = (1, 1, cols, rows)
 
-        print(value[1].dtype)
-
         actual = (value[1].dtype, (new_extent, (layout)), new_extent)
 
         result = self.metadata.collect_python_metadata(rdd,
