@@ -27,7 +27,7 @@ object TileLayerMetadataCollector {
   T <: CellGrid: AvroRecordCodec: ClassTag,
   K2: Boundable: SpatialComponent
   ](
-    javaRdd: RDD[Array[Byte]],
+    returnedRdd: RDD[Array[Byte]],
     schemaJson: String,
     pythonExtent: java.util.Map[String, Double],
     pythonTileLayout: java.util.Map[String, Int],
@@ -35,7 +35,7 @@ object TileLayerMetadataCollector {
   ): java.util.Map[String, Any] = {
 
     val rdd =
-      PythonTranslator.fromPython[(K, T)](javaRdd, Some(schemaJson))
+      PythonTranslator.fromPython[(K, T)](returnedRdd, Some(schemaJson))
 
     val layoutDefinition = LayoutDefinition(pythonExtent.toExtent,
       pythonTileLayout.toTileLayout)
@@ -54,7 +54,7 @@ object TileLayerMetadataCollector {
   def collectPythonMetadata(
     valueType: String,
     keyType: String,
-    javaRdd: RDD[Array[Byte]],
+    returnedRdd: RDD[Array[Byte]],
     schemaJson: String,
     pythonExtent: java.util.Map[String, Double],
     pythonTileLayout: java.util.Map[String, Int],
@@ -64,28 +64,28 @@ object TileLayerMetadataCollector {
     (valueType, keyType) match {
       case ("spatial", "singleband") =>
         createCollection[ProjectedExtent, Tile, SpatialKey](
-          javaRdd,
+          returnedRdd,
           schemaJson,
           pythonExtent,
           pythonTileLayout,
           crsJavaMap)
       case ("spatial", "multiband") =>
         createCollection[ProjectedExtent, MultibandTile, SpatialKey](
-          javaRdd,
+          returnedRdd,
           schemaJson,
           pythonExtent,
           pythonTileLayout,
           crsJavaMap)
       case ("spacetime", "singleband") =>
         createCollection[TemporalProjectedExtent, Tile, SpaceTimeKey](
-          javaRdd,
+          returnedRdd,
           schemaJson,
           pythonExtent,
           pythonTileLayout,
           crsJavaMap)
       case ("spacetime", "multiband") =>
         createCollection[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
-          javaRdd,
+          returnedRdd,
           schemaJson,
           pythonExtent,
           pythonTileLayout,
