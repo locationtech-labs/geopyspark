@@ -28,7 +28,13 @@ class TileLayerMetadataTest(unittest.TestCase):
         self.pysc._gateway.close()
 
     def check_results(self, actual, expected):
-        self.assertEqual(actual, expected)
+        if isinstance(actual, list) and isinstance(expected, list):
+            for x,y in zip(actual, expected):
+                self.check_results(x, y)
+        elif isinstance(actual, dict) and isinstance(expected, dict):
+            self.assertDictEqual(actual, expected)
+        else:
+            self.assertEqual(actual, expected)
 
     def test_collection(self):
         (rdd, schema) = self.hadoop_geotiff.get_spatial(self.dir_path)
@@ -37,12 +43,23 @@ class TileLayerMetadataTest(unittest.TestCase):
         projected_extent = value[0]
         old_extent = projected_extent.extent
 
-        new_extent = (old_extent.xmin, old_extent.ymin, old_extent.xmax, old_extent.ymax)
+        new_extent = {
+            "xmin": old_extent.xmin,
+            "ymin": old_extent.ymin,
+            "xmax": old_extent.xmax,
+            "ymax": old_extent.ymax
+        }
 
         (rows, cols) = value[1].shape
-        layout = (1, 1, cols, rows)
 
-        actual = (value[1].dtype, (new_extent, (layout)), new_extent)
+        layout = {
+            "layoutCols": 1,
+            "layoutRows": 1,
+            "tileCols": cols,
+            "tileRows": rows
+        }
+
+        actual = [value[1].dtype.name, layout, new_extent]
 
         result = self.metadata.collect_python_metadata(rdd,
                                                        schema,
@@ -50,7 +67,24 @@ class TileLayerMetadataTest(unittest.TestCase):
                                                        layout,
                                                        epsg_code=value[0].epsg_code)
 
-        expected = (result['cellType'], result['layout'], result['extent'])
+        returned_layout_extent = result['layout'][0]
+        layout_java_object = result['layout'][1]
+
+        returned_extent = {
+            'xmin': returned_layout_extent['xmin'],
+            'ymin': returned_layout_extent['ymin'],
+            'xmax': returned_layout_extent['xmax'],
+            'ymax': returned_layout_extent['ymax']
+        }
+
+        returned_layout = {
+            'layoutCols': layout_java_object['layoutCols'],
+            'layoutRows': layout_java_object['layoutRows'],
+            'tileCols': layout_java_object['tileCols'],
+            'tileRows': layout_java_object['tileRows']
+        }
+
+        expected = [result['cellType'], returned_layout, returned_extent]
 
         self.check_results(actual, expected)
 
