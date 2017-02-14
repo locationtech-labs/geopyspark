@@ -3,7 +3,7 @@ add_spark_path()
 check_directory()
 
 from pyspark import SparkContext
-from geopyspark.geotrellis.tile_layer_metadata import TileLayerMetadata
+from geopyspark.geotrellis.tile_layer_metadata import TileLayerMethods
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
@@ -15,7 +15,7 @@ import pytest
 class TileLayerMetadataTest(unittest.TestCase):
     def setUp(self):
         self.pysc = SparkContext(master="local[*]", appName="metadata-test")
-        self.metadata = TileLayerMetadata(self.pysc)
+        self.metadata = TileLayerMethods(self.pysc)
         self.hadoop_geotiff = HadoopGeoTiffRDD(self.pysc)
 
         self.dir_path = geotiff_test_path("all-ones.tif")
@@ -61,11 +61,11 @@ class TileLayerMetadataTest(unittest.TestCase):
 
         actual = [value[1].dtype.name, layout, new_extent]
 
-        result = self.metadata.collect_python_metadata(rdd,
-                                                       schema,
-                                                       new_extent,
-                                                       layout,
-                                                       epsg_code=value[0].epsg_code)
+        result = self.metadata.collect_metadata(rdd,
+                                                schema,
+                                                new_extent,
+                                                layout,
+                                                epsg_code=value[0].epsg_code)
 
         returned_layout_extent = result['layout'][0]
         layout_java_object = result['layout'][1]

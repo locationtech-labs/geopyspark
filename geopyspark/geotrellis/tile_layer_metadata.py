@@ -4,7 +4,7 @@ from geopyspark.avroserializer import AvroSerializer
 import json
 
 
-class TileLayerMetadata(object):
+class TileLayerMethods(object):
 
     def __init__(self, pysc, avroregistry=None):
         self.pysc = pysc
@@ -32,14 +32,14 @@ class TileLayerMetadata(object):
         else:
             return {}
 
-    def collect_python_metadata(self,
-                                rdd,
-                                schema,
-                                extent,
-                                tile_layout,
-                                proj_params=None,
-                                epsg_code=None,
-                                wkt_string=None):
+    def collect_metadata(self,
+                         rdd,
+                         schema,
+                         extent,
+                         tile_layout,
+                         proj_params=None,
+                         epsg_code=None,
+                         wkt_string=None):
 
         schema_json = json.loads(schema)
 
