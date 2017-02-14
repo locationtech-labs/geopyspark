@@ -62,22 +62,10 @@ class TileLayerMetadata(object):
         dumped = rdd.map(lambda value: ser.dumps(value, schema))
         java_rdd = dumped._to_java_object_rdd()
 
-        result = self._metadata_wrapper.collectPythonMetadata(key_type,
-                                                              value_type,
-                                                              java_rdd.rdd(),
-                                                              schema,
-                                                              extent,
-                                                              tile_layout,
-                                                              result)
-
-        extent = (result['xmin'], result['ymin'], result['xmax'], result['ymax'])
-        layout = (extent,
-                  (result['layoutCols'],
-                   result['layoutRows'],
-                   result['tileCols'],
-                   result['tileRows']))
-
-        return {'cellType': result['cellType'],
-                'layout': layout,
-                'extent': extent,
-                'crs': result['crs']}
+        return self._metadata_wrapper.collectPythonMetadata(key_type,
+                                                            value_type,
+                                                            java_rdd.rdd(),
+                                                            schema,
+                                                            extent,
+                                                            tile_layout,
+                                                            result)
