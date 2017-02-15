@@ -1,12 +1,12 @@
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.singleton_base import SingletonBase
+from geopyspark.geotrellis import decode_java_rdd
 
 import json
 
 
 class TileLayerMethods(metaclass=SingletonBase):
-
     def __init__(self, geopysc, avroregistry=None):
         self.geopysc = geopysc
         self.avroregistry = avroregistry
@@ -94,9 +94,12 @@ class TileLayerMethods(metaclass=SingletonBase):
         else:
             resample_dict = {"resampleMethod": resample_method}
 
-        return self._tiler_wrapper.cutTiles(types[0],
-                                            types[1],
-                                            java_rdd.rdd(),
-                                            schema,
-                                            tile_layer_metadata,
-                                            resample_dict)
+        result = self._tiler_wrapper.cutTiles(types[0],
+                                              types[1],
+                                              java_rdd.rdd(),
+                                              schema,
+                                              tile_layer_metadata['layout'],
+                                              tile_layer_metadata['crs'],
+                                              resample_dict)
+
+        return decode_java_rdd(self.pysc, result._1(), result._2(), self.avroregistry)

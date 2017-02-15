@@ -31,9 +31,9 @@ object GeoTrellisUtils {
     (stringMap, intMap)
   }
 
-  implicit class JavaArrayListExtensions(al: java.util.ArrayList[java.util.Map[String, _]]) {
+  implicit class JavaListExtensions(l: java.util.List[java.util.Map[String, _]]) {
     def toLayoutDefinition: LayoutDefinition =
-      LayoutDefinition(al(0).toExtent, al(1).toTileLayout)
+      LayoutDefinition(l(0).toExtent, l(1).toTileLayout)
   }
 
   implicit class JavaMapExtensions(m: java.util.Map[String, _]) {
@@ -68,9 +68,7 @@ object GeoTrellisUtils {
         }
 
     def getLayoutDefinition: LayoutDefinition =
-      m("layout")
-        .asInstanceOf[java.util.ArrayList[java.util.Map[String, _]]]
-        .toLayoutDefinition
+      m("layout").asInstanceOf[java.util.ArrayList[java.util.Map[String, _]]].toLayoutDefinition
   }
 
 
