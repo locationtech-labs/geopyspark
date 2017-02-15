@@ -66,28 +66,6 @@ object GeoTrellisUtils {
           case ("wktString", wktString) => Some(CRS.fromWKT(wktString))
           case (k, _) => throw new Exception(s"Cannot create CRS from $k")
         }
-
-    def toTileLayerMetadata[K: Boundable, V](rdd: RDD[(K, V)]): TileLayerMetadata[K] = {
-      val cellType = CellType.fromString(m("cellType") .asInstanceOf[String])
-
-      val layout = m("layout")
-        .asInstanceOf[java.util.ArrayList[java.util.Map[String, _]]]
-        .toLayoutDefinition
-
-      val extent = m("extent").asInstanceOf[java.util.Map[String, _]].toExtent
-
-      val crs = CRS.fromString(m("crs").asInstanceOf[String])
-
-      val bounds = Bounds.fromRdd(rdd)
-
-      TileLayerMetadata(
-        cellType,
-        layout,
-        extent,
-        crs,
-        bounds
-      )
-    }
   }
 
 
