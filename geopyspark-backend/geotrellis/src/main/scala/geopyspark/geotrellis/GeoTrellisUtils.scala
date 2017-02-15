@@ -66,6 +66,11 @@ object GeoTrellisUtils {
           case ("wktString", wktString) => Some(CRS.fromWKT(wktString))
           case (k, _) => throw new Exception(s"Cannot create CRS from $k")
         }
+
+    def getLayoutDefinition: LayoutDefinition =
+      m("layout")
+        .asInstanceOf[java.util.ArrayList[java.util.Map[String, _]]]
+        .toLayoutDefinition
   }
 
 
