@@ -1,10 +1,11 @@
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
+from geopyspark.singleton_base import SingletonBase
 
 import json
 
 
-class TileLayerMethods(object):
+class TileLayerMethods(metaclass=SingletonBase):
 
     def __init__(self, pysc, avroregistry=None):
         self.pysc = pysc
