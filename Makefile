@@ -3,24 +3,28 @@ export PYSPARK_PYTHON := ipython
 export IMG := jupyter-geopyspark
 
 ASSEMBLY := geopyspark-backend/geotrellis/target/scala-2.11/geotrellis-backend-assembly-0.1.0.jar
+WHEEL := dist/geopyspark-0.1.0-py3-none-any.whl
+rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 
 install:
 	${PYTHON} setup.py install --user --force --prefix=
 
-assembly: ${ASSEMBLY}
+${ASSEMBLY}: $(call rwildcard, geopyspark-backend/src, *.scala) geopyspark-backend/build.sbt
 	(cd geopyspark-backend && ./sbt "project geotrellis-backend" assembly)
 
-egg: dist/geopyspark-0.1.0-py3.5.egg
-	${PYTHON} setup.py build
+${WHEEL}: $(call rwildcard, geopyspark, *.py) setup.py
+	${PYTHON} setup.py bdist_wheel
 
-pyspark:
+wheel: ${WHEEL}
+
+pyspark: ${ASSEMBLY}
 	pyspark --jars ${ASSEMBLY}
 
-build: assembly
+image: ${WHEEL}
 	docker build -t ${IMG}:latest .
 
 run:
 	docker run --rm --name geopyspark  -it -p 8000:8000 -v $(CURDIR)/notebooks:/opt/notebooks ${IMG}:latest ${CMD}
 
 exec:
-	docker exec -it -u root jupyter bash
+	docker exec -it -u root geopyspark bash
