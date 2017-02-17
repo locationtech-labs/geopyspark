@@ -63,10 +63,12 @@ class TileLayerMethods(metaclass=SingletonBase):
         dumped = rdd.map(lambda value: ser.dumps(value, schema))
         java_rdd = dumped._to_java_object_rdd()
 
-        return self._metadata_wrapper.collectPythonMetadata(key_type,
-                                                            value_type,
-                                                            java_rdd.rdd(),
-                                                            schema,
-                                                            extent,
-                                                            tile_layout,
-                                                            result)
+        result = self._metadata_wrapper.collectPythonMetadata(key_type,
+                                                              value_type,
+                                                              java_rdd.rdd(),
+                                                              schema,
+                                                              extent,
+                                                              tile_layout,
+                                                              result)
+
+        return json.loads(result)
