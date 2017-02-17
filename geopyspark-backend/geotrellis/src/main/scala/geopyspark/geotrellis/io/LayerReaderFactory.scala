@@ -28,17 +28,53 @@ import geopyspark.geotrellis.PythonTranslator
   * General interface for reading.
   */
 abstract class LayerReaderWrapper {
-  def read(
-    k: String, v: String,
-    name: String, zoom: Int
+  def readSpatialSingleband(
+    name: String,
+    zoom: Int
   ): (JavaRDD[Array[Byte]], String)
 
-  def query(
-    k: String, v: String,
-    name: String, zoom: Int,
-    queryGeometryStr: String, queryIntervalStr: ArrayList[String]
+  def readSpatialMultiband(
+    name: String,
+    zoom: Int
+  ): (JavaRDD[Array[Byte]], String)
+
+  def readSpaceTimeSingleband(
+    name: String,
+    zoom: Int):
+  (JavaRDD[Array[Byte]], String)
+
+  def readSpaceTimeMultiband(
+    name: String,
+    zoom: Int
+  ): (JavaRDD[Array[Byte]], String)
+
+  def querySpatialSingleband(
+    name: String,
+    zoom: Int,
+    queryGeometryStr: String
+  ): (JavaRDD[Array[Byte]], String)
+
+  def querySpatialMultiband(
+    name: String,
+    zoom: Int,
+    queryGeometryStr: String
+  ): (JavaRDD[Array[Byte]], String)
+
+  def querySpaceTimeSingleband(
+    name: String,
+    zoom: Int,
+    queryGeometryStr: String,
+    queryIntervalStrs: ArrayList[String]
+  ): (JavaRDD[Array[Byte]], String)
+
+  def querySpaceTimeMultiband(
+    name: String,
+    zoom: Int,
+    queryGeometryStr: String,
+    queryIntervalStrs: ArrayList[String]
   ): (JavaRDD[Array[Byte]], String)
 }
+
 
 /**
   * Base wrapper class for all backends that provide a
@@ -50,57 +86,38 @@ abstract class FilteringLayerReaderWrapper()
   def attributeStore: AttributeStore
   def layerReader: FilteringLayerReader[LayerId]
 
-  /**
-    * Read the layer with the given name and zoom level.
-    *
-    * @param  name  The name of the layer to read
-    * @param  zoom  The zoom level of the requested layer
-    */
-  def read(k: String, v: String, name: String, zoom: Int): (JavaRDD[Array[Byte]], String) = {
+  def readSpatialSingleband(name: String, zoom: Int): (JavaRDD[Array[Byte]], String) = {
     val id = LayerId(name, zoom)
-
-    (k, v) match {
-      case ("spatial", "singleband") => {
-        val results = layerReader.read[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](id)
-        PythonTranslator.toPython(results)
-      }
-      case ("spacetime", "singleband") => {
-        val results = layerReader.read[SpaceTimeKey, Tile, TileLayerMetadata[SpaceTimeKey]](id)
-        PythonTranslator.toPython(results)
-      }
-      case ("spatial", "multiband") => {
-        val results = layerReader.read[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](id)
-        PythonTranslator.toPython(results)
-      }
-      case ("spacetime", "multiband") => {
-        val results = layerReader.read[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id)
-        PythonTranslator.toPython(results)
-      }
-    }
+    val results = layerReader.read[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](id)
+    PythonTranslator.toPython(results)
   }
 
-  /**
-    * Read a subset of the layer with the given name and zoom level.
-    * The subset is controlled by a Geometry communicated via WKT.  If
-    * the Geometry is a Point, then a "Contains" query is performed,
-    * otherwise if a Polygon or MultiPolygon is used, an "Intersects"
-    * query is done.
-    *
-    * @param  name            The name of the layer to read
-    * @param  zoom            The zoom level of the requested layer
-    * @param  queryObjectStr  The query object in WKT
-    */
-  def query(
-    k: String, v: String,
-    name: String, zoom: Int,
-    queryGeometryStr: String, queryIntervalStrs: ArrayList[String]
-  ): (JavaRDD[Array[Byte]], String) = {
+  def readSpatialMultiband(name: String, zoom: Int): (JavaRDD[Array[Byte]], String) = {
     val id = LayerId(name, zoom)
-    val spatialQuery = queryGeometryStr match {
+    val results = layerReader.read[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](id)
+    PythonTranslator.toPython(results)
+  }
+
+  def readSpaceTimeSingleband(name: String, zoom: Int): (JavaRDD[Array[Byte]], String) = {
+    val id = LayerId(name, zoom)
+    val results = layerReader.read[SpaceTimeKey, Tile, TileLayerMetadata[SpaceTimeKey]](id)
+    PythonTranslator.toPython(results)
+  }
+
+  def readSpaceTimeMultiband(name: String, zoom: Int): (JavaRDD[Array[Byte]], String) = {
+    val id = LayerId(name, zoom)
+    val results = layerReader.read[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id)
+    PythonTranslator.toPython(results)
+  }
+
+  private def getSpatialQuery(queryGeometryStr: String) =
+    queryGeometryStr match {
       case "" => None
       case str: String => Some(WKT.read(queryGeometryStr))
       case _ => throw new Exception
     }
+
+  private def getTemporalQuery(queryIntervalStrs: ArrayList[String]) = {
     val temporalRanges = queryIntervalStrs
       .asScala
       .grouped(2)
@@ -116,70 +133,106 @@ abstract class FilteringLayerReaderWrapper()
           }
         }})
       .toList
-    val temporalQuery =
-      if (temporalRanges.length >= 2) {
-        val h1 = temporalRanges.head
-        val h2 = temporalRanges.tail.head
-        Some(temporalRanges.drop(2).foldLeft(h1 or h2)({ (cs, c) => cs or c }))
-      }
-      else if (temporalRanges.length == 1) {
-        val h1 = temporalRanges.head
-        Some(h1 or h1)
-      }
-      else None
 
-    (k, v) match {
-      case ("spatial", "singleband") => {
-        val layer = layerReader.query[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](id)
-        val query = spatialQuery match {
-          case Some(point: Point) => layer.where(Contains(point))
-          case Some(polygon: Polygon) => layer.where(Intersects(polygon))
-          case Some(multi: MultiPolygon) => layer.where(Intersects(multi))
-          case None => layer
-          case _ => throw new Exception(s"Unsupported Geometry $spatialQuery")
-        }
-        PythonTranslator.toPython(query.result)
-      }
-      case ("spacetime", "singleband") => {
-        val layer = layerReader.query[SpaceTimeKey, Tile, TileLayerMetadata[SpaceTimeKey]](id)
-        val query1 = spatialQuery match {
-          case Some(polygon: Polygon) => layer.where(Intersects(polygon))
-          case Some(multi: MultiPolygon) => layer.where(Intersects(multi))
-          case None => layer
-          case _ => throw new Exception("Unsupported Geometry")
-        }
-        val query2 = temporalQuery match {
-          case Some(q) => query1.where(q)
-          case None => query1
-        }
-        PythonTranslator.toPython(query2.result)
-      }
-      case ("spatial", "multiband") => {
-        val layer = layerReader.query[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](id)
-        val query = spatialQuery match {
-          case Some(polygon: Polygon) => layer.where(Intersects(polygon))
-          case Some(multi: MultiPolygon) => layer.where(Intersects(multi))
-          case None => layer
-          case _ => throw new Exception("Unsupported Geometry")
-        }
-        PythonTranslator.toPython(query.result)
-      }
-      case ("spacetime", "multiband") => {
-        val layer = layerReader.query[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id)
-        val query1 = spatialQuery match {
-          case Some(multi: MultiPolygon) => layer.where(Intersects(multi))
-          case None => layer
-          case _ => throw new Exception("Unsupported Geometry")
-        }
-        val query2 = temporalQuery match {
-          case Some(q) => query1.where(q)
-          case None => query1
-        }
-        PythonTranslator.toPython(query2.result)
-      }
+    if (temporalRanges.length >= 2) {
+      val h1 = temporalRanges.head
+      val h2 = temporalRanges.tail.head
+      Some(temporalRanges.drop(2).foldLeft(h1 or h2)({ (cs, c) => cs or c }))
     }
+    else if (temporalRanges.length == 1) {
+      val h1 = temporalRanges.head
+      Some(h1 or h1)
+    }
+    else None
+  }
+
+  def querySpatialSingleband(
+    name: String,
+    zoom: Int,
+    queryGeometryStr: String
+  ): (JavaRDD[Array[Byte]], String) = {
+    val id = LayerId(name, zoom)
+    val spatialQuery = getSpatialQuery(queryGeometryStr)
+
+    val layer = layerReader.query[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](id)
+    val query = spatialQuery match {
+      case Some(point: Point) => layer.where(Contains(point))
+      case Some(polygon: Polygon) => layer.where(Intersects(polygon))
+      case Some(multi: MultiPolygon) => layer.where(Intersects(multi))
+      case None => layer
+      case _ => throw new Exception(s"Unsupported Geometry $spatialQuery")
+    }
+
+    PythonTranslator.toPython(query.result)
+  }
+
+  def querySpatialMultiband(
+    name: String,
+    zoom: Int,
+    queryGeometryStr: String
+  ): (JavaRDD[Array[Byte]], String) = {
+    val id = LayerId(name, zoom)
+    val spatialQuery = getSpatialQuery(queryGeometryStr)
+
+    val layer = layerReader.query[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](id)
+    val query = spatialQuery match {
+      case Some(polygon: Polygon) => layer.where(Intersects(polygon))
+      case Some(multi: MultiPolygon) => layer.where(Intersects(multi))
+      case None => layer
+      case _ => throw new Exception("Unsupported Geometry")
+    }
+
+    PythonTranslator.toPython(query.result)
+  }
+
+  def querySpaceTimeSingleband(
+    name: String,
+    zoom: Int,
+    queryGeometryStr: String,
+    queryIntervalStrs: ArrayList[String]
+  ): (JavaRDD[Array[Byte]], String) = {
+    val id = LayerId(name, zoom)
+    val spatialQuery = getSpatialQuery(queryGeometryStr)
+    val temporalQuery = getTemporalQuery(queryIntervalStrs)
+
+    val layer = layerReader.query[SpaceTimeKey, Tile, TileLayerMetadata[SpaceTimeKey]](id)
+    val query1 = spatialQuery match {
+      case Some(polygon: Polygon) => layer.where(Intersects(polygon))
+      case Some(multi: MultiPolygon) => layer.where(Intersects(multi))
+      case None => layer
+      case _ => throw new Exception("Unsupported Geometry")
+    }
+    val query2 = temporalQuery match {
+      case Some(q) => query1.where(q)
+      case None => query1
+    }
+    PythonTranslator.toPython(query2.result)
+  }
+
+  def querySpaceTimeMultiband(
+    name: String,
+    zoom: Int,
+    queryGeometryStr: String,
+    queryIntervalStrs: ArrayList[String]
+  ): (JavaRDD[Array[Byte]], String) = {
+    val id = LayerId(name, zoom)
+    val spatialQuery = getSpatialQuery(queryGeometryStr)
+    val temporalQuery = getTemporalQuery(queryIntervalStrs)
+
+    val layer = layerReader.query[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id)
+    val query1 = spatialQuery match {
+      case Some(multi: MultiPolygon) => layer.where(Intersects(multi))
+      case None => layer
+      case _ => throw new Exception("Unsupported Geometry")
+    }
+    val query2 = temporalQuery match {
+      case Some(q) => query1.where(q)
+      case None => query1
+    }
+    PythonTranslator.toPython(query2.result)
   }
 }
+
 
 /**
   * Wrapper for the AccumuloLayerReader class.

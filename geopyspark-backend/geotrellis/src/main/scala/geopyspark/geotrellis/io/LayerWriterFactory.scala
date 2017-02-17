@@ -31,88 +31,104 @@ abstract class LayerWriterWrapper {
   def attributeStore: AttributeStore
   def layerWriter: LayerWriter[LayerId]
 
-  /**
-    * Write the Java RDD of serialized objects (which will be
-    * converted into a normal GeoTrellis RDD via the schema) into a
-    * space-time layer with the given name and zoom level.
-    *
-    * @param  name           The name to use for the layer being written
-    * @param  zoom           The zoom level of the layer being written
-    * @param  jrdd           The PySpark RDD to be written
-    * @param  metadata       The metadata associated with the layer
-    * @param  schema         A schema which will be used to convert jrdd
-    * @param  timeString     A string controlling temporal indexing
-    * @param  indexStrategy  The index strategy to be used
-    */
-  def write(
-    keyType: String, valueType: String,
-    name: String, zoom: Int,
-    jrdd: JavaRDD[Array[Byte]], metadata: TileLayerMetadataWrapper[Any], schema: String,
-    timeString: String, indexStrategy: String
+  private def getSpatialIndexMethod(indexStrategy: String): KeyIndexMethod[SpatialKey] =
+    indexStrategy match {
+      case "zorder" => ZCurveKeyIndexMethod
+      case "hilbert" => HilbertKeyIndexMethod
+      case "rowmajor" => RowMajorKeyIndexMethod
+      case _ => throw new Exception
+    }
+
+  private def getTemporalIndexMethod(
+    timeString: String,
+    indexStrategy: String) =
+    (indexStrategy, timeString) match {
+      case ("zorder", "millis") => ZCurveKeyIndexMethod.byMilliseconds(1)
+      case ("zorder", "seconds") => ZCurveKeyIndexMethod.bySecond
+      case ("zorder", "minutes") => ZCurveKeyIndexMethod.byMinute
+      case ("zorder", "hour") => ZCurveKeyIndexMethod.byHour
+      case ("zorder", "days") => ZCurveKeyIndexMethod.byDay
+      case ("zorder", "months") => ZCurveKeyIndexMethod.byMonth
+      case ("zorder", "years") => ZCurveKeyIndexMethod.byYear
+      case ("hilbert", _) => {
+        timeString.split(",") match {
+          case Array(minDate, maxDate, resolution) =>
+            HilbertKeyIndexMethod(ZonedDateTime.parse(minDate), ZonedDateTime.parse(maxDate), resolution.toInt)
+          case Array(resolution) =>
+            HilbertKeyIndexMethod(resolution.toInt)
+          case _ => throw new Exception(s"Invalid timeString: $timeString")
+        }
+      }
+      case _ => throw new Exception
+    }
+
+  def writeSpatialSingleband(
+    name: String,
+    zoom: Int,
+    jrdd: JavaRDD[Array[Byte]],
+    metadata: TileLayerMetadataWrapper[Any],
+    schema: String,
+    indexStrategy: String
   ): Unit = {
     val id = LayerId(name, zoom)
 
-    /* SpatialKey */
-    if (keyType == "spatial") {
-      val indexMethod: KeyIndexMethod[SpatialKey] = indexStrategy match {
-        case "zorder" => ZCurveKeyIndexMethod
-        case "hilbert" => HilbertKeyIndexMethod
-        case "rowmajor" => RowMajorKeyIndexMethod
-        case _ => throw new Exception
-      }
-
-      /* Tile */
-      if (valueType == "singleband") {
-        val rawRdd = PythonTranslator.fromPython[(SpatialKey, Tile)](jrdd, Some(schema))
-        val rdd = ContextRDD(rawRdd, metadata.get.asInstanceOf[TileLayerMetadata[SpatialKey]])
-        layerWriter.write(id, rdd, indexMethod)
-      }
-      /* MultibandTile */
-      else if (valueType == "multiband") {
-        val rawRdd = PythonTranslator.fromPython[(SpatialKey, MultibandTile)](jrdd, Some(schema))
-        val rdd = ContextRDD(rawRdd, metadata.get.asInstanceOf[TileLayerMetadata[SpatialKey]])
-        layerWriter.write(id, rdd, indexMethod)
-      }
-      else throw new Exception
-    }
-    /* SpaceTimeKey */
-    else if (keyType == "spacetime") {
-      val indexMethod: KeyIndexMethod[SpaceTimeKey] = (indexStrategy, timeString) match {
-        case ("zorder", "millis") => ZCurveKeyIndexMethod.byMilliseconds(1)
-        case ("zorder", "seconds") => ZCurveKeyIndexMethod.bySecond
-        case ("zorder", "minutes") => ZCurveKeyIndexMethod.byMinute
-        case ("zorder", "hour") => ZCurveKeyIndexMethod.byHour
-        case ("zorder", "days") => ZCurveKeyIndexMethod.byDay
-        case ("zorder", "months") => ZCurveKeyIndexMethod.byMonth
-        case ("zorder", "years") => ZCurveKeyIndexMethod.byYear
-        case ("hilbert", _) => {
-          timeString.split(",") match {
-            case Array(minDate, maxDate, resolution) =>
-              HilbertKeyIndexMethod(ZonedDateTime.parse(minDate), ZonedDateTime.parse(maxDate), resolution.toInt)
-            case Array(resolution) =>
-              HilbertKeyIndexMethod(resolution.toInt)
-            case _ => throw new Exception(s"Invalid timeString: $timeString")
-          }
-        }
-        case _ => throw new Exception
-      }
-
-      /* Tile */
-      if (valueType == "singleband") {
-        val rawRdd = PythonTranslator.fromPython[(SpaceTimeKey, Tile)](jrdd, Some(schema))
-        val rdd = ContextRDD(rawRdd, metadata.get.asInstanceOf[TileLayerMetadata[SpaceTimeKey]])
-        layerWriter.write(id, rdd, indexMethod)
-      }
-      /* MultibandTile */
-      else if (valueType == "multiband") {
-        val rawRdd = PythonTranslator.fromPython[(SpaceTimeKey, MultibandTile)](jrdd, Some(schema))
-        val rdd = ContextRDD(rawRdd, metadata.get.asInstanceOf[TileLayerMetadata[SpaceTimeKey]])
-        layerWriter.write(id, rdd, indexMethod)
-      }
-    }
+    val indexMethod = getSpatialIndexMethod(indexStrategy)
+    val rawRdd = PythonTranslator.fromPython[(SpatialKey, Tile)](jrdd, Some(schema))
+    val rdd = ContextRDD(rawRdd, metadata.get.asInstanceOf[TileLayerMetadata[SpatialKey]])
+    layerWriter.write(id, rdd, indexMethod)
   }
 
+  def writeSpatialMultiband(
+    name: String,
+    zoom: Int,
+    jrdd: JavaRDD[Array[Byte]],
+    metadata: TileLayerMetadataWrapper[Any],
+    schema: String,
+    indexStrategy: String
+  ): Unit = {
+    val id = LayerId(name, zoom)
+
+    val indexMethod = getSpatialIndexMethod(indexStrategy)
+    val rawRdd = PythonTranslator.fromPython[(SpatialKey, MultibandTile)](jrdd, Some(schema))
+    val rdd = ContextRDD(rawRdd, metadata.get.asInstanceOf[TileLayerMetadata[SpatialKey]])
+    layerWriter.write(id, rdd, indexMethod)
+  }
+
+  def writeSpaceTimeSingleband(
+    name: String,
+    zoom: Int,
+    jrdd: JavaRDD[Array[Byte]],
+    metadata: TileLayerMetadataWrapper[Any],
+    schema: String,
+    timeString: String,
+    indexStrategy: String
+  ): Unit = {
+    val id = LayerId(name, zoom)
+
+    val indexMethod = getTemporalIndexMethod(timeString, indexStrategy)
+    val rawRdd = PythonTranslator.fromPython[(SpaceTimeKey, Tile)](jrdd, Some(schema))
+    val rdd = ContextRDD(rawRdd, metadata.get.asInstanceOf[TileLayerMetadata[SpaceTimeKey]])
+    layerWriter.write(id, rdd, indexMethod)
+  }
+
+  def writeSpaceTimeMultiband(
+    name: String,
+    zoom: Int,
+    jrdd: JavaRDD[Array[Byte]],
+    metadata: TileLayerMetadataWrapper[Any],
+    schema: String,
+    timeString: String,
+    indexStrategy: String
+  ): Unit = {
+    val id = LayerId(name, zoom)
+
+    val indexMethod = getTemporalIndexMethod(timeString, indexStrategy)
+    val rawRdd = PythonTranslator.fromPython[(SpaceTimeKey, MultibandTile)](jrdd, Some(schema))
+    val rdd = ContextRDD(rawRdd, metadata.get.asInstanceOf[TileLayerMetadata[SpaceTimeKey]])
+    layerWriter.write(id, rdd, indexMethod)
+  }
 }
+
 
 /**
   * Wrapper for the AccumuloLayerReader class.

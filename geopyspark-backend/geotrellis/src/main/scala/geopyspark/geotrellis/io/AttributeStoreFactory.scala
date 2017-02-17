@@ -220,5 +220,4 @@ object AttributeStoreFactory {
     )
     new AccumuloAttributeStoreWrapper(instance, attributeTable)
   }
-
 }
