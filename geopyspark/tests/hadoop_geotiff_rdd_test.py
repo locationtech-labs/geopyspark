@@ -4,6 +4,7 @@ check_directory()
 
 from pyspark import SparkContext
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
+from geopyspark.geopycontext import GeoPyContext
 from os import walk, path
 
 import rasterio
@@ -42,8 +43,9 @@ class GeoTiffIOTest(object):
 
 class Singleband(GeoTiffIOTest, unittest.TestCase):
     def setUp(self):
-        self.pysc = SparkContext(master="local[*]", appName="hadoop-singleband-geotiff-test")
-        self.hadoop_geotiff = HadoopGeoTiffRDD(self.pysc)
+        self.geopysc = GeoPyContext.construct(
+            master="local[*]", appName="hadoop-singleband-geotiff-test")
+        self.hadoop_geotiff = HadoopGeoTiffRDD(self.geopysc)
 
         self.dir_path = geotiff_test_path("one-month-tiles/")
         self.options = {'maxTileSize': 256}
@@ -51,8 +53,8 @@ class Singleband(GeoTiffIOTest, unittest.TestCase):
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        self.pysc.stop()
-        self.pysc._gateway.close()
+        self.geopysc.pysc.stop()
+        self.geopysc.pysc._gateway.close()
 
     def read_singleband_geotrellis(self, options=None):
         if options is None:
@@ -88,16 +90,17 @@ class Singleband(GeoTiffIOTest, unittest.TestCase):
 
 class Multiband(GeoTiffIOTest, unittest.TestCase):
     def setUp(self):
-        self.pysc = SparkContext(master="local[*]", appName="hadoop-multiband-geotiff-test")
-        self.hadoop_geotiff = HadoopGeoTiffRDD(self.pysc)
+        self.geopysc = GeoPyContext.construct(
+            master="local[*]", appName="hadoop-multiband-geotiff-test")
+        self.hadoop_geotiff = HadoopGeoTiffRDD(self.geopysc)
         self.dir_path = geotiff_test_path("one-month-tiles-multiband/")
         self.options = {'maxTileSize': 256}
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        self.pysc.stop()
-        self.pysc._gateway.close()
+        self.geopysc.pysc.stop()
+        self.geopysc.pysc._gateway.close()
 
     def read_multiband_geotrellis(self, options=None):
         if options is None:
