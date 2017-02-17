@@ -93,3 +93,4 @@ ENV/
 
 # GeoTiff Test Files
 geopyspark/tests/data_files/geotiff_test_files/
+notebooks
