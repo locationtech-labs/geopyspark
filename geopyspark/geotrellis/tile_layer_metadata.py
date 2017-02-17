@@ -7,13 +7,11 @@ import json
 
 class TileLayerMethods(metaclass=SingletonBase):
 
-    def __init__(self, pysc, avroregistry=None):
-        self.pysc = pysc
+    def __init__(self, geopysc, avroregistry=None):
+        self.geopysc = geopysc
         self.avroregistry = avroregistry
 
-        java_import(self.pysc._gateway.jvm, "geopyspark.geotrellis.spark.TileLayerMetadataCollector")
-
-        self._metadata_wrapper = self.pysc._gateway.jvm.TileLayerMetadataCollector
+        self._metadata_wrapper = self.geopysc.tile_layer_metadata_collecter
 
     @staticmethod
     def _format_strings(proj_params, epsg_code, wkt_string):
@@ -35,13 +33,13 @@ class TileLayerMethods(metaclass=SingletonBase):
 
     def collect_metadata(self,
                          rdd,
-                         schema,
                          extent,
                          tile_layout,
                          proj_params=None,
                          epsg_code=None,
                          wkt_string=None):
 
+        schema = rdd.schema
         schema_json = json.loads(schema)
 
         result = self._format_strings(proj_params, epsg_code, wkt_string)
@@ -63,7 +61,7 @@ class TileLayerMethods(metaclass=SingletonBase):
         dumped = rdd.map(lambda value: ser.dumps(value, schema))
         java_rdd = dumped._to_java_object_rdd()
 
-        result = self._metadata_wrapper.collectPythonMetadata(key_type,
+        metadata = self._metadata_wrapper.collectPythonMetadata(key_type,
                                                               value_type,
                                                               java_rdd.rdd(),
                                                               schema,
@@ -71,4 +69,4 @@ class TileLayerMethods(metaclass=SingletonBase):
                                                               tile_layout,
                                                               result)
 
-        return json.loads(result)
+        return json.loads(metadata)
