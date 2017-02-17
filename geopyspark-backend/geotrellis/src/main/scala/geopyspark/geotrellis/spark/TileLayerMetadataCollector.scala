@@ -8,8 +8,12 @@ import geotrellis.proj4._
 import geotrellis.raster._
 import geotrellis.vector._
 import geotrellis.spark._
+import geotrellis.spark.io._
+import geotrellis.spark.io.json._
 import geotrellis.spark.io.avro._
 import geotrellis.spark.tiling._
+
+import spray.json._
 
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
@@ -25,14 +29,14 @@ object TileLayerMetadataCollector {
   private def createCollection[
   K: GetComponent[?, ProjectedExtent]: (? => TilerKeyMethods[K, K2]): AvroRecordCodec: ClassTag,
   T <: CellGrid: AvroRecordCodec: ClassTag,
-  K2: Boundable: SpatialComponent
+  K2: Boundable: SpatialComponent: JsonFormat
   ](
     returnedRdd: RDD[Array[Byte]],
     schemaJson: String,
     pythonExtent: java.util.Map[String, Double],
     pythonTileLayout: java.util.Map[String, Int],
     crsJavaMap: java.util.Map[String, String]
-  ): java.util.Map[String, Any] = {
+  ): String = {
 
     val rdd =
       PythonTranslator.fromPython[(K, T)](returnedRdd, Some(schemaJson))
@@ -48,7 +52,7 @@ object TileLayerMetadataCollector {
         case Some(x) => rdd.collectMetadata[K2](x, layoutDefinition)
       }
 
-    metadata.toJavaMap
+    metadata.toJson.compactPrint
   }
 
   def collectPythonMetadata(
@@ -59,7 +63,7 @@ object TileLayerMetadataCollector {
     pythonExtent: java.util.Map[String, Double],
     pythonTileLayout: java.util.Map[String, Int],
     crsJavaMap: java.util.Map[String, String]
-  ): java.util.Map[String, Any] = {
+  ): String = {
 
     (valueType, keyType) match {
       case ("spatial", "singleband") =>
