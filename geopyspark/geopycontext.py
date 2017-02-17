@@ -31,3 +31,9 @@ class GeoPyContext(object):
     @property
     def writer_factory(self):
         return self._jvm.geopyspark.geotrellis.io.LayerWriterFactory
+
+    def stop(self):
+        self.pysc.stop()
+
+    def close_gateway(self):
+        self.pysc._gateway.close()
