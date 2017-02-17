@@ -10,6 +10,7 @@ from geopyspark.avroserializer import AvroSerializer
 
 import unittest
 import pytest
+import json
 
 
 class TileLayerMetadataTest(unittest.TestCase):
@@ -59,7 +60,7 @@ class TileLayerMetadataTest(unittest.TestCase):
             "tileRows": rows
         }
 
-        actual = [value[1].dtype.name, layout, new_extent]
+        actual = [[new_extent, layout], new_extent]
 
         result = self.metadata.collect_metadata(rdd,
                                                 schema,
@@ -67,24 +68,11 @@ class TileLayerMetadataTest(unittest.TestCase):
                                                 layout,
                                                 epsg_code=value[0].epsg_code)
 
-        returned_layout_extent = result['layout'][0]
-        layout_java_object = result['layout'][1]
+        result_dict = json.loads(result)
 
-        returned_extent = {
-            'xmin': returned_layout_extent['xmin'],
-            'ymin': returned_layout_extent['ymin'],
-            'xmax': returned_layout_extent['xmax'],
-            'ymax': returned_layout_extent['ymax']
-        }
-
-        returned_layout = {
-            'layoutCols': layout_java_object['layoutCols'],
-            'layoutRows': layout_java_object['layoutRows'],
-            'tileCols': layout_java_object['tileCols'],
-            'tileRows': layout_java_object['tileRows']
-        }
-
-        expected = [result['cellType'], returned_layout, returned_extent]
+        expected = [[result_dict['layoutDefinition']['extent'],
+                     result_dict['layoutDefinition']['tileLayout']],
+                    result_dict['extent']]
 
         self.check_results(actual, expected)
 
