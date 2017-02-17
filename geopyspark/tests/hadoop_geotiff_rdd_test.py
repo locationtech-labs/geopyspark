@@ -58,9 +58,9 @@ class Singleband(GeoTiffIOTest, unittest.TestCase):
 
     def read_singleband_geotrellis(self, options=None):
         if options is None:
-            result = self.hadoop_geotiff.get_spatial(self.dir_path)[0]
+            result = self.hadoop_geotiff.get_spatial(self.dir_path)
         else:
-            result = self.hadoop_geotiff.get_spatial(self.dir_path, options)[0]
+            result = self.hadoop_geotiff.get_spatial(self.dir_path, options)
 
         return [tile[1] for tile in result.collect()]
 
@@ -104,9 +104,9 @@ class Multiband(GeoTiffIOTest, unittest.TestCase):
 
     def read_multiband_geotrellis(self, options=None):
         if options is None:
-            result = self.hadoop_geotiff.get_spatial_multiband(self.dir_path)[0]
+            result = self.hadoop_geotiff.get_spatial_multiband(self.dir_path)
         else:
-            result = self.hadoop_geotiff.get_spatial_multiband(self.dir_path, options)[0]
+            result = self.hadoop_geotiff.get_spatial_multiband(self.dir_path, options)
 
         return [tile[1] for tile in result.collect()]
 
