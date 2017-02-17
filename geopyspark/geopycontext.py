@@ -10,7 +10,7 @@ class GeoPyContext(object):
 
     @staticmethod
     def construct(*args, **kwargs):
-        GeoPyContext(SparkContext(*args, **kwargs))
+        return GeoPyContext(SparkContext(*args, **kwargs))
 
     @property
     def hadoop_geotiff_rdd(self):
