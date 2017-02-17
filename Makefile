@@ -20,11 +20,11 @@ wheel: ${WHEEL}
 pyspark: ${ASSEMBLY}
 	pyspark --jars ${ASSEMBLY}
 
-image: ${WHEEL}
+docker-build: ${WHEEL}
 	docker build -t ${IMG}:latest .
 
-run:
+docker-run:
 	docker run --rm --name geopyspark  -it -p 8000:8000 -v $(CURDIR)/notebooks:/opt/notebooks ${IMG}:latest ${CMD}
 
-exec:
+docker-exec:
 	docker exec -it -u root geopyspark bash
