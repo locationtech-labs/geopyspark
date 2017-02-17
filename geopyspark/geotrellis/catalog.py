@@ -16,25 +16,13 @@ class Metadata(object):
 
 class _Catalog(object):
 
-    def __init__(self, pysc, avroregistry):
-        self.pysc = pysc
+    def __init__(self, geopysc, avroregistry):
+        self.geopysc = geopysc
         self.avroregistry = avroregistry
 
         self.store = None
         self.reader = None
         self.writer = None
-
-    @property
-    def store_factory(self):
-        return self.pysc._gateway.jvm.geopyspark.geotrellis.io.AttributeStoreFactory
-
-    @property
-    def reader_factory(self):
-        return self.pysc._gateway.jvm.geopyspark.geotrellis.io.LayerReaderFactory
-
-    @property
-    def writer_factory(self):
-        return self.pysc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
 
     def _get_spatial_jmetadata(self, layer_name, layer_zoom):
         return self.store.metadataSpatial(layer_name, layer_zoom)
@@ -44,7 +32,7 @@ class _Catalog(object):
 
     def _construct_return(self, java_rdd, schema, metadata):
         serializer = AvroSerializer(schema, self.avroregistry)
-        rdd = RDD(java_rdd, self.pysc, AutoBatchedSerializer(serializer))
+        rdd = RDD(java_rdd, self.geopysc.pysc, AutoBatchedSerializer(serializer))
 
         return (rdd, metadata)
 
@@ -315,19 +303,17 @@ class _Catalog(object):
 
 class HadoopCatalog(_Catalog):
 
-    __slots__ = ["pysc",
+    __slots__ = ["geopysc",
                  "avrogregistry",
                  "store",
                  "reader",
                  "writer",
                  "uri"]
 
-    def __init__(self, pysc, avroregistry=None):
+    def __init__(self, geopysc, avroregistry=None):
 
-        super().__init__(pysc, avroregistry)
-        self.pysc = pysc
-        self._sc = pysc._jsc.sc()
-
+        super().__init__(geopysc, avroregistry)
+        self.geopysc = geopysc
         self.avroregistry = avroregistry
 
         self.uri = None
@@ -336,18 +322,19 @@ class HadoopCatalog(_Catalog):
         if new_uri != self.uri and new_uri is not None:
             self.uri = new_uri
 
-            self.store = self.store_factory.buildHadoop(self.uri)
+            self.store = self.geopysc.store_factory.buildHadoop(self.uri)
 
             self._construct_reader()
             self._construct_writer()
 
     def _construct_reader(self):
         self.reader = \
-                self.reader_factory.buildHadoop(self.store, self._sc)
+                self.geopysc.reader_factory.buildHadoop(self.store,
+                                                        self.geopysc.sc)
 
     def _construct_writer(self):
         self.writer = \
-                self.writer_factory.buildHadoop(self.store)
+                self.geopysc.writer_factory.buildHadoop(self.store)
 
     def query_spatial_singleband(self,
                                  uri,
@@ -476,7 +463,7 @@ class HadoopCatalog(_Catalog):
 
 class S3Catalog(_Catalog):
 
-    __slots__ = ["pysc",
+    __slots__ = ["geopysc",
                  "avrogregistry",
                  "store",
                  "reader",
@@ -484,12 +471,10 @@ class S3Catalog(_Catalog):
                  "bucket",
                  "prefix"]
 
-    def __init__(self, pysc, avroregistry=None):
+    def __init__(self, geopysc, avroregistry=None):
 
-        super().__init__(pysc, avroregistry)
-        self.pysc = pysc
-        self._sc = pysc._jsc.sc()
-
+        super().__init__(geopysc, avroregistry)
+        self.geopysc = geopysc
         self.avroregistry = avroregistry
 
         self.bucket = None
@@ -503,18 +488,19 @@ class S3Catalog(_Catalog):
             self.bucket = new_bucket
             self.prefix = new_prefix
 
-            self.store = self.store_factory.buildS3(self.bucket,
-                                                    self.prefix)
+            self.store = self.geopysc.store_factory.buildS3(self.bucket,
+                                                            self.prefix)
 
             self._construct_reader()
             self._construct_writer()
 
     def _construct_reader(self):
         self.reader = \
-                self.reader_factory.buildS3(self.store, self._sc)
+                self.geopysc.reader_factory.buildS3(self.store,
+                                                    self.geopysc.sc)
 
     def _construct_writer(self):
-        self.writer = self.writer_factory.buildS3(self.store)
+        self.writer = self.geopysc.writer_factory.buildS3(self.store)
 
     def query_spatial_singleband(self,
                                  bucket,
@@ -651,18 +637,17 @@ class S3Catalog(_Catalog):
 
 class FileCatalog(_Catalog):
 
-    __slots__ = ["pysc",
+    __slots__ = ["geopysc",
                  "avrogregistry",
                  "store",
                  "reader",
                  "writer",
                  "path"]
 
-    def __init__(self, pysc, avroregistry=None):
+    def __init__(self, geopysc, avroregistry=None):
 
-        super().__init__(pysc, avroregistry)
-        self.pysc = pysc
-        self._sc = pysc._jsc.sc()
+        super().__init__(geopysc, avroregistry)
+        self.geopysc = geopysc
 
         self.avroregistry = avroregistry
 
@@ -672,18 +657,19 @@ class FileCatalog(_Catalog):
         if new_path != self.path and new_path is not None:
             self.path = new_path
 
-            self.store = self.store_factory.buildFile(self.path)
+            self.store = self.geopysc.store_factory.buildFile(self.path)
 
             self._construct_reader()
             self._construct_writer()
 
     def _construct_reader(self):
         self.reader = \
-                self.reader_factory.buildFile(self.store, self._sc)
+                self.geopysc.reader_factory.buildFile(self.store,
+                                                      self.geopysc.sc)
 
     def _construct_writer(self):
         self.writer = \
-                self.writer_factory.buildFile(self.store)
+                self.geopysc.writer_factory.buildFile(self.store)
 
     def query_spatial_singleband(self,
                                  path,
@@ -812,7 +798,7 @@ class FileCatalog(_Catalog):
 
 class CassandraCatalog(_Catalog):
 
-    __slots__ = ["pysc",
+    __slots__ = ["geopysc",
                  "avrogregistry",
                  "store",
                  "reader",
@@ -829,7 +815,7 @@ class CassandraCatalog(_Catalog):
                  "attribute_table"]
 
     def __init__(self,
-                 pysc,
+                 geopysc,
                  hosts,
                  username,
                  password,
@@ -840,9 +826,8 @@ class CassandraCatalog(_Catalog):
                  allow_remote_dcs_for_lcl,
                  avroregistry=None):
 
-        super().__init__(pysc, avroregistry)
-        self.pysc = pysc
-        self._sc = self.pysc._jsc.sc()
+        super().__init__(geopysc, avroregistry)
+        self.geopysc = geopysc
 
         self.hosts = hosts
         self.username = username
@@ -868,7 +853,7 @@ class CassandraCatalog(_Catalog):
             self.attribute_key_space = new_attribute_key_space
             self.attribute_table = new_attribute_table
 
-            self.store = self.store_factory.buildCassandra(
+            self.store = self.geopysc.store_factory.buildCassandra(
                 self.hosts,
                 self.username,
                 self.password,
@@ -885,14 +870,14 @@ class CassandraCatalog(_Catalog):
 
     def _construct_reader(self):
         self.reader = \
-                self.reader_factory.buildCassandra(self.store,
-                                                   self._sc)
+                self.geopysc.reader_factory.buildCassandra(self.store,
+                                                           self.geopysc.sc)
 
     def _construct_writer(self):
         self.writer = \
-                self.writer_factory.buildCassandra(self.store,
-                                                   self.attribute_key_space,
-                                                   self.attribute_table)
+                self.geopysc.writer_factory.buildCassandra(self.store,
+                                                           self.attribute_key_space,
+                                                           self.attribute_table)
 
     def query_spatial_singleband(self,
                                  attribute_key_space,
@@ -1029,7 +1014,7 @@ class CassandraCatalog(_Catalog):
 
 class HBaseCatalog(_Catalog):
 
-    __slots__ = ["pysc",
+    __slots__ = ["geopysc",
                  "avrogregistry",
                  "store",
                  "reader",
@@ -1040,15 +1025,14 @@ class HBaseCatalog(_Catalog):
                  "attribute_table"]
 
     def __init__(self,
-                 pysc,
+                 geopysc,
                  zookeepers,
                  master,
                  client_port,
                  avroregistry=None):
 
-        super().__init__(pysc, avroregistry)
-        self.pysc = pysc
-        self._sc = self.pysc._jsc.sc()
+        super().__init__(geopysc, avroregistry)
+        self.geopysc = geopysc
 
         self.zookeepers = zookeepers
         self.master = master
@@ -1065,21 +1049,22 @@ class HBaseCatalog(_Catalog):
         if is_old and is_none:
             self.attribute_table = new_attribute_table
             self.store = \
-                    self.store_factory.buildHBase(self.zookeepers,
-                                                  self.master,
-                                                  self.client_port,
-                                                  self.attribute_table)
+                    self.geopysc.store_factory.buildHBase(self.zookeepers,
+                                                          self.master,
+                                                          self.client_port,
+                                                          self.attribute_table)
             self._construct_reader()
             self._construct_writer()
 
     def _construct_reader(self):
         self.reader = \
-                self.reader_factory.buildHBase(self.store, self._sc)
+                self.geopysc.reader_factory.buildHBase(self.store,
+                                                       self.geopysc.sc)
 
     def _construct_writer(self):
         self.writer = \
-                self.writer_factory.buildHBase(self.store,
-                                               self.attribute_table)
+                self.geopysc.writer_factory.buildHBase(self.store,
+                                                       self.attribute_table)
 
     def query_spatial_singleband(self,
                                  attribute_table,
@@ -1206,7 +1191,7 @@ class HBaseCatalog(_Catalog):
 
 class AccumuloCatalog(_Catalog):
 
-    __slots__ = ["pysc",
+    __slots__ = ["geopysc",
                  "avrogregistry",
                  "store",
                  "reader",
@@ -1218,16 +1203,15 @@ class AccumuloCatalog(_Catalog):
                  "attribute_table"]
 
     def __init__(self,
-                 pysc,
+                 geopysc,
                  zookeepers,
                  instance_name,
                  user,
                  password,
                  avroregistry=None):
 
-        super().__init__(pysc, avroregistry)
-        self.pysc = pysc
-        self._sc = self.pysc._jsc.sc()
+        super().__init__(geopysc, avroregistry)
+        self.geopysc = geopysc
 
         self.zookeepers = zookeepers
         self.instance_name = instance_name
@@ -1245,25 +1229,25 @@ class AccumuloCatalog(_Catalog):
         if is_old and is_none:
             self.attribute_table = new_attribute_table
             self.store = \
-                    self.store_factory.buildAccumulo(self.zookeepers,
-                                                     self.instance_name,
-                                                     self.user,
-                                                     self.password,
-                                                     self.attribute_table)
+                    self.geopysc.store_factory.buildAccumulo(self.zookeepers,
+                                                             self.instance_name,
+                                                             self.user,
+                                                             self.password,
+                                                             self.attribute_table)
             self._construct_reader()
             self._construct_writer()
 
     def _construct_reader(self):
         self.reader = \
-                self.reader_factory.buildAccumulo(self.instance_name,
-                                                  self.store,
-                                                  self._sc)
+                self.geopysc.reader_factory.buildAccumulo(self.instance_name,
+                                                          self.store,
+                                                          self.geopysc.sc)
 
     def _construct_writer(self):
         self.writer = \
-                self.writer_factory.buildAccumulo(self.instance_name,
-                                                  self.store,
-                                                  self.attribute_table)
+                self.geopysc.writer_factory.buildAccumulo(self.instance_name,
+                                                          self.store,
+                                                          self.attribute_table)
 
     def query_spatial_singleband(self,
                                  attribute_table,
