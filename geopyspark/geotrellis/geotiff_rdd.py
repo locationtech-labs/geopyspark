@@ -17,8 +17,8 @@ class GeoTiffRDD:
 
 
 class HadoopGeoTiffRDD(GeoTiffRDD):
-    def __init__(self, pysc, avroregistry=None):
-        self.geopysc = GeoPyContext(pysc)
+    def __init__(self, geopysc, avroregistry=None):
+        self.geopysc = geopysc
 
         self.avroregistry = avroregistry
 
@@ -58,9 +58,9 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
 
 
 class S3GeoTiffRDD(GeoTiffRDD):
-    def __init__(self, pysc, avroregistry=None):
+    def __init__(self, geopysc, avroregistry=None):
 
-        self.geopysc = GeoPyContext(pysc)
+        self.geopysc = geopysc
         self.avroregistry = avroregistry
 
         self._s3_wrapper = self.geopysc.s3_geotiff_rdd
