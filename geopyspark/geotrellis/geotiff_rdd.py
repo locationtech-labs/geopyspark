@@ -4,22 +4,17 @@ from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.avroregistry import AvroRegistry
 from geopyspark.geopycontext import GeoPyContext
+from geopyspark.geopyrdd import GeoPyRDD
 
 
 class GeoTiffRDD:
     def _decode_java_rdd(self, java_rdd, schema, avroregistry):
-        if avroregistry is None:
-            ser = AvroSerializer(schema)
-        else:
-            ser = AvroSerializer(schema, avroregistry)
-
-        return RDD(java_rdd, self.geopysc.pysc, AutoBatchedSerializer(ser))
+        return GeoPyRDD(java_rdd, self.geopysc, schema, avroregistry)
 
 
 class HadoopGeoTiffRDD(GeoTiffRDD):
     def __init__(self, geopysc, avroregistry=None):
         self.geopysc = geopysc
-
         self.avroregistry = avroregistry
 
         self._hadoop_wrapper = self.geopysc.hadoop_geotiff_rdd
