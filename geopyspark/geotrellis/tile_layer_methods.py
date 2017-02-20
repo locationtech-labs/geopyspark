@@ -106,3 +106,29 @@ class TileLayerMethods(metaclass=SingletonBase):
                         self.geopysc,
                         result._2(),
                         self.avroregistry)
+
+    def tile_to_layout(self,
+                       rdd,
+                       tile_layout_metadata,
+                       resample_method=None):
+
+        schema_json = json.loads(rdd.schema)
+        types = self._get_key_value_types(schema_json)
+        java_rdd = self._convert_to_java_rdd(rdd)
+
+        if resample_method is None:
+            resample_dict = {}
+        else:
+            resample_dict = {"resampleMethod": resample_method}
+
+        result = self._tiler_wrapper.tileToLayout(types[0],
+                                                  types[1],
+                                                  java_rdd.rdd(),
+                                                  rdd.schema,
+                                                  json.dumps(tile_layer_metadata),
+                                                  resample_dict)
+
+        return GeoPyRDD(result._1(),
+                        self.geopysc,
+                        result._2(),
+                        self.avroregistry)
