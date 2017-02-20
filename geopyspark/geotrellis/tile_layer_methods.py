@@ -1,6 +1,7 @@
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.singleton_base import SingletonBase
+from geopyspark.geopyrdd import GeoPyRDD
 
 import json
 
@@ -11,6 +12,7 @@ class TileLayerMethods(metaclass=SingletonBase):
         self.avroregistry = avroregistry
 
         self._metadata_wrapper = self.geopysc.tile_layer_metadata_collecter
+        self._tiler_wrapper = self.geopysc.tile_layer_methods
 
     @staticmethod
     def _format_strings(proj_params, epsg_code, wkt_string):
@@ -48,7 +50,8 @@ class TileLayerMethods(metaclass=SingletonBase):
 
         return (key_type, value_type)
 
-    def _convert_to_java_rdd(self, rdd, schema):
+    def _convert_to_java_rdd(self, rdd):
+        schema = rdd.schema
         ser = AvroSerializer(schema, self.avroregistry)
         dumped = rdd.map(lambda value: ser.dumps(value, schema))
 
@@ -62,32 +65,30 @@ class TileLayerMethods(metaclass=SingletonBase):
                          epsg_code=None,
                          wkt_string=None):
 
-        schema = rdd.schema
-        schema_json = json.loads(schema)
+        schema_json = json.loads(rdd.schema)
 
         result = self._format_strings(proj_params, epsg_code, wkt_string)
         types = self._get_key_value_types(schema_json)
-        java_rdd = self._convert_to_java_rdd(rdd, schema)
+        java_rdd = self._convert_to_java_rdd(rdd)
 
         metadata = self._metadata_wrapper.collectPythonMetadata(types[0],
                                                                 types[1],
                                                                 java_rdd.rdd(),
-                                                                schema,
+                                                                rdd.schema,
                                                                 extent,
                                                                 tile_layout,
                                                                 result)
 
         return json.loads(metadata)
 
-    '''
     def cut_tiles(self,
                   rdd,
-                  schema,
                   tile_layer_metadata,
                   resample_method=None):
 
-        types = self._get_key_value_types(schema)
-        java_rdd = self._convert_to_java_rdd(rdd, schema)
+        schema_json = json.loads(rdd.schema)
+        types = self._get_key_value_types(schema_json)
+        java_rdd = self._convert_to_java_rdd(rdd)
 
         if resample_method is None:
             resample_dict = {}
@@ -97,10 +98,11 @@ class TileLayerMethods(metaclass=SingletonBase):
         result = self._tiler_wrapper.cutTiles(types[0],
                                               types[1],
                                               java_rdd.rdd(),
-                                              schema,
-                                              tile_layer_metadata['layout'],
-                                              tile_layer_metadata['crs'],
+                                              rdd.schema,
+                                              json.dumps(tile_layer_metadata),
                                               resample_dict)
 
-        return decode_java_rdd(self.pysc, result._1(), result._2(), self.avroregistry)
-    '''
+        return GeoPyRDD(result._1(),
+                        self.geopysc,
+                        result._2(),
+                        self.avroregistry)
