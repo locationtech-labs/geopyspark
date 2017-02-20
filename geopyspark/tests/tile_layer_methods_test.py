@@ -12,7 +12,7 @@ import pytest
 import numpy as np
 
 
-class TileLayerMetadataTest(unittest.TestCase):
+class TileLayerMethodsTest(unittest.TestCase):
     def setUp(self):
         self.pysc = SparkContext(master="local[*]", appName="metadata-test")
         self.geopysc = GeoPyContext(self.pysc)
@@ -46,8 +46,8 @@ class TileLayerMetadataTest(unittest.TestCase):
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        self.geopysc.stop()
-        self.geopysc.close_gateway()
+        self.geopysc.pysc.stop()
+        self.geopysc.pysc._gateway.close()
 
     def test_cut_tiles(self):
         metadata = self.methods.collect_metadata(self.rdd,
