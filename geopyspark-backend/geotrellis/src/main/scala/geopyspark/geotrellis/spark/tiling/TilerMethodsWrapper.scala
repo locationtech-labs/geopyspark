@@ -11,8 +11,11 @@ import geotrellis.raster.merge._
 import geotrellis.raster.prototype._
 import geotrellis.raster.resample._
 import geotrellis.spark._
+import geotrellis.spark.io._
 import geotrellis.spark.io.avro._
 import geotrellis.spark.tiling._
+
+import spray.json._
 
 import org.apache.spark._
 import org.apache.spark.rdd._
@@ -29,19 +32,17 @@ object TilerMethodsWrapper {
   private def _cutTiles[
   K: GetComponent[?, ProjectedExtent]: (? => TilerKeyMethods[K, K2]): AvroRecordCodec: ClassTag,
   V <: CellGrid: AvroRecordCodec: ClassTag: (? => TileMergeMethods[V]): (? => TilePrototypeMethods[V]),
-  K2: Boundable: SpatialComponent: ClassTag: AvroRecordCodec
+  K2: Boundable: SpatialComponent: ClassTag: AvroRecordCodec: JsonFormat
   ](
     returnedRdd: RDD[Array[Byte]],
     schema: String,
-    pythonTileDefinition: java.util.List[java.util.Map[String, _]],
-    pythonCRS: String,
+    returnedMetadata: String,
     resampleMap: java.util.Map[String, String]
   ): (JavaRDD[Array[Byte]], String) = {
     val rdd: RDD[(K, V)] = PythonTranslator.fromPython[(K, V)](returnedRdd, Some(schema))
-    val layoutDefinition: LayoutDefinition = pythonTileDefinition.toLayoutDefinition
-    val crs: CRS = CRS.fromString(pythonCRS)
 
-    val metadata = rdd.collectMetadata[K2](crs, layoutDefinition)
+    val metadataAST = returnedMetadata.parseJson
+    val metadata = metadataAST.convertTo[TileLayerMetadata[K2]]
 
     val scalaMap = resampleMap.asScala
 
@@ -63,8 +64,7 @@ object TilerMethodsWrapper {
     valueType: String,
     returnedRdd: RDD[Array[Byte]],
     schema: String,
-    pythonTileDefinition: java.util.List[java.util.Map[String, _]],
-    pythonCRS: String,
+    returnedMetadata: String,
     resampleMap: java.util.Map[String, String]
   ): (JavaRDD[Array[Byte]], String) =
     (keyType, valueType) match {
@@ -72,29 +72,25 @@ object TilerMethodsWrapper {
         _cutTiles[ProjectedExtent, Tile, SpatialKey](
           returnedRdd,
           schema,
-          pythonTileDefinition,
-          pythonCRS,
+          returnedMetadata,
           resampleMap)
       case ("spatial", "multiband") =>
         _cutTiles[ProjectedExtent, MultibandTile, SpatialKey](
           returnedRdd,
           schema,
-          pythonTileDefinition,
-          pythonCRS,
+          returnedMetadata,
           resampleMap)
       case ("spacetime", "singleband") =>
         _cutTiles[TemporalProjectedExtent, Tile, SpaceTimeKey](
           returnedRdd,
           schema,
-          pythonTileDefinition,
-          pythonCRS,
+          returnedMetadata,
           resampleMap)
       case ("spacetime", "multiband") =>
         _cutTiles[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
           returnedRdd,
           schema,
-          pythonTileDefinition,
-          pythonCRS,
+          returnedMetadata,
           resampleMap)
     }
 }
