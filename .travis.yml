@@ -39,4 +39,5 @@ script:
   - "export JAVA_HOME=/usr/lib/jvm/java-8-oracle"
   - cd geopyspark-backend && ./sbt "project geotrellis-backend" assembly
   - cd .. && pytest -k "not methods"
-  - pytest geopyspark/tests/tile_layer_methods_test.py
+  - pytest -k "cut_tiles" geopyspark/tests/tile_layer_methods_test.py
+  - pytest -k "tile_to_layout" geopyspark/tests/tile_layer_methods_test.py
