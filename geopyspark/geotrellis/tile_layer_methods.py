@@ -1,7 +1,6 @@
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.singleton_base import SingletonBase
-from geopyspark.geotrellis import decode_java_rdd
 
 import json
 
@@ -34,8 +33,8 @@ class TileLayerMethods(metaclass=SingletonBase):
     @staticmethod
     def _get_key_value_types(schema):
 
-        key = schema_json['fields'][0]['type']['name']
-        value = schema_json['fields'][1]['type'][0]['name']
+        key = schema['fields'][0]['type']['name']
+        value = schema['fields'][1]['type'][0]['name']
 
         if key == "ProjectedExtent":
             key_type = "spatial"
@@ -67,7 +66,7 @@ class TileLayerMethods(metaclass=SingletonBase):
         schema_json = json.loads(schema)
 
         result = self._format_strings(proj_params, epsg_code, wkt_string)
-        types = self._get_key_value_types(schema)
+        types = self._get_key_value_types(schema_json)
         java_rdd = self._convert_to_java_rdd(rdd, schema)
 
         metadata = self._metadata_wrapper.collectPythonMetadata(types[0],
@@ -80,6 +79,7 @@ class TileLayerMethods(metaclass=SingletonBase):
 
         return json.loads(metadata)
 
+    '''
     def cut_tiles(self,
                   rdd,
                   schema,
@@ -103,3 +103,4 @@ class TileLayerMethods(metaclass=SingletonBase):
                                               resample_dict)
 
         return decode_java_rdd(self.pysc, result._1(), result._2(), self.avroregistry)
+    '''
