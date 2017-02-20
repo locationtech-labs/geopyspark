@@ -41,3 +41,4 @@ script:
   - cd .. && pytest -k "not methods"
   - pytest -k "cut_tiles" geopyspark/tests/tile_layer_methods_test.py
   - pytest -k "tile_to_layout" geopyspark/tests/tile_layer_methods_test.py
+  - pytest -k "merge" geopyspark/tests/tile_layer_methods_test.py
