@@ -7,5 +7,5 @@ import pytest
 
 class BaseTestClass(unittest.TestCase):
     pysc = SparkContext(master="local[*]",
-                        appName="metadata-test")
+                        appName="test")
     geopysc = GeoPyContext(pysc)
