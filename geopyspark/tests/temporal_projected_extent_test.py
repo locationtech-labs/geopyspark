@@ -8,33 +8,26 @@ from geopyspark.avroserializer import AvroSerializer
 from geopyspark.geotrellis.extent import Extent
 from geopyspark.geotrellis.temporal_projected_extent import TemporalProjectedExtent
 from geopyspark.avroregistry import AvroRegistry
+from geopyspark.tests.base_test_class import BaseTestClass
 
 import unittest
 import pytest
 
 
-class TemporalProjectedExtentSchemaTest(unittest.TestCase):
-    def setUp(self):
-        self.pysc = SparkContext(master="local[*]", appName="tpe-test")
-        self.path = "geopyspark.geotrellis.tests.schemas.TemporalProjectedExtentWrapper"
-        java_import(self.pysc._gateway.jvm, self.path)
-        self.extents = [Extent(0, 0, 1, 1), Extent(1, 2, 3, 4), Extent(5, 6, 7, 8)]
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        self.pysc.stop()
-        self.pysc._gateway.close()
+class TemporalProjectedExtentSchemaTest(BaseTestClass):
+    path = "geopyspark.geotrellis.tests.schemas.TemporalProjectedExtentWrapper"
+    java_import(BaseTestClass.pysc._gateway.jvm, path)
+    extents = [Extent(0, 0, 1, 1), Extent(1, 2, 3, 4), Extent(5, 6, 7, 8)]
 
     def get_rdd(self):
-        sc = self.pysc._jsc.sc()
-        ew = self.pysc._gateway.jvm.TemporalProjectedExtentWrapper
+        sc = BaseTestClass.pysc._jsc.sc()
+        ew = BaseTestClass.pysc._gateway.jvm.TemporalProjectedExtentWrapper
 
         tup = ew.testOut(sc)
         (java_rdd, schema) = (tup._1(), tup._2())
 
         ser = AvroSerializer(schema)
-        return (RDD(java_rdd, self.pysc, AutoBatchedSerializer(ser)), schema)
+        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def get_tpextents(self):
         (tpextents, schema) = self.get_rdd()

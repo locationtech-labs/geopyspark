@@ -5,6 +5,7 @@ check_directory()
 from pyspark import SparkContext
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
 from geopyspark.geopycontext import GeoPyContext
+from geopyspark.tests.base_test_class import BaseTestClass
 from os import walk, path
 
 import rasterio
@@ -41,20 +42,11 @@ class GeoTiffIOTest(object):
         return rasterio_tiles
 
 
-class Singleband(GeoTiffIOTest, unittest.TestCase):
-    def setUp(self):
-        self.geopysc = GeoPyContext.construct(
-            master="local[*]", appName="hadoop-singleband-geotiff-test")
-        self.hadoop_geotiff = HadoopGeoTiffRDD(self.geopysc)
+class Singleband(GeoTiffIOTest, BaseTestClass):
+    hadoop_geotiff = HadoopGeoTiffRDD(BaseTestClass.geopysc)
 
-        self.dir_path = geotiff_test_path("one-month-tiles/")
-        self.options = {'maxTileSize': 256}
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        self.geopysc.pysc.stop()
-        self.geopysc.pysc._gateway.close()
+    dir_path = geotiff_test_path("one-month-tiles/")
+    options = {'maxTileSize': 256}
 
     def read_singleband_geotrellis(self, options=None):
         if options is None:
@@ -88,19 +80,10 @@ class Singleband(GeoTiffIOTest, unittest.TestCase):
             self.assertTrue((x == y).all())
 
 
-class Multiband(GeoTiffIOTest, unittest.TestCase):
-    def setUp(self):
-        self.geopysc = GeoPyContext.construct(
-            master="local[*]", appName="hadoop-multiband-geotiff-test")
-        self.hadoop_geotiff = HadoopGeoTiffRDD(self.geopysc)
-        self.dir_path = geotiff_test_path("one-month-tiles-multiband/")
-        self.options = {'maxTileSize': 256}
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        self.geopysc.pysc.stop()
-        self.geopysc.pysc._gateway.close()
+class Multiband(GeoTiffIOTest, BaseTestClass):
+    hadoop_geotiff = HadoopGeoTiffRDD(BaseTestClass.geopysc)
+    dir_path = geotiff_test_path("one-month-tiles-multiband/")
+    options = {'maxTileSize': 256}
 
     def read_multiband_geotrellis(self, options=None):
         if options is None:
