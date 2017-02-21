@@ -3,7 +3,7 @@ add_spark_path()
 check_directory()
 
 from pyspark import SparkContext
-from geopyspark.geotrellis.tile_layer_metadata import TileLayerMethods
+from geopyspark.geotrellis.tile_layer_methods import TileLayerMethods
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer

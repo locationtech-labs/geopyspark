@@ -31,9 +31,9 @@ object GeoTrellisUtils {
     (stringMap, intMap)
   }
 
-  implicit class JavaArrayListExtensions(al: java.util.ArrayList[java.util.Map[String, _]]) {
+  implicit class JavaListExtensions(l: java.util.List[java.util.Map[String, _]]) {
     def toLayoutDefinition: LayoutDefinition =
-      LayoutDefinition(al(0).toExtent, al(1).toTileLayout)
+      LayoutDefinition(l(0).toExtent, l(1).toTileLayout)
   }
 
   implicit class JavaMapExtensions(m: java.util.Map[String, _]) {
@@ -66,6 +66,9 @@ object GeoTrellisUtils {
           case ("wktString", wktString) => Some(CRS.fromWKT(wktString))
           case (k, _) => throw new Exception(s"Cannot create CRS from $k")
         }
+
+    def getLayoutDefinition: LayoutDefinition =
+      m("layout").asInstanceOf[java.util.ArrayList[java.util.Map[String, _]]].toLayoutDefinition
   }
 
 

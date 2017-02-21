@@ -36,6 +36,10 @@ class GeoPyContext(object):
     def tile_layer_metadata_collecter(self):
         return self._jvm.geopyspark.geotrellis.spark.TileLayerMetadataCollector
 
+    @property
+    def tile_layer_methods(self):
+        return self._jvm.geopyspark.geotrellis.spark.tiling.TilerMethodsWrapper
+
     def stop(self):
         self.pysc.stop()
 

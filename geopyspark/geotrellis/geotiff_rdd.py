@@ -1,18 +1,10 @@
-from pyspark import SparkConf, SparkContext, RDD
-from pyspark.serializers import AutoBatchedSerializer
+from geopyspark.geopyrdd import GeoPyRDD
 from py4j.java_gateway import java_import
-from geopyspark.avroserializer import AvroSerializer
-from geopyspark.avroregistry import AvroRegistry
 from geopyspark.geopycontext import GeoPyContext
 from geopyspark.geopyrdd import GeoPyRDD
 
 
-class GeoTiffRDD:
-    def _decode_java_rdd(self, java_rdd, schema, avroregistry):
-        return GeoPyRDD(java_rdd, self.geopysc, schema, avroregistry)
-
-
-class HadoopGeoTiffRDD(GeoTiffRDD):
+class HadoopGeoTiffRDD(object):
     def __init__(self, geopysc, avroregistry=None):
         self.geopysc = geopysc
         self.avroregistry = avroregistry
@@ -25,7 +17,7 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
         else:
             result = self._hadoop_wrapper.readSpatialSingleband(path, options, self.geopysc.sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return GeoPyRDD(result._1(), self.geopysc, result._2(), self.avroregistry)
 
     def get_spatial_multiband(self, path, options=None):
         if options is None:
@@ -33,7 +25,7 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
         else:
             result = self._hadoop_wrapper.readSpatialMultiband(path, options, self.geopysc.sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return GeoPyRDD(result._1(), self.geopysc, result._2(), self.avroregistry)
 
     def get_spacetime(self, path, options=None):
         if options is None:
@@ -41,7 +33,7 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
         else:
             result = self._hadoop_wrapper.readSpaceTimeSingleband(path, options, self.geopysc.sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return GeoPyRDD(result._1(), self.geopysc, result._2(), self.avroregistry)
 
     def get_spacetime_multiband(self, path, options=None):
         if options is None:
@@ -49,12 +41,11 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
         else:
             result = self._hadoop_wrapper.readSpaceTimeMultiband(path, options, self.geopysc.sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return GeoPyRDD(result._1(), self.geopysc, result._2(), self.avroregistry)
 
 
-class S3GeoTiffRDD(GeoTiffRDD):
+class S3GeoTiffRDD(object):
     def __init__(self, geopysc, avroregistry=None):
-
         self.geopysc = geopysc
         self.avroregistry = avroregistry
 
@@ -66,7 +57,7 @@ class S3GeoTiffRDD(GeoTiffRDD):
         else:
             result = self._s3_wrapper.readSpatialSingleband(bucket, prefix, options, self.geopysc.sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return GeoPyRDD(result._1(), self.geopysc, result._2(), self.avroregistry)
 
     def get_spatial_multiband(self, bucket, prefix, options=None):
         if options is None:
@@ -74,7 +65,7 @@ class S3GeoTiffRDD(GeoTiffRDD):
         else:
             result = self._s3_wrapper.readSpatialMultiband(bucket, prefix, options, self.geopysc.sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return GeoPyRDD(result._1(), self.geopysc, result._2(), self.avroregistry)
 
     def get_spacetime(self, bucket, prefix, options=None):
         if options is None:
@@ -82,7 +73,7 @@ class S3GeoTiffRDD(GeoTiffRDD):
         else:
             result = self._s3_wrapper.readSpaceTimeSingleband(bucket, prefix, options, self.geopysc.sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return GeoPyRDD(result._1(), self.geopysc, result._2(), self.avroregistry)
 
     def get_spacetime_multiband(self, bucket, prefix, options=None):
         if options is None:
@@ -90,4 +81,4 @@ class S3GeoTiffRDD(GeoTiffRDD):
         else:
             result = self._s3_wrapper.readSpaceTimeMultiband(bucket, prefix, options, self.geopysc.sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return GeoPyRDD(result._1(), self.geopysc, result._2(), self.avroregistry)
