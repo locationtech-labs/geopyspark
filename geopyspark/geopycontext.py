@@ -32,6 +32,10 @@ class GeoPyContext(object):
     def writer_factory(self):
         return self._jvm.geopyspark.geotrellis.io.LayerWriterFactory
 
+    @property
+    def tile_layer_metadata_collecter(self):
+        return self._jvm.geopyspark.geotrellis.spark.TileLayerMetadataCollector
+
     def stop(self):
         self.pysc.stop()
 
