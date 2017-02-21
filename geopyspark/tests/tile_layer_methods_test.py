@@ -77,6 +77,14 @@ class TileLayerMethodsTest(unittest.TestCase):
         self.assertEqual([0,0], [key_bounds.col, key_bounds.row])
         self.assertTrue((self.value[1] == tile).all())
 
+    def test_merge(self):
+        result = self.methods.merge(self.rdd, self.rdd)
+
+        (projected_extent, tile) = result.collect()[0]
+
+        self.assertEqual(self.value[0], projected_extent)
+        self.assertTrue((self.value[1] == tile).all())
+
 
 if __name__ == "__main__":
     unittest.main()

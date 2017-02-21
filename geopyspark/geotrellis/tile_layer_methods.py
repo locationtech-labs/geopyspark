@@ -13,6 +13,7 @@ class TileLayerMethods(metaclass=SingletonBase):
 
         self._metadata_wrapper = self.geopysc.tile_layer_metadata_collecter
         self._tiler_wrapper = self.geopysc.tile_layer_methods
+        self._merge_wrapper = self.geopysc.tile_layer_merge
 
     @staticmethod
     def _format_strings(proj_params, epsg_code, wkt_string):
@@ -127,6 +128,28 @@ class TileLayerMethods(metaclass=SingletonBase):
                                                   rdd.schema,
                                                   json.dumps(tile_layer_metadata),
                                                   resample_dict)
+
+        return GeoPyRDD(result._1(),
+                        self.geopysc,
+                        result._2(),
+                        self.avroregistry)
+
+    def merge(self,
+              rdd_1,
+              rdd_2):
+
+        schema_json = json.loads(rdd_1.schema)
+        types = self._get_key_value_types(schema_json)
+
+        java_rdd_1 = self._convert_to_java_rdd(rdd_1)
+        java_rdd_2 = self._convert_to_java_rdd(rdd_2)
+
+        result = self._merge_wrapper.merge(types[0],
+                                           types[1],
+                                           java_rdd_1.rdd(),
+                                           rdd_1.schema,
+                                           java_rdd_2.rdd(),
+                                           rdd_2.schema)
 
         return GeoPyRDD(result._1(),
                         self.geopysc,

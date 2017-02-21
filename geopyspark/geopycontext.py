@@ -40,6 +40,10 @@ class GeoPyContext(object):
     def tile_layer_methods(self):
         return self._jvm.geopyspark.geotrellis.spark.tiling.TilerMethodsWrapper
 
+    @property
+    def tile_layer_merge(self):
+        return self._jvm.geopyspark.geotrellis.spark.merge.MergeMethodsWrapper
+
     def stop(self):
         self.pysc.stop()
 
