@@ -63,6 +63,20 @@ class TileLayerMethodsTest(unittest.TestCase):
         self.assertEqual([0,0], [key_bounds.col, key_bounds.row])
         self.assertTrue((self.value[1] == tile).all())
 
+    def test_tile_to_layout(self):
+        metadata = self.methods.collect_metadata(self.rdd,
+                                                 self.new_extent,
+                                                 self.layout,
+                                                 epsg_code=self.value[0].epsg_code)
+
+        result = self.methods.cut_tiles(self.rdd,
+                                        metadata)
+
+        (key_bounds, tile) = result.collect()[0]
+
+        self.assertEqual([0,0], [key_bounds.col, key_bounds.row])
+        self.assertTrue((self.value[1] == tile).all())
+
 
 if __name__ == "__main__":
     unittest.main()

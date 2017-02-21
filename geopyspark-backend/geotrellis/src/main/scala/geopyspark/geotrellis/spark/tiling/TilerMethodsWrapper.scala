@@ -93,4 +93,65 @@ object TilerMethodsWrapper {
           returnedMetadata,
           resampleMap)
     }
+
+  private def _tileToLayout[
+    K: GetComponent[?, ProjectedExtent]: (? => TilerKeyMethods[K, K2]): AvroRecordCodec: ClassTag,
+    V <: CellGrid: AvroRecordCodec: ClassTag: (? => TileMergeMethods[V]): (? => TilePrototypeMethods[V]),
+    K2: Boundable: SpatialComponent: ClassTag: AvroRecordCodec: JsonFormat
+  ](
+    returnedRdd: RDD[Array[Byte]],
+    schema: String,
+    returnedMetadata: String,
+    options: java.util.Map[String, Any]
+  ): (JavaRDD[Array[Byte]], String) = {
+    val rdd: RDD[(K, V)] = PythonTranslator.fromPython[(K, V)](returnedRdd, Some(schema))
+
+    val metadataAST = returnedMetadata.parseJson
+    val metadata = metadataAST.convertTo[TileLayerMetadata[K2]]
+
+    val returnedOptions =
+      if (options.isEmpty)
+        TilerOptions.default
+      else
+        TilerOptions.setValues(options)
+
+    val result = rdd.tileToLayout(metadata, returnedOptions)
+
+    PythonTranslator.toPython(result)
+  }
+
+  def tileToLayout(
+    keyType: String,
+    valueType: String,
+    returnedRdd: RDD[Array[Byte]],
+    schema: String,
+    returnedMetadata: String,
+    options: java.util.Map[String, Any]
+  ): (JavaRDD[Array[Byte]], String) =
+    (keyType, valueType) match {
+      case ("spatial", "singleband") =>
+        _tileToLayout[ProjectedExtent, Tile, SpatialKey](
+          returnedRdd,
+          schema,
+          returnedMetadata,
+          options)
+      case ("spatial", "multiband") =>
+        _tileToLayout[ProjectedExtent, MultibandTile, SpatialKey](
+          returnedRdd,
+          schema,
+          returnedMetadata,
+          options)
+      case ("spacetime", "singleband") =>
+        _tileToLayout[TemporalProjectedExtent, Tile, SpaceTimeKey](
+          returnedRdd,
+          schema,
+          returnedMetadata,
+          options)
+      case ("spacetime", "multiband") =>
+        _tileToLayout[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
+          returnedRdd,
+          schema,
+          returnedMetadata,
+          options)
+    }
 }
