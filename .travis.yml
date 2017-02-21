@@ -38,7 +38,4 @@ script:
   - "export SPARK_HOME=./spark-2.1.0-bin-hadoop2.7/"
   - "export JAVA_HOME=/usr/lib/jvm/java-8-oracle"
   - cd geopyspark-backend && ./sbt "project geotrellis-backend" assembly
-  - cd .. && pytest -k "not methods"
-  - pytest -k "cut_tiles" geopyspark/tests/tile_layer_methods_test.py
-  - pytest -k "tile_to_layout" geopyspark/tests/tile_layer_methods_test.py
-  - pytest -k "merge" geopyspark/tests/tile_layer_methods_test.py
+  - cd .. && pytest
