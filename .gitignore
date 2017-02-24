@@ -96,4 +96,4 @@ geopyspark/tests/data_files/geotiff_test_files/
 notebooks
 
 # GeoPySpark-backend jar
-geopyspark/jar/*.jar
+geopyspark/jars/*.jar

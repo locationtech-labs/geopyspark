@@ -4,7 +4,7 @@ export IMG := jupyter-geopyspark
 
 ASSEMBLY := geopyspark-backend/geotrellis/target/scala-2.11/geotrellis-backend-assembly-0.1.0.jar
 WHEEL := dist/geopyspark-0.1.0-py3-none-any.whl
-JAR-PATH := geopyspark/jar/
+JAR-PATH := geopyspark/jars/
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 
 install: ${ASSEMBLY} ${JAR-PATH}

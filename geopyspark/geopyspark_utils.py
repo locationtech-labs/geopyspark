@@ -14,8 +14,8 @@ def setup_environment():
     current_location = path.dirname(path.realpath(__file__))
 
     local_prefixes = [
-        path.join(current_location, 'jar/'),
-        path.join(os.getcwd(), 'jar/')
+        path.join(current_location, 'jars/'),
+        path.join(os.getcwd(), 'jars/')
     ]
 
     possible_jars = [path.join(prefix, '*.jar') for prefix in local_prefixes]
