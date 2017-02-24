@@ -18,7 +18,7 @@ def setup_environment():
     ]
 
     possible_jars = [path.join(prefix, '*.jar') for prefix in local_prefixes]
-    possible_jars.append(path.abspath(resource_filename('geopyspark.jar',
+    possible_jars.append(path.abspath(resource_filename('geopyspark.jars',
                                                         JAR_FILE)))
 
     returned = [glob.glob(jar_files) for jar_files in possible_jars]
