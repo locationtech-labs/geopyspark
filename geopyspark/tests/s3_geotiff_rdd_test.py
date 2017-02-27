@@ -5,6 +5,7 @@ check_directory()
 from pyspark import SparkContext
 from geopyspark.geotrellis.geotiff_rdd import S3GeoTiffRDD
 from geopyspark.geopycontext import GeoPyContext
+from geopyspark.tests.base_test_class import BaseTestClass
 from py4j.java_gateway import java_import
 from os import walk, path
 
@@ -41,24 +42,14 @@ class S3GeoTiffIOTest(object):
         return rasterio_tiles
 
 
-class Singleband(S3GeoTiffIOTest, unittest.TestCase):
-    def setUp(self):
-        pysc = SparkContext(master="local[*]", appName="s3-singlebandgeotiff-test")
-        self.geopysc = GeoPyContext(pysc)
+class Singleband(S3GeoTiffIOTest, BaseTestClass):
+    java_import(BaseTestClass.geopysc._jvm,
+            "geopyspark.geotrellis.testkit.MockS3ClientWrapper")
 
-        java_import(self.geopysc._jvm,
-                "geopyspark.geotrellis.testkit.MockS3ClientWrapper")
+    mock_wrapper = BaseTestClass.geopysc._jvm.MockS3ClientWrapper
+    client = mock_wrapper.mockClient()
 
-        self.mock_wrapper = self.geopysc._jvm.MockS3ClientWrapper
-        self.client = self.mock_wrapper.mockClient()
-
-        self.s3_geotiff = S3GeoTiffRDD(self.geopysc)
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        self.geopysc.pysc.stop()
-        self.geopysc.pysc._gateway.close()
+    s3_geotiff = S3GeoTiffRDD(BaseTestClass.geopysc)
 
     key = "one-month-tiles/test-200506000000_0_0.tif"
     bucket = "test"
@@ -97,24 +88,14 @@ class Singleband(S3GeoTiffIOTest, unittest.TestCase):
             self.assertTrue((x == y).all())
 
 
-class Multiband(S3GeoTiffIOTest, unittest.TestCase):
-    def setUp(self):
-        pysc = SparkContext(master="local[*]", appName="s3-multibandgeotiff-test")
-        self.geopysc = GeoPyContext(pysc)
+class Multiband(S3GeoTiffIOTest, BaseTestClass):
+    java_import(BaseTestClass.geopysc._jvm,
+            "geopyspark.geotrellis.testkit.MockS3ClientWrapper")
 
-        java_import(self.geopysc._jvm,
-                "geopyspark.geotrellis.testkit.MockS3ClientWrapper")
+    mock_wrapper = BaseTestClass.geopysc._jvm.MockS3ClientWrapper
+    client = mock_wrapper.mockClient()
 
-        self.mock_wrapper = self.geopysc._jvm.MockS3ClientWrapper
-        self.client = self.mock_wrapper.mockClient()
-
-        self.s3_geotiff = S3GeoTiffRDD(self.geopysc)
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        self.geopysc.pysc.stop()
-        self.geopysc.pysc._gateway.close()
+    s3_geotiff = S3GeoTiffRDD(BaseTestClass.geopysc)
 
     key = "one-month-tiles-multiband/result.tif"
     bucket = "test"

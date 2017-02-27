@@ -8,27 +8,19 @@ from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
 from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.geopycontext import GeoPyContext
+from geopyspark.tests.base_test_class import BaseTestClass
 
 import unittest
 import pytest
 import json
 
 
-class TileLayerMetadataTest(unittest.TestCase):
-    def setUp(self):
-        pysc = SparkContext(master="local[*]", appName="metadata-test")
-        self.geopysc = GeoPyContext(pysc)
-        self.metadata = TileLayerMethods(self.geopysc)
-        self.hadoop_geotiff = HadoopGeoTiffRDD(self.geopysc)
+class TileLayerMetadataTest(BaseTestClass):
+    metadata = TileLayerMethods(BaseTestClass.geopysc)
+    hadoop_geotiff = HadoopGeoTiffRDD(BaseTestClass.geopysc)
 
-        self.dir_path = geotiff_test_path("all-ones.tif")
-        self.options = {'maxTileSize': 256}
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        self.geopysc.stop()
-        self.geopysc.close_gateway()
+    dir_path = geotiff_test_path("all-ones.tif")
+    options = {'maxTileSize': 256}
 
     def check_results(self, actual, expected):
         if isinstance(actual, list) and isinstance(expected, list):

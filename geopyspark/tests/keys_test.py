@@ -7,32 +7,25 @@ from py4j.java_gateway import java_import
 from geopyspark.geotrellis.keys import SpatialKey, SpaceTimeKey
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.avroregistry import AvroRegistry
+from geopyspark.tests.base_test_class import BaseTestClass
 
 import unittest
 import pytest
 
 
-class SpatialKeySchemaTest(unittest.TestCase):
-    def setUp(self):
-        self.pysc = SparkContext(master="local[*]", appName="spatial-key-test")
-        self.path = "geopyspark.geotrellis.tests.schemas.SpatialKeyWrapper"
-        java_import(self.pysc._gateway.jvm, self.path)
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        self.pysc.stop()
-        self.pysc._gateway.close()
+class SpatialKeySchemaTest(BaseTestClass):
+    path = "geopyspark.geotrellis.tests.schemas.SpatialKeyWrapper"
+    java_import(BaseTestClass.pysc._gateway.jvm, path)
 
     def get_rdd(self):
-        sc = self.pysc._jsc.sc()
-        ew = self.pysc._gateway.jvm.SpatialKeyWrapper
+        sc = BaseTestClass.pysc._jsc.sc()
+        ew = BaseTestClass.pysc._gateway.jvm.SpatialKeyWrapper
 
         tup = ew.testOut(sc)
         (java_rdd, schema) = (tup._1(), tup._2())
 
         ser = AvroSerializer(schema)
-        return (RDD(java_rdd, self.pysc, AutoBatchedSerializer(ser)), schema)
+        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def get_skeys(self):
         (skeys, schema) = self.get_rdd()
@@ -63,26 +56,20 @@ class SpatialKeySchemaTest(unittest.TestCase):
             self.assertEqual(actual, expected)
 
 
-class SpaceTimeKeySchemaTest(unittest.TestCase):
-    def setUp(self):
-        self.pysc = SparkContext(master="local[*]", appName="spacetime-key-test")
-        self.path = "geopyspark.geotrellis.tests.schemas.SpaceTimeKeyWrapper"
-        java_import(self.pysc._gateway.jvm, self.path)
-
-    def tearDown(self):
-        self.pysc.stop()
-        self.pysc._gateway.close()
+class SpaceTimeKeySchemaTest(BaseTestClass):
+    path = "geopyspark.geotrellis.tests.schemas.SpaceTimeKeyWrapper"
+    java_import(BaseTestClass.pysc._gateway.jvm, path)
 
     def get_rdd(self):
-        java_import(self.pysc._gateway.jvm, self.path)
-        sc = self.pysc._jsc.sc()
-        ew = self.pysc._gateway.jvm.SpaceTimeKeyWrapper
+        java_import(BaseTestClass.pysc._gateway.jvm, self.path)
+        sc = BaseTestClass.pysc._jsc.sc()
+        ew = BaseTestClass.pysc._gateway.jvm.SpaceTimeKeyWrapper
 
         tup = ew.testOut(sc)
         (java_rdd, schema) = (tup._1(), tup._2())
 
         ser = AvroSerializer(schema)
-        return (RDD(java_rdd, self.pysc, AutoBatchedSerializer(ser)), schema)
+        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def get_skeys(self):
         (skeys, schema) = self.get_rdd()
