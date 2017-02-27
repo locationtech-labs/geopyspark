@@ -18,7 +18,9 @@ setup(
         'numpy>=1.8',
         'shapely>=1.6b3'
     ],
-    packages=['geopyspark', 'geopyspark.geotrellis', 'geopyspark.tests'],
+    include_package_data=True,
+    data_files=[('jars', ['geopyspark/jars/geotrellis-backend-assembly-0.1.0.jar'])],
+    packages=['geopyspark', 'geopyspark.geotrellis', 'geopyspark.tests', 'geopyspark.jars'],
     scripts=[],
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',

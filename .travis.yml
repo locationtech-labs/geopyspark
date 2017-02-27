@@ -23,6 +23,11 @@ addons:
       - gfortran
       - oracle-java8-set-default
 
+before_install:
+  - cd geopyspark-backend && ./sbt "project geotrellis-backend" assembly
+  - cp geotrellis/target/scala-2.11/geotrellis-backend-assembly-0.1.0.jar ../geopyspark/jars
+  - cd ..
+
 install:
   - pip3 install -r requirements.txt
   - pip3 install .
@@ -37,5 +42,4 @@ script:
   - "tar -xvf spark-2.1.0-bin-hadoop2.7.tgz"
   - "export SPARK_HOME=./spark-2.1.0-bin-hadoop2.7/"
   - "export JAVA_HOME=/usr/lib/jvm/java-8-oracle"
-  - cd geopyspark-backend && ./sbt "project geotrellis-backend" assembly
-  - cd .. && pytest
+  - pytest
