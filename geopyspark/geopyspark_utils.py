@@ -1,5 +1,6 @@
 import os
 import glob
+import sys
 
 from os import path
 from pkg_resources import resource_filename
@@ -9,7 +10,17 @@ VERSION = '0.1.0'
 JAR_FILE = 'geotrellis-backend-assembly-' + VERSION + '.jar'
 
 
+def add_pyspark_path():
+    try:
+        pyspark_home = os.environ["SPARK_HOME"]
+        sys.path.append(path.join(pyspark_home, 'python'))
+
+    except:
+        raise KeyError("Could not find SPARK_HOME")
+
 def setup_environment():
+    add_pyspark_path()
+
     current_location = path.dirname(path.realpath(__file__))
 
     local_prefixes = [
