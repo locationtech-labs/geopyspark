@@ -1,9 +1,13 @@
 import numpy as np
 
 class TileArray(np.ndarray):
-    def __new__(cls, input_array, no_data_value):
+    def __new__(cls, input_array, no_data_value=None):
         obj = np.asarray(input_array).view(cls)
-        obj.no_data_value = no_data_value
+
+        if no_data_value is not None:
+            obj.no_data_value = no_data_value
+        else:
+            obj.no_data_value = None
 
         return obj
 

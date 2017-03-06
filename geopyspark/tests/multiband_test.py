@@ -19,7 +19,8 @@ class MultibandSchemaTest(BaseTestClass):
     java_import(BaseTestClass.pysc._gateway.jvm, path)
 
     arr = TileArray(np.array(bytearray([0, 0, 1, 1])).reshape(2, 2), -128)
-    multiband_tile = [arr, arr, arr]
+    bands = [arr, arr, arr]
+    multiband_tile = np.array(bands)
 
     def get_rdd(self):
         sc = BaseTestClass.pysc._jsc.sc()
@@ -43,10 +44,10 @@ class MultibandSchemaTest(BaseTestClass):
         actual_encoded = encoded.collect()
 
         expected_encoded = [
-                {'bands': [AvroRegistry.tile_encoder(x) for x in self.multiband_tile]},
-                {'bands': [AvroRegistry.tile_encoder(x) for x in self.multiband_tile]},
-                {'bands': [AvroRegistry.tile_encoder(x) for x in self.multiband_tile]},
-                ]
+            {'bands': [AvroRegistry.tile_encoder(x) for x in self.bands]},
+            {'bands': [AvroRegistry.tile_encoder(x) for x in self.bands]},
+            {'bands': [AvroRegistry.tile_encoder(x) for x in self.bands]}
+        ]
 
         for actual, expected in zip(actual_encoded, expected_encoded):
             self.assertEqual(actual, expected)
@@ -55,10 +56,10 @@ class MultibandSchemaTest(BaseTestClass):
         actual_multibands = self.get_multibands()
 
         expected_multibands = [
-                self.multiband_tile,
-                self.multiband_tile,
-                self.multiband_tile
-                ]
+            self.multiband_tile,
+            self.multiband_tile,
+            self.multiband_tile
+        ]
 
         for actual_tiles, expected_tiles in zip(actual_multibands, expected_multibands):
             for actual, expected in zip(actual_tiles, expected_tiles):
