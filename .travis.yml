@@ -7,7 +7,7 @@ python:
 
 branches:
   only:
-    - travis
+    - io-refactor
     - master
 
 addons:
