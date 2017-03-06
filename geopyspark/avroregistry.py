@@ -1,4 +1,7 @@
+import numpy as np
+
 from functools import partial
+from geopyspark.geotrellis.tile import TileArray
 
 
 class AvroRegistry(object):
@@ -7,30 +10,30 @@ class AvroRegistry(object):
     def __init__(self):
 
         self.decoders = {
-                'BitArrayTile': self.tile_decoder,
-                'ByteArrayTile': self.tile_decoder,
-                'UByteArrayTile': self.tile_decoder,
-                'ShortArrayTile': self.tile_decoder,
-                'UShortArrayTile': self.tile_decoder,
-                'IntArrayTile': self.tile_decoder,
-                'FloatArrayTile': self.tile_decoder,
-                'DoubleArrayTile': self.tile_decoder,
-                'Extent': self.extent_decoder,
-                'ProjectedExtent': self.projected_extent_decoder,
-                'TemporalProjectedExtent': self.temporal_projected_extent_decoder,
-                'SpatialKey': self.spatial_key_decoder,
-                'SpaceTimeKey': self.spacetime_key_decoder,
-                'ArrayMultibandTile': self.multiband_decoder
-                }
+            'BitArrayTile': self.tile_decoder,
+            'ByteArrayTile': self.tile_decoder,
+            'UByteArrayTile': self.tile_decoder,
+            'ShortArrayTile': self.tile_decoder,
+            'UShortArrayTile': self.tile_decoder,
+            'IntArrayTile': self.tile_decoder,
+            'FloatArrayTile': self.tile_decoder,
+            'DoubleArrayTile': self.tile_decoder,
+            'Extent': self.extent_decoder,
+            'ProjectedExtent': self.projected_extent_decoder,
+            'TemporalProjectedExtent': self.temporal_projected_extent_decoder,
+            'SpatialKey': self.spatial_key_decoder,
+            'SpaceTimeKey': self.spacetime_key_decoder,
+            'ArrayMultibandTile': self.multiband_decoder
+        }
 
         self.encoders = {
-                'TileArray': self.tile_encoder,
-                'Extent': self.extent_encoder,
-                'ProjectedExtent': self.projected_extent_encoder,
-                'TemporalProjectedExtent': self.temporal_projected_extent_encoder,
-                'SpatialKey': self.spatial_key_encoder,
-                'SpaceTimeKey': self.spacetime_key_encoder,
-                }
+            'TileArray': self.tile_encoder,
+            'Extent': self.extent_encoder,
+            'ProjectedExtent': self.projected_extent_encoder,
+            'TemporalProjectedExtent': self.temporal_projected_extent_encoder,
+            'SpatialKey': self.spatial_key_encoder,
+            'SpaceTimeKey': self.spacetime_key_encoder,
+        }
 
     def add_decoder(self, custom_cls, decoding_method):
         self.decoders[type(custom_cls).__name__] = decoding_method
@@ -42,8 +45,6 @@ class AvroRegistry(object):
 
     @staticmethod
     def tile_decoder(i):
-        from geopyspark.geotrellis.tile import TileArray
-        import numpy as np
 
         cells = i['cells']
 
@@ -54,9 +55,9 @@ class AvroRegistry(object):
         arr = np.array(cells).reshape(i['rows'], i['cols'])
 
         if 'noDataValue' in i:
-            tile = TileArray(arr, i['noDataValue'])
+            tile = TileArray(arr, no_data_value=i['noDataValue'])
         else:
-            tile = TileArray(arr, None)
+            tile = TileArray(arr)
 
         return tile
 
@@ -100,9 +101,10 @@ class AvroRegistry(object):
     @classmethod
     def multiband_decoder(cls, i):
         bands = i['bands']
-        objs = list(map(cls.tile_decoder, bands))
+        tiles = [cls.tile_decoder(band) for band in bands]
+        no_data = tiles[0].no_data_value
 
-        return objs
+        return TileArray(np.array(tiles), no_data)
 
     @staticmethod
     def tuple_decoder(i, decoder_1, decoder_2):
@@ -140,19 +142,19 @@ class AvroRegistry(object):
             name_2 = b['type']['name']
 
         decoder_1 = self.get_decoder(name=name_1,
-                schema_dict=schema_dict,)
+                                     schema_dict=schema_dict,)
 
         decoder_2 = self.get_decoder(name=name_2,
-                schema_dict=schema_dict)
+                                     schema_dict=schema_dict)
 
         return partial(self.tuple_decoder,
-                decoder_1=decoder_1,
-                decoder_2=decoder_2)
+                       decoder_1=decoder_1,
+                       decoder_2=decoder_2)
 
     def get_decoder(self, name, schema_dict):
         if name == 'KeyValueRecord':
             return partial(self.key_value_record_decoder,
-                    schema_dict=schema_dict)
+                           schema_dict=schema_dict)
 
         elif name == 'Tuple2':
             return self.tuple_decoder_creator(schema_dict=schema_dict)
@@ -167,88 +169,87 @@ class AvroRegistry(object):
 
     @staticmethod
     def tile_encoder(obj):
-        import numpy as np
         import array
 
         (r, c) = obj.shape
 
-        if obj.dtype.type == np.int8 or obj.dtype.type == np.uint8:
+        if obj.dtype.name == 'int8' or obj.dtype.name == 'uint8':
             values = array.array('B', obj.flatten()).tostring()
         else:
             values = obj.flatten().tolist()
 
         if obj.no_data_value is not None:
             datum = {
-                    'cols': c,
-                    'rows': r,
-                    'cells': values,
-                    'noDataValue': obj.no_data_value
-                    }
+                'cols': c,
+                'rows': r,
+                'cells': values,
+                'noDataValue': obj.no_data_value
+            }
         else:
             datum = {
-                    'cols': c,
-                    'rows': r,
-                    'cells': values
-                    }
+                'cols': c,
+                'rows': r,
+                'cells': values
+            }
 
         return datum
 
     @staticmethod
     def extent_encoder(obj):
         datum = {
-                'xmin': obj.xmin,
-                'xmax': obj.xmax,
-                'ymin': obj.ymin,
-                'ymax': obj.ymax
-                }
+            'xmin': obj.xmin,
+            'xmax': obj.xmax,
+            'ymin': obj.ymin,
+            'ymax': obj.ymax
+        }
 
         return datum
 
     @classmethod
     def projected_extent_encoder(cls, obj):
         datum = {
-                'extent': cls.extent_encoder(obj.extent),
-                'epsg': obj.epsg_code
-                }
+            'extent': cls.extent_encoder(obj.extent),
+            'epsg': obj.epsg_code
+        }
 
         return datum
 
     @classmethod
     def temporal_projected_extent_encoder(cls, obj):
         datum = {
-                'extent': cls.extent_encoder(obj.extent),
-                'epsg': obj.epsg_code,
-                'instant': obj.instant
-                }
+            'extent': cls.extent_encoder(obj.extent),
+            'epsg': obj.epsg_code,
+            'instant': obj.instant
+        }
 
         return datum
 
     @staticmethod
     def spatial_key_encoder(obj):
         datum = {
-                'col': obj.col,
-                'row': obj.row
-                }
+            'col': obj.col,
+            'row': obj.row
+        }
 
         return datum
 
     @staticmethod
     def spacetime_key_encoder(obj):
         datum = {
-                'col': obj.col,
-                'row': obj.row,
-                'instant': obj.instant
-                }
+            'col': obj.col,
+            'row': obj.row,
+            'instant': obj.instant
+        }
 
         return datum
 
     @classmethod
     def multiband_encoder(cls, obj):
-        tile_datums = list(map(cls.tile_encoder, obj))
+        tile_datums = [cls.tile_encoder(obj[x,:,:]) for x in range(obj.shape[0])]
 
         datum = {
-                'bands': tile_datums
-                }
+            'bands': tile_datums
+        }
 
         return datum
 
@@ -260,9 +261,9 @@ class AvroRegistry(object):
         datum_2 = encoder_2(b)
 
         datum = {
-                '_1': datum_1,
-                '_2': datum_2
-                }
+            '_1': datum_1,
+            '_2': datum_2
+        }
 
         return datum
 
@@ -272,8 +273,8 @@ class AvroRegistry(object):
         tuple_datums = list(map(encoder, obj))
 
         datum = {
-                'pairs': tuple_datums
-                }
+            'pairs': tuple_datums
+        }
 
         return datum
 
@@ -284,8 +285,8 @@ class AvroRegistry(object):
         encoder_2 = self.get_encoder(b)
 
         return partial(self.tuple_encoder,
-                encoder_1=encoder_1,
-                encoder_2=encoder_2)
+                       encoder_1=encoder_1,
+                       encoder_2=encoder_2)
 
     def get_encoder(self, obj):
         if type(obj).__name__ in self.encoders.keys():
