@@ -151,19 +151,33 @@ class AvroRegistry(object):
                        decoder_1=decoder_1,
                        decoder_2=decoder_2)
 
-    def get_decoder(self, name, schema_dict):
-        if name == 'KeyValueRecord':
-            return partial(self.key_value_record_decoder,
-                           schema_dict=schema_dict)
-
-        elif name == 'Tuple2':
-            return self.tuple_decoder_creator(schema_dict=schema_dict)
-
-        elif name in self.decoders.keys():
-            return self.decoders[name]
-
+    def _get_key_decoder(self, key_name):
+        if key_name == "ProjectedExtent":
+            return self.projected_extent_decoder
+        elif key_name == "TemporalProjectedExtent":
+            return self.temporal_projected_extent_decoder
+        elif key_name == "SpatialKey":
+            return self.spatial_key_decoder
+        elif key_name == "SpaceTimeKey":
+            return self.spacetime_key_decoder
         else:
-            raise Exception("Could not find a decoder for", name)
+            raise Exception("Could not find decoder for key type", key_name)
+
+    def _get_value_decoder(self, value_name):
+        if value_name == "Tile":
+            return self.tile_decoder
+        elif value_name == "MultibandTile":
+            return self.multiband_decoder
+        else:
+            raise Exception("Could not find decoder for value type", value_name)
+
+    def get_decoder(self, key_name, value_name):
+        key_decoder = self._get_key_decoder(key_name)
+        value_decoder = self._get_value_decoder(value_name)
+
+        return partial(self.tuple_decoder,
+                       decoder_1=key_decoder,
+                       decoder_2=value_decoder)
 
     # ENCODERS
 
@@ -288,18 +302,30 @@ class AvroRegistry(object):
                        encoder_1=encoder_1,
                        encoder_2=encoder_2)
 
-    def get_encoder(self, obj):
-        if type(obj).__name__ in self.encoders.keys():
-            return self.encoders[type(obj).__name__]
-
-        elif isinstance(obj, list) and isinstance(obj[0], tuple):
-            return self.key_value_record_encoder
-
-        elif isinstance(obj, tuple):
-            return self.tuple_encoder_creator(obj)
-
-        elif isinstance(obj, list):
-            return self.multiband_encoder
-
+    def _get_key_encoder(self, key_name):
+        if key_name == "ProjectedExtent":
+            return self.projected_extent_encoder
+        elif key_name == "TemporalProjectedExtent":
+            return self.temporal_projected_extent_encoder
+        elif key_name == "SpatialKey":
+            return self.spatial_key_encoder
+        elif key_name == "SpaceTimeKey":
+            return self.spacetime_key_encoder
         else:
-            raise Exception('Could not find encoder for', obj)
+            raise Exception("Could not find encoder for key type", key_name)
+
+    def _get_value_encoder(self, value_name):
+        if value_name == "Tile":
+            return self.tile_encoder
+        elif value_name == "MultibandTile":
+            return self.multiband_encoder
+        else:
+            raise Exception("Could not find encoder for value type", value_name)
+
+    def get_encoder(self, key_name, value_name):
+        key_encoder = self._get_key_encoder(key_name)
+        value_encoder = self._get_value_encoder(value_name)
+
+        return partial(self.tuple_encoder,
+                       encoder_1=key_encoder,
+                       encoder_2=value_encoder)
