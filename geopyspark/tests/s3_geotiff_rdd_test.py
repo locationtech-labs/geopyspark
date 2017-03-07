@@ -2,9 +2,7 @@ from geopyspark.tests.python_test_utils import *
 add_spark_path()
 check_directory()
 
-from pyspark import SparkContext
 from geopyspark.geotrellis.geotiff_rdd import S3GeoTiffRDD
-from geopyspark.geopycontext import GeoPyContext
 from geopyspark.tests.base_test_class import BaseTestClass
 from py4j.java_gateway import java_import
 from os import walk, path
@@ -63,7 +61,7 @@ class Singleband(S3GeoTiffIOTest, BaseTestClass):
 
     def read_singleband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.data)
-        result = self.s3_geotiff.get_spatial(self.bucket, self.key, opt)
+        result = self.s3_geotiff.get_rdd("spatial", "singleband", self.bucket, self.key, opt)
 
         return [tile[1] for tile in result.collect()]
 
@@ -108,7 +106,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
 
     def read_multiband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.data)
-        result = self.s3_geotiff.get_spatial_multiband(self.bucket, self.key, opt)
+        result = self.s3_geotiff.get_rdd("spatial", "multiband", self.bucket, self.key, opt)
 
         return [tile[1] for tile in result.collect()]
 
