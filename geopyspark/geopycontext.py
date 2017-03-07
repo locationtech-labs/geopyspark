@@ -1,7 +1,8 @@
 from geopyspark.avroregistry import AvroRegistry
+from geopyspark.avroserializer import AvroSerializer
 
-from pyspark import SparkContext
-from py4j.java_gateway import java_import
+from pyspark import RDD, SparkContext
+from pyspark.serializers import AutoBatchedSerializer
 
 
 class GeoPyContext(object):
@@ -55,8 +56,23 @@ class GeoPyContext(object):
     def tile_layer_merge(self):
         return self._jvm.geopyspark.geotrellis.spark.merge.MergeMethodsWrapper
 
-    def produce_schema(key_type, value_type):
+    def create_schema(self, key_type, value_type):
         return self.schema_producer.getSchema(key_type, value_type)
+
+    def create_serializer(self, key_type, value_type):
+        schema = self.create_schema(key_type, value_type)
+        decoder = self.avroregistry.get_decoder(key_type, value_type)
+        encoder = self.avroregistry.get_encoder(key_type, value_type)
+
+        return AvroSerializer(schema, decoder, encoder)
+
+    def avro_rdd_to_python(self, key_type, value_type, jrdd, schema):
+        decoder = self.avroregistry.get_decoder(key_type, value_type)
+        encoder = self.avroregistry.get_encoder(key_type, value_type)
+
+        ser = AvroSerializer(schema, decoder, encoder)
+
+        return RDD(jrdd, self.pysc, AutoBatchedSerializer(ser))
 
     def stop(self):
         self.pysc.stop()
