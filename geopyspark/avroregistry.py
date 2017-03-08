@@ -45,7 +45,6 @@ class AvroRegistry(object):
 
     @staticmethod
     def tile_decoder(i):
-
         cells = i['cells']
 
         if isinstance(cells, bytes):
@@ -185,7 +184,10 @@ class AvroRegistry(object):
     def tile_encoder(obj):
         import array
 
-        (r, c) = obj.shape
+        if isinstance(obj, dict):
+            obj = TileArray(obj['arr'], obj['no_data_value'])
+
+        (rows, cols) = obj.shape
 
         if obj.dtype.name == 'int8' or obj.dtype.name == 'uint8':
             values = array.array('B', obj.flatten()).tostring()
@@ -194,15 +196,16 @@ class AvroRegistry(object):
 
         if obj.no_data_value is not None:
             datum = {
-                'cols': c,
-                'rows': r,
+                'cols': cols,
+                'rows': rows,
                 'cells': values,
                 'noDataValue': obj.no_data_value
             }
+
         else:
             datum = {
-                'cols': c,
-                'rows': r,
+                'cols': cols,
+                'rows': rows,
                 'cells': values
             }
 
