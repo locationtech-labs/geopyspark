@@ -2,17 +2,18 @@ from geopyspark.tests.python_test_utils import *
 add_spark_path()
 check_directory()
 
-from pyspark import SparkContext
+from geopyspark.geotrellis.tile import TileArray
+from geopyspark.geotrellis.extent import Extent
+from geopyspark.geotrellis.projected_extent import ProjectedExtent
 from geopyspark.geotrellis.tile_layer_methods import TileLayerMethods
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
-from py4j.java_gateway import java_import
-from geopyspark.avroserializer import AvroSerializer
-from geopyspark.geopycontext import GeoPyContext
 from geopyspark.tests.base_test_class import BaseTestClass
 
 import unittest
 import pytest
 import json
+import rasterio
+import numpy as np
 
 
 class TileLayerMetadataTest(BaseTestClass):
@@ -31,9 +32,8 @@ class TileLayerMetadataTest(BaseTestClass):
         else:
             self.assertEqual(actual, expected)
 
-    def test_collection(self):
-        rdd = self.hadoop_geotiff.get_spatial(self.dir_path)
-        schema = rdd.schema
+    def test_collection_avro_rdd(self):
+        rdd = self.hadoop_geotiff.get_rdd("spatial", "singleband", self.dir_path)
         value = rdd.collect()[0]
 
         projected_extent = value[0]
@@ -57,7 +57,9 @@ class TileLayerMetadataTest(BaseTestClass):
 
         actual = [[new_extent, layout], new_extent]
 
-        result = self.metadata.collect_metadata(rdd,
+        result = self.metadata.collect_metadata("spatial",
+                                                "singleband",
+                                                rdd,
                                                 new_extent,
                                                 layout,
                                                 epsg_code=value[0].epsg_code)
@@ -68,22 +70,22 @@ class TileLayerMetadataTest(BaseTestClass):
 
         self.check_results(actual, expected)
 
-    def test_failure(self):
-        rdd = self.hadoop_geotiff.get_spatial(self.dir_path)
-        schema = rdd.schema
-        value = rdd.collect()[0]
+    def test_collection_python_rdd(self):
+        data = rasterio.open(self.dir_path)
 
-        projected_extent = value[0]
-        old_extent = projected_extent.extent
+        old_extent = Extent(data.bounds.left,
+                            data.bounds.bottom,
+                            data.bounds.right,
+                            data.bounds.top)
 
         new_extent = {
-            "xmin": old_extent.xmax,
-            "ymin": old_extent.ymin,
-            "xmax": old_extent.ymin,
-            "ymax": old_extent.ymax
+            "xmin": data.bounds.left,
+            "ymin": data.bounds.bottom,
+            "xmax": data.bounds.right,
+            "ymax": data.bounds.top
         }
 
-        (cols, rows) = value[1].shape
+        (rows, cols) = data.shape
 
         layout = {
             "layoutCols": 1,
@@ -92,12 +94,24 @@ class TileLayerMetadataTest(BaseTestClass):
             "tileRows": rows
         }
 
-        self.assertRaises(Exception,
-                          self.metadata.collect_metadata,
-                          rdd,
-                          new_extent,
-                          layout,
-                          epsg_code=value[0].epsg_code)
+        projected_extent = ProjectedExtent(old_extent, epsg_code=3426)
+        tile_dict = {'arr': data.read(1), 'no_data_value': data.nodata}
+        rdd = self.geopysc.pysc.parallelize([(projected_extent, tile_dict)])
+
+        actual = [[new_extent, layout], new_extent]
+
+        result = self.metadata.collect_metadata("spatial",
+                                                "singleband",
+                                                rdd,
+                                                new_extent,
+                                                layout,
+                                                epsg_code=3426)
+
+        expected = [[result['layoutDefinition']['extent'],
+                     result['layoutDefinition']['tileLayout']],
+                    result['extent']]
+
+        self.check_results(actual, expected)
 
 
 if __name__ == "__main__":
