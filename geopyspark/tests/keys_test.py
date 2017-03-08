@@ -13,6 +13,7 @@ import unittest
 import pytest
 
 
+@pytest.mark.xfail
 class SpatialKeySchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.SpatialKeyWrapper"
     java_import(BaseTestClass.pysc._gateway.jvm, path)
@@ -56,6 +57,7 @@ class SpatialKeySchemaTest(BaseTestClass):
             self.assertEqual(actual, expected)
 
 
+@pytest.mark.xfail
 class SpaceTimeKeySchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.SpaceTimeKeyWrapper"
     java_import(BaseTestClass.pysc._gateway.jvm, path)

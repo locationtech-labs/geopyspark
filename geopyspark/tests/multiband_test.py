@@ -14,6 +14,7 @@ import unittest
 import pytest
 
 
+@pytest.mark.xfail
 class MultibandSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.ArrayMultibandTileWrapper"
     java_import(BaseTestClass.pysc._gateway.jvm, path)

@@ -17,6 +17,7 @@ import pytest
 # TODO: CLEANUP THESE TESTS TO MAKE IT MORE DRY
 
 
+@pytest.mark.xfail
 class ShortTileSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.ShortArrayTileWrapper"
     java_import(BaseTestClass.pysc._gateway.jvm, path)
@@ -65,6 +66,7 @@ class ShortTileSchemaTest(BaseTestClass):
             self.assertTrue((actual == expected).all())
 
 
+@pytest.mark.xfail
 class UShortTileSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.UShortArrayTileWrapper"
     java_import(BaseTestClass.pysc._gateway.jvm, path)
@@ -113,6 +115,7 @@ class UShortTileSchemaTest(BaseTestClass):
             self.assertTrue((actual == expected).all())
 
 
+@pytest.mark.xfail
 class ByteTileSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.ByteArrayTileWrapper"
     java_import(BaseTestClass.pysc._gateway.jvm, path)
@@ -161,6 +164,7 @@ class ByteTileSchemaTest(BaseTestClass):
             self.assertTrue((actual == expected).all())
 
 
+@pytest.mark.xfail
 class UByteTileSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.UByteArrayTileWrapper"
     java_import(BaseTestClass.pysc._gateway.jvm, path)
@@ -209,6 +213,7 @@ class UByteTileSchemaTest(BaseTestClass):
             self.assertTrue((actual == expected).all())
 
 
+@pytest.mark.xfail
 class IntTileSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.IntArrayTileWrapper"
     java_import(BaseTestClass.pysc._gateway.jvm, path)
@@ -257,6 +262,7 @@ class IntTileSchemaTest(BaseTestClass):
             self.assertTrue((actual == expected).all())
 
 
+@pytest.mark.xfail
 class DoubleTileSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.DoubleArrayTileWrapper"
     java_import(BaseTestClass.pysc._gateway.jvm, path)
@@ -305,6 +311,7 @@ class DoubleTileSchemaTest(BaseTestClass):
             self.assertTrue((actual == expected).all())
 
 
+@pytest.mark.xfail
 class FloatTileSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.FloatArrayTileWrapper"
     java_import(BaseTestClass.pysc._gateway.jvm, path)

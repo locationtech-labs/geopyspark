@@ -14,6 +14,7 @@ import unittest
 import pytest
 
 
+@pytest.mark.xfail
 class TemporalProjectedExtentSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.TemporalProjectedExtentWrapper"
     java_import(BaseTestClass.pysc._gateway.jvm, path)
@@ -63,4 +64,4 @@ class TemporalProjectedExtentSchemaTest(BaseTestClass):
 
 
 if __name__ == "__main__":
-    unittest.main()
+   unittest.main()

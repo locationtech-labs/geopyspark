@@ -13,6 +13,7 @@ import unittest
 import pytest
 
 
+@pytest.mark.xfail
 class ExtentSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.ExtentWrapper"
     java_import(BaseTestClass.pysc._gateway.jvm, path)
