@@ -11,13 +11,13 @@ class AvroSerializer(FramedSerializer):
                  decoding_method,
                  encoding_method):
 
-        self._schema = schema
+        self.schema_string = schema
         self.decoding_method = decoding_method
         self.encoding_method = encoding_method
 
     @property
     def schema(self):
-        return avro.schema.Parse(self._schema)
+        return avro.schema.Parse(self.schema_string)
 
     @property
     def schema_name(self):
@@ -27,7 +27,7 @@ class AvroSerializer(FramedSerializer):
     def schema_dict(self):
         import json
 
-        return json.loads(self._schema)
+        return json.loads(self.schema_string)
 
     @property
     def reader(self):
