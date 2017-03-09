@@ -1,6 +1,3 @@
-from geopyspark.tests.python_test_utils import add_spark_path
-add_spark_path()
-
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from py4j.java_gateway import java_import
@@ -25,18 +22,17 @@ class ShortTileSchemaTest(BaseTestClass):
         {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -32768}
     ]
 
-    def get_rdd(self):
-        sc = BaseTestClass.pysc._jsc.sc()
-        tw = BaseTestClass.pysc._gateway.jvm.ShortArrayTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    tw = BaseTestClass.pysc._gateway.jvm.ShortArrayTileWrapper
 
-        tup = tw.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    tup = tw.testOut(sc)
+    (java_rdd, schema) = (tup._1(), tup._2())
 
-        ser = AvroSerializer(schema, AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    ser = AvroSerializer(schema, AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
+    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def test_encoded_tiles(self):
-        (rdd, schema) = self.get_rdd()
+        (rdd, schema) = self.tup
         encoded = rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
         actual_encoded = encoded.collect()
@@ -50,7 +46,7 @@ class ShortTileSchemaTest(BaseTestClass):
         self.assertEqual(actual_encoded, expected_encoded)
 
     def test_decoded_tiles(self):
-        (tiles, schema) = self.get_rdd()
+        (tiles, schema) = self.tup
         actual_tiles = tiles.collect()
 
         expected_tiles = self.tiles
@@ -69,18 +65,17 @@ class UShortTileSchemaTest(BaseTestClass):
         {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': 0}
     ]
 
-    def get_rdd(self):
-        sc = BaseTestClass.pysc._jsc.sc()
-        tw = BaseTestClass.pysc._gateway.jvm.UShortArrayTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    tw = BaseTestClass.pysc._gateway.jvm.UShortArrayTileWrapper
 
-        tup = tw.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    tup = tw.testOut(sc)
+    (java_rdd, schema) = (tup._1(), tup._2())
 
-        ser = AvroSerializer(schema, AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    ser = AvroSerializer(schema, AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
+    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def test_encoded_tiles(self):
-        (rdd, schema) = self.get_rdd()
+        (rdd, schema) = self.tup
         encoded = rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
         actual_encoded = encoded.collect()
@@ -94,7 +89,7 @@ class UShortTileSchemaTest(BaseTestClass):
         self.assertEqual(actual_encoded, expected_encoded)
 
     def test_decoded_tiles(self):
-        (tiles, schema) = self.get_rdd()
+        (tiles, schema) = self.tup
         actual_tiles = tiles.collect()
 
         expected_tiles = self.tiles
@@ -113,18 +108,17 @@ class ByteTileSchemaTest(BaseTestClass):
         {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -128}
     ]
 
-    def get_rdd(self):
-        sc = BaseTestClass.pysc._jsc.sc()
-        tw = BaseTestClass.pysc._gateway.jvm.ByteArrayTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    tw = BaseTestClass.pysc._gateway.jvm.ByteArrayTileWrapper
 
-        tup = tw.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    tup = tw.testOut(sc)
+    (java_rdd, schema) = (tup._1(), tup._2())
 
-        ser = AvroSerializer(schema, AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    ser = AvroSerializer(schema, AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
+    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def test_encoded_tiles(self):
-        (rdd, schema) = self.get_rdd()
+        (rdd, schema) = self.tup
         encoded = rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
         actual_encoded = encoded.collect()
@@ -138,7 +132,7 @@ class ByteTileSchemaTest(BaseTestClass):
         self.assertEqual(actual_encoded, expected_encoded)
 
     def test_decoded_tiles(self):
-        (tiles, schema) = self.get_rdd()
+        (tiles, schema) = self.tup
         actual_tiles = tiles.collect()
 
         expected_tiles = self.tiles
@@ -157,18 +151,17 @@ class UByteTileSchemaTest(BaseTestClass):
         {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -128}
     ]
 
-    def get_rdd(self):
-        sc = BaseTestClass.pysc._jsc.sc()
-        tw = BaseTestClass.pysc._gateway.jvm.UByteArrayTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    tw = BaseTestClass.pysc._gateway.jvm.UByteArrayTileWrapper
 
-        tup = tw.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    tup = tw.testOut(sc)
+    (java_rdd, schema) = (tup._1(), tup._2())
 
-        ser = AvroSerializer(schema, AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    ser = AvroSerializer(schema, AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
+    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def test_encoded_tiles(self):
-        (rdd, schema) = self.get_rdd()
+        (rdd, schema) = self.tup
         encoded = rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
         actual_encoded = encoded.collect()
@@ -182,7 +175,7 @@ class UByteTileSchemaTest(BaseTestClass):
         self.assertEqual(actual_encoded, expected_encoded)
 
     def test_decoded_tiles(self):
-        (tiles, schema) = self.get_rdd()
+        (tiles, schema) = self.tup
         actual_tiles = tiles.collect()
 
         expected_tiles = self.tiles
@@ -201,18 +194,17 @@ class IntTileSchemaTest(BaseTestClass):
         {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -2147483648}
     ]
 
-    def get_rdd(self):
-        sc = BaseTestClass.pysc._jsc.sc()
-        tw = BaseTestClass.pysc._gateway.jvm.IntArrayTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    tw = BaseTestClass.pysc._gateway.jvm.IntArrayTileWrapper
 
-        tup = tw.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    tup = tw.testOut(sc)
+    (java_rdd, schema) = (tup._1(), tup._2())
 
-        ser = AvroSerializer(schema, AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    ser = AvroSerializer(schema, AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
+    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def test_encoded_tiles(self):
-        (rdd, schema) = self.get_rdd()
+        (rdd, schema) = self.tup
         encoded = rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
         actual_encoded = encoded.collect()
@@ -226,7 +218,7 @@ class IntTileSchemaTest(BaseTestClass):
         self.assertEqual(actual_encoded, expected_encoded)
 
     def test_decoded_tiles(self):
-        (tiles, schema) = self.get_rdd()
+        (tiles, schema) = self.tup
         actual_tiles = tiles.collect()
 
         expected_tiles = self.tiles
@@ -245,18 +237,17 @@ class DoubleTileSchemaTest(BaseTestClass):
         {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': True}
     ]
 
-    def get_rdd(self):
-        sc = BaseTestClass.pysc._jsc.sc()
-        tw = BaseTestClass.pysc._gateway.jvm.DoubleArrayTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    tw = BaseTestClass.pysc._gateway.jvm.DoubleArrayTileWrapper
 
-        tup = tw.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    tup = tw.testOut(sc)
+    (java_rdd, schema) = (tup._1(), tup._2())
 
-        ser = AvroSerializer(schema, AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    ser = AvroSerializer(schema, AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
+    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def test_encoded_tiles(self):
-        (rdd, schema) = self.get_rdd()
+        (rdd, schema) = self.tup
         encoded = rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
         actual_encoded = encoded.collect()
@@ -270,7 +261,7 @@ class DoubleTileSchemaTest(BaseTestClass):
         self.assertEqual(actual_encoded, expected_encoded)
 
     def test_decoded_tiles(self):
-        (tiles, schema) = self.get_rdd()
+        (tiles, schema) = self.tup
         actual_tiles = tiles.collect()
 
         expected_tiles = self.tiles
@@ -289,18 +280,17 @@ class FloatTileSchemaTest(BaseTestClass):
         {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': True}
     ]
 
-    def get_rdd(self):
-        sc = BaseTestClass.pysc._jsc.sc()
-        tw = BaseTestClass.pysc._gateway.jvm.FloatArrayTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    tw = BaseTestClass.pysc._gateway.jvm.FloatArrayTileWrapper
 
-        tup = tw.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    tup = tw.testOut(sc)
+    (java_rdd, schema) = (tup._1(), tup._2())
 
-        ser = AvroSerializer(schema, AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    ser = AvroSerializer(schema, AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
+    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def test_encoded_tiles(self):
-        (rdd, schema) = self.get_rdd()
+        (rdd, schema) = self.tup
         encoded = rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
         actual_encoded = encoded.collect()
@@ -314,7 +304,7 @@ class FloatTileSchemaTest(BaseTestClass):
         self.assertEqual(actual_encoded, expected_encoded)
 
     def test_decoded_tiles(self):
-        (tiles, schema) = self.get_rdd()
+        (tiles, schema) = self.tup
         actual_tiles = tiles.collect()
 
         expected_tiles = self.tiles

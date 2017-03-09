@@ -1,6 +1,3 @@
-from geopyspark.tests.python_test_utils import add_spark_path
-add_spark_path()
-
 from pyspark import SparkContext, RDD
 from pyspark.serializers import AutoBatchedSerializer
 from py4j.java_gateway import java_import
@@ -16,18 +13,17 @@ class SpatialKeySchemaTest(BaseTestClass):
 
     expected_skey = {'col': 7, 'row': 3}
 
-    def get_rdd(self):
-        sc = BaseTestClass.pysc._jsc.sc()
-        ew = BaseTestClass.pysc._gateway.jvm.SpatialKeyWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    ew = BaseTestClass.pysc._gateway.jvm.SpatialKeyWrapper
 
-        tup = ew.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    tup = ew.testOut(sc)
+    (java_rdd, schema) = (tup._1(), tup._2())
 
-        ser = AvroSerializer(schema)
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    ser = AvroSerializer(schema)
+    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def test_encoded_skeys(self):
-        (rdd, schema) = self.get_rdd()
+        (rdd, schema) = self.tup
         encoded = rdd.map(lambda s: s)
 
         actual_encoded = encoded.first()
@@ -35,7 +31,7 @@ class SpatialKeySchemaTest(BaseTestClass):
         self.assertDictEqual(actual_encoded, self.expected_skey)
 
     def test_decoded_extents(self):
-        (skeys, schema) = self.get_rdd()
+        (skeys, schema) = self.tup
         actual_skeys = skeys.first()
 
         self.assertDictEqual(actual_skeys, self.expected_skey)
@@ -51,20 +47,18 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
         {'col': 11, 'row': 5, 'instant': 15}
     ]
 
-    def get_rdd(self):
-        java_import(BaseTestClass.pysc._gateway.jvm, self.path)
-        sc = BaseTestClass.pysc._jsc.sc()
-        ew = BaseTestClass.pysc._gateway.jvm.SpaceTimeKeyWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    ew = BaseTestClass.pysc._gateway.jvm.SpaceTimeKeyWrapper
 
-        tup = ew.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    tup = ew.testOut(sc)
+    (java_rdd, schema) = (tup._1(), tup._2())
 
-        ser = AvroSerializer(schema)
+    ser = AvroSerializer(schema)
 
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def test_encoded_skeys(self):
-        (rdd, schema) = self.get_rdd()
+        (rdd, schema) = self.tup
 
         encoded = rdd.map(lambda s: s)
         actual_encoded = encoded.collect()
@@ -73,7 +67,7 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
             self.assertEqual(actual, expected)
 
     def test_decoded_extents(self):
-        (skeys, schema) = self.get_rdd()
+        (skeys, schema) = self.tup
         actual_skeys = skeys.collect()
 
         for actual, expected in zip(actual_skeys, self.expected_skeys):

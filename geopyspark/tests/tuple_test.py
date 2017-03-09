@@ -1,6 +1,3 @@
-from geopyspark.tests.python_test_utils import add_spark_path
-add_spark_path()
-
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from py4j.java_gateway import java_import
@@ -8,15 +5,23 @@ from geopyspark.avroserializer import AvroSerializer
 from geopyspark.avroregistry import AvroRegistry
 from geopyspark.tests.base_test_class import BaseTestClass
 
+import os
+import pytest
 import numpy as np
 import unittest
 
 
-def decode(x):
-    return (AvroRegistry.tile_decoder(x['_1']), x['_2'])
+def decoder(x):
+    tup_decoder = AvroRegistry.tuple_decoder
+    tile_decoder = AvroRegistry.tile_decoder
 
-def encode(x):
-    return {'_1': AvroRegistry.tile_encoder(x[0]), '_2': x[1]}
+    return tup_decoder(x, key_decoder=tile_decoder)
+
+def encoder(x):
+    tup_encoder = AvroRegistry.tuple_encoder
+    tile_encoder = AvroRegistry.tile_encoder
+
+    return tup_encoder(x, key_encoder=tile_encoder)
 
 
 class TupleSchemaTest(BaseTestClass):
@@ -35,20 +40,22 @@ class TupleSchemaTest(BaseTestClass):
         {'data': np.array([0, 1, 2, 3, 4, 5]).reshape(6, 1), 'no_data_value': -2147483648}
     ]
 
-    def get_rdd(self):
-        sc = BaseTestClass.pysc._jsc.sc()
-        ew = BaseTestClass.pysc._gateway.jvm.TupleWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    ew = BaseTestClass.pysc._gateway.jvm.TupleWrapper
 
-        tup = ew.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    tup = ew.testOut(sc)
+    (java_rdd, schema) = (tup._1(), tup._2())
 
-        ser = AvroSerializer(schema, decode, encode)
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    ser = AvroSerializer(schema, decoder, encoder)
+    values = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
+    @pytest.mark.skipif('TRAVIS' in os.environ, reason="Encoding using methods in Main causes issues on Travis")
     def test_encoded_tuples(self):
-        (rdd, schema) = self.get_rdd()
+        (rdd, schema) = self.values
 
-        encoded = rdd.map(lambda s: encode(s))
+        s = rdd._jrdd_deserializer.serializer
+
+        encoded = rdd.map(lambda x: encoder(x))
         actual_encoded = encoded.collect()
 
         expected_encoded = [
@@ -61,7 +68,7 @@ class TupleSchemaTest(BaseTestClass):
             self.assertDictEqual(actual, expected)
 
     def test_decoded_tuples(self):
-        (tuples, schema) = self.get_rdd()
+        (tuples, schema) = self.values
         actual_tuples = tuples.collect()
 
         expected_tuples = [

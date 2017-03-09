@@ -1,6 +1,3 @@
-from geopyspark.tests.python_test_utils import add_spark_path
-add_spark_path()
-
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from py4j.java_gateway import java_import
@@ -25,26 +22,20 @@ class MultibandSchemaTest(BaseTestClass):
     multiband_tile = np.array(bands)
     multiband_dict = {'data': multiband_tile, 'no_data_value': no_data}
 
-    def get_rdd(self):
-        sc = BaseTestClass.pysc._jsc.sc()
-        mw = BaseTestClass.pysc._gateway.jvm.ArrayMultibandTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    mw = BaseTestClass.pysc._gateway.jvm.ArrayMultibandTileWrapper
 
-        tup = mw.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    tup = mw.testOut(sc)
+    (java_rdd, schema) = (tup._1(), tup._2())
 
-        ser = AvroSerializer(schema,
-                             AvroRegistry.multiband_decoder,
-                             AvroRegistry.multiband_encoder)
+    ser = AvroSerializer(schema,
+                         AvroRegistry.multiband_decoder,
+                         AvroRegistry.multiband_encoder)
 
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
-
-    def get_multibands(self):
-        (multibands, schema) = self.get_rdd()
-
-        return multibands.collect()
+    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def test_encoded_multibands(self):
-        (rdd, schema) = self.get_rdd()
+        (rdd, schema) = self.tup
 
         encoded = rdd.map(lambda s: AvroRegistry.multiband_encoder(s))
         actual_encoded = encoded.collect()
@@ -59,7 +50,7 @@ class MultibandSchemaTest(BaseTestClass):
             self.assertEqual(actual, expected)
 
     def test_decoded_multibands(self):
-        actual_multibands = self.get_multibands()
+        actual_multibands = self.tup[0].collect()
 
         expected_multibands = [
             self.multiband_dict,

@@ -1,6 +1,3 @@
-from geopyspark.tests.python_test_utils import add_spark_path
-add_spark_path()
-
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from py4j.java_gateway import java_import
@@ -14,19 +11,17 @@ class ExtentSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.ExtentWrapper"
     java_import(BaseTestClass.pysc._gateway.jvm, path)
 
-    def get_rdd(self):
-        sc = BaseTestClass.pysc._jsc.sc()
-        ew = BaseTestClass.pysc._gateway.jvm.ExtentWrapper
+    ew = BaseTestClass.geopysc._jvm.ExtentWrapper
 
-        tup = ew.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    tup = ew.testOut(BaseTestClass.geopysc.sc)
+    (java_rdd, schema) = (tup._1(), tup._2())
 
-        ser = AvroSerializer(schema)
+    ser = AvroSerializer(schema)
 
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def test_encoded_extents(self):
-        (rdd, schema) = self.get_rdd()
+        (rdd, schema) = self.tup
 
         encoded = rdd.map(lambda s: s)
         actual_encoded = encoded.collect()
@@ -41,7 +36,7 @@ class ExtentSchemaTest(BaseTestClass):
             assert(actual == expected)
 
     def test_decoded_extents(self):
-        (extents, schema) = self.get_rdd()
+        (extents, schema) = self.tup
         actual_extents = extents.collect()
 
         expected_extents = [

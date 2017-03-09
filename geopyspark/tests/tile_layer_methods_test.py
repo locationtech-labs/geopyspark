@@ -1,5 +1,4 @@
 from geopyspark.tests.python_test_utils import *
-add_spark_path()
 check_directory()
 
 from pyspark import SparkContext
@@ -9,8 +8,8 @@ from geopyspark.tests.base_test_class import BaseTestClass
 
 import unittest
 import pytest
-import numpy as np
 import rasterio
+import os
 
 
 class TileLayerMethodsTest(BaseTestClass):
@@ -94,8 +93,8 @@ class TileLayerMethodsTest(BaseTestClass):
     def test_merge(self):
         result = self.methods.merge("spatial",
                                     "singleband",
-                                    self.hadoop_rdd,
-                                    self.rasterio_rdd)
+                                    self.rasterio_rdd,
+                                    self.hadoop_rdd)
 
         (projected_extent, tile) = result.collect()[0]
 

@@ -1,5 +1,4 @@
 from geopyspark.tests.python_test_utils import *
-add_spark_path()
 check_directory()
 
 from geopyspark.geotrellis.geotiff_rdd import S3GeoTiffRDD

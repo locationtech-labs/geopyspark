@@ -1,6 +1,3 @@
-from geopyspark.tests.python_test_utils import add_spark_path
-add_spark_path()
-
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from py4j.java_gateway import java_import
@@ -20,19 +17,18 @@ class TemporalProjectedExtentSchemaTest(BaseTestClass):
         {'instant': 2, 'epsg': 2004, 'extent': {'xmin': 5, 'ymin': 6, 'xmax': 7, 'ymax': 8}},
     ]
 
-    def get_rdd(self):
-        sc = BaseTestClass.pysc._jsc.sc()
-        ew = BaseTestClass.pysc._gateway.jvm.TemporalProjectedExtentWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    ew = BaseTestClass.pysc._gateway.jvm.TemporalProjectedExtentWrapper
 
-        tup = ew.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    tup = ew.testOut(sc)
+    (java_rdd, schema) = (tup._1(), tup._2())
 
-        ser = AvroSerializer(schema)
+    ser = AvroSerializer(schema)
 
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
 
     def test_encoded_tpextents(self):
-        (rdd, schema) = self.get_rdd()
+        (rdd, schema) = self.tup
 
         encoded = rdd.map(lambda s: s)
         actual_encoded = encoded.collect()
@@ -41,7 +37,7 @@ class TemporalProjectedExtentSchemaTest(BaseTestClass):
             self.assertEqual(actual, expected)
 
     def test_decoded_tpextents(self):
-        (tpextents, schema) = self.get_rdd()
+        (tpextents, schema) = self.tup
         actual_tpextents = tpextents.collect()
 
         for actual, expected in zip(actual_tpextents, self.expected_tpextents):

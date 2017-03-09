@@ -1,6 +1,3 @@
-from geopyspark.tests.python_test_utils import add_spark_path
-add_spark_path()
-
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from py4j.java_gateway import java_import
@@ -10,14 +7,21 @@ from geopyspark.tests.base_test_class import BaseTestClass
 
 import numpy as np
 import unittest
+import pytest
+import os
 
 
-def decode(xs):
-    tuples = xs['pairs']
-    return [(AvroRegistry.tile_decoder(x['_1']), x['_2']) for x in tuples]
+def decoder(x):
+    tup_decoder = AvroRegistry.tuple_decoder
+    tile_decoder = AvroRegistry.tile_decoder
 
-def encode(xs):
-    return [{'_1': AvroRegistry.tile_encoder(x[0]), '_2': x[1]} for x in xs]
+    tuples = x['pairs']
+    return [tup_decoder(tup, key_decoder=tile_decoder) for tup in tuples]
+
+def encoder(xs):
+    tup_encoder = AvroRegistry.tuple_encoder
+    tile_encoder = AvroRegistry.tile_encoder
+    return {'pairs': [tup_encoder(x, key_encoder=tile_encoder) for x in xs]}
 
 
 class KeyValueRecordSchemaTest(unittest.TestCase):
@@ -31,9 +35,9 @@ class KeyValueRecordSchemaTest(unittest.TestCase):
     ]
 
     arrs = [
-        {'data': np.array([0, 1, 2, 3, 4, 5]).reshape(3, 2), 'no_data_value': -128},
-        {'data': np.array([0, 1, 2, 3, 4, 5]).reshape(2, 3), 'no_data_value': -128},
-        {'data': np.array([0, 1, 2, 3, 4, 5]).reshape(6, 1), 'no_data_value': -128}
+        {'data': np.array(bytearray([0, 1, 2, 3, 4, 5])).reshape(3, 2), 'no_data_value': -128},
+        {'data': np.array(bytearray([0, 1, 2, 3, 4, 5])).reshape(2, 3), 'no_data_value': -128},
+        {'data': np.array(bytearray([0, 1, 2, 3, 4, 5])).reshape(6, 1), 'no_data_value': -128}
     ]
 
     tuple_list= [
@@ -42,21 +46,19 @@ class KeyValueRecordSchemaTest(unittest.TestCase):
         (arrs[2], extents[2])
     ]
 
-    def get_rdd(self):
-        sc = BaseTestClass.pysc._jsc.sc()
-        ew = BaseTestClass.pysc._gateway.jvm.KeyValueRecordWrapper
+    ew = BaseTestClass.geopysc._jvm.KeyValueRecordWrapper
 
-        tup = ew.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    tup = ew.testOut(BaseTestClass.geopysc.sc)
+    java_rdd = tup._1()
 
-        ser = AvroSerializer(schema, decode, encode)
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    ser = AvroSerializer(tup._2(), decoder, encoder)
+    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    collected = rdd.collect()
 
+    @pytest.mark.skipif('TRAVIS' in os.environ, reason="Encoding using methods in Main cuases issues on Travis")
     def test_encoded_kvs(self):
-        (rdd, schema) = self.get_rdd()
-        encoded = rdd.map(lambda s: encode(s))
-
-        actual_encoded = encoded.collect()
+        encoded = self.rdd.map(lambda s: encoder(s))
+        actual_kvs = encoded.collect()
 
         encoded_tuples = [
             {'_1': AvroRegistry.tile_encoder(self.arrs[0]), '_2': self.extents[0]},
@@ -64,22 +66,22 @@ class KeyValueRecordSchemaTest(unittest.TestCase):
             {'_1': AvroRegistry.tile_encoder(self.arrs[2]), '_2': self.extents[2]}
         ]
 
-        expected_encoded = [
+        expected_kvs = [
             {'pairs': encoded_tuples},
             {'pairs': encoded_tuples},
         ]
 
-        print(actual_encoded)
-        print('\n\n')
-        print(expected_encoded)
+        for actual, expected in zip(actual_kvs, expected_kvs):
+            actual_pairs = actual['pairs']
+            expected_pairs = expected['pairs']
+
+            for a, e in zip(actual_pairs, expected_pairs):
+                self.assertDictEqual(a, e)
 
     def test_decoded_kvs(self):
-        (kvs, schema) = self.get_rdd()
-        actual_kvs = kvs.collect()
-
         expected_kvs = [self.tuple_list, self.tuple_list]
 
-        for actual_tuples, expected_tuples in zip(actual_kvs, expected_kvs):
+        for actual_tuples, expected_tuples in zip(self.collected, expected_kvs):
             for actual, expected in zip(actual_tuples, expected_tuples):
                 (actual_tile, actual_extent) = actual
                 (expected_tile, expected_extent) = expected

@@ -6,11 +6,6 @@ from functools import partial
 
 
 class AvroRegistry(object):
-    __slots__ = []
-
-    def __init__(self):
-        pass
-
     # DECODERS
 
     @staticmethod
@@ -53,15 +48,16 @@ class AvroRegistry(object):
         else:
             return (schema_1, schema_2)
 
-    def get_decoder(self, value_name):
+    @classmethod
+    def get_decoder(cls, value_name):
         if value_name == "Tile":
-            decoder = self.tile_decoder
+            decoder = cls.tile_decoder
         elif value_name == "MultibandTile":
-            decoder = self.multiband_decoder
+            decoder = cls.multiband_decoder
         else:
             raise Exception("Could not find decoder for value type", value_name)
 
-        return partial(self.tuple_decoder, value_decoder=decoder)
+        return partial(cls.tuple_decoder, value_decoder=decoder)
 
     # ENCODERS
 
@@ -116,10 +112,10 @@ class AvroRegistry(object):
         (a, b) = obj
 
         if key_encoder and value_encoder:
-            datum_1 = value_encoder(a)
+            datum_1 = key_encoder(a)
             datum_2 = value_encoder(b)
         elif key_encoder:
-            datum_1 = value_encoder(a)
+            datum_1 = key_encoder(a)
             datum_2 = b
         elif value_encoder:
             datum_1 = a
@@ -130,12 +126,13 @@ class AvroRegistry(object):
 
         return {'_1': datum_1, '_2': datum_2}
 
-    def get_encoder(self, value_name):
+    @classmethod
+    def get_encoder(cls, value_name):
         if value_name == "Tile":
-            encoder = self.tile_encoder
+            encoder = cls.tile_encoder
         elif value_name == "MultibandTile":
-            encoder = self.multiband_encoder
+            encoder = cls.multiband_encoder
         else:
             raise Exception("Could not find encoder for value type", value_name)
 
-        return partial(self.tuple_encoder, value_encoder=encoder)
+        return partial(cls.tuple_encoder, value_encoder=encoder)
