@@ -61,18 +61,22 @@ class GeoPyContext(object):
 
     def create_serializer(self, key_type, value_type):
         schema = self.create_schema(key_type, value_type)
-        decoder = self.avroregistry.get_decoder(key_type, value_type)
-        encoder = self.avroregistry.get_encoder(key_type, value_type)
+        decoder = self.avroregistry.get_decoder(value_type)
+        encoder = self.avroregistry.get_encoder(value_type)
 
         return AvroSerializer(schema, decoder, encoder)
 
     def avro_rdd_to_python(self, key_type, value_type, jrdd, schema):
-        decoder = self.avroregistry.get_decoder(key_type, value_type)
-        encoder = self.avroregistry.get_encoder(key_type, value_type)
+        decoder = self.avroregistry.get_decoder(value_type)
+        encoder = self.avroregistry.get_encoder(value_type)
 
         ser = AvroSerializer(schema, decoder, encoder)
 
         return RDD(jrdd, self.pysc, AutoBatchedSerializer(ser))
+
+    @staticmethod
+    def reserialize_python_rdd(rdd, serializer):
+        return rdd._reserialize(AutoBatchedSerializer(serializer))
 
     def stop(self):
         self.pysc.stop()
