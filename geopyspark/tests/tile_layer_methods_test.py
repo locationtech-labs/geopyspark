@@ -23,23 +23,15 @@ class TileLayerMethodsTest(BaseTestClass):
     data = rasterio.open(dir_path)
     no_data = data.nodata
     tile = data.read(1)
-    tile_dict = {'arr': tile, 'no_data_value': no_data}
+    tile_dict = {'data': tile, 'no_data_value': no_data}
 
     value = hadoop_rdd.collect()[0]
 
     rasterio_rdd = BaseTestClass.geopysc.pysc.parallelize([(value[0], tile_dict)])
 
-    _projected_extent = value[0]
-    _old_extent = _projected_extent.extent
+    extent = value[0]['extent']
 
-    new_extent = {
-        "xmin": _old_extent.xmin,
-        "ymin": _old_extent.ymin,
-        "xmax": _old_extent.xmax,
-        "ymax": _old_extent.ymax
-    }
-
-    (_rows, _cols) = value[1].shape
+    (_rows, _cols) = value[1]['data'].shape
 
     layout = {
         "layoutCols": 1,
@@ -51,9 +43,9 @@ class TileLayerMethodsTest(BaseTestClass):
     metadata = methods.collect_metadata("spatial",
                                         "singleband",
                                         hadoop_rdd,
-                                        new_extent,
+                                        extent,
                                         layout,
-                                        epsg_code=value[0].epsg_code)
+                                        epsg_code=value[0]['epsg'])
 
     def test_cut_tiles_hadoop(self):
         result = self.methods.cut_tiles("spatial",
@@ -63,8 +55,8 @@ class TileLayerMethodsTest(BaseTestClass):
 
         (key_bounds, tile) = result.collect()[0]
 
-        self.assertEqual([0,0], [key_bounds.col, key_bounds.row])
-        self.assertTrue((self.value[1] == tile).all())
+        self.assertEqual([0,0], [key_bounds['col'], key_bounds['row']])
+        self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_cut_tiles_rasterio(self):
         result = self.methods.cut_tiles("spatial",
@@ -74,8 +66,8 @@ class TileLayerMethodsTest(BaseTestClass):
 
         (key_bounds, tile) = result.collect()[0]
 
-        self.assertEqual([0,0], [key_bounds.col, key_bounds.row])
-        self.assertTrue((self.value[1] == tile).all())
+        self.assertEqual([0,0], [key_bounds['col'], key_bounds['row']])
+        self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_tile_to_layout_hadoop(self):
         result = self.methods.tile_to_layout("spatial",
@@ -85,8 +77,8 @@ class TileLayerMethodsTest(BaseTestClass):
 
         (key_bounds, tile) = result.collect()[0]
 
-        self.assertEqual([0,0], [key_bounds.col, key_bounds.row])
-        self.assertTrue((self.value[1] == tile).all())
+        self.assertEqual([0,0], [key_bounds['col'], key_bounds['row']])
+        self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_tile_to_layout_rasterio(self):
         result = self.methods.tile_to_layout("spatial",
@@ -96,8 +88,8 @@ class TileLayerMethodsTest(BaseTestClass):
 
         (key_bounds, tile) = result.collect()[0]
 
-        self.assertEqual([0,0], [key_bounds.col, key_bounds.row])
-        self.assertTrue((self.value[1] == tile).all())
+        self.assertEqual([0,0], [key_bounds['col'], key_bounds['row']])
+        self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_merge(self):
         result = self.methods.merge("spatial",
@@ -107,8 +99,7 @@ class TileLayerMethodsTest(BaseTestClass):
 
         (projected_extent, tile) = result.collect()[0]
 
-        self.assertEqual(self.value[0], projected_extent)
-        self.assertTrue((self.value[1] == tile).all())
+        self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
 
 if __name__ == "__main__":

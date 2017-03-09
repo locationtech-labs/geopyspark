@@ -2,8 +2,6 @@ from geopyspark.tests.python_test_utils import add_spark_path
 add_spark_path()
 
 from pyspark import SparkContext, RDD
-from geopyspark.geotrellis.extent import Extent
-from geopyspark.geotrellis.tile import TileArray
 from geopyspark.avroregistry import AvroRegistry
 
 import unittest
@@ -11,6 +9,7 @@ import numpy as np
 import pytest
 
 
+'''
 class MyCustomClass(object):
     def __init__(self, extents, tile):
         self.extents = extents
@@ -88,3 +87,4 @@ class TestCustomClass(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+'''
