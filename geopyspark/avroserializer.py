@@ -8,12 +8,20 @@ import avro.io
 class AvroSerializer(FramedSerializer):
     def __init__(self,
                  schema,
-                 decoding_method,
-                 encoding_method):
+                 decoding_method=None,
+                 encoding_method=None):
 
         self.schema_string = schema
-        self.decoding_method = decoding_method
-        self.encoding_method = encoding_method
+
+        if decoding_method:
+            self.decoding_method = decoding_method
+        else:
+            self.decoding_method = None
+
+        if encoding_method:
+            self.encoding_method = encoding_method
+        else:
+            self.encoding_method = None
 
     @property
     def schema(self):
@@ -45,8 +53,12 @@ class AvroSerializer(FramedSerializer):
         bytes_writer = io.BytesIO()
 
         encoder = avro.io.BinaryEncoder(bytes_writer)
-        datum = self.encoding_method(obj)
-        self.datum_writer.write(datum, encoder)
+
+        if self.encoding_method:
+            datum = self.encoding_method(obj)
+            self.datum_writer.write(datum, encoder)
+        else:
+            self.datum_writer.write(obj, encoder)
 
         return bytes_writer.getvalue()
 
@@ -58,6 +70,8 @@ class AvroSerializer(FramedSerializer):
 
         decoder = avro.io.BinaryDecoder(buf)
         i = self.reader.read(decoder)
-        result = self.decoding_method(i)
 
-        return [result]
+        if self.decoding_method:
+            return [self.decoding_method(i)]
+        else:
+            return [i]
