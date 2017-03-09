@@ -1,13 +1,7 @@
+import json
+
 from shapely.geometry import Polygon
 from shapely.wkt import dumps
-
-
-class Metadata(object):
-    def __init__(self, key_type, value_type, schema, jmetadata):
-        self.key_type = key_type
-        self.value_type = value_type
-        self.schema = schema
-        self.jmetadata = jmetadata
 
 
 class _Catalog(object):
@@ -37,12 +31,6 @@ class _Catalog(object):
 
         return (key, value)
 
-    def _get_spatial_jmetadata(self, layer_name, layer_zoom):
-        return self.store.metadataSpatial(layer_name, layer_zoom)
-
-    def _get_spacetime_jmetadata(self, layer_name, layer_zoom):
-        return self.store.metadataSpaceTime(layer_name, layer_zoom)
-
     def _read(self,
               key_type,
               value_type,
@@ -54,14 +42,14 @@ class _Catalog(object):
         schema = tup._2()
 
         if key_type == "spatial":
-            jmetadata = self._get_spatial_jmetadata(layer_name, layer_zoom)
+            jmetadata = self.store.metadataSpatial(layer_name, layer_zoom)
         else:
-            jmetadata = self._get_spacetime_jmetadata(layer_name, layer_zoom)
+            jmetadata = self.store.metadataSpaceTime(layer_name, layer_zoom)
 
-        metadata = Metadata(key_type, value_type, schema, jmetadata)
+        metadata = json.loads(jmetadata)
         rdd = self.geopysc.avro_rdd_to_python(key, value, tup._1(), schema)
 
-        return (rdd, metadata)
+        return (rdd, schema, metadata)
 
     def _query(self,
                key_type,
@@ -70,6 +58,7 @@ class _Catalog(object):
                layer_zoom,
                intersects,
                time_intervals):
+
         (key, value) = self._map_inputs(key_type, value_type)
 
         if time_intervals is None:
@@ -94,12 +83,16 @@ class _Catalog(object):
             raise Exception("Could not query intersection", intersects)
 
         schema = tup._2()
-        jmetadata = self._get_spacetime_jmetadata(layer_name, layer_zoom)
-        metadata = Metadata(key_type, value_type, schema, jmetadata)
 
+        if key_type == "spatial":
+            jmetadata = self.store.metadataSpatial(layer_name, layer_zoom)
+        else:
+            jmetadata = self.store.metadataSpaceTime(layer_name, layer_zoom)
+
+        metadata = json.loads(jmetadata)
         rdd = self.geopysc.avro_rdd_to_python(key, value, tup._1(), schema)
 
-        return (rdd, metadata)
+        return (rdd, schema, metadata)
 
     def _write(self,
                key_type,
@@ -114,7 +107,6 @@ class _Catalog(object):
         (key, value) = self._map_inputs(key_type, value_type)
 
         schema = metadata.schema
-        jmetadata = metadata.jmetadata
 
         if not time_unit:
             time_unit = ""
@@ -124,7 +116,7 @@ class _Catalog(object):
                           layer_name,
                           layer_zoom,
                           rdd._jrdd,
-                          jmetadata,
+                          json.dumps(metadata),
                           schema,
                           time_unit,
                           index_strategy)
