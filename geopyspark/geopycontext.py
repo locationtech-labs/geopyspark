@@ -6,19 +6,19 @@ from pyspark.serializers import AutoBatchedSerializer
 
 
 class GeoPyContext(object):
-    def __init__(self, pysc, avroregistry=None):
-        self.pysc = pysc
+    def __init__(self, pysc=None, *args, **kwargs):
+        if pysc:
+            self.pysc = pysc
+        elif args or kwargs:
+            self.pysc = SparkContext(*args, **kwargs)
+        else:
+            raise TypeError(("Either a SparkContext or its constructing parameters must be given,"
+                             " but none were found"))
+
         self.sc = self.pysc._jsc.sc()
         self._jvm = self.pysc._gateway.jvm
 
-        if avroregistry:
-            self.avroregistry = avroregistry
-        else:
-            self.avroregistry = AvroRegistry()
-
-    @staticmethod
-    def construct(*args, **kwargs):
-        return GeoPyContext(SparkContext(*args, **kwargs))
+        self.avroregistry = AvroRegistry()
 
     @property
     def schema_producer(self):
