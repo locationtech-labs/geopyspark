@@ -14,16 +14,14 @@ class ExtentSchemaTest(BaseTestClass):
     ew = BaseTestClass.geopysc._jvm.ExtentWrapper
 
     tup = ew.testOut(BaseTestClass.geopysc.sc)
-    (java_rdd, schema) = (tup._1(), tup._2())
+    java_rdd = tup._1()
+    ser = AvroSerializer(tup._2())
 
-    ser = AvroSerializer(schema)
-
-    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    collected = rdd.collect()
 
     def test_encoded_extents(self):
-        (rdd, schema) = self.tup
-
-        encoded = rdd.map(lambda s: s)
+        encoded = self.rdd.map(lambda s: s)
         actual_encoded = encoded.collect()
 
         expected_encoded = [
@@ -36,16 +34,13 @@ class ExtentSchemaTest(BaseTestClass):
             assert(actual == expected)
 
     def test_decoded_extents(self):
-        (extents, schema) = self.tup
-        actual_extents = extents.collect()
-
         expected_extents = [
             {'xmin': 0, 'ymin': 0, 'xmax': 1, 'ymax': 1},
             {'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4},
             {'xmin': 5, 'ymin': 6, 'xmax': 7, 'ymax': 8}
         ]
 
-        for actual, expected in zip(actual_extents, expected_extents):
+        for actual, expected in zip(self.collected, expected_extents):
             self.assertDictEqual(actual, expected)
 
 

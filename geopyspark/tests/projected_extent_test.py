@@ -20,26 +20,21 @@ class ProjectedExtentSchemaTest(BaseTestClass):
     ew = BaseTestClass.pysc._gateway.jvm.ProjectedExtentWrapper
 
     tup = ew.testOut(sc)
-    (java_rdd, schema) = (tup._1(), tup._2())
+    java_rdd = tup._1()
+    ser = AvroSerializer(tup._2())
 
-    ser = AvroSerializer(schema)
-
-    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    collected = rdd.collect()
 
     def test_encoded_pextents(self):
-        (rdd, schema) = self.tup
-
-        encoded = rdd.map(lambda s: s)
+        encoded = self.rdd.map(lambda s: s)
         actual_encoded = encoded.collect()
 
         for actual, expected in zip(actual_encoded, self.projected_extents):
             self.assertDictEqual(actual, expected)
 
     def test_decoded_pextents(self):
-        (pextents, schema) = self.tup
-        actual_pextents = pextents.collect()
-
-        for actual, expected in zip(actual_pextents, self.projected_extents):
+        for actual, expected in zip(self.collected, self.projected_extents):
             self.assertDictEqual(actual, expected)
 
 

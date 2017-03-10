@@ -21,26 +21,21 @@ class TemporalProjectedExtentSchemaTest(BaseTestClass):
     ew = BaseTestClass.pysc._gateway.jvm.TemporalProjectedExtentWrapper
 
     tup = ew.testOut(sc)
-    (java_rdd, schema) = (tup._1(), tup._2())
+    java_rdd = tup._1()
+    ser = AvroSerializer(tup._2())
 
-    ser = AvroSerializer(schema)
-
-    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    collected = rdd.collect()
 
     def test_encoded_tpextents(self):
-        (rdd, schema) = self.tup
-
-        encoded = rdd.map(lambda s: s)
+        encoded = self.rdd.map(lambda s: s)
         actual_encoded = encoded.collect()
 
         for actual, expected in zip(actual_encoded, self.expected_tpextents):
             self.assertEqual(actual, expected)
 
     def test_decoded_tpextents(self):
-        (tpextents, schema) = self.tup
-        actual_tpextents = tpextents.collect()
-
-        for actual, expected in zip(actual_tpextents, self.expected_tpextents):
+        for actual, expected in zip(self.collected, self.expected_tpextents):
             self.assertEqual(actual, expected)
 
 

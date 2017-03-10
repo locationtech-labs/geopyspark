@@ -44,18 +44,17 @@ class TupleSchemaTest(BaseTestClass):
     ew = BaseTestClass.pysc._gateway.jvm.TupleWrapper
 
     tup = ew.testOut(sc)
-    (java_rdd, schema) = (tup._1(), tup._2())
+    java_rdd = tup._1()
 
-    ser = AvroSerializer(schema, decoder, encoder)
-    values = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    ser = AvroSerializer(tup._2(), decoder, encoder)
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    collected = rdd.collect()
 
     @pytest.mark.skipif('TRAVIS' in os.environ, reason="Encoding using methods in Main causes issues on Travis")
     def test_encoded_tuples(self):
-        (rdd, schema) = self.values
+        s = self.rdd._jrdd_deserializer.serializer
 
-        s = rdd._jrdd_deserializer.serializer
-
-        encoded = rdd.map(lambda x: encoder(x))
+        encoded = self.rdd.map(lambda x: encoder(x))
         actual_encoded = encoded.collect()
 
         expected_encoded = [
@@ -68,16 +67,13 @@ class TupleSchemaTest(BaseTestClass):
             self.assertDictEqual(actual, expected)
 
     def test_decoded_tuples(self):
-        (tuples, schema) = self.values
-        actual_tuples = tuples.collect()
-
         expected_tuples = [
             (self.arrs[0], self.extents[0]),
             (self.arrs[1], self.extents[1]),
             (self.arrs[2], self.extents[2])
         ]
 
-        for actual, expected in zip(actual_tuples, expected_tuples):
+        for actual, expected in zip(self.collected, expected_tuples):
             (actual_tile, actual_extent) = actual
             (expected_tile, expected_extent) = expected
 

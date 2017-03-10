@@ -17,24 +17,20 @@ class SpatialKeySchemaTest(BaseTestClass):
     ew = BaseTestClass.pysc._gateway.jvm.SpatialKeyWrapper
 
     tup = ew.testOut(sc)
-    (java_rdd, schema) = (tup._1(), tup._2())
+    java_rdd = tup._1()
+    ser = AvroSerializer(tup._2())
 
-    ser = AvroSerializer(schema)
-    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    collected = rdd.first()
 
     def test_encoded_skeys(self):
-        (rdd, schema) = self.tup
-        encoded = rdd.map(lambda s: s)
-
+        encoded = self.rdd.map(lambda s: s)
         actual_encoded = encoded.first()
 
         self.assertDictEqual(actual_encoded, self.expected_skey)
 
     def test_decoded_extents(self):
-        (skeys, schema) = self.tup
-        actual_skeys = skeys.first()
-
-        self.assertDictEqual(actual_skeys, self.expected_skey)
+        self.assertDictEqual(self.collected, self.expected_skey)
 
 
 class SpaceTimeKeySchemaTest(BaseTestClass):
@@ -51,26 +47,21 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
     ew = BaseTestClass.pysc._gateway.jvm.SpaceTimeKeyWrapper
 
     tup = ew.testOut(sc)
-    (java_rdd, schema) = (tup._1(), tup._2())
+    java_rdd = tup._1()
+    ser = AvroSerializer(tup._2())
 
-    ser = AvroSerializer(schema)
-
-    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    collected = rdd.collect()
 
     def test_encoded_skeys(self):
-        (rdd, schema) = self.tup
-
-        encoded = rdd.map(lambda s: s)
+        encoded = self.rdd.map(lambda s: s)
         actual_encoded = encoded.collect()
 
         for actual, expected in zip(actual_encoded, self.expected_skeys):
             self.assertEqual(actual, expected)
 
     def test_decoded_extents(self):
-        (skeys, schema) = self.tup
-        actual_skeys = skeys.collect()
-
-        for actual, expected in zip(actual_skeys, self.expected_skeys):
+        for actual, expected in zip(self.collected, self.expected_skeys):
             self.assertDictEqual(actual, expected)
 
 

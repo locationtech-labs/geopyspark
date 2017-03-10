@@ -26,18 +26,17 @@ class MultibandSchemaTest(BaseTestClass):
     mw = BaseTestClass.pysc._gateway.jvm.ArrayMultibandTileWrapper
 
     tup = mw.testOut(sc)
-    (java_rdd, schema) = (tup._1(), tup._2())
+    java_rdd = tup._1()
 
-    ser = AvroSerializer(schema,
+    ser = AvroSerializer(tup._2(),
                          AvroRegistry.multiband_decoder,
                          AvroRegistry.multiband_encoder)
 
-    tup = (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    collected = rdd.collect()
 
     def test_encoded_multibands(self):
-        (rdd, schema) = self.tup
-
-        encoded = rdd.map(lambda s: AvroRegistry.multiband_encoder(s))
+        encoded = self.rdd.map(lambda s: AvroRegistry.multiband_encoder(s))
         actual_encoded = encoded.collect()
 
         expected_encoded = [
@@ -50,15 +49,13 @@ class MultibandSchemaTest(BaseTestClass):
             self.assertEqual(actual, expected)
 
     def test_decoded_multibands(self):
-        actual_multibands = self.tup[0].collect()
-
         expected_multibands = [
             self.multiband_dict,
             self.multiband_dict,
             self.multiband_dict
         ]
 
-        for actual, expected in zip(actual_multibands, expected_multibands):
+        for actual, expected in zip(self.collected, expected_multibands):
             self.assertTrue((actual['data'] == expected['data']).all())
 
 
