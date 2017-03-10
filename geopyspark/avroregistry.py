@@ -1,8 +1,5 @@
 import array
-import json
 import numpy as np
-
-from functools import partial
 
 
 class AvroRegistry(object):
@@ -47,17 +44,6 @@ class AvroRegistry(object):
             return (schema_1, value_decoder(schema_2))
         else:
             return (schema_1, schema_2)
-
-    @classmethod
-    def get_decoder(cls, value_name):
-        if value_name == "Tile":
-            decoder = cls.tile_decoder
-        elif value_name == "MultibandTile":
-            decoder = cls.multiband_decoder
-        else:
-            raise Exception("Could not find decoder for value type", value_name)
-
-        return partial(cls.tuple_decoder, value_decoder=decoder)
 
     # ENCODERS
 
@@ -125,14 +111,3 @@ class AvroRegistry(object):
             datum_2 = b
 
         return {'_1': datum_1, '_2': datum_2}
-
-    @classmethod
-    def get_encoder(cls, value_name):
-        if value_name == "Tile":
-            encoder = cls.tile_encoder
-        elif value_name == "MultibandTile":
-            encoder = cls.multiband_encoder
-        else:
-            raise Exception("Could not find encoder for value type", value_name)
-
-        return partial(cls.tuple_encoder, value_encoder=encoder)
