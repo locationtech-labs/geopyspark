@@ -4,15 +4,18 @@ from geopyspark.avroserializer import AvroSerializer
 from pyspark import RDD, SparkContext
 from pyspark.serializers import AutoBatchedSerializer
 
+from functools import partial
+
 
 class GeoPyContext(object):
-    def __init__(self, pysc=None, *args, **kwargs):
+    def __init__(self, pysc=None, **kwargs):
         if pysc:
             self.pysc = pysc
-        elif args or kwargs:
-            self.pysc = SparkContext(*args, **kwargs)
+        elif kwargs:
+            self.pysc = SparkContext(**kwargs)
         else:
-            raise TypeError(("Either a SparkContext or its constructing parameters must be given,"
+            raise TypeError(("Either a SparkContext or its constructing"
+                             " parameters must be given,"
                              " but none were found"))
 
         self.sc = self.pysc._jsc.sc()
@@ -56,23 +59,75 @@ class GeoPyContext(object):
     def tile_layer_merge(self):
         return self._jvm.geopyspark.geotrellis.spark.merge.MergeMethodsWrapper
 
+    @staticmethod
+    def map_key_input(key_type, is_boundable):
+        if is_boundable:
+            if key_type == "spatial":
+                return "SpatialKey"
+            elif key_type == "spacetime":
+                return "SpaceTimeKey"
+            else:
+                raise Exception("Could not find key type that matches", key_type)
+        else:
+            if key_type == "spatial":
+                return "ProjectedExtent"
+            elif key_type == "spacetime":
+                return "TemporalProjectedExtent"
+            else:
+                raise Exception("Could not find key type that matches", key_type)
+
+    @staticmethod
+    def map_value_input(value_type):
+        if value_type == "singleband":
+            return "Tile"
+        elif value_type == "multiband":
+            return "MultibandTile"
+        else:
+            raise Exception("Could not find value type that matches", value_type)
+
+    def _get_decoder(self, value_type):
+        if value_type == "Tile":
+            return partial(self.avroregistry.tuple_decoder,
+                           key_decoder=None,
+                           value_decoder=self.avroregistry.tile_decoder)
+
+        else:
+            return partial(self.avroregistry.tuple_decoder,
+                           key_decoder=None,
+                           value_decoder=self.avroregistry.multiband_decoder)
+
+    def _get_encoder(self, value_type):
+        if value_type == "Tile":
+            return partial(self.avroregistry.tuple_encoder,
+                           key_encoder=None,
+                           value_encoder=self.avroregistry.tile_encoder)
+
+        else:
+            return partial(self.avroregistry.tuple_encoder,
+                           key_encoder=None,
+                           value_encoder=self.avroregistry.multiband_encoder)
+
+
     def create_schema(self, key_type, value_type):
         return self.schema_producer.getSchema(key_type, value_type)
 
     def create_serializer(self, key_type, value_type):
         schema = self.create_schema(key_type, value_type)
-        decoder = self.avroregistry.get_decoder(value_type)
-        encoder = self.avroregistry.get_encoder(value_type)
+        decoder = self._get_decoder(value_type)
+        encoder = self._get_encoder(value_type)
 
-        return AvroSerializer(schema, decoder, encoder)
+        return AutoBatchedSerializer(AvroSerializer(schema, decoder, encoder))
 
     def avro_rdd_to_python(self, key_type, value_type, jrdd, schema):
-        decoder = self.avroregistry.get_decoder(value_type)
-        encoder = self.avroregistry.get_encoder(value_type)
+        decoder = self._get_decoder(value_type)
+        encoder = self._get_encoder(value_type)
 
         ser = AvroSerializer(schema, decoder, encoder)
 
         return RDD(jrdd, self.pysc, AutoBatchedSerializer(ser))
+
+    def create_python_rdd(self, jrdd, serializer):
+        return RDD(jrdd, self.pysc, AutoBatchedSerializer(serializer))
 
     @staticmethod
     def reserialize_python_rdd(rdd, serializer):

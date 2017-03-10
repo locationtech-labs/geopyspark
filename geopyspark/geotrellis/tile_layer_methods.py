@@ -1,8 +1,6 @@
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.singleton_base import SingletonBase
 
-from pyspark.serializers import AutoBatchedSerializer
-
 import json
 
 
@@ -13,24 +11,6 @@ class TileLayerMethods(metaclass=SingletonBase):
         self._metadata_wrapper = self.geopysc.tile_layer_metadata_collecter
         self._tiler_wrapper = self.geopysc.tile_layer_methods
         self._merge_wrapper = self.geopysc.tile_layer_merge
-
-    @staticmethod
-    def _map_inputs(key_type, value_type):
-        if key_type == "spatial":
-            key = "ProjectedExtent"
-        elif key_type == "spacetime":
-            key = "TemporalProjectedExtent"
-        else:
-            raise Exception("Could not find key type that matches", key_type)
-
-        if value_type == "singleband":
-            value = "Tile"
-        elif value_type == "multiband":
-            value = "MultibandTile"
-        else:
-            raise Exception("Could not find value type that matches", value_type)
-
-        return (key, value)
 
     @staticmethod
     def _map_outputs(key_type, value_type):
@@ -53,8 +33,10 @@ class TileLayerMethods(metaclass=SingletonBase):
             schema = rdd._jrdd_deserializer.serializer.schema_string
         else:
             ser = self.geopysc.create_serializer(key_type, value_type)
-            reserialized_rdd = rdd._reserialize(AutoBatchedSerializer(ser))
-            dumped = reserialized_rdd.map(lambda x: ser.dumps(x))
+            reserialized_rdd = rdd._reserialize(ser)
+            avro_ser = reserialized_rdd._jrdd_deserializer.serializer
+
+            dumped = reserialized_rdd.map(lambda x: avro_ser.dumps(x))
             schema = reserialized_rdd._jrdd_deserializer.serializer.schema_string
 
         return (dumped._to_java_object_rdd(), schema)
@@ -69,7 +51,8 @@ class TileLayerMethods(metaclass=SingletonBase):
                          epsg_code=None,
                          wkt_string=None):
 
-        (key, value) = self._map_inputs(key_type, value_type)
+        key = self.geopysc.map_key_input(key_type, False)
+        value = self.geopysc.map_value_input(value_type)
 
         (java_rdd, schema) = self._convert_to_java_rdd(key, value, rdd)
 
@@ -101,7 +84,9 @@ class TileLayerMethods(metaclass=SingletonBase):
                   tile_layer_metadata,
                   resample_method=None):
 
-        (key, value) = self._map_inputs(key_type, value_type)
+        key = self.geopysc.map_key_input(key_type, False)
+        value = self.geopysc.map_value_input(value_type)
+
         (java_rdd, schema) = self._convert_to_java_rdd(key, value, rdd)
 
         if resample_method is None:
@@ -130,7 +115,9 @@ class TileLayerMethods(metaclass=SingletonBase):
                        tile_layer_metadata,
                        resample_method=None):
 
-        (key, value) = self._map_inputs(key_type, value_type)
+        key = self.geopysc.map_key_input(key_type, False)
+        value = self.geopysc.map_value_input(value_type)
+
         (java_rdd, schema) = self._convert_to_java_rdd(key, value, rdd)
 
         if resample_method is None:
@@ -158,7 +145,9 @@ class TileLayerMethods(metaclass=SingletonBase):
               rdd_1,
               rdd_2):
 
-        (key, value) = self._map_inputs(key_type, value_type)
+        key = self.geopysc.map_key_input(key_type, False)
+        value = self.geopysc.map_value_input(value_type)
+
         (java_rdd_1, schema_1) = self._convert_to_java_rdd(key, value, rdd_1)
         (java_rdd_2, schema_2) = self._convert_to_java_rdd(key, value, rdd_2)
 

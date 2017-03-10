@@ -13,31 +13,15 @@ class _Catalog(object):
         self.reader = None
         self.writer = None
 
-    @staticmethod
-    def _map_inputs(key_type, value_type):
-        if key_type == "spatial":
-            key = "SpatialKey"
-        elif key_type == "spacetime":
-            key = "SpaceTimeKey"
-        else:
-            raise Exception("Could not find key type that matches", key_type)
-
-        if value_type == "singleband":
-            value = "Tile"
-        elif value_type == "multiband":
-            value = "MultibandTile"
-        else:
-            raise Exception("Could not find value type that matches", value_type)
-
-        return (key, value)
-
     def _read(self,
               key_type,
               value_type,
               layer_name,
               layer_zoom):
 
-        (key, value) = self._map_inputs(key_type, value_type)
+        key = self.geopysc.map_key_input(key_type, True)
+        value = self.geopysc.map_value_input(value_type)
+
         tup = self.reader.read(key, value, layer_name, layer_zoom)
         schema = tup._2()
 
@@ -59,7 +43,8 @@ class _Catalog(object):
                intersects,
                time_intervals):
 
-        (key, value) = self._map_inputs(key_type, value_type)
+        key = self.geopysc.map_key_input(key_type, True)
+        value = self.geopysc.map_value_input(value_type)
 
         if time_intervals is None:
             time_intervals = []
@@ -104,7 +89,8 @@ class _Catalog(object):
                time_unit,
                index_strategy):
 
-        (key, value) = self._map_inputs(key_type, value_type)
+        key = self.geopysc.map_key_input(key_type, True)
+        value = self.geopysc.map_value_input(value_type)
 
         schema = metadata.schema
 
