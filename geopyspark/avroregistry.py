@@ -1,4 +1,5 @@
 import array
+from functools import partial
 import numpy as np
 
 
@@ -45,6 +46,31 @@ class AvroRegistry(object):
             return (schema_1, value_decoder(schema_2))
         else:
             return (schema_1, schema_2)
+
+    @classmethod
+    def get_decoder(cls, name):
+        if name == "Tile":
+            return cls.tile_decoder
+        elif name == "MultibandTile":
+            return cls.multiband_decoder
+        else:
+            raise Exception("Could not find value type that matches", name)
+
+    @classmethod
+    def create_partial_tuple_decoder(cls, key_type=None, value_type=None):
+        if key_type:
+            key_decoder = cls.get_decoder(key_type)
+        else:
+            key_decoder = None
+
+        if value_type:
+            value_decoder = cls.get_decoder(value_type)
+        else:
+            value_decoder = None
+
+        return partial(cls.tuple_decoder,
+                       key_decoder=key_decoder,
+                       value_decoder=value_decoder)
 
     # ENCODERS
 
@@ -112,3 +138,28 @@ class AvroRegistry(object):
             datum_2 = value_2
 
         return {'_1': datum_1, '_2': datum_2}
+
+    @classmethod
+    def create_partial_tuple_encoder(cls, key_type=None, value_type=None):
+        if key_type:
+            key_encoder = cls.get_encoder(key_type)
+        else:
+            key_encoder = None
+
+        if value_type:
+            value_encoder = cls.get_encoder(value_type)
+        else:
+            value_encoder = None
+
+        return partial(cls.tuple_encoder,
+                       key_encoder=key_encoder,
+                       value_encoder=value_encoder)
+
+    @classmethod
+    def get_encoder(cls, name):
+        if name == "Tile":
+            return cls.tile_encoder
+        elif name == "MultibandTile":
+            return cls.multiband_encoder
+        else:
+            raise Exception("Could not find value type that matches", name)
