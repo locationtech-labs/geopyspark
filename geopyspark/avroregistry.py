@@ -6,35 +6,36 @@ class AvroRegistry(object):
     # DECODERS
 
     @staticmethod
-    def tile_decoder(i):
-        cells = i['cells']
+    def tile_decoder(schema_dict):
+        cells = schema_dict['cells']
 
         if isinstance(cells, bytes):
             cells = bytearray(cells)
 
         # cols and rows are opposte for GeoTrellis ArrayTiles and Numpy Arrays
-        arr = np.array(cells).reshape(i['rows'], i['cols'])
+        arr = np.array(cells).reshape(schema_dict['rows'], schema_dict['cols'])
 
-        if 'noDataValue' in i:
-            tile_dict = {'data': arr, 'no_data_value': i['noDataValue']}
+        if 'noDataValue' in schema_dict:
+            tile_dict = {'data': arr, 'no_data_value': schema_dict['noDataValue']}
         else:
             tile_dict = {'data': arr}
 
         return tile_dict
 
     @classmethod
-    def multiband_decoder(cls, i):
-        bands = i['bands']
+    def multiband_decoder(cls, schema_dict):
+        bands = schema_dict['bands']
         tile_dicts = [cls.tile_decoder(band) for band in bands]
+
         tiles = [tile['data'] for tile in tile_dicts]
         no_data = tile_dicts[0]['no_data_value']
 
         return {'data': np.array(tiles), 'no_data_value': no_data}
 
     @staticmethod
-    def tuple_decoder(i, key_decoder=None, value_decoder=None):
-        schema_1 = i['_1']
-        schema_2 = i['_2']
+    def tuple_decoder(schema_dict, key_decoder=None, value_decoder=None):
+        schema_1 = schema_dict['_1']
+        schema_2 = schema_dict['_2']
 
         if key_decoder and value_decoder:
             return (key_decoder(schema_1), value_decoder(schema_2))
@@ -82,7 +83,7 @@ class AvroRegistry(object):
     def multiband_encoder(cls, obj):
 
         def create_dict(index):
-            return {'data': obj['data'][index,:,:], 'no_data_value': obj['no_data_value']}
+            return {'data': obj['data'][index, :, :], 'no_data_value': obj['no_data_value']}
 
         bands = obj['data'].shape[0]
         tile_datums = [cls.tile_encoder(create_dict(x)) for x in range(bands)]
@@ -95,19 +96,19 @@ class AvroRegistry(object):
 
     @staticmethod
     def tuple_encoder(obj, key_encoder=None, value_encoder=None):
-        (a, b) = obj
+        (value_1, value_2) = obj
 
         if key_encoder and value_encoder:
-            datum_1 = key_encoder(a)
-            datum_2 = value_encoder(b)
+            datum_1 = key_encoder(value_1)
+            datum_2 = value_encoder(value_2)
         elif key_encoder:
-            datum_1 = key_encoder(a)
-            datum_2 = b
+            datum_1 = key_encoder(value_1)
+            datum_2 = value_2
         elif value_encoder:
-            datum_1 = a
-            datum_2 = value_encoder(b)
+            datum_1 = value_1
+            datum_2 = value_encoder(value_2)
         else:
-            datum_1 = a
-            datum_2 = b
+            datum_1 = value_1
+            datum_2 = value_2
 
         return {'_1': datum_1, '_2': datum_2}

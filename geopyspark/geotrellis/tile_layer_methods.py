@@ -1,10 +1,9 @@
-from geopyspark.avroserializer import AvroSerializer
-from geopyspark.singleton_base import SingletonBase
-
 import json
 
+from geopyspark.avroserializer import AvroSerializer
 
-class TileLayerMethods(metaclass=SingletonBase):
+
+class TileLayerMethods(object):
     def __init__(self, geopysc):
         self.geopysc = geopysc
 
@@ -61,11 +60,11 @@ class TileLayerMethods(metaclass=SingletonBase):
         elif epsg_code:
             if isinstance(epsg_code, int):
                 epsg_code = str(epsg_code)
-            output_crs = {"epsg": epsg_code}
-        elif wkt_string:
-            output_crs = {"wktString": wkt_string}
-        else:
-            output_crs = {}
+                output_crs = {"epsg": epsg_code}
+            elif wkt_string:
+                output_crs = {"wktString": wkt_string}
+            else:
+                output_crs = {}
 
         metadata = self._metadata_wrapper.collectPythonMetadata(key_type,
                                                                 value_type,

@@ -1,10 +1,10 @@
+from functools import partial
+
 from geopyspark.avroregistry import AvroRegistry
 from geopyspark.avroserializer import AvroSerializer
 
 from pyspark import RDD, SparkContext
 from pyspark.serializers import AutoBatchedSerializer
-
-from functools import partial
 
 
 class GeoPyContext(object):

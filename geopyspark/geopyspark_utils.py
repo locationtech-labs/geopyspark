@@ -1,7 +1,7 @@
-import os
 import glob
 import sys
 
+import os
 from os import path
 from pkg_resources import resource_filename
 

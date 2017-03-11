@@ -1,8 +1,8 @@
-from pyspark.serializers import Serializer, FramedSerializer
-
 import io
 import avro
 import avro.io
+
+from pyspark.serializers import Serializer, FramedSerializer
 
 
 class AvroSerializer(FramedSerializer):
@@ -69,9 +69,9 @@ class AvroSerializer(FramedSerializer):
         buf = io.BytesIO(obj)
 
         decoder = avro.io.BinaryDecoder(buf)
-        i = self.reader.read(decoder)
+        schema_dict = self.reader.read(decoder)
 
         if self.decoding_method:
-            return [self.decoding_method(i)]
+            return [self.decoding_method(schema_dict)]
         else:
-            return [i]
+            return [schema_dict]
