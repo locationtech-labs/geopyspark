@@ -31,42 +31,45 @@ abstract class ValueReaderWrapper() {
   def attributeStore: AttributeStore
   def valueReader: ValueReader[LayerId]
 
-  def readSpatialSingleband(
-    layerName: String, zoom: Int,
-    col: Int, row: Int
+  def readTile(
+    keyType: String,
+    valueType: String,
+    layerName: String,
+    zoom: Int,
+    col: Int,
+    row: Int,
+    zdt: String
   ): (Array[Byte], String) = {
     val id = LayerId(layerName, zoom)
-    val key = SpatialKey(col, row)
-    PythonTranslator.toPython(valueReader.reader[SpatialKey, Tile](id).read(key))
-  }
 
-  def readSpatialMultiband(
-    layerName: String, zoom: Int,
-    col: Int, row: Int
-  ): (Array[Byte], String) = {
-    val id = LayerId(layerName, zoom)
-    val key = SpatialKey(col, row)
-    PythonTranslator.toPython(valueReader.reader[SpatialKey, MultibandTile](id).read(key))
-  }
+    if (keyType == "SpatialKey") {
+      val spatialKey = SpatialKey(col, row)
 
-  def readSpacetimeSingleband(
-    layerName: String, zoom: Int,
-    col: Int, row: Int, zdt: String
-  ): (Array[Byte], String) = {
-    val id = LayerId(layerName, zoom)
-    val key = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
-    PythonTranslator.toPython(valueReader.reader[SpaceTimeKey, Tile](id).read(key))
-  }
+      valueType match {
+        case "Tile" =>
+          PythonTranslator
+            .toPython(valueReader
+            .reader[SpatialKey, Tile](id).read(spatialKey))
+        case "MultibandTile" =>
+          PythonTranslator
+            .toPython(valueReader
+            .reader[SpatialKey, MultibandTile](id).read(spatialKey))
+      }
+    } else {
+      val spaceKey = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
 
-  def readSpacetimeMultiband(
-    layerName: String, zoom: Int,
-    col: Int, row: Int, zdt: String
-  ): (Array[Byte], String) = {
-    val id = LayerId(layerName, zoom)
-    val key = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
-    PythonTranslator.toPython(valueReader.reader[SpaceTimeKey, MultibandTile](id).read(key))
+      valueType match {
+        case "Tile" =>
+          PythonTranslator
+            .toPython(valueReader
+            .reader[SpaceTimeKey, Tile](id).read(spaceKey))
+        case "MultibandTile" =>
+          PythonTranslator
+            .toPython(valueReader
+            .reader[SpaceTimeKey, MultibandTile](id).read(spaceKey))
+      }
+    }
   }
-
 }
 
 /**
