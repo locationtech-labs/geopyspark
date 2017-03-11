@@ -1,14 +1,14 @@
-from geopyspark.tests.python_test_utils import *
-check_directory()
+import os
+import unittest
+import rasterio
 
+from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.tile_layer_methods import TileLayerMethods
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
 from geopyspark.tests.base_test_class import BaseTestClass
 
-import pytest
-import unittest
-import rasterio
-import os
+
+check_directory()
 
 
 class TileLayerMetadataTest(BaseTestClass):

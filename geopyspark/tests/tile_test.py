@@ -1,20 +1,17 @@
+import unittest
+import numpy as np
+
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
-from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.avroregistry import AvroRegistry
 from geopyspark.tests.base_test_class import BaseTestClass
-
-import numpy as np
-import unittest
-
-
-# TODO: CLEANUP THESE TESTS TO MAKE IT MORE DRY
+from py4j.java_gateway import java_import
 
 
 class ShortTileSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.ShortArrayTileWrapper"
-    java_import(BaseTestClass.pysc._gateway.jvm, path)
+    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
 
     tiles = [
         {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -32768},
@@ -22,14 +19,14 @@ class ShortTileSchemaTest(BaseTestClass):
         {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -32768}
     ]
 
-    sc = BaseTestClass.pysc._jsc.sc()
-    tw = BaseTestClass.pysc._gateway.jvm.ShortArrayTileWrapper
+    sc = BaseTestClass.geopysc.pysc._jsc.sc()
+    tw = BaseTestClass.geopysc.pysc._gateway.jvm.ShortArrayTileWrapper
 
     tup = tw.testOut(sc)
     java_rdd = tup._1()
     ser = AvroSerializer(tup._2(), AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
@@ -51,7 +48,7 @@ class ShortTileSchemaTest(BaseTestClass):
 
 class UShortTileSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.UShortArrayTileWrapper"
-    java_import(BaseTestClass.pysc._gateway.jvm, path)
+    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
 
     tiles = [
         {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': 0},
@@ -59,14 +56,14 @@ class UShortTileSchemaTest(BaseTestClass):
         {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': 0}
     ]
 
-    sc = BaseTestClass.pysc._jsc.sc()
-    tw = BaseTestClass.pysc._gateway.jvm.UShortArrayTileWrapper
+    sc = BaseTestClass.geopysc.pysc._jsc.sc()
+    tw = BaseTestClass.geopysc.pysc._gateway.jvm.UShortArrayTileWrapper
 
     tup = tw.testOut(sc)
     java_rdd = tup._1()
     ser = AvroSerializer(tup._2(), AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
@@ -88,7 +85,7 @@ class UShortTileSchemaTest(BaseTestClass):
 
 class ByteTileSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.ByteArrayTileWrapper"
-    java_import(BaseTestClass.pysc._gateway.jvm, path)
+    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
 
     tiles = [
         {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -128},
@@ -96,14 +93,14 @@ class ByteTileSchemaTest(BaseTestClass):
         {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -128}
     ]
 
-    sc = BaseTestClass.pysc._jsc.sc()
-    tw = BaseTestClass.pysc._gateway.jvm.ByteArrayTileWrapper
+    sc = BaseTestClass.geopysc.pysc._jsc.sc()
+    tw = BaseTestClass.geopysc.pysc._gateway.jvm.ByteArrayTileWrapper
 
     tup = tw.testOut(sc)
     java_rdd = tup._1()
     ser = AvroSerializer(tup._2(), AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
@@ -125,7 +122,7 @@ class ByteTileSchemaTest(BaseTestClass):
 
 class UByteTileSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.UByteArrayTileWrapper"
-    java_import(BaseTestClass.pysc._gateway.jvm, path)
+    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
 
     tiles = [
         {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -128},
@@ -133,14 +130,14 @@ class UByteTileSchemaTest(BaseTestClass):
         {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -128}
     ]
 
-    sc = BaseTestClass.pysc._jsc.sc()
-    tw = BaseTestClass.pysc._gateway.jvm.UByteArrayTileWrapper
+    sc = BaseTestClass.geopysc.pysc._jsc.sc()
+    tw = BaseTestClass.geopysc.pysc._gateway.jvm.UByteArrayTileWrapper
 
     tup = tw.testOut(sc)
     java_rdd = tup._1()
     ser = AvroSerializer(tup._2(), AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
@@ -162,7 +159,7 @@ class UByteTileSchemaTest(BaseTestClass):
 
 class IntTileSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.IntArrayTileWrapper"
-    java_import(BaseTestClass.pysc._gateway.jvm, path)
+    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
 
     tiles = [
         {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -2147483648},
@@ -170,14 +167,14 @@ class IntTileSchemaTest(BaseTestClass):
         {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -2147483648}
     ]
 
-    sc = BaseTestClass.pysc._jsc.sc()
-    tw = BaseTestClass.pysc._gateway.jvm.IntArrayTileWrapper
+    sc = BaseTestClass.geopysc.pysc._jsc.sc()
+    tw = BaseTestClass.geopysc.pysc._gateway.jvm.IntArrayTileWrapper
 
     tup = tw.testOut(sc)
     java_rdd = tup._1()
     ser = AvroSerializer(tup._2(), AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
@@ -199,7 +196,7 @@ class IntTileSchemaTest(BaseTestClass):
 
 class DoubleTileSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.DoubleArrayTileWrapper"
-    java_import(BaseTestClass.pysc._gateway.jvm, path)
+    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
 
     tiles = [
         {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': True},
@@ -207,14 +204,14 @@ class DoubleTileSchemaTest(BaseTestClass):
         {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': True}
     ]
 
-    sc = BaseTestClass.pysc._jsc.sc()
-    tw = BaseTestClass.pysc._gateway.jvm.DoubleArrayTileWrapper
+    sc = BaseTestClass.geopysc.pysc._jsc.sc()
+    tw = BaseTestClass.geopysc.pysc._gateway.jvm.DoubleArrayTileWrapper
 
     tup = tw.testOut(sc)
     java_rdd = tup._1()
     ser = AvroSerializer(tup._2(), AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
@@ -236,7 +233,7 @@ class DoubleTileSchemaTest(BaseTestClass):
 
 class FloatTileSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.FloatArrayTileWrapper"
-    java_import(BaseTestClass.pysc._gateway.jvm, path)
+    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
 
     tiles = [
         {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': True},
@@ -244,14 +241,14 @@ class FloatTileSchemaTest(BaseTestClass):
         {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': True}
     ]
 
-    sc = BaseTestClass.pysc._jsc.sc()
-    tw = BaseTestClass.pysc._gateway.jvm.FloatArrayTileWrapper
+    sc = BaseTestClass.geopysc.pysc._jsc.sc()
+    tw = BaseTestClass.geopysc.pysc._gateway.jvm.FloatArrayTileWrapper
 
     tup = tw.testOut(sc)
     java_rdd = tup._1()
     ser = AvroSerializer(tup._2(), AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):

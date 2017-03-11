@@ -1,15 +1,14 @@
-from geopyspark.tests.python_test_utils import *
-check_directory()
+import os
+import unittest
+import rasterio
 
-from pyspark import SparkContext
+from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.tile_layer_methods import TileLayerMethods
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
 from geopyspark.tests.base_test_class import BaseTestClass
 
-import unittest
-import pytest
-import rasterio
-import os
+
+check_directory()
 
 
 class TileLayerMethodsTest(BaseTestClass):
@@ -54,7 +53,7 @@ class TileLayerMethodsTest(BaseTestClass):
 
         (key_bounds, tile) = result.collect()[0]
 
-        self.assertEqual([0,0], [key_bounds['col'], key_bounds['row']])
+        self.assertEqual([0, 0], [key_bounds['col'], key_bounds['row']])
         self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_cut_tiles_rasterio(self):
@@ -65,7 +64,7 @@ class TileLayerMethodsTest(BaseTestClass):
 
         (key_bounds, tile) = result.collect()[0]
 
-        self.assertEqual([0,0], [key_bounds['col'], key_bounds['row']])
+        self.assertEqual([0, 0], [key_bounds['col'], key_bounds['row']])
         self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_tile_to_layout_hadoop(self):
@@ -76,7 +75,7 @@ class TileLayerMethodsTest(BaseTestClass):
 
         (key_bounds, tile) = result.collect()[0]
 
-        self.assertEqual([0,0], [key_bounds['col'], key_bounds['row']])
+        self.assertEqual([0, 0], [key_bounds['col'], key_bounds['row']])
         self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_tile_to_layout_rasterio(self):
@@ -87,7 +86,7 @@ class TileLayerMethodsTest(BaseTestClass):
 
         (key_bounds, tile) = result.collect()[0]
 
-        self.assertEqual([0,0], [key_bounds['col'], key_bounds['row']])
+        self.assertEqual([0, 0], [key_bounds['col'], key_bounds['row']])
         self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_merge(self):
@@ -96,7 +95,7 @@ class TileLayerMethodsTest(BaseTestClass):
                                     self.rasterio_rdd,
                                     self.hadoop_rdd)
 
-        (projected_extent, tile) = result.collect()[0]
+        tile = result.collect()[0][1]
 
         self.assertTrue((self.value[1]['data'] == tile['data']).all())
 

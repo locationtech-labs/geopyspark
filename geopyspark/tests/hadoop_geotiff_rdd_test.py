@@ -1,13 +1,13 @@
-from geopyspark.tests.python_test_utils import *
-check_directory()
+import unittest
+from os import walk, path
+import rasterio
 
+from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
 from geopyspark.tests.base_test_class import BaseTestClass
-from os import walk, path
 
-import rasterio
-import unittest
-import os
+
+check_directory()
 
 
 class GeoTiffIOTest(object):
@@ -23,19 +23,20 @@ class GeoTiffIOTest(object):
         rasterio_tiles = []
 
         windows = [((0, 256), (0, 256)),
-                ((256, 512), (0, 256)),
-                ((0, 256), (256, 512)),
-                ((256, 512), (256, 512))]
+                   ((256, 512), (0, 256)),
+                   ((0, 256), (256, 512)),
+                   ((256, 512), (256, 512))]
 
         for f in paths:
             with rasterio.open(f) as src:
                 if not windowed:
-                    rasterio_tiles.append({'data': src.read(), 'no_data_value': src.nodata})
+                    rasterio_tiles.append({'data': src.read(),
+                                           'no_data_value': src.nodata})
                 else:
                     for window in windows:
                         rasterio_tiles.append(
-                            {'data': src.read(window=window), 'no_data_value': src.nodata}
-                        )
+                            {'data': src.read(window=window),
+                             'no_data_value': src.nodata})
 
         return rasterio_tiles
 
@@ -48,9 +49,14 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
 
     def read_singleband_geotrellis(self, options=None):
         if options is None:
-            result = self.hadoop_geotiff.get_rdd("spatial", "singleband", self.dir_path)
+            result = self.hadoop_geotiff.get_rdd("spatial",
+                                                 "singleband",
+                                                 self.dir_path)
         else:
-            result = self.hadoop_geotiff.get_rdd("spatial", "singleband", self.dir_path, options)
+            result = self.hadoop_geotiff.get_rdd("spatial",
+                                                 "singleband",
+                                                 self.dir_path,
+                                                 options)
 
         return [tile[1] for tile in result.collect()]
 
@@ -87,9 +93,13 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
 
     def read_multiband_geotrellis(self, options=None):
         if options is None:
-            result = self.hadoop_geotiff.get_rdd("spatial", "multiband", self.dir_path)
+            result = self.hadoop_geotiff.get_rdd("spatial",
+                                                 "multiband",
+                                                 self.dir_path)
         else:
-            result = self.hadoop_geotiff.get_rdd("spatial", "multiband", self.dir_path, options)
+            result = self.hadoop_geotiff.get_rdd("spatial",
+                                                 "multiband",
+                                                 self.dir_path, options)
 
         return [tile[1] for tile in result.collect()]
 
@@ -119,4 +129,5 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
 
 
 if __name__ == "__main__":
+
     unittest.main()

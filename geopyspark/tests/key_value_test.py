@@ -1,14 +1,14 @@
+import os
+import unittest
+import pytest
+import numpy as np
+
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
-from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.avroregistry import AvroRegistry
 from geopyspark.tests.base_test_class import BaseTestClass
-
-import numpy as np
-import unittest
-import pytest
-import os
+from py4j.java_gateway import java_import
 
 
 def decoder(x):
@@ -26,7 +26,7 @@ def encoder(xs):
 
 class KeyValueRecordSchemaTest(unittest.TestCase):
     path = "geopyspark.geotrellis.tests.schemas.KeyValueRecordWrapper"
-    java_import(BaseTestClass.pysc._gateway.jvm, path)
+    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
 
     extents = [
         {'xmin': 0, 'ymin': 0, 'xmax': 1, 'ymax': 1},
@@ -55,7 +55,8 @@ class KeyValueRecordSchemaTest(unittest.TestCase):
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
-    @pytest.mark.skipif('TRAVIS' in os.environ, reason="Encoding using methods in Main cuases issues on Travis")
+    @pytest.mark.skipif('TRAVIS' in os.environ,
+                        reason="Encoding using methods in Main cuases issues on Travis")
     def test_encoded_kvs(self):
         encoded = self.rdd.map(lambda s: encoder(s))
         actual_kvs = encoded.collect()

@@ -1,17 +1,17 @@
+import unittest
+import numpy as np
+
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
-from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.avroregistry import AvroRegistry
 from geopyspark.tests.base_test_class import BaseTestClass
-
-import numpy as np
-import unittest
+from py4j.java_gateway import java_import
 
 
 class MultibandSchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.ArrayMultibandTileWrapper"
-    java_import(BaseTestClass.pysc._gateway.jvm, path)
+    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
 
     arr = np.array(bytearray([0, 0, 1, 1])).reshape(2, 2)
     no_data = -128
@@ -22,8 +22,8 @@ class MultibandSchemaTest(BaseTestClass):
     multiband_tile = np.array(bands)
     multiband_dict = {'data': multiband_tile, 'no_data_value': no_data}
 
-    sc = BaseTestClass.pysc._jsc.sc()
-    mw = BaseTestClass.pysc._gateway.jvm.ArrayMultibandTileWrapper
+    sc = BaseTestClass.geopysc.pysc._jsc.sc()
+    mw = BaseTestClass.geopysc.pysc._gateway.jvm.ArrayMultibandTileWrapper
 
     tup = mw.testOut(sc)
     java_rdd = tup._1()
@@ -32,7 +32,7 @@ class MultibandSchemaTest(BaseTestClass):
                          AvroRegistry.multiband_decoder,
                          AvroRegistry.multiband_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_multibands(self):
