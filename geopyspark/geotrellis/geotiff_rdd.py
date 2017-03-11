@@ -15,7 +15,7 @@ class HadoopGeoTiffRDD(object):
         else:
             result = self._hadoop_wrapper.getRDD(key, value, path, options, self.geopysc.sc)
 
-        return self.geopysc.avro_rdd_to_python(key, value, result._1(), result._2())
+        return self.geopysc.avro_tuple_rdd_to_python(key, value, result._1(), result._2())
 
 
 class S3GeoTiffRDD(object):
@@ -32,4 +32,4 @@ class S3GeoTiffRDD(object):
         else:
             result = self._s3_wrapper.getRDD(key, value, bucket, prefix, options, self.geopysc.sc)
 
-        return self.geopysc.avro_rdd_to_python(key, value, result._1(), result._2())
+        return self.geopysc.avro_tuple_rdd_to_python(key, value, result._1(), result._2())

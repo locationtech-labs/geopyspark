@@ -31,7 +31,7 @@ class TileLayerMethods(object):
             dumped = rdd.map(lambda value: ser.dumps(value))
             schema = rdd._jrdd_deserializer.serializer.schema_string
         else:
-            ser = self.geopysc.create_serializer(key_type, value_type)
+            ser = self.geopysc.create_tuple_serializer(key_type, value_type)
             reserialized_rdd = rdd._reserialize(ser)
             avro_ser = reserialized_rdd._jrdd_deserializer.serializer
 
@@ -102,10 +102,10 @@ class TileLayerMethods(object):
 
         (out_key, out_value) = self._map_outputs(key_type, value_type)
 
-        return self.geopysc.avro_rdd_to_python(out_key,
-                                               out_value,
-                                               result._1(),
-                                               result._2())
+        return self.geopysc.avro_tuple_rdd_to_python(out_key,
+                                                     out_value,
+                                                     result._1(),
+                                                     result._2())
 
     def tile_to_layout(self,
                        key_type,
@@ -133,10 +133,10 @@ class TileLayerMethods(object):
 
         (out_key, out_value) = self._map_outputs(key_type, value_type)
 
-        return self.geopysc.avro_rdd_to_python(out_key,
-                                               out_value,
-                                               result._1(),
-                                               result._2())
+        return self.geopysc.avro_tuple_rdd_to_python(out_key,
+                                                     out_value,
+                                                     result._1(),
+                                                     result._2())
 
     def merge(self,
               key_type,
@@ -157,7 +157,7 @@ class TileLayerMethods(object):
                                            java_rdd_2.rdd(),
                                            schema_2)
 
-        return self.geopysc.avro_rdd_to_python(key,
-                                               value,
-                                               result._1(),
-                                               result._2())
+        return self.geopysc.avro_tuple_rdd_to_python(key,
+                                                     value,
+                                                     result._1(),
+                                                     result._2())

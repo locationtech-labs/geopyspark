@@ -31,7 +31,7 @@ class _Catalog(object):
             jmetadata = self.store.metadataSpaceTime(layer_name, layer_zoom)
 
         metadata = json.loads(jmetadata)
-        rdd = self.geopysc.avro_rdd_to_python(key, value, tup._1(), schema)
+        rdd = self.geopysc.avro_tuple_rdd_to_python(key, value, tup._1(), schema)
 
         return (rdd, schema, metadata)
 
@@ -75,7 +75,7 @@ class _Catalog(object):
             jmetadata = self.store.metadataSpaceTime(layer_name, layer_zoom)
 
         metadata = json.loads(jmetadata)
-        rdd = self.geopysc.avro_rdd_to_python(key, value, tup._1(), schema)
+        rdd = self.geopysc.avro_tuple_rdd_to_python(key, value, tup._1(), schema)
 
         return (rdd, schema, metadata)
 
@@ -581,7 +581,8 @@ class HBaseCatalog(_Catalog):
               value_type,
               layer_name,
               layer_zoom,
-              rdd, metadata,
+              rdd,
+              metadata,
               time_unit=None,
               index_strategy="zorder",
               attribute_table=None):
