@@ -1,5 +1,3 @@
-from functools import partial
-
 from geopyspark.avroregistry import AvroRegistry
 from geopyspark.avroserializer import AvroSerializer
 
@@ -44,6 +42,10 @@ class GeoPyContext(object):
         return self._jvm.geopyspark.geotrellis.io.LayerReaderFactory
 
     @property
+    def value_reader_factory(self):
+        return self._jvm.geopyspark.geotrellis.io.ValueReaderFactory
+
+    @property
     def writer_factory(self):
         return self._jvm.geopyspark.geotrellis.io.LayerWriterFactory
 
@@ -85,42 +87,25 @@ class GeoPyContext(object):
         else:
             raise Exception("Could not find value type that matches", value_type)
 
-    def _get_decoder(self, value_type):
-        if value_type == "Tile":
-            return partial(self.avroregistry.tuple_decoder,
-                           key_decoder=None,
-                           value_decoder=self.avroregistry.tile_decoder)
-
-        else:
-            return partial(self.avroregistry.tuple_decoder,
-                           key_decoder=None,
-                           value_decoder=self.avroregistry.multiband_decoder)
-
-    def _get_encoder(self, value_type):
-        if value_type == "Tile":
-            return partial(self.avroregistry.tuple_encoder,
-                           key_encoder=None,
-                           value_encoder=self.avroregistry.tile_encoder)
-
-        else:
-            return partial(self.avroregistry.tuple_encoder,
-                           key_encoder=None,
-                           value_encoder=self.avroregistry.multiband_encoder)
-
-
     def create_schema(self, key_type, value_type):
         return self.schema_producer.getSchema(key_type, value_type)
 
-    def create_serializer(self, key_type, value_type):
+    def create_tuple_serializer(self, key_type, value_type):
         schema = self.create_schema(key_type, value_type)
-        decoder = self._get_decoder(value_type)
-        encoder = self._get_encoder(value_type)
+        decoder = self.avroregistry.create_partial_tuple_decoder(value_type=value_type)
+        encoder = self.avroregistry.create_partial_tuple_encoder(value_type=value_type)
 
         return AutoBatchedSerializer(AvroSerializer(schema, decoder, encoder))
 
-    def avro_rdd_to_python(self, key_type, value_type, jrdd, schema):
-        decoder = self._get_decoder(value_type)
-        encoder = self._get_encoder(value_type)
+    def create_value_serializer(self, value_type, schema):
+        decoder = self.avroregistry.get_decoder(value_type)
+        encoder = self.avroregistry.get_encoder(value_type)
+
+        return AvroSerializer(schema, decoder, encoder)
+
+    def avro_tuple_rdd_to_python(self, key_type, value_type, jrdd, schema):
+        decoder = self.avroregistry.create_partial_tuple_decoder(value_type=value_type)
+        encoder = self.avroregistry.create_partial_tuple_encoder(value_type=value_type)
 
         ser = AvroSerializer(schema, decoder, encoder)
 
