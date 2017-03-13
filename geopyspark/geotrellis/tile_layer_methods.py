@@ -61,10 +61,10 @@ class TileLayerMethods(object):
             if isinstance(epsg_code, int):
                 epsg_code = str(epsg_code)
                 output_crs = {"epsg": epsg_code}
-            elif wkt_string:
-                output_crs = {"wktString": wkt_string}
-            else:
-                output_crs = {}
+        elif wkt_string:
+            output_crs = {"wktString": wkt_string}
+        else:
+            output_crs = {}
 
         metadata = self._metadata_wrapper.collectPythonMetadata(key_type,
                                                                 value_type,
