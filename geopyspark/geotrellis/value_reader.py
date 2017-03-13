@@ -19,8 +19,11 @@ class _ValueReader(object):
         if not zdt:
             zdt = ""
 
-        tup = self.value_reader.readTile(self.key_type,
-                                         self.value_type,
+        key = self.geopysc.map_key_input(self.key_type, True)
+        value = self.geopysc.map_value_input(self.value_type)
+
+        tup = self.value_reader.readTile(key,
+                                         value,
                                          layer_name,
                                          zoom_level,
                                          col,
@@ -29,7 +32,7 @@ class _ValueReader(object):
 
         if not self.ser:
             self.ser = \
-                    self.geopysc.create_value_serializer(self.value_type,
+                    self.geopysc.create_value_serializer(value,
                                                          tup._2())
 
         return self.ser.loads(tup._1())[0]
