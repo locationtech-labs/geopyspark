@@ -6,7 +6,7 @@ from geopyspark.tests.python_test_utils import check_directory, geotiff_test_pat
 from geopyspark.geotrellis.tile_layer_methods import TileLayerMethods
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis.geotrellis_constants import SPATIAL
+from geopyspark.geotrellis.constants import SPATIAL
 
 
 check_directory()

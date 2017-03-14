@@ -5,7 +5,7 @@ import rasterio
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis.geotrellis_constants import SPATIAL
+from geopyspark.geotrellis.constants import SPATIAL
 
 
 check_directory()
