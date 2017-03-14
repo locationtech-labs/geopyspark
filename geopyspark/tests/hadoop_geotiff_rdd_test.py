@@ -5,6 +5,7 @@ import rasterio
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
 from geopyspark.tests.base_test_class import BaseTestClass
+from geopyspark.geotrellis.geotrellis_constants import SPATIAL
 
 
 check_directory()
@@ -49,11 +50,11 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
 
     def read_singleband_geotrellis(self, options=None):
         if options is None:
-            result = self.hadoop_geotiff.get_rdd("spatial",
+            result = self.hadoop_geotiff.get_rdd(SPATIAL,
                                                  "singleband",
                                                  self.dir_path)
         else:
-            result = self.hadoop_geotiff.get_rdd("spatial",
+            result = self.hadoop_geotiff.get_rdd(SPATIAL,
                                                  "singleband",
                                                  self.dir_path,
                                                  options)
@@ -93,11 +94,11 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
 
     def read_multiband_geotrellis(self, options=None):
         if options is None:
-            result = self.hadoop_geotiff.get_rdd("spatial",
+            result = self.hadoop_geotiff.get_rdd(SPATIAL,
                                                  "multiband",
                                                  self.dir_path)
         else:
-            result = self.hadoop_geotiff.get_rdd("spatial",
+            result = self.hadoop_geotiff.get_rdd(SPATIAL,
                                                  "multiband",
                                                  self.dir_path, options)
 

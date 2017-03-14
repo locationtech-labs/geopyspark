@@ -6,6 +6,7 @@ from geopyspark.tests.python_test_utils import check_directory, geotiff_test_pat
 from geopyspark.geotrellis.tile_layer_methods import TileLayerMethods
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
 from geopyspark.tests.base_test_class import BaseTestClass
+from geopyspark.geotrellis.geotrellis_constants import SPATIAL
 
 
 check_directory()
@@ -18,7 +19,7 @@ class TileLayerMetadataTest(BaseTestClass):
     dir_path = geotiff_test_path("all-ones.tif")
     options = {'maxTileSize': 256}
 
-    rdd = hadoop_geotiff.get_rdd("spatial", "singleband", dir_path)
+    rdd = hadoop_geotiff.get_rdd(SPATIAL, "singleband", dir_path)
     value = rdd.collect()[0]
 
     projected_extent = value[0]
@@ -45,7 +46,7 @@ class TileLayerMetadataTest(BaseTestClass):
             self.assertEqual(actual, expected)
 
     def test_collection_avro_rdd(self):
-        result = self.metadata.collect_metadata("spatial",
+        result = self.metadata.collect_metadata(SPATIAL,
                                                 "singleband",
                                                 self.rdd,
                                                 self.extent,
@@ -63,7 +64,7 @@ class TileLayerMetadataTest(BaseTestClass):
         tile_dict = {'data': data.read(), 'no_data_value': data.nodata}
         rasterio_rdd = self.geopysc.pysc.parallelize([(self.projected_extent, tile_dict)])
 
-        result = self.metadata.collect_metadata("spatial",
+        result = self.metadata.collect_metadata(SPATIAL,
                                                 "singleband",
                                                 rasterio_rdd,
                                                 self.extent,
