@@ -5,6 +5,7 @@ import rasterio
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.geotiff_rdd import S3GeoTiffRDD
 from geopyspark.tests.base_test_class import BaseTestClass
+from geopyspark.geotrellis.constants import SPATIAL
 from py4j.java_gateway import java_import
 
 
@@ -63,7 +64,7 @@ class Singleband(S3GeoTiffIOTest, BaseTestClass):
 
     def read_singleband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.data)
-        result = self.s3_geotiff.get_rdd("spatial",
+        result = self.s3_geotiff.get_rdd(SPATIAL,
                                          "singleband",
                                          self.bucket,
                                          self.key,
@@ -114,7 +115,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
 
     def read_multiband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.data)
-        result = self.s3_geotiff.get_rdd("spatial",
+        result = self.s3_geotiff.get_rdd(SPATIAL,
                                          "multiband",
                                          self.bucket,
                                          self.key,

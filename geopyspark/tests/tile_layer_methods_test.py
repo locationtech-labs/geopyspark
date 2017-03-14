@@ -6,6 +6,7 @@ from geopyspark.tests.python_test_utils import check_directory, geotiff_test_pat
 from geopyspark.geotrellis.tile_layer_methods import TileLayerMethods
 from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
 from geopyspark.tests.base_test_class import BaseTestClass
+from geopyspark.geotrellis.constants import SPATIAL
 
 
 check_directory()
@@ -16,7 +17,7 @@ class TileLayerMethodsTest(BaseTestClass):
     hadoop_geotiff = HadoopGeoTiffRDD(BaseTestClass.geopysc)
 
     dir_path = geotiff_test_path("all-ones.tif")
-    hadoop_rdd = hadoop_geotiff.get_rdd("spatial", "singleband", dir_path)
+    hadoop_rdd = hadoop_geotiff.get_rdd(SPATIAL, "singleband", dir_path)
 
     data = rasterio.open(dir_path)
     no_data = data.nodata
@@ -38,7 +39,7 @@ class TileLayerMethodsTest(BaseTestClass):
         "tileRows": _rows
     }
 
-    metadata = methods.collect_metadata("spatial",
+    metadata = methods.collect_metadata(SPATIAL,
                                         "singleband",
                                         hadoop_rdd,
                                         extent,
@@ -46,7 +47,7 @@ class TileLayerMethodsTest(BaseTestClass):
                                         epsg_code=value[0]['epsg'])
 
     def test_cut_tiles_hadoop(self):
-        result = self.methods.cut_tiles("spatial",
+        result = self.methods.cut_tiles(SPATIAL,
                                         "singleband",
                                         self.hadoop_rdd,
                                         self.metadata)
@@ -57,7 +58,7 @@ class TileLayerMethodsTest(BaseTestClass):
         self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_cut_tiles_rasterio(self):
-        result = self.methods.cut_tiles("spatial",
+        result = self.methods.cut_tiles(SPATIAL,
                                         "singleband",
                                         self.rasterio_rdd,
                                         self.metadata)
@@ -68,7 +69,7 @@ class TileLayerMethodsTest(BaseTestClass):
         self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_tile_to_layout_hadoop(self):
-        result = self.methods.tile_to_layout("spatial",
+        result = self.methods.tile_to_layout(SPATIAL,
                                              "singleband",
                                              self.hadoop_rdd,
                                              self.metadata)
@@ -79,7 +80,7 @@ class TileLayerMethodsTest(BaseTestClass):
         self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_tile_to_layout_rasterio(self):
-        result = self.methods.tile_to_layout("spatial",
+        result = self.methods.tile_to_layout(SPATIAL,
                                              "singleband",
                                              self.rasterio_rdd,
                                              self.metadata)
@@ -90,7 +91,7 @@ class TileLayerMethodsTest(BaseTestClass):
         self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_merge(self):
-        result = self.methods.merge("spatial",
+        result = self.methods.merge(SPATIAL,
                                     "singleband",
                                     self.rasterio_rdd,
                                     self.hadoop_rdd)
