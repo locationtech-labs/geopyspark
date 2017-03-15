@@ -29,23 +29,19 @@ class MultibandSchemaTest(BaseTestClass):
     java_rdd = tup._1()
 
     ser = AvroSerializer(tup._2(),
-                         AvroRegistry.multiband_decoder,
-                         AvroRegistry.multiband_encoder)
+                         AvroRegistry.tile_decoder,
+                         AvroRegistry.tile_encoder)
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_multibands(self):
-        encoded = self.rdd.map(lambda s: AvroRegistry.multiband_encoder(s))
-        actual_encoded = encoded.collect()
+        encoded = self.rdd.map(lambda s: AvroRegistry.tile_encoder(s))
 
-        expected_encoded = [
-            {'bands': [AvroRegistry.tile_encoder(x) for x in self.band_dicts]},
-            {'bands': [AvroRegistry.tile_encoder(x) for x in self.band_dicts]},
-            {'bands': [AvroRegistry.tile_encoder(x) for x in self.band_dicts]}
-        ]
+        actual_encoded = encoded.collect()[0]
+        expected_encoded = AvroRegistry.tile_encoder(self.multiband_dict)
 
-        for actual, expected in zip(actual_encoded, expected_encoded):
+        for actual, expected in zip(actual_encoded['bands'], expected_encoded['bands']):
             self.assertEqual(actual, expected)
 
     def test_decoded_multibands(self):

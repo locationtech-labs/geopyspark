@@ -65,7 +65,6 @@ class Singleband(S3GeoTiffIOTest, BaseTestClass):
     def read_singleband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.data)
         result = self.s3_geotiff.get_rdd(SPATIAL,
-                                         "singleband",
                                          self.bucket,
                                          self.key,
                                          opt)
@@ -116,7 +115,6 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
     def read_multiband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.data)
         result = self.s3_geotiff.get_rdd(SPATIAL,
-                                         "multiband",
                                          self.bucket,
                                          self.key,
                                          opt)

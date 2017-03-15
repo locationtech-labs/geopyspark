@@ -34,12 +34,13 @@ class ShortTileSchemaTest(BaseTestClass):
         actual_encoded = encoded.collect()
 
         expected_encoded = [
-            {'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': -32768},
-            {'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': -32768},
-            {'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': -32768}
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': -32768}]},
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': -32768}]},
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': -32768}]}
         ]
 
-        self.assertEqual(actual_encoded, expected_encoded)
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
@@ -71,12 +72,13 @@ class UShortTileSchemaTest(BaseTestClass):
         actual_encoded = encoded.collect()
 
         expected_encoded = [
-            {'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': 0},
-            {'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': 0},
-            {'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': 0}
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': 0}]},
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': 0}]},
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': 0}]}
         ]
 
-        self.assertEqual(actual_encoded, expected_encoded)
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
@@ -108,12 +110,13 @@ class ByteTileSchemaTest(BaseTestClass):
         actual_encoded = encoded.collect()
 
         expected_encoded = [
-            {'cols': 2, 'rows': 2, 'cells': bytearray([0, 0, 1, 1]), 'noDataValue': -128},
-            {'cols': 2, 'rows': 2, 'cells': bytearray([1, 2, 3, 4]), 'noDataValue': -128},
-            {'cols': 2, 'rows': 2, 'cells': bytearray([5, 6, 7, 8]), 'noDataValue': -128}
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': bytearray([0, 0, 1, 1]), 'noDataValue': -128}]},
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': bytearray([1, 2, 3, 4]), 'noDataValue': -128}]},
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': bytearray([5, 6, 7, 8]), 'noDataValue': -128}]}
         ]
 
-        self.assertEqual(actual_encoded, expected_encoded)
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
@@ -125,9 +128,9 @@ class UByteTileSchemaTest(BaseTestClass):
     java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
 
     tiles = [
-        {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -128},
-        {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': -128},
-        {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -128}
+        {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': 0},
+        {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': 0},
+        {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': 0}
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
@@ -145,12 +148,13 @@ class UByteTileSchemaTest(BaseTestClass):
         actual_encoded = encoded.collect()
 
         expected_encoded = [
-            {'cols': 2, 'rows': 2, 'cells': bytearray([0, 0, 1, 1]), 'noDataValue': 0},
-            {'cols': 2, 'rows': 2, 'cells': bytearray([1, 2, 3, 4]), 'noDataValue': 0},
-            {'cols': 2, 'rows': 2, 'cells': bytearray([5, 6, 7, 8]), 'noDataValue': 0}
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': bytearray([0, 0, 1, 1]), 'noDataValue': 0}]},
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': bytearray([1, 2, 3, 4]), 'noDataValue': 0}]},
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': bytearray([5, 6, 7, 8]), 'noDataValue': 0}]}
         ]
 
-        self.assertEqual(actual_encoded, expected_encoded)
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
@@ -182,12 +186,13 @@ class IntTileSchemaTest(BaseTestClass):
         actual_encoded = encoded.collect()
 
         expected_encoded = [
-            {'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': -2147483648},
-            {'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': -2147483648},
-            {'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': -2147483648}
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': -2147483648}]},
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': -2147483648}]},
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': -2147483648}]}
         ]
 
-        self.assertEqual(actual_encoded, expected_encoded)
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
@@ -219,12 +224,13 @@ class DoubleTileSchemaTest(BaseTestClass):
         actual_encoded = encoded.collect()
 
         expected_encoded = [
-            {'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': True},
-            {'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': True},
-            {'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': True}
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': True}]},
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': True}]},
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': True}]}
         ]
 
-        self.assertEqual(actual_encoded, expected_encoded)
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
@@ -256,12 +262,13 @@ class FloatTileSchemaTest(BaseTestClass):
         actual_encoded = encoded.collect()
 
         expected_encoded = [
-            {'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': True},
-            {'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': True},
-            {'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': True}
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': True}]},
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': True}]},
+            {'bands': [{'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': True}]}
         ]
 
-        self.assertEqual(actual_encoded, expected_encoded)
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):

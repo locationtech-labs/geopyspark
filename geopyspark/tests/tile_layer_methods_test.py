@@ -17,11 +17,11 @@ class TileLayerMethodsTest(BaseTestClass):
     hadoop_geotiff = HadoopGeoTiffRDD(BaseTestClass.geopysc)
 
     dir_path = geotiff_test_path("all-ones.tif")
-    hadoop_rdd = hadoop_geotiff.get_rdd(SPATIAL, "singleband", dir_path)
+    hadoop_rdd = hadoop_geotiff.get_rdd(SPATIAL, dir_path)
 
     data = rasterio.open(dir_path)
     no_data = data.nodata
-    tile = data.read(1)
+    tile = data.read()
     tile_dict = {'data': tile, 'no_data_value': no_data}
 
     value = hadoop_rdd.collect()[0]
@@ -30,7 +30,7 @@ class TileLayerMethodsTest(BaseTestClass):
 
     extent = value[0]['extent']
 
-    (_rows, _cols) = value[1]['data'].shape
+    (_, _rows, _cols) = value[1]['data'].shape
 
     layout = {
         "layoutCols": 1,
@@ -40,7 +40,6 @@ class TileLayerMethodsTest(BaseTestClass):
     }
 
     metadata = methods.collect_metadata(SPATIAL,
-                                        "singleband",
                                         hadoop_rdd,
                                         extent,
                                         layout,
@@ -48,7 +47,6 @@ class TileLayerMethodsTest(BaseTestClass):
 
     def test_cut_tiles_hadoop(self):
         result = self.methods.cut_tiles(SPATIAL,
-                                        "singleband",
                                         self.hadoop_rdd,
                                         self.metadata)
 
@@ -59,7 +57,6 @@ class TileLayerMethodsTest(BaseTestClass):
 
     def test_cut_tiles_rasterio(self):
         result = self.methods.cut_tiles(SPATIAL,
-                                        "singleband",
                                         self.rasterio_rdd,
                                         self.metadata)
 
@@ -70,7 +67,6 @@ class TileLayerMethodsTest(BaseTestClass):
 
     def test_tile_to_layout_hadoop(self):
         result = self.methods.tile_to_layout(SPATIAL,
-                                             "singleband",
                                              self.hadoop_rdd,
                                              self.metadata)
 
@@ -81,7 +77,6 @@ class TileLayerMethodsTest(BaseTestClass):
 
     def test_tile_to_layout_rasterio(self):
         result = self.methods.tile_to_layout(SPATIAL,
-                                             "singleband",
                                              self.rasterio_rdd,
                                              self.metadata)
 
@@ -92,7 +87,6 @@ class TileLayerMethodsTest(BaseTestClass):
 
     def test_merge(self):
         result = self.methods.merge(SPATIAL,
-                                    "singleband",
                                     self.rasterio_rdd,
                                     self.hadoop_rdd)
 
