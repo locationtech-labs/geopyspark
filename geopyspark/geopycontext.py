@@ -78,15 +78,6 @@ class GeoPyContext(object):
             else:
                 raise Exception("Could not find key type that matches", key_type)
 
-    @staticmethod
-    def map_value_input(value_type):
-        if value_type == "singleband":
-            return "Tile"
-        elif value_type == "multiband":
-            return "MultibandTile"
-        else:
-            raise Exception("Could not find value type that matches", value_type)
-
     def create_schema(self, key_type, value_type):
         return self.schema_producer.getSchema(key_type, value_type)
 
