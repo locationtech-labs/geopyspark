@@ -68,7 +68,6 @@ abstract class LayerWriterWrapper {
 
   def write(
     keyType: String,
-    valueType: String,
     layerName: String,
     zoom: Int,
     jrdd: JavaRDD[Array[Byte]],
@@ -80,26 +79,14 @@ abstract class LayerWriterWrapper {
     val id = LayerId(layerName, zoom)
     val metadataAST = returnedMetadata.parseJson
 
-    (keyType, valueType) match {
-      case ("SpatialKey", "Tile") => {
-        val indexMethod = getSpatialIndexMethod(indexStrategy)
-        val rawRdd = PythonTranslator.fromPython[(SpatialKey, Tile)](jrdd, Some(schema))
-        val rdd = ContextRDD(rawRdd, metadataAST.convertTo[TileLayerMetadata[SpatialKey]])
-        layerWriter.write(id, rdd, indexMethod)
-      }
-      case ("SpatialKey", "MultibandTile") => {
+    keyType match {
+      case "SpatialKey" => {
         val indexMethod = getSpatialIndexMethod(indexStrategy)
         val rawRdd = PythonTranslator.fromPython[(SpatialKey, MultibandTile)](jrdd, Some(schema))
         val rdd = ContextRDD(rawRdd, metadataAST.convertTo[TileLayerMetadata[SpatialKey]])
         layerWriter.write(id, rdd, indexMethod)
       }
-      case ("SpaceTimeKey", "Tile") => {
-        val indexMethod = getTemporalIndexMethod(timeString, indexStrategy)
-        val rawRdd = PythonTranslator.fromPython[(SpaceTimeKey, Tile)](jrdd, Some(schema))
-        val rdd = ContextRDD(rawRdd, metadataAST.convertTo[TileLayerMetadata[SpaceTimeKey]])
-        layerWriter.write(id, rdd, indexMethod)
-      }
-      case ("SpaceTimeKey", "MultibandTile") => {
+      case "SpaceTimeKey" => {
         val indexMethod = getTemporalIndexMethod(timeString, indexStrategy)
         val rawRdd = PythonTranslator.fromPython[(SpaceTimeKey, MultibandTile)](jrdd, Some(schema))
         val rdd = ContextRDD(rawRdd, metadataAST.convertTo[TileLayerMetadata[SpaceTimeKey]])

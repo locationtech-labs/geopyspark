@@ -37,32 +37,19 @@ object MergeMethodsWrapper {
 
   def merge(
     keyType: String,
-    valueType: String,
     self: RDD[Array[Byte]],
     selfSchema: String,
     other: RDD[Array[Byte]],
     otherSchema: String
   ): (JavaRDD[Array[Byte]], String) =
-    (keyType, valueType) match {
-      case ("spatial", "singleband") =>
-        mergeRDDs[ProjectedExtent, Tile](
-          self,
-          selfSchema,
-          other,
-          otherSchema)
-      case ("spatial", "multiband") =>
+    keyType match {
+      case "ProjectedExtent" =>
         mergeRDDs[ProjectedExtent, MultibandTile](
           self,
           selfSchema,
           other,
           otherSchema)
-      case ("spacetime", "singleband") =>
-        mergeRDDs[TemporalProjectedExtent, Tile](
-          self,
-          selfSchema,
-          other,
-          otherSchema)
-      case ("spacetime", "multiband") =>
+      case "TemporalProjectedExtent" =>
         mergeRDDs[TemporalProjectedExtent, MultibandTile](
           self,
           selfSchema,

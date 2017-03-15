@@ -33,7 +33,6 @@ abstract class ValueReaderWrapper() {
 
   def readTile(
     keyType: String,
-    valueType: String,
     layerName: String,
     zoom: Int,
     col: Int,
@@ -42,31 +41,18 @@ abstract class ValueReaderWrapper() {
   ): (Array[Byte], String) = {
     val id = LayerId(layerName, zoom)
 
-    if (keyType == "SpatialKey") {
-      val spatialKey = SpatialKey(col, row)
-
-      valueType match {
-        case "Tile" =>
-          PythonTranslator
-            .toPython(valueReader
-            .reader[SpatialKey, Tile](id).read(spatialKey))
-        case "MultibandTile" =>
-          PythonTranslator
-            .toPython(valueReader
-            .reader[SpatialKey, MultibandTile](id).read(spatialKey))
-      }
-    } else {
+    keyType match {
+      case "SpatialKey" => {
+        val spatialKey = SpatialKey(col, row)
+        PythonTranslator
+          .toPython(valueReader.reader[SpatialKey, MultibandTile](id)
+          .read(spatialKey))
+        }
+      case "SpaceTimeKey" => {
       val spaceKey = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
-
-      valueType match {
-        case "Tile" =>
-          PythonTranslator
-            .toPython(valueReader
-            .reader[SpaceTimeKey, Tile](id).read(spaceKey))
-        case "MultibandTile" =>
-          PythonTranslator
-            .toPython(valueReader
-            .reader[SpaceTimeKey, MultibandTile](id).read(spaceKey))
+      PythonTranslator
+        .toPython(valueReader.reader[SpaceTimeKey, MultibandTile](id)
+        .read(spaceKey))
       }
     }
   }
