@@ -27,7 +27,7 @@ class AvroRegistry(object):
         else:
             bands = schema_dict['bands']
             arrs = [cls._tile_decoder(band) for band in bands]
-            no_data = bands[0].get('NoDataValue')
+            no_data = bands[0].get('noDataValue')
             tile = np.array(arrs)
 
         return {'data': tile, 'no_data_value': no_data}
