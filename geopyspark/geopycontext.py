@@ -78,32 +78,31 @@ class GeoPyContext(object):
             else:
                 raise Exception("Could not find key type that matches", key_type)
 
-    def create_schema(self, key_type, value_type):
-        return self.schema_producer.getSchema(key_type, value_type)
+    def create_schema(self, key_type):
+        return self.schema_producer.getSchema(key_type)
 
-    def create_tuple_serializer(self, key_type, value_type):
-        schema = self.create_schema(key_type, value_type)
-        decoder = self.avroregistry.create_partial_tuple_decoder(value_type=value_type)
-        encoder = self.avroregistry.create_partial_tuple_encoder(value_type=value_type)
+    def create_tuple_serializer(self, schema, key_type=None, value_type=None):
+        decoder = \
+                self.avroregistry.create_partial_tuple_decoder(key_type=key_type,
+                                                               value_type=value_type)
+
+        encoder = \
+                self.avroregistry.create_partial_tuple_encoder(key_type=key_type,
+                                                               value_type=value_type)
 
         return AutoBatchedSerializer(AvroSerializer(schema, decoder, encoder))
 
-    def create_value_serializer(self, value_type, schema):
+    def create_value_serializer(self, schema, value_type):
         decoder = self.avroregistry.get_decoder(value_type)
         encoder = self.avroregistry.get_encoder(value_type)
 
         return AvroSerializer(schema, decoder, encoder)
 
-    def avro_tuple_rdd_to_python(self, key_type, value_type, jrdd, schema):
-        decoder = self.avroregistry.create_partial_tuple_decoder(value_type=value_type)
-        encoder = self.avroregistry.create_partial_tuple_encoder(value_type=value_type)
-
-        ser = AvroSerializer(schema, decoder, encoder)
-
-        return RDD(jrdd, self.pysc, AutoBatchedSerializer(ser))
-
     def create_python_rdd(self, jrdd, serializer):
-        return RDD(jrdd, self.pysc, AutoBatchedSerializer(serializer))
+        if isinstance(serializer, AutoBatchedSerializer):
+            return RDD(jrdd, self.pysc, serializer)
+        else:
+            return RDD(jrdd, self.pysc, AutoBatchedSerializer(serializer))
 
     @staticmethod
     def reserialize_python_rdd(rdd, serializer):
