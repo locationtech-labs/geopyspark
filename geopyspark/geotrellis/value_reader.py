@@ -5,7 +5,6 @@ class _ValueReader(object):
     def __init__(self, geopysc, key_type, value_type):
         self.geopysc = geopysc
         self.key_type = key_type
-        self.value_type = value_type
         self.value_reader = None
         self.ser = None
 
@@ -20,10 +19,8 @@ class _ValueReader(object):
             zdt = ""
 
         key = self.geopysc.map_key_input(self.key_type, True)
-        value = self.geopysc.map_value_input(self.value_type)
 
         tup = self.value_reader.readTile(key,
-                                         value,
                                          layer_name,
                                          zoom_level,
                                          col,
@@ -32,8 +29,8 @@ class _ValueReader(object):
 
         if not self.ser:
             self.ser = \
-                    self.geopysc.create_value_serializer(value,
-                                                         tup._2())
+                    self.geopysc.create_value_serializer(tup._2(),
+                                                        "Tile")
 
         return self.ser.loads(tup._1())[0]
 
@@ -42,14 +39,12 @@ class HadoopValueReader(_ValueReader):
     def __init__(self,
                  geopysc,
                  key_type,
-                 value_type,
                  uri):
 
-        super().__init__(geopysc, key_type, value_type)
+        super().__init__(geopysc, key_type)
 
         self.geopysc = geopysc
         self.key_type = key_type
-        self.value_type = value_type
         self.uri = uri
 
         self.store = self.geopysc.store_factory.buildHadoop(self.uri)
@@ -60,15 +55,13 @@ class S3ValueReader(_ValueReader):
     def __init__(self,
                  geopysc,
                  key_type,
-                 value_type,
                  bucket,
                  prefix):
 
-        super().__init__(geopysc, key_type, value_type)
+        super().__init__(geopysc, key_type)
 
         self.geopysc = geopysc
         self.key_type = key_type
-        self.value_type = value_type
         self.bucket = bucket
         self.prefix = prefix
 
@@ -80,14 +73,12 @@ class FileValueReader(_ValueReader):
     def __init__(self,
                  geopysc,
                  key_type,
-                 value_type,
                  path):
 
-        super().__init__(geopysc, key_type, value_type)
+        super().__init__(geopysc, key_type)
 
         self.geopysc = geopysc
         self.key_type = key_type
-        self.value_type = value_type
         self.path = path
 
         self.store = self.geopysc.store_factory.buildFile(self.path)
@@ -98,7 +89,6 @@ class CassandraValueReader(_ValueReader):
     def __init__(self,
                  geopysc,
                  key_type,
-                 value_type,
                  hosts,
                  username,
                  password,
@@ -110,11 +100,10 @@ class CassandraValueReader(_ValueReader):
                  attribute_key_space,
                  attribute_table):
 
-        super().__init__(geopysc, key_type, value_type)
+        super().__init__(geopysc, key_type)
 
         self.geopysc = geopysc
         self.key_type = key_type
-        self.value_type = value_type
 
         self.hosts = hosts
         self.username = username
@@ -146,17 +135,15 @@ class HBaseValueReader(_ValueReader):
     def __init__(self,
                  geopysc,
                  key_type,
-                 value_type,
                  zookeepers,
                  master,
                  client_port,
                  attribute_table):
 
-        super().__init__(geopysc, key_type, value_type)
+        super().__init__(geopysc, key_type)
 
         self.geopysc = geopysc
         self.key_type = key_type
-        self.value_type = value_type
 
         self.zookeepers = zookeepers
         self.master = master
@@ -177,18 +164,16 @@ class AccumuloValueReader(_ValueReader):
     def __init__(self,
                  geopysc,
                  key_type,
-                 value_type,
                  zookeepers,
                  instance_name,
                  user,
                  password,
                  attribute_table):
 
-        super().__init__(geopysc, key_type, value_type)
+        super().__init__(geopysc, key_type)
 
         self.geopysc = geopysc
         self.key_type = key_type
-        self.value_type = value_type
 
         self.zookeepers = zookeepers
         self.instance_name = instance_name
