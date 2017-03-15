@@ -3,7 +3,7 @@ from os import walk, path
 import rasterio
 
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
+from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.constants import SPATIAL
 
@@ -43,19 +43,18 @@ class GeoTiffIOTest(object):
 
 
 class Singleband(GeoTiffIOTest, BaseTestClass):
-    hadoop_geotiff = HadoopGeoTiffRDD(BaseTestClass.geopysc)
-
     dir_path = geotiff_test_path("one-month-tiles/")
-    options = {'maxTileSize': 256}
 
     def read_singleband_geotrellis(self, options=None):
         if options is None:
-            result = self.hadoop_geotiff.get_rdd(SPATIAL,
-                                                 self.dir_path)
+            result = geotiff_rdd(BaseTestClass.geopysc,
+                                 SPATIAL,
+                                 self.dir_path)
         else:
-            result = self.hadoop_geotiff.get_rdd(SPATIAL,
-                                                 self.dir_path,
-                                                 options)
+            result = geotiff_rdd(BaseTestClass.geopysc,
+                                 SPATIAL,
+                                 self.dir_path,
+                                 maxTileSize=256)
 
         return [tile[1] for tile in result.collect()]
 
@@ -73,7 +72,7 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
         self.assertEqual(len(windowed_tiles), 24)
 
     def test_windowed_tiles(self):
-        geotrellis_tiles = self.read_singleband_geotrellis(self.options)
+        geotrellis_tiles = self.read_singleband_geotrellis(True)
 
         file_paths = self.get_filepaths(self.dir_path)
         rasterio_tiles = self.read_geotiff_rasterio(file_paths, True)
@@ -86,17 +85,19 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
 
 
 class Multiband(GeoTiffIOTest, BaseTestClass):
-    hadoop_geotiff = HadoopGeoTiffRDD(BaseTestClass.geopysc)
     dir_path = geotiff_test_path("one-month-tiles-multiband/")
     options = {'maxTileSize': 256}
 
     def read_multiband_geotrellis(self, options=None):
         if options is None:
-            result = self.hadoop_geotiff.get_rdd(SPATIAL,
-                                                 self.dir_path)
+            result = geotiff_rdd(BaseTestClass.geopysc,
+                                 SPATIAL,
+                                 self.dir_path)
         else:
-            result = self.hadoop_geotiff.get_rdd(SPATIAL,
-                                                 self.dir_path, options)
+            result = geotiff_rdd(BaseTestClass.geopysc,
+                                 SPATIAL,
+                                 self.dir_path,
+                                 options)
 
         return [tile[1] for tile in result.collect()]
 

@@ -4,7 +4,7 @@ import rasterio
 
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.tile_layer_methods import TileLayerMethods
-from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
+from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.constants import SPATIAL
 
@@ -14,12 +14,10 @@ check_directory()
 
 class TileLayerMetadataTest(BaseTestClass):
     metadata = TileLayerMethods(BaseTestClass.geopysc)
-    hadoop_geotiff = HadoopGeoTiffRDD(BaseTestClass.geopysc)
 
     dir_path = geotiff_test_path("all-ones.tif")
-    options = {'maxTileSize': 256}
 
-    rdd = hadoop_geotiff.get_rdd(SPATIAL, dir_path)
+    rdd = geotiff_rdd(BaseTestClass.geopysc, SPATIAL, dir_path)
     value = rdd.collect()[0]
 
     projected_extent = value[0]
