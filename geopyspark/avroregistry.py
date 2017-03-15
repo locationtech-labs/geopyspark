@@ -22,7 +22,7 @@ class AvroRegistry(object):
     def tile_decoder(cls, schema_dict):
         if 'bands' not in schema_dict:
             arr = [cls._tile_decoder(schema_dict)]
-            no_data = schema_dict.get('noNoDataValue')
+            no_data = schema_dict.get('noDataValue')
             tile = np.array(arr)
         else:
             bands = schema_dict['bands']
