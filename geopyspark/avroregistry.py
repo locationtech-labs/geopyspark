@@ -101,6 +101,9 @@ class AvroRegistry(object):
 
     @classmethod
     def tile_encoder(cls, obj):
+        if obj['data'].ndim == 2:
+            obj['data'] = np.expand_dims(obj['data'], 0)
+
         band_count = obj['data'].shape[0]
 
         def create_dict(index):
