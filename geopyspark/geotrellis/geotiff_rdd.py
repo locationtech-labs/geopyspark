@@ -19,10 +19,38 @@ def geotiff_rdd(geopysc,
             GeoTiffs must have the same saptial type.
         uri (str): The path to a given file/directory.
         options (dict, optional): A dictionary of different options that are used
-            when creating the RDD. This defaults to the None. If None, then the
+            when creating the RDD. This defaults to None. If None, then the
             RDD will be created using the default options for the given backend
             in GeoTrellis. Note: key values should be in camel case, as this is
             the style that is used in Scala.
+
+            These are the options when using the local file system or HDFS:
+                crs (str, optional): The CRS that the output tiles should be
+                    in. The CRS must be in the well-known name format. If None,
+                    then the CRS that the tiles were originally in will be used.
+                timeTag (str, optional): The name of the tiff tag that contains
+                    the time stamp for the tile. If None, then the default value
+                    is: 'TIFFTAG_DATETIME'.
+                timeFormat (str, optional): The pattern of the time stamp for
+                    java.time.format.DateTimeFormatter to parse. If None,
+                    then the default value is: 'yyyy:MM:dd HH:mm:ss".
+                maxTileSize (int, optional): The max size of each tile in the
+                    resulting RDD. If the size is smaller than a read in tile,
+                    then that tile will be broken into tiles of the specified
+                    size. If None, then the whole tile will be read in.
+                numPartitions (int, optional): The number of repartitions Spark
+                    will make when the data is repartitioned. If None, then the
+                    data will not be repartitioned.
+                chunkSize (int, optional): How many bytes of the file should be
+                    read in at a time. If None, then files will be read in 65536
+                    byte chunks.
+
+            S3 has the above options in addition to this:
+                s3Client (st, optional): Which S3Cleint to use when reading
+                    GeoTiffs. There are currently two options: 'default' and
+                    'mock'. If None, 'defualt' is used. Note: 'mock' should
+                    only be used in unit tests.
+
         **kwargs: Option parameters can also be entered as keyword arguements.
             Note: Defining both options and keyword arguements will cause the
             keyword arguements to be ignored in favor of options.
