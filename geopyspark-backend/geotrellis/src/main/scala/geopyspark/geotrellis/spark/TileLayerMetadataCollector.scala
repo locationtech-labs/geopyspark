@@ -79,4 +79,62 @@ object TileLayerMetadataCollector {
           pythonTileLayout,
           crsJavaMap)
     }
+
+  private def createPyramidCollection[
+    K: GetComponent[?, ProjectedExtent]: (? => TilerKeyMethods[K, K2]): AvroRecordCodec: ClassTag,
+    T <: CellGrid: AvroRecordCodec: ClassTag,
+    K2: Boundable: SpatialComponent: JsonFormat
+  ](
+    returnedRdd: RDD[Array[Byte]],
+    schemaJson: String,
+    crs: String,
+    tileSize: Int,
+    resolutionThreshold: Double,
+    maxZoom: Int,
+    crsJavaMap: java.util.Map[String, String]
+  ): (Int, String) = {
+    val rdd = PythonTranslator.fromPython[(K, T)](returnedRdd, Some(schemaJson))
+
+    val zoomedLayout= ZoomedLayoutScheme(CRS.fromName(crs), tileSize, resolutionThreshold)
+    val outputCRS: Option[CRS] = crsJavaMap.toCrs
+
+    val (zoomLevel, metadata) =
+      outputCRS match {
+        case None => TileLayerMetadata.fromRdd(rdd, zoomedLayout, maxZoom)
+        case Some(x) => TileLayerMetadata.fromRdd(rdd, x, zoomedLayout, maxZoom)
+      }
+
+    (zoomLevel, metadata.toJson.compactPrint)
+  }
+
+  def collectPythonPyramidMetadata(
+    keyType: String,
+    returnedRDD: RDD[Array[Byte]],
+    schemaJson: String,
+    crs: String,
+    tileSize: Int,
+    resolutionThreshold: Double,
+    maxZoom: Int,
+    crsJavaMap: java.util.Map[String, String]
+  ): (Int, String) =
+      keyType match {
+        case "ProjectedExtent" =>
+          createPyramidCollection[ProjectedExtent, MultibandTile, SpatialKey](
+            returnedRDD,
+            schemaJson,
+            crs,
+            tileSize,
+            resolutionThreshold,
+            maxZoom,
+            crsJavaMap)
+        case "TemporalProjectedExtent" =>
+          createPyramidCollection[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
+            returnedRDD,
+            schemaJson,
+            crs,
+            tileSize,
+            resolutionThreshold,
+            maxZoom,
+            crsJavaMap)
+      }
 }
