@@ -3,7 +3,7 @@ import unittest
 import rasterio
 
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-from geopyspark.geotrellis.tile_layer_methods import TileLayerMethods
+from geopyspark.geotrellis.tile_layer import collect_metadata, collect_pyramid_metadata
 from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.constants import SPATIAL
@@ -13,8 +13,6 @@ check_directory()
 
 
 class TileLayerMetadataTest(BaseTestClass):
-    metadata = TileLayerMethods(BaseTestClass.geopysc)
-
     dir_path = geotiff_test_path("all-ones.tif")
 
     rdd = geotiff_rdd(BaseTestClass.geopysc, SPATIAL, dir_path)
@@ -44,11 +42,11 @@ class TileLayerMetadataTest(BaseTestClass):
             self.assertEqual(actual, expected)
 
     def test_collection_avro_rdd(self):
-        result = self.metadata.collect_metadata(SPATIAL,
-                                                self.rdd,
-                                                self.extent,
-                                                self.layout,
-                                                epsg_code=self.value[0]['epsg'])
+        result = collect_metadata(BaseTestClass.geopysc,
+                                  SPATIAL,
+                                  self.rdd,
+                                  self.extent,
+                                  self.layout)
 
         expected = [[result['layoutDefinition']['extent'],
                      result['layoutDefinition']['tileLayout']],
@@ -56,16 +54,17 @@ class TileLayerMetadataTest(BaseTestClass):
 
         self.check_results(self.actual, expected)
 
+
     def test_collection_python_rdd(self):
         data = rasterio.open(self.dir_path)
         tile_dict = {'data': data.read(), 'no_data_value': data.nodata}
         rasterio_rdd = self.geopysc.pysc.parallelize([(self.projected_extent, tile_dict)])
 
-        result = self.metadata.collect_metadata(SPATIAL,
-                                                rasterio_rdd,
-                                                self.extent,
-                                                self.layout,
-                                                epsg_code=self.value[0]['epsg'])
+        result = collect_metadata(BaseTestClass.geopysc,
+                                  SPATIAL,
+                                  rasterio_rdd,
+                                  self.extent,
+                                  self.layout)
 
         expected = [[result['layoutDefinition']['extent'],
                      result['layoutDefinition']['tileLayout']],

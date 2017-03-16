@@ -3,7 +3,10 @@ import unittest
 import rasterio
 
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-from geopyspark.geotrellis.tile_layer_methods import TileLayerMethods
+from geopyspark.geotrellis.tile_layer import (collect_metadata,
+                                              cut_tiles,
+                                              merge_tiles,
+                                              tile_to_layout)
 from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.constants import SPATIAL
@@ -13,8 +16,6 @@ check_directory()
 
 
 class TileLayerMethodsTest(BaseTestClass):
-    methods = TileLayerMethods(BaseTestClass.geopysc)
-
     dir_path = geotiff_test_path("all-ones.tif")
     hadoop_rdd = geotiff_rdd(BaseTestClass.geopysc, SPATIAL, dir_path)
 
@@ -38,16 +39,17 @@ class TileLayerMethodsTest(BaseTestClass):
         "tileRows": _rows
     }
 
-    metadata = methods.collect_metadata(SPATIAL,
-                                        hadoop_rdd,
-                                        extent,
-                                        layout,
-                                        epsg_code=value[0]['epsg'])
+    metadata = collect_metadata(BaseTestClass.geopysc,
+                                SPATIAL,
+                                hadoop_rdd,
+                                extent,
+                                layout)
 
     def test_cut_tiles_hadoop(self):
-        result = self.methods.cut_tiles(SPATIAL,
-                                        self.hadoop_rdd,
-                                        self.metadata)
+        result = cut_tiles(BaseTestClass.geopysc,
+                           SPATIAL,
+                           self.hadoop_rdd,
+                           self.metadata)
 
         (key_bounds, tile) = result.collect()[0]
 
@@ -55,9 +57,10 @@ class TileLayerMethodsTest(BaseTestClass):
         self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_cut_tiles_rasterio(self):
-        result = self.methods.cut_tiles(SPATIAL,
-                                        self.rasterio_rdd,
-                                        self.metadata)
+        result = cut_tiles(BaseTestClass.geopysc,
+                           SPATIAL,
+                           self.rasterio_rdd,
+                           self.metadata)
 
         (key_bounds, tile) = result.collect()[0]
 
@@ -65,9 +68,10 @@ class TileLayerMethodsTest(BaseTestClass):
         self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_tile_to_layout_hadoop(self):
-        result = self.methods.tile_to_layout(SPATIAL,
-                                             self.hadoop_rdd,
-                                             self.metadata)
+        result = tile_to_layout(BaseTestClass.geopysc,
+                                SPATIAL,
+                                self.hadoop_rdd,
+                                self.metadata)
 
         (key_bounds, tile) = result.collect()[0]
 
@@ -75,9 +79,10 @@ class TileLayerMethodsTest(BaseTestClass):
         self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_tile_to_layout_rasterio(self):
-        result = self.methods.tile_to_layout(SPATIAL,
-                                             self.rasterio_rdd,
-                                             self.metadata)
+        result = tile_to_layout(BaseTestClass.geopysc,
+                                SPATIAL,
+                                self.rasterio_rdd,
+                                self.metadata)
 
         (key_bounds, tile) = result.collect()[0]
 
@@ -85,9 +90,10 @@ class TileLayerMethodsTest(BaseTestClass):
         self.assertTrue((self.value[1]['data'] == tile['data']).all())
 
     def test_merge(self):
-        result = self.methods.merge(SPATIAL,
-                                    self.rasterio_rdd,
-                                    self.hadoop_rdd)
+        result = merge_tiles(BaseTestClass.geopysc,
+                             SPATIAL,
+                             self.rasterio_rdd,
+                             self.hadoop_rdd)
 
         tile = result.collect()[0][1]
 
