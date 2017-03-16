@@ -3,141 +3,194 @@ import json
 from geopyspark.avroserializer import AvroSerializer
 
 
-class TileLayerMethods(object):
-    def __init__(self, geopysc):
-        self.geopysc = geopysc
+def _convert_to_java_rdd(geopysc, rdd_type, raster_rdd):
+    if isinstance(raster_rdd._jrdd_deserializer.serializer, AvroSerializer):
+        ser = raster_rdd._jrdd_deserializer.serializer
+        dumped = raster_rdd.map(lambda value: ser.dumps(value))
+        schema = raster_rdd._jrdd_deserializer.serializer.schema_string
+    else:
+        schema = geopysc.create_schema(rdd_type)
+        ser = geopysc.create_tuple_serializer(schema, value_type="Tile")
+        reserialized_rdd = raster_rdd._reserialize(ser)
 
-        self._metadata_wrapper = self.geopysc.tile_layer_metadata_collecter
-        self._tiler_wrapper = self.geopysc.tile_layer_methods
-        self._merge_wrapper = self.geopysc.tile_layer_merge
+        avro_ser = reserialized_rdd._jrdd_deserializer.serializer
+        dumped = reserialized_rdd.map(lambda x: avro_ser.dumps(x))
 
-    @staticmethod
-    def _map_outputs(key_type):
-        if key_type == "spatial":
-            key = "SpatialKey"
-        else:
-            key = "SpaceTimeKey"
+    return (dumped._to_java_object_rdd(), schema)
 
-        return key
+def collect_metadata(geopysc,
+                     rdd_type,
+                     raster_rdd,
+                     layout_extent,
+                     tile_layout,
+                     output_crs=None,
+                     **kwargs):
 
-    def _convert_to_java_rdd(self, key_type, rdd):
-        if isinstance(rdd._jrdd_deserializer.serializer, AvroSerializer):
-            ser = rdd._jrdd_deserializer.serializer
-            dumped = rdd.map(lambda value: ser.dumps(value))
-            schema = rdd._jrdd_deserializer.serializer.schema_string
-        else:
-            schema = self.geopysc.create_schema(key_type)
-            ser = self.geopysc.create_tuple_serializer(schema, value_type="Tile")
-            reserialized_rdd = rdd._reserialize(ser)
+    metadata_wrapper = geopysc.tile_layer_metadata_collecter
+    key = geopysc.map_key_input(rdd_type, False)
 
-            avro_ser = reserialized_rdd._jrdd_deserializer.serializer
-            dumped = reserialized_rdd.map(lambda x: avro_ser.dumps(x))
+    (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, raster_rdd)
 
-        return (dumped._to_java_object_rdd(), schema)
+    if output_crs:
+        output_crs = output_crs
+    elif kwargs:
+        output_crs = kwargs
+    else:
+        output_crs = {}
 
-    def collect_metadata(self,
-                         key_type,
-                         rdd,
-                         extent,
-                         tile_layout,
-                         proj_params=None,
-                         epsg_code=None,
-                         wkt_string=None):
+    metadata = metadata_wrapper.collectPythonMetadata(key,
+                                                      java_rdd.rdd(),
+                                                      schema,
+                                                      layout_extent,
+                                                      tile_layout,
+                                                      output_crs)
 
-        key = self.geopysc.map_key_input(key_type, False)
+    return json.loads(metadata)
 
-        (java_rdd, schema) = self._convert_to_java_rdd(key, rdd)
 
-        if proj_params:
-            output_crs = {"projParams": proj_params}
-        elif epsg_code:
-            if isinstance(epsg_code, int):
-                epsg_code = str(epsg_code)
-                output_crs = {"epsg": epsg_code}
-            elif wkt_string:
-                output_crs = {"wktString": wkt_string}
-            else:
-                output_crs = {}
+def collect_pyramid_metadata(geopysc,
+                             rdd_type,
+                             raster_rdd,
+                             crs,
+                             tile_size,
+                             resolution_threshold=0.1,
+                             max_zoom=12,
+                             output_crs=None,
+                             **kwargs):
 
-        metadata = self._metadata_wrapper.collectPythonMetadata(key,
-                                                                java_rdd.rdd(),
-                                                                schema,
-                                                                extent,
-                                                                tile_layout,
-                                                                output_crs)
+    metadata_wrapper = geopysc.tile_layer_metadata_collecter
+    key = geopysc.map_key_input(rdd_type, False)
 
-        return json.loads(metadata)
+    (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, raster_rdd)
 
-    def cut_tiles(self,
-                  key_type,
-                  rdd,
-                  tile_layer_metadata,
-                  resample_method=None):
+    if output_crs:
+        output_crs = output_crs
+    elif kwargs:
+        output_crs = kwargs
+    else:
+        output_crs = {}
 
-        key = self.geopysc.map_key_input(key_type, False)
+    result = metadata_wrapper.collectPythonPyramidMetadata(key,
+                                                           java_rdd.rdd(),
+                                                           schema,
+                                                           crs,
+                                                           tile_size,
+                                                           resolution_threshold,
+                                                           max_zoom,
+                                                           output_crs)
 
-        (java_rdd, schema) = self._convert_to_java_rdd(key, rdd)
+    return (result._1(), json.loads(result._2()))
 
-        if resample_method is None:
-            resample_dict = {}
-        else:
-            resample_dict = {"resampleMethod": resample_method}
+def cut_tiles(geopysc,
+              rdd_type,
+              raster_rdd,
+              tile_layer_metadata,
+              resample_method=None,
+              **kwargs):
 
-        result = self._tiler_wrapper.cutTiles(key,
-                                              java_rdd.rdd(),
-                                              schema,
-                                              json.dumps(tile_layer_metadata),
-                                              resample_dict)
+    tiler_wrapper = geopysc.tile_layer_methods
+    key = geopysc.map_key_input(rdd_type, False)
 
-        out_key = self._map_outputs(key_type)
+    (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, raster_rdd)
 
-        ser = self.geopysc.create_tuple_serializer(result._2(), value_type="Tile")
+    if resample_method:
+        resample_dict = {"resampleMethod": resample_method}
+    elif kwargs:
+        resample_dict = kwargs
+    else:
+        resample_dict = {}
 
-        return self.geopysc.create_python_rdd(result._1(), ser)
+    result = tiler_wrapper.cutTiles(key,
+                                    java_rdd.rdd(),
+                                    schema,
+                                    json.dumps(tile_layer_metadata),
+                                    resample_dict)
 
-    def tile_to_layout(self,
-                       key_type,
-                       rdd,
-                       tile_layer_metadata,
-                       resample_method=None):
+    ser = geopysc.create_tuple_serializer(result._2(), value_type="Tile")
 
-        key = self.geopysc.map_key_input(key_type, False)
+    return geopysc.create_python_rdd(result._1(), ser)
 
-        (java_rdd, schema) = self._convert_to_java_rdd(key, rdd)
+def tile_to_layout(geopysc,
+                   rdd_type,
+                   raster_rdd,
+                   tile_layer_metadata,
+                   resample_method=None,
+                   **kwargs):
 
-        if resample_method is None:
-            resample_dict = {}
-        else:
-            resample_dict = {"resampleMethod": resample_method}
+    tiler_wrapper = geopysc.tile_layer_methods
+    key = geopysc.map_key_input(rdd_type, False)
 
-        result = self._tiler_wrapper.tileToLayout(key,
-                                                  java_rdd.rdd(),
-                                                  schema,
-                                                  json.dumps(tile_layer_metadata),
-                                                  resample_dict)
+    (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, raster_rdd)
 
-        out_key = self._map_outputs(key_type)
+    if resample_method:
+        resample_dict = {"resampleMethod": resample_method}
+    elif kwargs:
+        resample_dict = kwargs
+    else:
+        resample_dict = {}
 
-        ser = self.geopysc.create_tuple_serializer(result._2(), value_type="Tile")
+    result = tiler_wrapper.tileToLayout(key,
+                                        java_rdd.rdd(),
+                                        schema,
+                                        json.dumps(tile_layer_metadata),
+                                        resample_dict)
 
-        return self.geopysc.create_python_rdd(result._1(), ser)
+    ser = geopysc.create_tuple_serializer(result._2(), value_type="Tile")
 
-    def merge(self,
-              key_type,
-              rdd_1,
-              rdd_2):
+    return geopysc.create_python_rdd(result._1(), ser)
 
-        key = self.geopysc.map_key_input(key_type, False)
+def merge_tiles(geopysc,
+                rdd_type,
+                rdd_1,
+                rdd_2):
 
-        (java_rdd_1, schema_1) = self._convert_to_java_rdd(key, rdd_1)
-        (java_rdd_2, schema_2) = self._convert_to_java_rdd(key, rdd_2)
+    merge_wrapper = geopysc.tile_layer_merge
+    key = geopysc.map_key_input(rdd_type, False)
 
-        result = self._merge_wrapper.merge(key,
-                                           java_rdd_1.rdd(),
-                                           schema_1,
-                                           java_rdd_2.rdd(),
-                                           schema_2)
+    (java_rdd_1, schema_1) = _convert_to_java_rdd(geopysc, key, rdd_1)
+    (java_rdd_2, schema_2) = _convert_to_java_rdd(geopysc, key, rdd_2)
 
-        ser = self.geopysc.create_tuple_serializer(result._2(), value_type="Tile")
+    result = merge_wrapper.merge(key,
+                                 java_rdd_1.rdd(),
+                                 schema_1,
+                                 java_rdd_2.rdd(),
+                                 schema_2)
 
-        return self.geopysc.create_python_rdd(result._1(), ser)
+    ser = geopysc.create_tuple_serializer(result._2(), value_type="Tile")
+
+    return geopysc.create_python_rdd(result._1(), ser)
+
+def pyramid(geopysc,
+            rdd_type,
+            base_raster_rdd,
+            layer_metadata,
+            tile_size,
+            start_zoom,
+            end_zoom,
+            resolution_threshold=0.1,
+            options=None,
+            **kwargs):
+
+    pyramider = geopysc.pyramid_builder
+    key = geopysc.map_key_input(rdd_type, False)
+
+    (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, base_raster_rdd)
+
+    if options:
+        options = options
+    elif kwargs:
+        options = kwargs
+    else:
+        options = {}
+
+    result = pyramider.buildPythonPyramid(key,
+                                          java_rdd,
+                                          schema,
+                                          layer_metadata,
+                                          tile_size,
+                                          resolution_threshold,
+                                          start_zoom,
+                                          end_zoom,
+                                          options)
+
+    return result
