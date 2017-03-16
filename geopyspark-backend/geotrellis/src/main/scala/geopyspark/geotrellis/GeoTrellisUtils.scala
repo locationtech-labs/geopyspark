@@ -56,9 +56,7 @@ object GeoTrellisUtils {
         None
       else
         m.head.asInstanceOf[(String, String)] match {
-          case ("projParams", projParams) => Some(CRS.fromString(projParams))
-          case ("epsg", epsgString) => Some(CRS.fromName(s"EPSG:$epsgString"))
-          case ("wktString", wktString) => Some(CRS.fromWKT(wktString))
+          case ("ouputCRS", name) => Some(CRS.fromName(name))
           case (k, _) => throw new Exception(s"Cannot create CRS from $k")
         }
   }
