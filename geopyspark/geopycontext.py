@@ -61,6 +61,10 @@ class GeoPyContext(object):
     def tile_layer_merge(self):
         return self._jvm.geopyspark.geotrellis.spark.merge.MergeMethodsWrapper
 
+    @property
+    def pyramid_builder(self):
+        return self._jvm.geopyspark.geotrellis.spark.pyramid.PyramidWrapper
+
     @staticmethod
     def map_key_input(key_type, is_boundable):
         if is_boundable:
