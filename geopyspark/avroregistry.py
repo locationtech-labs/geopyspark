@@ -7,7 +7,7 @@ class AvroRegistry(object):
     # DECODERS
 
     @staticmethod
-    def tile_decoder(schema_dict):
+    def _tile_decoder(schema_dict):
         cells = schema_dict['cells']
 
         if isinstance(cells, bytes):
@@ -16,22 +16,21 @@ class AvroRegistry(object):
         # cols and rows are opposte for GeoTrellis ArrayTiles and Numpy Arrays
         arr = np.array(cells).reshape(schema_dict['rows'], schema_dict['cols'])
 
-        if 'noDataValue' in schema_dict:
-            tile_dict = {'data': arr, 'no_data_value': schema_dict['noDataValue']}
-        else:
-            tile_dict = {'data': arr}
-
-        return tile_dict
+        return arr
 
     @classmethod
-    def multiband_decoder(cls, schema_dict):
-        bands = schema_dict['bands']
-        tile_dicts = [cls.tile_decoder(band) for band in bands]
+    def tile_decoder(cls, schema_dict):
+        if 'bands' not in schema_dict:
+            arr = [cls._tile_decoder(schema_dict)]
+            no_data = schema_dict.get('noDataValue')
+            tile = np.array(arr)
+        else:
+            bands = schema_dict['bands']
+            arrs = [cls._tile_decoder(band) for band in bands]
+            no_data = bands[0].get('noDataValue')
+            tile = np.array(arrs)
 
-        tiles = [tile['data'] for tile in tile_dicts]
-        no_data = tile_dicts[0]['no_data_value']
-
-        return {'data': np.array(tiles), 'no_data_value': no_data}
+        return {'data': tile, 'no_data_value': no_data}
 
     @staticmethod
     def tuple_decoder(schema_dict, key_decoder=None, value_decoder=None):
@@ -51,8 +50,6 @@ class AvroRegistry(object):
     def get_decoder(cls, name):
         if name == "Tile":
             return cls.tile_decoder
-        elif name == "MultibandTile":
-            return cls.multiband_decoder
         else:
             raise Exception("Could not find value type that matches", name)
 
@@ -75,20 +72,17 @@ class AvroRegistry(object):
     # ENCODERS
 
     @staticmethod
-    def tile_encoder(obj):
+    def _tile_encoder(obj):
         arr = obj['data']
 
-        if len(arr.shape) > 2:
-            (rows, cols) = (arr.shape[1], arr.shape[2])
-        else:
-            (rows, cols) = arr.shape
+        (rows, cols) = arr.shape
 
         if arr.dtype.name == 'int8' or arr.dtype.name == 'uint8':
             values = array.array('B', arr.flatten()).tostring()
         else:
             values = arr.flatten().tolist()
 
-        if 'no_data_value' in obj:
+        if obj['no_data_value'] is not None:
             datum = {
                 'cols': cols,
                 'rows': rows,
@@ -106,19 +100,18 @@ class AvroRegistry(object):
         return datum
 
     @classmethod
-    def multiband_encoder(cls, obj):
+    def tile_encoder(cls, obj):
+        if obj['data'].ndim == 2:
+            obj['data'] = np.expand_dims(obj['data'], 0)
+
+        band_count = obj['data'].shape[0]
 
         def create_dict(index):
             return {'data': obj['data'][index, :, :], 'no_data_value': obj['no_data_value']}
 
-        bands = obj['data'].shape[0]
-        tile_datums = [cls.tile_encoder(create_dict(x)) for x in range(bands)]
+        tile_datums = [cls._tile_encoder(create_dict(x)) for x in range(band_count)]
 
-        datum = {
-            'bands': tile_datums
-        }
-
-        return datum
+        return {'bands': tile_datums}
 
     @staticmethod
     def tuple_encoder(obj, key_encoder=None, value_encoder=None):
@@ -159,7 +152,5 @@ class AvroRegistry(object):
     def get_encoder(cls, name):
         if name == "Tile":
             return cls.tile_encoder
-        elif name == "MultibandTile":
-            return cls.multiband_encoder
         else:
             raise Exception("Could not find value type that matches", name)

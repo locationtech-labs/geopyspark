@@ -61,10 +61,21 @@ class KeyValueRecordSchemaTest(unittest.TestCase):
         encoded = self.rdd.map(lambda s: encoder(s))
         actual_kvs = encoded.collect()
 
+        encoded_tiles = [
+            {'bands':
+             [{'cells': bytearray([0, 1, 2, 3, 4, 5]), 'rows': 3, 'cols': 2, 'noDataValue': -128}]
+            },
+            {'bands':
+             [{'cells': bytearray([0, 1, 2, 3, 4, 5]), 'rows': 2, 'cols': 3, 'noDataValue': -128}]
+            },
+            {'bands':
+             [{'cells': bytearray([0, 1, 2, 3, 4, 5]), 'rows': 6, 'cols': 1, 'noDataValue': -128}]
+            }
+        ]
         encoded_tuples = [
-            {'_1': AvroRegistry.tile_encoder(self.arrs[0]), '_2': self.extents[0]},
-            {'_1': AvroRegistry.tile_encoder(self.arrs[1]), '_2': self.extents[1]},
-            {'_1': AvroRegistry.tile_encoder(self.arrs[2]), '_2': self.extents[2]}
+            {'_1': encoded_tiles[0], '_2': self.extents[0]},
+            {'_1': encoded_tiles[1], '_2': self.extents[1]},
+            {'_1': encoded_tiles[2], '_2': self.extents[2]}
         ]
 
         expected_kvs = [

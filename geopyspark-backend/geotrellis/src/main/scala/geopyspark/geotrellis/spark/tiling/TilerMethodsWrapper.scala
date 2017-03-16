@@ -61,32 +61,19 @@ object TilerMethodsWrapper {
 
   def cutTiles(
     keyType: String,
-    valueType: String,
     returnedRdd: RDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
     resampleMap: java.util.Map[String, String]
   ): (JavaRDD[Array[Byte]], String) =
-    (keyType, valueType) match {
-      case ("spatial", "singleband") =>
-        cutRDDTiles[ProjectedExtent, Tile, SpatialKey](
-          returnedRdd,
-          schema,
-          returnedMetadata,
-          resampleMap)
-      case ("spatial", "multiband") =>
+    keyType match {
+      case "ProjectedExtent" =>
         cutRDDTiles[ProjectedExtent, MultibandTile, SpatialKey](
           returnedRdd,
           schema,
           returnedMetadata,
           resampleMap)
-      case ("spacetime", "singleband") =>
-        cutRDDTiles[TemporalProjectedExtent, Tile, SpaceTimeKey](
-          returnedRdd,
-          schema,
-          returnedMetadata,
-          resampleMap)
-      case ("spacetime", "multiband") =>
+      case "TemporalProjectedExtent" =>
         cutRDDTiles[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
           returnedRdd,
           schema,
@@ -122,32 +109,19 @@ object TilerMethodsWrapper {
 
   def tileToLayout(
     keyType: String,
-    valueType: String,
     returnedRdd: RDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
     options: java.util.Map[String, Any]
   ): (JavaRDD[Array[Byte]], String) =
-    (keyType, valueType) match {
-      case ("spatial", "singleband") =>
-        toLayout[ProjectedExtent, Tile, SpatialKey](
-          returnedRdd,
-          schema,
-          returnedMetadata,
-          options)
-      case ("spatial", "multiband") =>
+    keyType match {
+      case "ProjectedExtent" =>
         toLayout[ProjectedExtent, MultibandTile, SpatialKey](
           returnedRdd,
           schema,
           returnedMetadata,
           options)
-      case ("spacetime", "singleband") =>
-        toLayout[TemporalProjectedExtent, Tile, SpaceTimeKey](
-          returnedRdd,
-          schema,
-          returnedMetadata,
-          options)
-      case ("spacetime", "multiband") =>
+      case "TemporalProjectedExtent" =>
         toLayout[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
           returnedRdd,
           schema,

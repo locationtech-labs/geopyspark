@@ -35,9 +35,9 @@ class TupleSchemaTest(BaseTestClass):
     ]
 
     arrs = [
-        {'data': np.array([0, 1, 2, 3, 4, 5]).reshape(3, 2), 'no_data_value': -2147483648},
-        {'data': np.array([0, 1, 2, 3, 4, 5]).reshape(2, 3), 'no_data_value': -2147483648},
-        {'data': np.array([0, 1, 2, 3, 4, 5]).reshape(6, 1), 'no_data_value': -2147483648}
+        {'data': np.array([0, 1, 2, 3, 4, 5]).reshape(1, 3, 2), 'no_data_value': -2147483648},
+        {'data': np.array([0, 1, 2, 3, 4, 5]).reshape(1, 2, 3), 'no_data_value': -2147483648},
+        {'data': np.array([0, 1, 2, 3, 4, 5]).reshape(1, 6, 1), 'no_data_value': -2147483648}
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()

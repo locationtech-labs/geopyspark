@@ -8,6 +8,7 @@ import geotrellis.spark.io.cassandra._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.hbase._
+import geotrellis.spark.io.json._
 import geotrellis.spark.io.s3._
 import geotrellis.vector._
 import geotrellis.vector.io.wkt.WKT
@@ -15,6 +16,8 @@ import geotrellis.vector.io.wkt.WKT
 import org.apache.spark._
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd.RDD
+
+import spray.json._
 
 import java.time.ZonedDateTime
 import java.util.ArrayList
@@ -30,13 +33,11 @@ import geopyspark.geotrellis.PythonTranslator
 abstract class LayerReaderWrapper {
   def read(
     keyType: String,
-    valueType: String,
     layerName: String,
     zoom: Int): (JavaRDD[Array[Byte]], String)
 
   def query(
     keyType: String,
-    valueType: String,
     layerName: String,
     zoom: Int,
     queryGeometryString: String,
@@ -55,30 +56,36 @@ abstract class FilteringLayerReaderWrapper()
   def attributeStore: AttributeStore
   def layerReader: FilteringLayerReader[LayerId]
 
+  def getValueClass(id: LayerId): String =
+    attributeStore.readHeader[LayerHeader](id).valueClass
+
+  def tileToMultiband[K](rdd: RDD[(K, Tile)]): RDD[(K, MultibandTile)] =
+    rdd.map{ x => (x._1, MultibandTile(x._2)) }
+
   def read(
     keyType: String,
-    valueType: String,
     layerName: String,
     zoom: Int
   ): (JavaRDD[Array[Byte]], String) = {
     val id = LayerId(layerName, zoom)
+    val valueClass = getValueClass(id)
 
-    (keyType, valueType) match {
-      case ("SpatialKey", "Tile") => {
-        val results = layerReader.read[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](id)
-        PythonTranslator.toPython(results)
+    (keyType, valueClass) match {
+      case ("SpatialKey", "geotrellis.raster.Tile") => {
+        val result = layerReader.read[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](id)
+        PythonTranslator.toPython(tileToMultiband[SpatialKey](result))
       }
-      case ("SpatialKey", "MultibandTile") => {
-        val results = layerReader.read[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](id)
-        PythonTranslator.toPython(results)
+      case ("SpatialKey", "geotrellis.raster.MultibandTile") => {
+        val result = layerReader.read[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](id)
+        PythonTranslator.toPython(result)
       }
-      case ("SpaceTimeKey", "Tile") => {
-        val results = layerReader.read[SpaceTimeKey, Tile, TileLayerMetadata[SpaceTimeKey]](id)
-        PythonTranslator.toPython(results)
+      case ("SpaceTimeKey", "geotrellis.raster.Tile") => {
+        val result = layerReader.read[SpaceTimeKey, Tile, TileLayerMetadata[SpaceTimeKey]](id)
+        PythonTranslator.toPython(tileToMultiband[SpaceTimeKey](result))
       }
-      case ("SpaceTimeKey", "MultibandTile") => {
-        val results = layerReader.read[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id)
-        PythonTranslator.toPython(results)
+      case ("SpaceTimeKey", "geotrellis.raster.MultibandTile") => {
+        val result = layerReader.read[SpaceTimeKey, Tile, TileLayerMetadata[SpaceTimeKey]](id)
+        PythonTranslator.toPython(result)
       }
     }
   }
@@ -121,16 +128,16 @@ abstract class FilteringLayerReaderWrapper()
 
   def query(
     keyType: String,
-    valueType: String,
     layerName: String,
     zoom: Int,
     queryGeometryString: String,
     queryIntervalStrings: ArrayList[String]
   ): (JavaRDD[Array[Byte]], String) = {
     val id = LayerId(layerName, zoom)
+    val valueClass = getValueClass(id)
 
-    (keyType, valueType) match {
-      case ("SpatialKey", "Tile") => {
+    (keyType, valueClass) match {
+      case ("SpatialKey", "geotrellis.raster.Tile") => {
         val spatialQuery = getSpatialQuery(queryGeometryString)
 
         val layer = layerReader.query[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](id)
@@ -139,11 +146,12 @@ abstract class FilteringLayerReaderWrapper()
           case Some(polygon: Polygon) => layer.where(Intersects(polygon))
           case Some(multi: MultiPolygon) => layer.where(Intersects(multi))
           case None => layer
-          case _ => throw new Exception(s"Unsupported Geometry $spatialQuery")
+          case _ => throw new Exception("Unsupported Geometry")
         }
-        PythonTranslator.toPython(query.result)
+
+        PythonTranslator.toPython(tileToMultiband[SpatialKey](query.result))
       }
-      case("SpatialKey", "MultibandTile") => {
+      case ("SpatialKey", "geotrellis.raster.MultibandTile") => {
         val spatialQuery = getSpatialQuery(queryGeometryString)
 
         val layer = layerReader.query[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](id)
@@ -156,7 +164,7 @@ abstract class FilteringLayerReaderWrapper()
 
         PythonTranslator.toPython(query.result)
       }
-      case("SpaceTimeKey", "Tile") => {
+      case ("SpaceTimeKey", "geotrellis.raster.Tile") => {
         val spatialQuery = getSpatialQuery(queryGeometryString)
         val temporalQuery = getTemporalQuery(queryIntervalStrings)
 
@@ -171,14 +179,16 @@ abstract class FilteringLayerReaderWrapper()
           case Some(q) => query1.where(q)
           case None => query1
         }
-        PythonTranslator.toPython(query2.result)
+        PythonTranslator.toPython(tileToMultiband[SpaceTimeKey](query2.result))
       }
-      case("SpaceTimeKey", "MultibandTile") => {
+
+      case ("SpaceTimeKey", "geotrellis.raster.MultibandTile") => {
         val spatialQuery = getSpatialQuery(queryGeometryString)
         val temporalQuery = getTemporalQuery(queryIntervalStrings)
 
         val layer = layerReader.query[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id)
         val query1 = spatialQuery match {
+          case Some(polygon: Polygon) => layer.where(Intersects(polygon))
           case Some(multi: MultiPolygon) => layer.where(Intersects(multi))
           case None => layer
           case _ => throw new Exception("Unsupported Geometry")

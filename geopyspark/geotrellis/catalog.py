@@ -15,14 +15,12 @@ class _Catalog(object):
 
     def _read(self,
               key_type,
-              value_type,
               layer_name,
               layer_zoom):
 
         key = self.geopysc.map_key_input(key_type, True)
-        value = self.geopysc.map_value_input(value_type)
 
-        tup = self.reader.read(key, value, layer_name, layer_zoom)
+        tup = self.reader.read(key, layer_name, layer_zoom)
         schema = tup._2()
 
         if key_type == "spatial":
@@ -31,27 +29,26 @@ class _Catalog(object):
             jmetadata = self.store.metadataSpaceTime(layer_name, layer_zoom)
 
         metadata = json.loads(jmetadata)
-        rdd = self.geopysc.avro_tuple_rdd_to_python(key, value, tup._1(), schema)
+        ser = self.geopysc.create_tuple_serializer(schema, value_type="Tile")
+
+        rdd = self.geopysc.create_python_rdd(tup._1(), ser)
 
         return (rdd, schema, metadata)
 
     def _query(self,
                key_type,
-               value_type,
                layer_name,
                layer_zoom,
                intersects,
                time_intervals):
 
         key = self.geopysc.map_key_input(key_type, True)
-        value = self.geopysc.map_value_input(value_type)
 
         if time_intervals is None:
             time_intervals = []
 
         if isinstance(intersects, Polygon):
             tup = self.reader.query(key,
-                                    value,
                                     layer_name,
                                     layer_zoom,
                                     dumps(intersects),
@@ -59,7 +56,6 @@ class _Catalog(object):
 
         elif isinstance(intersects, str):
             tup = self.reader.query(key,
-                                    value,
                                     layer_name,
                                     layer_zoom,
                                     intersects,
@@ -75,13 +71,14 @@ class _Catalog(object):
             jmetadata = self.store.metadataSpaceTime(layer_name, layer_zoom)
 
         metadata = json.loads(jmetadata)
-        rdd = self.geopysc.avro_tuple_rdd_to_python(key, value, tup._1(), schema)
+        ser = self.geopysc.create_tuple_serializer(schema, value_type="Tile")
+
+        rdd = self.geopysc.create_python_rdd(tup._1(), ser)
 
         return (rdd, schema, metadata)
 
     def _write(self,
                key_type,
-               value_type,
                layer_name,
                layer_zoom,
                rdd,
@@ -90,7 +87,6 @@ class _Catalog(object):
                index_strategy):
 
         key = self.geopysc.map_key_input(key_type, True)
-        value = self.geopysc.map_value_input(value_type)
 
         schema = metadata.schema
 
@@ -98,7 +94,6 @@ class _Catalog(object):
             time_unit = ""
 
         self.writer.write(key,
-                          value,
                           layer_name,
                           layer_zoom,
                           rdd._jrdd,
@@ -137,7 +132,6 @@ class HadoopCatalog(_Catalog):
 
     def read(self,
              key_type,
-             value_type,
              uri,
              layer_name,
              layer_zoom):
@@ -145,12 +139,10 @@ class HadoopCatalog(_Catalog):
         self._construct_catalog(uri)
 
         return self._read(key_type,
-                          value_type,
                           layer_name,
                           layer_zoom)
     def query(self,
               key_type,
-              value_type,
               uri,
               layer_name,
               layer_zoom,
@@ -160,7 +152,6 @@ class HadoopCatalog(_Catalog):
         self._construct_catalog(uri)
 
         return self._query(key_type,
-                           value_type,
                            layer_name,
                            layer_zoom,
                            intersects,
@@ -168,7 +159,6 @@ class HadoopCatalog(_Catalog):
 
     def write(self,
               key_type,
-              value_type,
               layer_name,
               layer_zoom,
               rdd,
@@ -181,7 +171,6 @@ class HadoopCatalog(_Catalog):
             self._construct_catalog(uri)
 
         self._write(key_type,
-                    value_type,
                     layer_name,
                     layer_zoom,
                     rdd,
@@ -226,7 +215,6 @@ class S3Catalog(_Catalog):
 
     def read(self,
              key_type,
-             value_type,
              bucket,
              prefix,
              layer_name,
@@ -235,12 +223,10 @@ class S3Catalog(_Catalog):
         self._construct_catalog(bucket, prefix)
 
         return self._read(key_type,
-                          value_type,
                           layer_name,
                           layer_zoom)
     def query(self,
               key_type,
-              value_type,
               bucket,
               prefix,
               layer_name,
@@ -251,7 +237,6 @@ class S3Catalog(_Catalog):
         self._construct_catalog(bucket, prefix)
 
         return self._query(key_type,
-                           value_type,
                            layer_name,
                            layer_zoom,
                            intersects,
@@ -259,7 +244,6 @@ class S3Catalog(_Catalog):
 
     def write(self,
               key_type,
-              value_type,
               layer_name,
               layer_zoom,
               rdd,
@@ -273,7 +257,6 @@ class S3Catalog(_Catalog):
             self._construct_catalog(bucket, prefix)
 
         self._write(key_type,
-                    value_type,
                     layer_name,
                     layer_zoom,
                     rdd,
@@ -310,7 +293,6 @@ class FileCatalog(_Catalog):
 
     def read(self,
              key_type,
-             value_type,
              path,
              layer_name,
              layer_zoom):
@@ -318,13 +300,11 @@ class FileCatalog(_Catalog):
         self._construct_catalog(path)
 
         return self._read(key_type,
-                          value_type,
                           layer_name,
                           layer_zoom)
 
     def query(self,
               key_type,
-              value_type,
               path,
               layer_name,
               layer_zoom,
@@ -334,7 +314,6 @@ class FileCatalog(_Catalog):
         self._construct_catalog(path)
 
         return self._query(key_type,
-                           value_type,
                            layer_name,
                            layer_zoom,
                            intersects,
@@ -342,7 +321,6 @@ class FileCatalog(_Catalog):
 
     def write(self,
               key_type,
-              value_type,
               layer_name,
               layer_zoom,
               rdd,
@@ -355,7 +333,6 @@ class FileCatalog(_Catalog):
             self._construct_catalog(path)
 
         self._write(key_type,
-                    value_type,
                     layer_name,
                     layer_zoom,
                     rdd,
@@ -441,7 +418,6 @@ class CassandraCatalog(_Catalog):
 
     def read(self,
              key_type,
-             value_type,
              attribute_key_space,
              attribute_table,
              layer_name,
@@ -450,13 +426,11 @@ class CassandraCatalog(_Catalog):
         self._construct_catalog(attribute_key_space, attribute_table)
 
         return self._read(key_type,
-                          value_type,
                           layer_name,
                           layer_zoom)
 
     def query(self,
               key_type,
-              value_type,
               attribute_key_space,
               attribute_table,
               layer_name,
@@ -467,7 +441,6 @@ class CassandraCatalog(_Catalog):
         self._construct_catalog(attribute_key_space, attribute_table)
 
         return self._query(key_type,
-                           value_type,
                            layer_name,
                            layer_zoom,
                            intersects,
@@ -475,7 +448,6 @@ class CassandraCatalog(_Catalog):
 
     def write(self,
               key_type,
-              value_type,
               layer_name,
               layer_zoom,
               rdd,
@@ -489,7 +461,6 @@ class CassandraCatalog(_Catalog):
             self._construct_catalog(attribute_key_space, attribute_table)
 
         self._write(key_type,
-                    value_type,
                     layer_name,
                     layer_zoom,
                     rdd,
@@ -546,7 +517,6 @@ class HBaseCatalog(_Catalog):
 
     def read(self,
              key_type,
-             value_type,
              attribute_table,
              layer_name,
              layer_zoom):
@@ -554,13 +524,11 @@ class HBaseCatalog(_Catalog):
         self._construct_catalog(attribute_table)
 
         return self._read(key_type,
-                          value_type,
                           layer_name,
                           layer_zoom)
 
     def query(self,
               key_type,
-              value_type,
               attribute_table,
               layer_name,
               layer_zoom,
@@ -570,7 +538,6 @@ class HBaseCatalog(_Catalog):
         self._construct_catalog(attribute_table)
 
         return self._query(key_type,
-                           value_type,
                            layer_name,
                            layer_zoom,
                            intersects,
@@ -578,7 +545,6 @@ class HBaseCatalog(_Catalog):
 
     def write(self,
               key_type,
-              value_type,
               layer_name,
               layer_zoom,
               rdd,
@@ -591,7 +557,6 @@ class HBaseCatalog(_Catalog):
             self._construct_catalog(attribute_table)
 
         self._write(key_type,
-                    value_type,
                     layer_name,
                     layer_zoom,
                     rdd,
@@ -652,7 +617,6 @@ class AccumuloCatalog(_Catalog):
 
     def read(self,
              key_type,
-             value_type,
              attribute_table,
              layer_name,
              layer_zoom):
@@ -660,13 +624,11 @@ class AccumuloCatalog(_Catalog):
         self._construct_catalog(attribute_table)
 
         return self._read(key_type,
-                          value_type,
                           layer_name,
                           layer_zoom)
 
     def query(self,
               key_type,
-              value_type,
               attribute_table,
               layer_name,
               layer_zoom,
@@ -676,7 +638,6 @@ class AccumuloCatalog(_Catalog):
         self._construct_catalog(attribute_table)
 
         return self._query(key_type,
-                           value_type,
                            layer_name,
                            layer_zoom,
                            intersects,
@@ -684,7 +645,6 @@ class AccumuloCatalog(_Catalog):
 
     def write(self,
               key_type,
-              value_type,
               layer_name,
               layer_zoom,
               rdd,
@@ -697,7 +657,6 @@ class AccumuloCatalog(_Catalog):
             self._construct_catalog(attribute_table)
 
         self._write(key_type,
-                    value_type,
                     layer_name,
                     layer_zoom,
                     rdd,

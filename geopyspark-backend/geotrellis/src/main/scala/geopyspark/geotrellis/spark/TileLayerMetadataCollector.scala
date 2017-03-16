@@ -56,7 +56,6 @@ object TileLayerMetadataCollector {
   }
 
   def collectPythonMetadata(
-    valueType: String,
     keyType: String,
     returnedRdd: RDD[Array[Byte]],
     schemaJson: String,
@@ -64,29 +63,15 @@ object TileLayerMetadataCollector {
     pythonTileLayout: java.util.Map[String, Int],
     crsJavaMap: java.util.Map[String, String]
   ): String =
-    (valueType, keyType) match {
-      case ("spatial", "singleband") =>
-        createCollection[ProjectedExtent, Tile, SpatialKey](
-          returnedRdd,
-          schemaJson,
-          pythonExtent,
-          pythonTileLayout,
-          crsJavaMap)
-      case ("spatial", "multiband") =>
+    keyType match {
+      case "ProjectedExtent" =>
         createCollection[ProjectedExtent, MultibandTile, SpatialKey](
           returnedRdd,
           schemaJson,
           pythonExtent,
           pythonTileLayout,
           crsJavaMap)
-      case ("spacetime", "singleband") =>
-        createCollection[TemporalProjectedExtent, Tile, SpaceTimeKey](
-          returnedRdd,
-          schemaJson,
-          pythonExtent,
-          pythonTileLayout,
-          crsJavaMap)
-      case ("spacetime", "multiband") =>
+      case "TemporalProjectedExtent" =>
         createCollection[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
           returnedRdd,
           schemaJson,

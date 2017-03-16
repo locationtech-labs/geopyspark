@@ -19,13 +19,13 @@ class TileLayerMetadataTest(BaseTestClass):
     dir_path = geotiff_test_path("all-ones.tif")
     options = {'maxTileSize': 256}
 
-    rdd = hadoop_geotiff.get_rdd(SPATIAL, "singleband", dir_path)
+    rdd = hadoop_geotiff.get_rdd(SPATIAL, dir_path)
     value = rdd.collect()[0]
 
     projected_extent = value[0]
     extent = projected_extent['extent']
 
-    (rows, cols) = value[1]['data'].shape
+    (_, rows, cols) = value[1]['data'].shape
 
     layout = {
         "layoutCols": 1,
@@ -47,7 +47,6 @@ class TileLayerMetadataTest(BaseTestClass):
 
     def test_collection_avro_rdd(self):
         result = self.metadata.collect_metadata(SPATIAL,
-                                                "singleband",
                                                 self.rdd,
                                                 self.extent,
                                                 self.layout,
@@ -65,7 +64,6 @@ class TileLayerMetadataTest(BaseTestClass):
         rasterio_rdd = self.geopysc.pysc.parallelize([(self.projected_extent, tile_dict)])
 
         result = self.metadata.collect_metadata(SPATIAL,
-                                                "singleband",
                                                 rasterio_rdd,
                                                 self.extent,
                                                 self.layout,

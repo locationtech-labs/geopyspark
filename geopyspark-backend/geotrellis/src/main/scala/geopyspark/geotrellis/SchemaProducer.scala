@@ -7,24 +7,16 @@ import geotrellis.spark.io.avro._
 
 
 object SchemaProducer {
-  def getSchema(keyType: String, valueType: String): String =
-    (keyType, valueType) match {
-      case ("ProjectedExtent", "Tile") =>
-        implicitly[AvroRecordCodec[(ProjectedExtent, Tile)]].schema.toString
-      case ("ProjectedExtent", "MultibandTile") =>
+  def getSchema(keyType: String): String =
+    keyType match {
+      case "ProjectedExtent" =>
         implicitly[AvroRecordCodec[(ProjectedExtent, MultibandTile)]].schema.toString
-      case ("TemporalProjectedExtent", "Tile") =>
-        implicitly[AvroRecordCodec[(TemporalProjectedExtent, Tile)]].schema.toString
-      case ("TemporalProjectedExtent", "MultibandTile") =>
+      case "TemporalProjectedExtent" =>
         implicitly[AvroRecordCodec[(TemporalProjectedExtent, MultibandTile)]].schema.toString
 
-      case ("SpatialKey", "Tile") =>
-        implicitly[AvroRecordCodec[(SpatialKey, Tile)]].schema.toString
-      case ("SpatialKey", "MultibandTile") =>
+      case "SpatialKey" =>
         implicitly[AvroRecordCodec[(SpatialKey, MultibandTile)]].schema.toString
-      case ("SpaceTimeKey", "Tile") =>
-        implicitly[AvroRecordCodec[(SpaceTimeKey, Tile)]].schema.toString
-      case ("SpaceTimeKey", "MultibandTile") =>
+      case "SpaceTimeKey" =>
         implicitly[AvroRecordCodec[(SpaceTimeKey, MultibandTile)]].schema.toString
     }
 }
