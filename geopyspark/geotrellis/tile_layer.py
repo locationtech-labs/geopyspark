@@ -172,7 +172,7 @@ def pyramid(geopysc,
             **kwargs):
 
     pyramider = geopysc.pyramid_builder
-    key = geopysc.map_key_input(rdd_type, False)
+    key = geopysc.map_key_input(rdd_type, True)
 
     (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, base_raster_rdd)
 
@@ -184,13 +184,20 @@ def pyramid(geopysc,
         options = {}
 
     result = pyramider.buildPythonPyramid(key,
-                                          java_rdd,
+                                          java_rdd.rdd(),
                                           schema,
-                                          layer_metadata,
+                                          json.dumps(layer_metadata),
                                           tile_size,
                                           resolution_threshold,
                                           start_zoom,
                                           end_zoom,
                                           options)
 
-    return result
+    def formatter(x):
+        (rdd, schema) = (x._2()._1(), x._2()._2())
+        ser = geopysc.create_tuple_serializer(schema, value_type="Tile")
+        returned_rdd = geopysc.create_python_rdd(rdd, ser)
+
+        return (x._1(), returned_rdd, json.loads(x._3()))
+
+    return [formatter(x) for x in result]
