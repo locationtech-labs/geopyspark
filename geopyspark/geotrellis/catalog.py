@@ -1,665 +1,232 @@
 import json
+import re
 
 from shapely.geometry import Polygon
 from shapely.wkt import dumps
+from urllib.parse import urlparse
 
 
-class _Catalog(object):
-
-    def __init__(self, geopysc):
+class Catalog(object):
+    def __init__(self, geopysc, options=None, **kwargs):
         self.geopysc = geopysc
+
+        self.uri = None
 
         self.store = None
         self.reader = None
         self.writer = None
 
-    def _read(self,
-              key_type,
-              layer_name,
-              layer_zoom):
-
-        key = self.geopysc.map_key_input(key_type, True)
-
-        tup = self.reader.read(key, layer_name, layer_zoom)
-        schema = tup._2()
-
-        if key_type == "spatial":
-            jmetadata = self.store.metadataSpatial(layer_name, layer_zoom)
+        if options:
+            self.options = options
+        elif kwargs:
+            self.options = kwargs
         else:
-            jmetadata = self.store.metadataSpaceTime(layer_name, layer_zoom)
-
-        metadata = json.loads(jmetadata)
-        ser = self.geopysc.create_tuple_serializer(schema, value_type="Tile")
-
-        rdd = self.geopysc.create_python_rdd(tup._1(), ser)
-
-        return (rdd, schema, metadata)
-
-    def _query(self,
-               key_type,
-               layer_name,
-               layer_zoom,
-               intersects,
-               time_intervals):
-
-        key = self.geopysc.map_key_input(key_type, True)
-
-        if time_intervals is None:
-            time_intervals = []
-
-        if isinstance(intersects, Polygon):
-            tup = self.reader.query(key,
-                                    layer_name,
-                                    layer_zoom,
-                                    dumps(intersects),
-                                    time_intervals)
-
-        elif isinstance(intersects, str):
-            tup = self.reader.query(key,
-                                    layer_name,
-                                    layer_zoom,
-                                    intersects,
-                                    time_intervals)
-        else:
-            raise Exception("Could not query intersection", intersects)
-
-        schema = tup._2()
-
-        if key_type == "spatial":
-            jmetadata = self.store.metadataSpatial(layer_name, layer_zoom)
-        else:
-            jmetadata = self.store.metadataSpaceTime(layer_name, layer_zoom)
-
-        metadata = json.loads(jmetadata)
-        ser = self.geopysc.create_tuple_serializer(schema, value_type="Tile")
-
-        rdd = self.geopysc.create_python_rdd(tup._1(), ser)
-
-        return (rdd, schema, metadata)
-
-    def _write(self,
-               key_type,
-               layer_name,
-               layer_zoom,
-               rdd,
-               metadata,
-               time_unit,
-               index_strategy):
-
-        key = self.geopysc.map_key_input(key_type, True)
-
-        schema = metadata.schema
-
-        if not time_unit:
-            time_unit = ""
-
-        self.writer.write(key,
-                          layer_name,
-                          layer_zoom,
-                          rdd._jrdd,
-                          json.dumps(metadata),
-                          schema,
-                          time_unit,
-                          index_strategy)
-
-
-class HadoopCatalog(_Catalog):
-
-    __slots__ = ["geopysc",
-                 "store",
-                 "reader",
-                 "writer",
-                 "uri"]
-
-    def __init__(self, geopysc):
-
-        super().__init__(geopysc)
-        self.geopysc = geopysc
-
-        self.uri = None
+            self.options = {}
 
     def _construct_catalog(self, new_uri):
         if new_uri != self.uri and new_uri is not None:
             self.uri = new_uri
 
-            self.store = self.geopysc.store_factory.buildHadoop(self.uri)
+            parsed_uri = urlparse(self.uri)
+            backend = parsed_uri.scheme
 
-            self.reader = \
-                    self.geopysc.reader_factory.buildHadoop(self.store,
+            if backend == 'hdfs':
+                self.store = self.geopysc.store_factory.buildHadoop(self.uri)
+
+                self.reader = \
+                        self.geopysc.reader_factory.buildHadoop(self.store,
+                                                                self.geopysc.sc)
+                self.writer = \
+                        self.geopysc.writer_factory.buildHadoop(self.store)
+
+            elif backend == 'file':
+                self.store = self.geopysc.store_factory.buildFile(self.uri)
+
+                self.reader = \
+                        self.geopysc.reader_factory.buildFile(self.store,
+                                                              self.geopysc.sc)
+                self.writer = \
+                        self.geopysc.writer_factory.buildFile(self.store)
+
+            elif backend == 's3':
+                self.store = self.geopysc.store_factory.buildS3(parsed_uri.netloc,
+                                                                parsed_uri.path[1:])
+
+                self.reader = \
+                        self.geopysc.reader_factory.buildS3(self.store,
                                                             self.geopysc.sc)
-            self.writer = \
-                    self.geopysc.writer_factory.buildHadoop(self.store)
 
-    def read(self,
-             key_type,
-             uri,
-             layer_name,
-             layer_zoom):
+                self.writer = self.geopysc.writer_factory.buildS3(self.store)
 
-        self._construct_catalog(uri)
+            elif backend == 'cassandra':
+                parameters = parsed_uri.query.split('&')
+                parameter_dict = {}
 
-        return self._read(key_type,
-                          layer_name,
-                          layer_zoom)
-    def query(self,
-              key_type,
-              uri,
-              layer_name,
-              layer_zoom,
-              intersects,
-              time_intervals=None):
+                for param in parameters:
+                    split_param = param.split('=', 1)
+                    parameter_dict[split_param[0]] = split_param[1]
 
-        self._construct_catalog(uri)
+                self.store = self.geopysc.store_factory.buildCassandra(
+                    parameter_dict['host'],
+                    parameter_dict['username'],
+                    parameter_dict['password'],
+                    parameter_dict['keyspace'],
+                    parameter_dict['table'],
+                    self.options)
 
-        return self._query(key_type,
-                           layer_name,
-                           layer_zoom,
-                           intersects,
-                           time_intervals)
+                self.reader = \
+                        self.geopysc.reader_factory.buildCassandra(self.store,
+                                                                   self.geopysc.sc)
 
-    def write(self,
-              key_type,
-              layer_name,
-              layer_zoom,
-              rdd,
-              metadata,
-              index_strategy="zorder",
-              time_unit=None,
-              uri=None):
+                self.writer = \
+                        self.geopysc.writer_factory.buildCassandra(self.store,
+                                                                   parameter_dict['keyspace'],
+                                                                   parameter_dict['table'])
 
-        if uri is not None:
-            self._construct_catalog(uri)
+            elif backend == 'hbase':
 
-        self._write(key_type,
-                    layer_name,
-                    layer_zoom,
-                    rdd,
-                    metadata,
-                    time_unit,
-                    index_strategy)
+                # The assumed uri looks like: hbase://zoo1, zoo2, ..., zooN: port/table
+                (zookeepers, port) = parsed_uri.netloc.split(':')
+                table = parsed_uri.path
+
+                if 'master' in self.options:
+                    master = self.options['master']
+                else:
+                    master = ""
 
 
-class S3Catalog(_Catalog):
-
-    __slots__ = ["geopysc",
-                 "store",
-                 "reader",
-                 "writer",
-                 "bucket",
-                 "prefix"]
-
-    def __init__(self, geopysc):
-
-        super().__init__(geopysc)
-        self.geopysc = geopysc
-
-        self.bucket = None
-        self.prefix = None
-
-    def _construct_catalog(self, new_bucket, new_prefix):
-        bucket = new_bucket != self.bucket and new_bucket is not None
-        prefix = new_prefix != self.prefix and new_prefix is not None
-
-        if bucket or prefix:
-            self.bucket = new_bucket
-            self.prefix = new_prefix
-
-            self.store = self.geopysc.store_factory.buildS3(self.bucket,
-                                                            self.prefix)
-
-            self.reader = \
-                    self.geopysc.reader_factory.buildS3(self.store,
-                                                        self.geopysc.sc)
-
-            self.writer = self.geopysc.writer_factory.buildS3(self.store)
-
-    def read(self,
-             key_type,
-             bucket,
-             prefix,
-             layer_name,
-             layer_zoom):
-
-        self._construct_catalog(bucket, prefix)
-
-        return self._read(key_type,
-                          layer_name,
-                          layer_zoom)
-    def query(self,
-              key_type,
-              bucket,
-              prefix,
-              layer_name,
-              layer_zoom,
-              intersects,
-              time_intervals=None):
-
-        self._construct_catalog(bucket, prefix)
-
-        return self._query(key_type,
-                           layer_name,
-                           layer_zoom,
-                           intersects,
-                           time_intervals)
-
-    def write(self,
-              key_type,
-              layer_name,
-              layer_zoom,
-              rdd,
-              metadata,
-              index_strategy="zorder",
-              time_unit=None,
-              bucket=None,
-              prefix=None):
-
-        if bucket is not None or prefix is not None:
-            self._construct_catalog(bucket, prefix)
-
-        self._write(key_type,
-                    layer_name,
-                    layer_zoom,
-                    rdd,
-                    metadata,
-                    time_unit,
-                    index_strategy)
-
-
-class FileCatalog(_Catalog):
-
-    __slots__ = ["geopysc",
-                 "store",
-                 "reader",
-                 "writer",
-                 "path"]
-
-    def __init__(self, geopysc):
-
-        super().__init__(geopysc)
-        self.geopysc = geopysc
-        self.path = None
-
-    def _construct_catalog(self, new_path):
-        if new_path != self.path and new_path is not None:
-            self.path = new_path
-
-            self.store = self.geopysc.store_factory.buildFile(self.path)
-
-            self.reader = \
-                    self.geopysc.reader_factory.buildFile(self.store,
-                                                          self.geopysc.sc)
-            self.writer = \
-                    self.geopysc.writer_factory.buildFile(self.store)
-
-    def read(self,
-             key_type,
-             path,
-             layer_name,
-             layer_zoom):
-
-        self._construct_catalog(path)
-
-        return self._read(key_type,
-                          layer_name,
-                          layer_zoom)
-
-    def query(self,
-              key_type,
-              path,
-              layer_name,
-              layer_zoom,
-              intersects,
-              time_intervals=None):
-
-        self._construct_catalog(path)
-
-        return self._query(key_type,
-                           layer_name,
-                           layer_zoom,
-                           intersects,
-                           time_intervals)
-
-    def write(self,
-              key_type,
-              layer_name,
-              layer_zoom,
-              rdd,
-              metadata,
-              time_unit=None,
-              index_strategy="zorder",
-              path=None):
-
-        if path is not None:
-            self._construct_catalog(path)
-
-        self._write(key_type,
-                    layer_name,
-                    layer_zoom,
-                    rdd,
-                    metadata,
-                    time_unit,
-                    index_strategy)
-
-
-class CassandraCatalog(_Catalog):
-
-    __slots__ = ["geopysc",
-                 "store",
-                 "reader",
-                 "writer",
-                 "hosts",
-                 "username",
-                 "password",
-                 "replication_strategy",
-                 "replication_factor",
-                 "local_dc",
-                 "uhprd",
-                 "allow_remote_dcs_for_lcl",
-                 "attribute_key_space",
-                 "attribute_table"]
-
-    def __init__(self,
-                 geopysc,
-                 hosts,
-                 username,
-                 password,
-                 replication_strategy,
-                 replication_factor,
-                 local_dc,
-                 uhprd,
-                 allow_remote_dcs_for_lcl):
-
-        super().__init__(geopysc)
-        self.geopysc = geopysc
-
-        self.hosts = hosts
-        self.username = username
-        self.password = password
-        self.replication_strategy = replication_strategy
-        self.replication_factor = replication_factor
-        self.local_dc = local_dc
-        self.uhpd = uhprd
-        self.allow_remote_dcs_for_lcl = allow_remote_dcs_for_lcl
-
-        self.attribute_key_space = None
-        self.attribute_table = None
-
-    def _construct_catalog(self, new_attribute_key_space, new_attribute_table):
-        is_old_key = new_attribute_key_space != self.attribute_key_space
-        is_none_key = new_attribute_key_space is not None
-
-        is_old_table = new_attribute_table != self.attribute_table
-        is_none_table = new_attribute_table is not None
-
-        if (is_old_key and is_none_key) or (is_old_table and is_none_table):
-            self.attribute_key_space = new_attribute_key_space
-            self.attribute_table = new_attribute_table
-
-            self.store = self.geopysc.store_factory.buildCassandra(
-                self.hosts,
-                self.username,
-                self.password,
-                self.replication_strategy,
-                self.replication_factor,
-                self.local_dc,
-                self.uhpd,
-                self.allow_remote_dcs_for_lcl,
-                self.attribute_key_space,
-                self.attribute_table)
-
-            self.reader = \
-                    self.geopysc.reader_factory.buildCassandra(self.store,
+                self.store = \
+                        self.geopysc.store_factory.buildHBase(zookeepers,
+                                                              master,
+                                                              port,
+                                                              table)
+                self.reader = \
+                        self.geopysc.reader_factory.buildHBase(self.store,
                                                                self.geopysc.sc)
 
-            self.writer = \
-                    self.geopysc.writer_factory.buildCassandra(self.store,
-                                                               self.attribute_key_space,
-                                                               self.attribute_table)
+                self.writer = \
+                        self.geopysc.writer_factory.buildHBase(self.store,
+                                                               table)
 
-    def read(self,
-             key_type,
-             attribute_key_space,
-             attribute_table,
-             layer_name,
-             layer_zoom):
+            elif backend == 'accumulo':
 
-        self._construct_catalog(attribute_key_space, attribute_table)
+                # The assumed uri looks like: accumulo//username:password/zoo1, zoo2/instance/table
+                (user, password) = parsed_uri.netloc.split(':')
+                split_parameters = parsed_uri.path.split('/')[1:]
 
-        return self._read(key_type,
-                          layer_name,
-                          layer_zoom)
+                self.store = \
+                        self.geopysc.store_factory.buildAccumulo(split_parameters[0],
+                                                                 split_parameters[1],
+                                                                 user,
+                                                                 password,
+                                                                 split_parameters[2])
+                self.reader = \
+                        self.geopysc.reader_factory.buildAccumulo(split_parameters[1],
+                                                                  self.store,
+                                                                  self.geopysc.sc)
+                self.writer = \
+                        self.geopysc.writer_factory.buildAccumulo(split_parameters[1],
+                                                                  self.store,
+                                                                  split_parameters[2])
 
-    def query(self,
-              key_type,
-              attribute_key_space,
-              attribute_table,
-              layer_name,
-              layer_zoom,
-              intersects,
-              time_intervals=None):
+            else:
+                raise Exception("Cannot find Attribute Store for, {}".format(backend))
 
-        self._construct_catalog(attribute_key_space, attribute_table)
+        def read(self,
+                 rdd_type,
+                 uri,
+                 layer_name,
+                 layer_zoom):
 
-        return self._query(key_type,
-                           layer_name,
-                           layer_zoom,
-                           intersects,
-                           time_intervals)
+            self._construct_catalog(uri)
 
-    def write(self,
-              key_type,
-              layer_name,
-              layer_zoom,
-              rdd,
-              metadata,
-              time_unit=None,
-              index_strategy="zorder",
-              attribute_key_space=None,
-              attribute_table=None):
+            key = self.geopysc.map_key_input(rdd_type, True)
 
-        if attribute_key_space is not None or attribute_table is not None:
-            self._construct_catalog(attribute_key_space, attribute_table)
+            tup = self.reader.read(key, layer_name, layer_zoom)
+            schema = tup._2()
 
-        self._write(key_type,
-                    layer_name,
-                    layer_zoom,
-                    rdd,
-                    metadata,
-                    time_unit,
-                    index_strategy)
+            if rdd_type == "spatial":
+                jmetadata = self.store.metadataSpatial(layer_name, layer_zoom)
+            else:
+                jmetadata = self.store.metadataSpaceTime(layer_name, layer_zoom)
 
+            metadata = json.loads(jmetadata)
+            ser = self.geopysc.create_tuple_serializer(schema, value_type="Tile")
 
-class HBaseCatalog(_Catalog):
+            rdd = self.geopysc.create_python_rdd(tup._1(), ser)
 
-    __slots__ = ["geopysc",
-                 "store",
-                 "reader",
-                 "writer",
-                 "zookeepers",
-                 "master",
-                 "client_port",
-                 "attribute_table"]
+            return (rdd, schema, metadata)
 
-    def __init__(self,
-                 geopysc,
-                 zookeepers,
-                 master,
-                 client_port):
+        def query(self,
+                  rdd_type,
+                  uri,
+                  layer_name,
+                  layer_zoom,
+                  intersects,
+                  time_intervals=None):
 
-        super().__init__(geopysc)
-        self.geopysc = geopysc
+            self._construct_catalog(uri)
 
-        self.zookeepers = zookeepers
-        self.master = master
-        self.client_port = client_port
+            key = self.geopysc.map_key_input(rdd_type, True)
 
-        self.attribute_table = None
+            if time_intervals is None:
+                time_intervals = []
 
-    def _construct_catalog(self, new_attribute_table):
-        is_old = new_attribute_table != self.attribute_table
-        is_none = new_attribute_table is not None
+            if isinstance(intersects, Polygon):
+                tup = self.reader.query(key,
+                                        layer_name,
+                                        layer_zoom,
+                                        dumps(intersects),
+                                        time_intervals)
 
-        if is_old and is_none:
-            self.attribute_table = new_attribute_table
-            self.store = \
-                    self.geopysc.store_factory.buildHBase(self.zookeepers,
-                                                          self.master,
-                                                          self.client_port,
-                                                          self.attribute_table)
-            self.reader = \
-                    self.geopysc.reader_factory.buildHBase(self.store,
-                                                           self.geopysc.sc)
+            elif isinstance(intersects, str):
+                tup = self.reader.query(key,
+                                        layer_name,
+                                        layer_zoom,
+                                        intersects,
+                                        time_intervals)
+            else:
+                raise Exception("Could not query intersection", intersects)
 
-            self.writer = \
-                    self.geopysc.writer_factory.buildHBase(self.store,
-                                                           self.attribute_table)
+            schema = tup._2()
 
+            if rdd_type == "spatial":
+                jmetadata = self.store.metadataSpatial(layer_name, layer_zoom)
+            else:
+                jmetadata = self.store.metadataSpaceTime(layer_name, layer_zoom)
 
-    def read(self,
-             key_type,
-             attribute_table,
-             layer_name,
-             layer_zoom):
+            metadata = json.loads(jmetadata)
+            ser = self.geopysc.create_tuple_serializer(schema, value_type="Tile")
 
-        self._construct_catalog(attribute_table)
+            rdd = self.geopysc.create_python_rdd(tup._1(), ser)
 
-        return self._read(key_type,
-                          layer_name,
-                          layer_zoom)
+            return (rdd, schema, metadata)
 
-    def query(self,
-              key_type,
-              attribute_table,
-              layer_name,
-              layer_zoom,
-              intersects,
-              time_intervals=None):
+        def write(self,
+                  rdd_type,
+                  layer_name,
+                  layer_zoom,
+                  rdd,
+                  metadata,
+                  index_strategy="zorder",
+                  time_unit=None,
+                  uri=None):
 
-        self._construct_catalog(attribute_table)
+            if uri is not None:
+                self._construct_catalog(uri)
 
-        return self._query(key_type,
-                           layer_name,
-                           layer_zoom,
-                           intersects,
-                           time_intervals)
+            key = self.geopysc.map_key_input(rdd_type, True)
 
-    def write(self,
-              key_type,
-              layer_name,
-              layer_zoom,
-              rdd,
-              metadata,
-              time_unit=None,
-              index_strategy="zorder",
-              attribute_table=None):
+            schema = metadata.schema
 
-        if attribute_table is not None:
-            self._construct_catalog(attribute_table)
+            if not time_unit:
+                time_unit = ""
 
-        self._write(key_type,
-                    layer_name,
-                    layer_zoom,
-                    rdd,
-                    metadata,
-                    time_unit,
-                    index_strategy)
-
-
-class AccumuloCatalog(_Catalog):
-
-    __slots__ = ["geopysc",
-                 "store",
-                 "reader",
-                 "writer",
-                 "zookeepers",
-                 "instance_name",
-                 "user",
-                 "password",
-                 "attribute_table"]
-
-    def __init__(self,
-                 geopysc,
-                 zookeepers,
-                 instance_name,
-                 user,
-                 password):
-
-        super().__init__(geopysc)
-        self.geopysc = geopysc
-
-        self.zookeepers = zookeepers
-        self.instance_name = instance_name
-        self.user = user
-        self.password = password
-
-        self.attribute_table = None
-
-    def _construct_catalog(self, new_attribute_table):
-        is_old = new_attribute_table != self.attribute_table
-        is_none = new_attribute_table is not None
-
-        if is_old and is_none:
-            self.attribute_table = new_attribute_table
-            self.store = \
-                    self.geopysc.store_factory.buildAccumulo(self.zookeepers,
-                                                             self.instance_name,
-                                                             self.user,
-                                                             self.password,
-                                                             self.attribute_table)
-            self.reader = \
-                    self.geopysc.reader_factory.buildAccumulo(self.instance_name,
-                                                              self.store,
-                                                              self.geopysc.sc)
-            self.writer = \
-                    self.geopysc.writer_factory.buildAccumulo(self.instance_name,
-                                                              self.store,
-                                                              self.attribute_table)
-
-    def read(self,
-             key_type,
-             attribute_table,
-             layer_name,
-             layer_zoom):
-
-        self._construct_catalog(attribute_table)
-
-        return self._read(key_type,
-                          layer_name,
-                          layer_zoom)
-
-    def query(self,
-              key_type,
-              attribute_table,
-              layer_name,
-              layer_zoom,
-              intersects,
-              time_intervals=None):
-
-        self._construct_catalog(attribute_table)
-
-        return self._query(key_type,
-                           layer_name,
-                           layer_zoom,
-                           intersects,
-                           time_intervals)
-
-    def write(self,
-              key_type,
-              layer_name,
-              layer_zoom,
-              rdd,
-              metadata,
-              time_unit=None,
-              index_strategy="zorder",
-              attribute_table=None):
-
-        if attribute_table is not None:
-            self._construct_catalog(attribute_table)
-
-        self._write(key_type,
-                    layer_name,
-                    layer_zoom,
-                    rdd,
-                    metadata,
-                    time_unit,
-                    index_strategy)
+            self.writer.write(key,
+                              layer_name,
+                              layer_zoom,
+                              rdd._jrdd,
+                              json.dumps(metadata),
+                              schema,
+                              time_unit,
+                              index_strategy)
