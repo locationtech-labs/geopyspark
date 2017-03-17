@@ -3,7 +3,7 @@ import unittest
 import rasterio
 
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-from geopyspark.geotrellis.geotiff_rdd import S3GeoTiffRDD
+from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.constants import SPATIAL
 from py4j.java_gateway import java_import
@@ -50,10 +50,10 @@ class Singleband(S3GeoTiffIOTest, BaseTestClass):
     mock_wrapper = BaseTestClass.geopysc._jvm.MockS3ClientWrapper
     client = mock_wrapper.mockClient()
 
-    s3_geotiff = S3GeoTiffRDD(BaseTestClass.geopysc)
-
     key = "one-month-tiles/test-200506000000_0_0.tif"
     bucket = "test"
+
+    uri = "s3://test/one-month-tiles/test-200506000000_0_0.tif"
     file_path = geotiff_test_path(key)
 
     in_file = open(file_path, "rb")
@@ -64,10 +64,7 @@ class Singleband(S3GeoTiffIOTest, BaseTestClass):
 
     def read_singleband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.data)
-        result = self.s3_geotiff.get_rdd(SPATIAL,
-                                         self.bucket,
-                                         self.key,
-                                         opt)
+        result = geotiff_rdd(BaseTestClass.geopysc, SPATIAL, self.uri, opt)
 
         return [tile[1] for tile in result.collect()]
 
@@ -96,15 +93,15 @@ class Singleband(S3GeoTiffIOTest, BaseTestClass):
 
 class Multiband(S3GeoTiffIOTest, BaseTestClass):
     java_import(BaseTestClass.geopysc._jvm,
-                "geopyspark.geotrellis.testkit.MockS3ClientWrapper")
+    "geopyspark.geotrellis.testkit.MockS3ClientWrapper")
 
     mock_wrapper = BaseTestClass.geopysc._jvm.MockS3ClientWrapper
     client = mock_wrapper.mockClient()
 
-    s3_geotiff = S3GeoTiffRDD(BaseTestClass.geopysc)
-
     key = "one-month-tiles-multiband/result.tif"
     bucket = "test"
+
+    uri = "s3://test/one-month-tiles-multiband/result.tif"
     file_path = geotiff_test_path(key)
     options = {"s3Client": "mock"}
 
@@ -114,10 +111,10 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
 
     def read_multiband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.data)
-        result = self.s3_geotiff.get_rdd(SPATIAL,
-                                         self.bucket,
-                                         self.key,
-                                         opt)
+        result = geotiff_rdd(BaseTestClass.geopysc,
+                             SPATIAL,
+                             self.uri,
+                             opt)
 
         return [tile[1] for tile in result.collect()]
 
