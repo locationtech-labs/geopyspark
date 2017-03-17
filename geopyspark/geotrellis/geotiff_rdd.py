@@ -83,7 +83,7 @@ def geotiff_rdd(geopysc,
     if kwargs and not options:
         options = kwargs
 
-    if 's3' in uri:
+    if uri.startswith("s3://"):
         key_and_bucket_uri = uri.split("s3://")[1]
         (bucket, prefix) = key_and_bucket_uri.split("/", 1)
 
