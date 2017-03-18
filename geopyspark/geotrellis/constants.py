@@ -12,41 +12,44 @@ of this type of K.
 """
 SPACETIME = 'spacetime'
 
+
 """
 Indicates the type value that needs to be serialized/deserialized. Both singleband
 and multiband GeoTiffs are reffered to as this.
 """
 TILE = 'Tile'
 
-"""A resampling method"""
+
+"""A resampling method."""
 NEARESTNEIGHBOR = 'NearestNeighbor'
 
-"""A resampling method"""
+"""A resampling method."""
 BILINEAR = 'Bilinear'
 
-"""A resampling method"""
+"""A resampling method."""
 CUBICCONVOLUTION = 'CubicConvolution'
 
-"""A resampling method"""
+"""A resampling method."""
 CUBICSPLINE = 'CubicSpline'
 
-"""A resampling method"""
+"""A resampling method."""
 LANCZOS = 'Lanczos'
 
-"""A resampling method"""
+"""A resampling method."""
 AVERAGE = 'Average'
 
-"""A resampling method"""
+"""A resampling method."""
 MODE = 'Mode'
 
-"""A resampling method"""
+"""A resampling method."""
 MEDIAN = 'Median'
 
-"""A resampling method"""
+"""A resampling method."""
 MAX = 'Max'
 
-"""A resampling method"""
+"""A resampling method."""
 MIN = 'Min'
+
 
 """A key indexing method. Works for RDDs that contain both SpatialKeys and SpacetimeKeys."""
 ZORDER = 'zorder'
@@ -65,3 +68,25 @@ good locality guarntees. It is reccomended then that this method should only be 
 is not important for your analysis.
 """
 ROWMAJOR = 'rowmajor'
+
+
+"""A time unit used with ZORDER."""
+MILLISECONDS = 'millis'
+
+"""A time unit used with ZORDER."""
+SECONDS = 'seconds'
+
+"""A time unit used with ZORDER."""
+MINUTES = 'minutes'
+
+"""A time unit used with ZORDER."""
+HOURS = 'hours'
+
+"""A time unit used with ZORDER."""
+DAYS = 'days'
+
+"""A time unit used with ZORDER."""
+MONTHS = 'months'
+
+"""A time unit used with ZORDER."""
+YEARS = 'years'
