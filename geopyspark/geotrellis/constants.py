@@ -12,32 +12,38 @@ of this type of K.
 """
 SPACETIME = 'spacetime'
 
-"""A resampling methods"""
+"""
+Indicates the type value that needs to be serialized/deserialized. Both singleband
+and multiband GeoTiffs are reffered to as this.
+"""
+TILE = 'Tile'
+
+"""A resampling method"""
 NEARESTNEIGHBOR = 'NearestNeighbor'
 
-"""A resampling methods"""
+"""A resampling method"""
 BILINEAR = 'Bilinear'
 
-"""A resampling methods"""
+"""A resampling method"""
 CUBICCONVOLUTION = 'CubicConvolution'
 
-"""A resampling methods"""
+"""A resampling method"""
 CUBICSPLINE = 'CubicSpline'
 
-"""A resampling methods"""
+"""A resampling method"""
 LANCZOS = 'Lanczos'
 
-"""A resampling methods"""
+"""A resampling method"""
 AVERAGE = 'Average'
 
-"""A resampling methods"""
+"""A resampling method"""
 MODE = 'Mode'
 
-"""A resampling methods"""
+"""A resampling method"""
 MEDIAN = 'Median'
 
-"""A resampling methods"""
+"""A resampling method"""
 MAX = 'Max'
 
-"""A resampling methods"""
+"""A resampling method"""
 MIN = 'Min'

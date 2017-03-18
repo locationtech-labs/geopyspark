@@ -1,7 +1,7 @@
 import json
 
 from geopyspark.avroserializer import AvroSerializer
-from geopyspark.geotrellis.constants import NEARESTNEIGHBOR
+from geopyspark.geotrellis.constants import NEARESTNEIGHBOR, TILE
 
 
 def _convert_to_java_rdd(geopysc, rdd_type, raster_rdd):
@@ -11,7 +11,7 @@ def _convert_to_java_rdd(geopysc, rdd_type, raster_rdd):
         schema = raster_rdd._jrdd_deserializer.serializer.schema_string
     else:
         schema = geopysc.create_schema(rdd_type)
-        ser = geopysc.create_tuple_serializer(schema, value_type="Tile")
+        ser = geopysc.create_tuple_serializer(schema, value_type=TILE)
         reserialized_rdd = raster_rdd._reserialize(ser)
 
         avro_ser = reserialized_rdd._jrdd_deserializer.serializer
@@ -287,7 +287,7 @@ def cut_tiles(geopysc,
                                     json.dumps(tile_layer_metadata),
                                     resample_method)
 
-    ser = geopysc.create_tuple_serializer(result._2(), value_type="Tile")
+    ser = geopysc.create_tuple_serializer(result._2(), value_type=TILE)
 
     return geopysc.create_python_rdd(result._1(), ser)
 
@@ -374,7 +374,7 @@ def tile_to_layout(geopysc,
                                         json.dumps(tile_layer_metadata),
                                         resample_method)
 
-    ser = geopysc.create_tuple_serializer(result._2(), value_type="Tile")
+    ser = geopysc.create_tuple_serializer(result._2(), value_type=TILE)
 
     return geopysc.create_python_rdd(result._1(), ser)
 
@@ -426,7 +426,7 @@ def merge_tiles(geopysc,
                                  java_rdd_2.rdd(),
                                  schema_2)
 
-    ser = geopysc.create_tuple_serializer(result._2(), value_type="Tile")
+    ser = geopysc.create_tuple_serializer(result._2(), value_type=TILE)
 
     return geopysc.create_python_rdd(result._1(), ser)
 
@@ -457,7 +457,7 @@ def pyramid(geopysc,
 
     def formatter(x):
         (rdd, schema) = (x._2()._1(), x._2()._2())
-        ser = geopysc.create_tuple_serializer(schema, value_type="Tile")
+        ser = geopysc.create_tuple_serializer(schema, value_type=TILE)
         returned_rdd = geopysc.create_python_rdd(rdd, ser)
 
         return (x._1(), returned_rdd, json.loads(x._3()))
