@@ -1,6 +1,7 @@
 import json
 
 from geopyspark.avroserializer import AvroSerializer
+from geopyspark.geotrellis.constants import NEARESTNEIGHBOR
 
 
 def _convert_to_java_rdd(geopysc, rdd_type, raster_rdd):
@@ -23,8 +24,7 @@ def collect_metadata(geopysc,
                      raster_rdd,
                      layout_extent,
                      tile_layout,
-                     output_crs=None,
-                     **kwargs):
+                     output_crs=None):
 
     """Collects the metadata of an RDD.
 
@@ -71,15 +71,9 @@ def collect_metadata(geopysc,
                 tileRows (int): The number of rows of tiles that runs north to south.
                 tileCols (int): The number of pixel cols in tile that runs east to west.
                 tileRows (int): The number of pixel rows in tile that runs north to south.
-        output_crs (dict, optional): The CRS that the metadata should be
-            represented in. If None, then the GeoTiffs' original CRS will be
-            used.
-
-            The field that is used to represent output_crs:
-                output_crs: (str): The well-known name representation of the CRS.
-        **kwargs: The output_crs can also be entered as keyword arguements.
-            Note: Defining both outout_crs and keyword arguements will cause the
-            keyword arguements to be ignored in favor of output_crs.
+        output_crs (str, optional): The CRS that the metadata should be
+            represented in. Must be in well-known name format. If None, then the GeoTiffs'
+            original CRS will be used.
 
     Returns:
         dict: The dictionary representation of the RDD's metadata.
@@ -118,10 +112,8 @@ def collect_metadata(geopysc,
 
     if output_crs:
         output_crs = output_crs
-    elif kwargs:
-        output_crs = kwargs
     else:
-        output_crs = {}
+        output_crs = ""
 
     metadata = metadata_wrapper.collectPythonMetadata(key,
                                                       java_rdd.rdd(),
@@ -140,8 +132,7 @@ def collect_pyramid_metadata(geopysc,
                              tile_size,
                              resolution_threshold=0.1,
                              max_zoom=12,
-                             output_crs=None,
-                             **kwargs):
+                             output_crs=None):
 
     """Collects the metadata of an RDD as well as the zoom level of the RDD.
 
@@ -162,15 +153,9 @@ def collect_pyramid_metadata(geopysc,
             zoom level. If not specified, the default value is: 0.1.
         max_zoom (int, optional): The max level this tile layer can go to.
             If not specified, the default max_zoom is: 12.
-        output_crs (dict, optional): The CRS that the metadata should be
-            represented in. If None, then the GeoTiffs' original CRS will be
-            used.
-
-            The field that is used to represent output_crs:
-                output_crs: (str): The well-known name representation of the CRS.
-        **kwargs: The output_crs can also be entered as keyword arguements.
-            Note: Defining both outout_crs and keyword arguements will cause the
-            keyword arguements to be ignored in favor of output_crs.
+        output_crs (str, optional): The CRS that the metadata should be
+            represented in. Must be in well-known name format. If None, then the GeoTiffs'
+            original CRS will be used.
 
     Returns:
         tup: A tuple that contains the zoom level and the metadata for the tile layer.
@@ -205,10 +190,8 @@ def collect_pyramid_metadata(geopysc,
 
     if output_crs:
         output_crs = output_crs
-    elif kwargs:
-        output_crs = kwargs
     else:
-        output_crs = {}
+        output_crs = ""
 
     result = metadata_wrapper.collectPythonPyramidMetadata(key,
                                                            java_rdd.rdd(),
@@ -225,8 +208,7 @@ def cut_tiles(geopysc,
               rdd_type,
               raster_rdd,
               tile_layer_metadata,
-              resample_method=None,
-              **kwargs):
+              resample_method=NEARESTNEIGHBOR):
 
     """Cuts the tiles within a RDD to a given tile layout.
 
@@ -256,26 +238,20 @@ def cut_tiles(geopysc,
                         The fields that are used to represent the minKey and maxKey:
                             col (int): The column number of the grid, runs east to west.
                             row (int): The row number of the grid, runs north to south.
-        resample_method (dict, optional): The resample method used when creating the resulting
-            tiles. If None, the default method is: NearestNeighbor.
+        resample_method (str, optional): The resample method used when creating the resulting
+            tiles. If None, the default method is: NEARESTNEIGHBOR.
 
-            The field that is used to represent resample_method:
-                resampleMethod: (str): The resample method's name.
-
-                The list of supported methods:
-                    'NearestNeighbor"
-                    'Bilinear'
-                    'CubicConvolution'
-                    'CubicSpline'
-                    'Lanczos'
-                    'Average'
-                    'Mode'
-                    'Median'
-                    'Max
-                    'Min'
-        **kwargs: The resample_method can also be entered as a keyword arguement.
-            Note: Defining both resample_method and a keyword arguement will cause the
-            keyword arguement to be ignored in favor of resample_method.
+            The list of supported methods:
+                NEARESTNEIGHBOR
+                BILINEAR
+                CUBICCONVOLUTION
+                CUBICSPLINE
+                LANCZOS
+                AVERAGE
+                MODE
+                MEDIAN
+                MAX
+                MIN
 
     Returns:
         RDD: A RDD that contains tuples of dictionaries, (key, tile).
@@ -305,18 +281,11 @@ def cut_tiles(geopysc,
 
     (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, raster_rdd)
 
-    if resample_method:
-        resample_dict = {"resampleMethod": resample_method}
-    elif kwargs:
-        resample_dict = kwargs
-    else:
-        resample_dict = {}
-
     result = tiler_wrapper.cutTiles(key,
                                     java_rdd.rdd(),
                                     schema,
                                     json.dumps(tile_layer_metadata),
-                                    resample_dict)
+                                    resample_method)
 
     ser = geopysc.create_tuple_serializer(result._2(), value_type="Tile")
 
@@ -326,8 +295,7 @@ def tile_to_layout(geopysc,
                    rdd_type,
                    raster_rdd,
                    tile_layer_metadata,
-                   resample_method=None,
-                   **kwargs):
+                   resample_method=NEARESTNEIGHBOR):
 
     """Resamples tiles to a new resolution.
 
@@ -357,26 +325,6 @@ def tile_to_layout(geopysc,
                         The fields that are used to represent the minKey and maxKey:
                             col (int): The column number of the grid, runs east to west.
                             row (int): The row number of the grid, runs north to south.
-        resample_method (dict, optional): The resample method used when creating the resulting
-            tiles. If None, the default method is: NearestNeighbor.
-
-            The field that is used to represent resample_method:
-                resampleMethod: (str): The resample method's name.
-
-                The list of supported methods:
-                    'NearestNeighbor"
-                    'Bilinear'
-                    'CubicConvolution'
-                    'CubicSpline'
-                    'Lanczos'
-                    'Average'
-                    'Mode'
-                    'Median'
-                    'Max
-                    'Min'
-        **kwargs: The resample_method can also be entered as a keyword arguement.
-            Note: Defining both resample_method and a keyword arguement will cause the
-            keyword arguement to be ignored in favor of resample_method.
 
     Returns:
         RDD: A RDD that contains tuples of dictionaries, (key, tile).
@@ -399,6 +347,20 @@ def tile_to_layout(geopysc,
                         a multiband tile and read and saved as such.
                     no_data_value (optional): The no data value of the tile. Can be a range of
                         types including None.
+        resample_method (str, optional): The resample method used when creating the resulting
+            tiles. If None, the default method is: NEARESTNEIGHBOR.
+
+            The list of supported methods:
+                NEARESTNEIGHBOR
+                BILINEAR
+                CUBICCONVOLUTION
+                CUBICSPLINE
+                LANCZOS
+                AVERAGE
+                MODE
+                MEDIAN
+                MAX
+                MIN
 
     """
     tiler_wrapper = geopysc.tile_layer_methods
@@ -406,18 +368,11 @@ def tile_to_layout(geopysc,
 
     (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, raster_rdd)
 
-    if resample_method:
-        resample_dict = {"resampleMethod": resample_method}
-    elif kwargs:
-        resample_dict = kwargs
-    else:
-        resample_dict = {}
-
     result = tiler_wrapper.tileToLayout(key,
                                         java_rdd.rdd(),
                                         schema,
                                         json.dumps(tile_layer_metadata),
-                                        resample_dict)
+                                        resample_method)
 
     ser = geopysc.create_tuple_serializer(result._2(), value_type="Tile")
 
@@ -483,20 +438,12 @@ def pyramid(geopysc,
             start_zoom,
             end_zoom,
             resolution_threshold=0.1,
-            options=None,
-            **kwargs):
+            resample_method=NEARESTNEIGHBOR):
 
     pyramider = geopysc.pyramid_builder
     key = geopysc.map_key_input(rdd_type, True)
 
     (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, base_raster_rdd)
-
-    if options:
-        options = options
-    elif kwargs:
-        options = kwargs
-    else:
-        options = {}
 
     result = pyramider.buildPythonPyramid(key,
                                           java_rdd.rdd(),
@@ -506,7 +453,7 @@ def pyramid(geopysc,
                                           resolution_threshold,
                                           start_zoom,
                                           end_zoom,
-                                          options)
+                                          resample_method)
 
     def formatter(x):
         (rdd, schema) = (x._2()._1(), x._2()._2())
