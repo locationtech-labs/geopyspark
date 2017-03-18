@@ -48,7 +48,7 @@ abstract class LayerWriterWrapper {
       case ("zorder", "millis") => ZCurveKeyIndexMethod.byMilliseconds(1)
       case ("zorder", "seconds") => ZCurveKeyIndexMethod.bySecond
       case ("zorder", "minutes") => ZCurveKeyIndexMethod.byMinute
-      case ("zorder", "hour") => ZCurveKeyIndexMethod.byHour
+      case ("zorder", "hours") => ZCurveKeyIndexMethod.byHour
       case ("zorder", "days") => ZCurveKeyIndexMethod.byDay
       case ("zorder", "months") => ZCurveKeyIndexMethod.byMonth
       case ("zorder", "years") => ZCurveKeyIndexMethod.byYear

@@ -1,3 +1,9 @@
+"""Methods for reading, querying, and saving tile layers to and from Geotrellis Catalogs.
+
+Because GeoPySpark represents all raster data as 3D numpy arrays, data that is read/written out
+will be in a multiband format; regardless of how the data was originally formatted.
+"""
+
 import json
 
 from geopyspark.geotrellis.constants import SPATIAL, TILE, ZORDER
@@ -68,7 +74,7 @@ def _construct_catalog(geopysc, new_uri, options):
 
         elif backend == 'accumulo':
 
-            # The assumed uri looks like: accumulo//username:password/zoo1, zoo2/instance/table
+            # The assumed uri looks like: accumulo://username:password/zoo1, zoo2/instance/table
             (user, password) = parsed_uri.netloc.split(':')
             split_parameters = parsed_uri.path.split('/')[1:]
 
@@ -98,6 +104,78 @@ def read(geopysc,
          layer_zoom,
          options=None,
          **kwargs):
+
+    """Reads a single, zoom layer from a GeoTrellis catalog.
+    Note, this will read the entire layer. If only part of the layer is needed, consider using
+    query instead.
+
+    A layer can be read from various backends. These are the ones that are currently supported:
+        Local Filesystem
+        HDFS
+        S3
+        Cassandra
+        HBase
+        Accumulo
+
+    Args:
+        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        rdd_type (str): What the spatial type of the geotiffs are. This is
+            represented by the constants: SPATIAL and SPACETIME. Note: All of the
+            GeoTiffs must have the same saptial type.
+        uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
+        catalog to be read from. The shape of this string varies depending on backend.
+
+            Example uris for each backend:
+                Local Filesystem: file://my_folder/my_catalog/
+                HDFS: hdfs://my_folder/my_catalog/
+                S3: s3://my_bucket/my_catalog/
+                Cassandra: cassandra:name?username=user&password=pass&host=host1&keyspace=key&table=table
+                HBase: hbase://zoo1, zoo2: port/table
+                Accumulo: accumulo://username:password/zoo1, zoo2/instance/table
+        layer_name (str): The name of the GeoTrellis catalog to be read from.
+        layer_zoom (int): The zoom level of the layer that is to be read.
+        options (dict, optional): Additional parameters for reading the tile for specific backends.
+            The dictioanry is only used for Cassandra and HBase, no other backend requires this
+            to be set.
+
+            Fields that can be set for Cassandra:
+                replicationStrategy (str, optional): If not specified, then 'SimpleStrategy' will
+                    be used.
+                replicationFactor (int, optional): If not specified, then 1 will be used.
+                localDc (str, optional): If not specified, then 'datacenter1' will be used.
+                usedHostsPerRemoteDc (int, optional): If not specified, then 0 will be used.
+                allowRemoteDCsForLocalConsistencyLevel (int, optional): If you'd like this feature,
+                    then the value would be 1, Otherwise, the value should be 0. If not specified,
+                    then 0 will be used.
+
+            Fields that can be set for HBase:
+                master (str, optional): If not specified, then 'null' will be used.
+        **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
+            be in camel case. If both options and keywords are set, then the options will be used.
+
+    Returns:
+        RDD: A RDD that contains tuples of dictionaries, (key, tile).
+            key (dict): The index of the tile within the layer. There are two different types
+                of keys, SpatialKeys and SpaceTimeKeys. SpatialKeys deal with data that have just
+                a spatial component, whereas SpaceTimeKeys are for data with both a spatial and
+                time component.
+
+                Both SpatialKeys and SpaceTimeKeys share these fields:
+                    col (int): The column number of the grid, runs east to west.
+                    row (int): The row number of the grid, runs north to south.
+
+                SpaceTimeKeys also have an additional field:
+                    instant (int): The time stamp of the tile.
+            tile (dict): The data of the tile.
+
+                The fields to represent the tile:
+                    data (np.ndarray): The tile data itself is represented as a 3D, numpy array.
+                        Note, even if the data was originally singleband, it will be reformatted as
+                        a multiband tile and read and saved as such.
+                    no_data_value (optional): The no data value of the tile. Can be a range of
+                        types including None.
+
+    """
 
     if options:
         options = options
@@ -136,6 +214,93 @@ def query(geopysc,
           time_intervals=None,
           options=None,
           **kwargs):
+
+    """Queries a single, zoom layer from a GeoTrellis catalog given spatial and/or time parameters.
+    Unlike read, this method will only return part of the layer that intersects the specified
+    region. However, the whole layer could still be read in if no area/time has been set, or
+    if the querried region contains the entire layer.
+
+    A layer can be queried from various backends. These are the ones that are currently supported:
+        Local Filesystem
+        HDFS
+        S3
+        Cassandra
+        HBase
+        Accumulo
+
+    Args:
+        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        rdd_type (str): What the spatial type of the geotiffs are. This is
+            represented by the constants: SPATIAL and SPACETIME. Note: All of the
+            GeoTiffs must have the same saptial type.
+        uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
+            catalog to be read from. The shape of this string varies depending on backend.
+
+            Example uris for each backend:
+                Local Filesystem: file://my_folder/my_catalog/
+                HDFS: hdfs://my_folder/my_catalog/
+                S3: s3://my_bucket/my_catalog/
+                Cassandra: cassandra:name?username=user&password=pass&host=host1&keyspace=key&table=table
+                HBase: hbase://zoo1, zoo2: port/table
+                Accumulo: accumulo://username:password/zoo1, zoo2/instance/table
+        layer_name (str): The name of the GeoTrellis catalog to be querried.
+        layer_zoom (int): The zoom level of the layer that is to be querried.
+        intersects (str, Polygon): The desired spatial area to be returned. Can either be a string
+            or a shapely Polygon. If the value is a string, it must be the WKT string, geometry
+            format.
+
+            The types of Polygons supported:
+                Point
+                Polygon
+                MultiPolygon
+
+            Note, only layers that were made from spatial, singleband GeoTiffs can query a Point.
+            All other types are restricted to Polygon and MulitPolygon.
+        time_intervals (list, optional): A list of strings that time intervals to query.
+            The strings must be in a valid date-time format. This parameter is only used when
+            querying spatial-temporal data. The default value is, None. If None, then only the
+            spatial area will be querried.
+        options (dict, optional): Additional parameters for reading the tile for specific backends.
+            The dictioanry is only used for Cassandra and HBase, no other backend requires this
+            to be set.
+
+            Fields that can be set for Cassandra:
+                replicationStrategy (str, optional): If not specified, then 'SimpleStrategy' will
+                    be used.
+                replicationFactor (int, optional): If not specified, then 1 will be used.
+                localDc (str, optional): If not specified, then 'datacenter1' will be used.
+                usedHostsPerRemoteDc (int, optional): If not specified, then 0 will be used.
+                allowRemoteDCsForLocalConsistencyLevel (int, optional): If you'd like this feature,
+                    then the value would be 1, Otherwise, the value should be 0. If not specified,
+                    then 0 will be used.
+
+            Fields that can be set for HBase:
+                master (str, optional): If not specified, then 'null' will be used.
+        **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
+            be in camel case. If both options and keywords are set, then the options will be used.
+    Returns:
+        RDD: A RDD that contains tuples of dictionaries, (key, tile).
+            key (dict): The index of the tile within the layer. There are two different types
+                of keys, SpatialKeys and SpaceTimeKeys. SpatialKeys deal with data that have just
+                a spatial component, whereas SpaceTimeKeys are for data with both a spatial and
+                time component.
+
+                Both SpatialKeys and SpaceTimeKeys share these fields:
+                    col (int): The column number of the grid, runs east to west.
+                    row (int): The row number of the grid, runs north to south.
+
+                SpaceTimeKeys also have an additional field:
+                    instant (int): The time stamp of the tile.
+            tile (dict): The data of the tile.
+
+                The fields to represent the tile:
+                    data (np.ndarray): The tile data itself is represented as a 3D, numpy array.
+                        Note, even if the data was originally singleband, it will be reformatted as
+                        a multiband tile and read and saved as such.
+                    no_data_value (optional): The no data value of the tile. Can be a range of
+                        types including None.
+
+    """
 
     if options:
         options = options
@@ -194,6 +359,116 @@ def write(geopysc,
           time_unit=None,
           options=None,
           **kwargs):
+
+    """Writes a tile layer to a specified destination.
+
+    Args:
+        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        rdd_type (str): What the spatial type of the geotiffs are. This is
+            represented by the constants: SPATIAL and SPACETIME. Note: All of the
+            GeoTiffs must have the same saptial type.
+        uri (str): The Uniform Resource Identifier used to point towards the desired location for
+        the tile layer to written to. The shape of this string varies depending on backend.
+
+            Example uris for each backend:
+                Local Filesystem: file://my_folder/my_catalog/
+                HDFS: hdfs://my_folder/my_catalog/
+                S3: s3://my_bucket/my_catalog/
+                Cassandra: cassandra:name?username=user&password=pass&host=host1&keyspace=key&table=table
+                HBase: hbase://zoo1, zoo2: port/table
+                Accumulo: accumulo://username:password/zoo1, zoo2/instance/table
+        layer_name (str): The name of the new, tile layer.
+        layer_zoom (int): The zoom level the layer should be saved at.
+        rdd (RDD): A RDD that contains tuples of dictionaries, (key, tile).
+            key (dict): The index of the tile within the layer. There are two different types
+                of keys, SpatialKeys and SpaceTimeKeys. SpatialKeys deal with data that have just
+                a spatial component, whereas SpaceTimeKeys are for data with both a spatial and
+                time component.
+
+                Both SpatialKeys and SpaceTimeKeys share these fields:
+                    col (int): The column number of the grid, runs east to west.
+                    row (int): The row number of the grid, runs north to south.
+
+                SpaceTimeKeys also have an additional field:
+                    instant (int): The time stamp of the tile.
+            tile (dict): The data of the tile.
+
+                The fields to represent the tile:
+                    data (np.ndarray): The tile data itself is represented as a 3D, numpy array.
+                        Note, even if the data was originally singleband, it will be reformatted as
+                        a multiband tile and read and saved as such.
+                    no_data_value (optional): The no data value of the tile. Can be a range of
+                        types including None.
+        tile_layer_metadata (dict): The metadata for this tile layer. This provides
+            the layout definition that the tiles will be cut to.
+
+            The fields that are used to represent the metadata:
+                cellType (str): The value type of every cell within the rasters.
+                layoutDefinition (dict): Defines the raster layout of the rasters.
+
+                The fields that are used to represent the layoutDefinition:
+                    extent (dict): The area covered by the layout tiles.
+                    tileLayout (dict): The tile layout of the rasters.
+                extent (dict): The extent that covers the tiles.
+                crs (str): The CRS that the rasters are projected in.
+                bounds (dict): Represents the positions of the tile layer tiles within a gird.
+
+                    The fields that are used to represent the bounds:
+                        minKey (dict): Represents where the tile layer begins in the gird.
+                        maxKey (dict): Represents where the tile layer ends in the gird.
+
+                        The fields that are used to represent the minKey and maxKey:
+                            col (int): The column number of the grid, runs east to west.
+                            row (int): The row number of the grid, runs north to south.
+        index_strategy (str): The method used to orginize the saved data. Depending on the type of
+            data within the layer, only certain methods are available. The default method used is,
+            ZORDER.
+
+            The different indexing methods:
+                ZORDER: Works for both spatial and spatial-temporal data.
+                HILBERT: Works for both spatial and spatial-temporal data. Currently has a size
+                    limitation where the combined resolutions for each index cannot be greater
+                    than 64 bits.
+                ROWMAJOR: Works only for spatial data. Is the fastest of the three methods,
+                    but can provide unreliable locality results.
+        time_unit (str, optional): Horallllllllllllllll data should be indexed when saved.
+            While this is set to None as default, it must be set if saving spatial-temporal data.
+            Depending on the indexing method chosen, different time units are used.
+
+            Time units for ZORDER:
+                MILLIS: Index data by milliseconds.
+                SECONDS: Index data by seconds.
+                MINUTES: Index data by minutes.
+                HOURS: Index data by hours.
+                DAYS: Index data by days.
+                MONTHS: Index data by months.
+                YEARS: Index data by years.
+
+            Time unit for HILBERT:
+                The time unit must be in this format: 'min_date, max_date, resolution'.
+                Where 'min_date' is the starting date, 'max_date' is the ending date,
+                and 'resolution' is the temporal resolution. Both 'min_date' and 'max_date'
+                must be in a valid date-time format.
+
+        options (dict, optional): Additional parameters for writing the tile layer for specific
+            backends. The dictioanry is only used for Cassandra and HBase, no other backend
+            requires this to be set.
+
+            Fields that can be set for Cassandra:
+                replicationStrategy (str, optional): If not specified, then 'SimpleStrategy' will
+                    be used.
+                replicationFactor (int, optional): If not specified, then 1 will be used.
+                localDc (str, optional): If not specified, then 'datacenter1' will be used.
+                usedHostsPerRemoteDc (int, optional): If not specified, then 0 will be used.
+                allowRemoteDCsForLocalConsistencyLevel (int, optional): If you'd like this feature,
+                    then the value would be 1, Otherwise, the value should be 0. If not specified,
+                    then 0 will be used.
+
+            Fields that can be set for HBase:
+                master (str, optional): If not specified, then 'null' will be used.
+        **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
+            be in camel case. If both options and keywords are set, then the options will be used.
+    """
 
     if options:
         options = options
