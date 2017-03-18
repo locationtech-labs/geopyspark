@@ -11,3 +11,33 @@ time attribute. Both temporal_projected_extent and spacetime_key are examples
 of this type of K.
 """
 SPACETIME = 'spacetime'
+
+"""A resampling methods"""
+NEARESTNEIGHBOR = 'NearestNeighbor'
+
+"""A resampling methods"""
+BILINEAR = 'Bilinear'
+
+"""A resampling methods"""
+CUBICCONVOLUTION = 'CubicConvolution'
+
+"""A resampling methods"""
+CUBICSPLINE = 'CubicSpline'
+
+"""A resampling methods"""
+LANCZOS = 'Lanczos'
+
+"""A resampling methods"""
+AVERAGE = 'Average'
+
+"""A resampling methods"""
+MODE = 'Mode'
+
+"""A resampling methods"""
+MEDIAN = 'Median'
+
+"""A resampling methods"""
+MAX = 'Max'
+
+"""A resampling methods"""
+MIN = 'Min'
