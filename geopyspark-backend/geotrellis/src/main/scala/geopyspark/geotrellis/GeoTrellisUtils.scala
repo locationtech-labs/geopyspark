@@ -50,14 +50,5 @@ object GeoTrellisUtils {
         mappedLayout("tileCols"),
         mappedLayout("tileRows"))
     }
-
-    def toCrs: Option[CRS] =
-      if (m.isEmpty)
-        None
-      else
-        m.head.asInstanceOf[(String, String)] match {
-          case ("ouputCRS", name) => Some(CRS.fromName(name))
-          case (k, _) => throw new Exception(s"Cannot create CRS from $k")
-        }
   }
 }

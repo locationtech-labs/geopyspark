@@ -35,7 +35,7 @@ object TileLayerMetadataCollector {
     schemaJson: String,
     pythonExtent: java.util.Map[String, Double],
     pythonTileLayout: java.util.Map[String, Int],
-    crsJavaMap: java.util.Map[String, String]
+    outputCrs: String
   ): String = {
 
     val rdd =
@@ -44,12 +44,10 @@ object TileLayerMetadataCollector {
     val layoutDefinition = LayoutDefinition(pythonExtent.toExtent,
       pythonTileLayout.toTileLayout)
 
-    val crs: Option[CRS] = crsJavaMap.toCrs
-
     val metadata =
-      crs match {
-        case None => rdd.collectMetadata[K2](layoutDefinition)
-        case Some(x) => rdd.collectMetadata[K2](x, layoutDefinition)
+      outputCrs match {
+        case "" => rdd.collectMetadata[K2](layoutDefinition)
+        case projection => rdd.collectMetadata[K2](CRS.fromName(projection), layoutDefinition)
       }
 
     metadata.toJson.compactPrint
@@ -61,7 +59,7 @@ object TileLayerMetadataCollector {
     schemaJson: String,
     pythonExtent: java.util.Map[String, Double],
     pythonTileLayout: java.util.Map[String, Int],
-    crsJavaMap: java.util.Map[String, String]
+    outputCrs: String
   ): String =
     keyType match {
       case "ProjectedExtent" =>
@@ -70,14 +68,14 @@ object TileLayerMetadataCollector {
           schemaJson,
           pythonExtent,
           pythonTileLayout,
-          crsJavaMap)
+          outputCrs)
       case "TemporalProjectedExtent" =>
         createCollection[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
           returnedRdd,
           schemaJson,
           pythonExtent,
           pythonTileLayout,
-          crsJavaMap)
+          outputCrs)
     }
 
   private def createPyramidCollection[
@@ -91,17 +89,15 @@ object TileLayerMetadataCollector {
     tileSize: Int,
     resolutionThreshold: Double,
     maxZoom: Int,
-    crsJavaMap: java.util.Map[String, String]
+    outputCrs: String
   ): (Int, String) = {
     val rdd = PythonTranslator.fromPython[(K, T)](returnedRdd, Some(schemaJson))
-
     val zoomedLayout= ZoomedLayoutScheme(CRS.fromName(crs), tileSize, resolutionThreshold)
-    val outputCRS: Option[CRS] = crsJavaMap.toCrs
 
     val (zoomLevel, metadata) =
-      outputCRS match {
-        case None => TileLayerMetadata.fromRdd(rdd, zoomedLayout, maxZoom)
-        case Some(x) => TileLayerMetadata.fromRdd(rdd, x, zoomedLayout, maxZoom)
+      outputCrs match {
+        case "" => TileLayerMetadata.fromRdd(rdd, zoomedLayout, maxZoom)
+        case projection => TileLayerMetadata.fromRdd(rdd, CRS.fromName(projection), zoomedLayout, maxZoom)
       }
 
     (zoomLevel, metadata.toJson.compactPrint)
@@ -115,7 +111,7 @@ object TileLayerMetadataCollector {
     tileSize: Int,
     resolutionThreshold: Double,
     maxZoom: Int,
-    crsJavaMap: java.util.Map[String, String]
+    outputCrs: String
   ): (Int, String) =
       keyType match {
         case "ProjectedExtent" =>
@@ -126,7 +122,7 @@ object TileLayerMetadataCollector {
             tileSize,
             resolutionThreshold,
             maxZoom,
-            crsJavaMap)
+            outputCrs)
         case "TemporalProjectedExtent" =>
           createPyramidCollection[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
             returnedRDD,
@@ -135,6 +131,6 @@ object TileLayerMetadataCollector {
             tileSize,
             resolutionThreshold,
             maxZoom,
-            crsJavaMap)
+            outputCrs)
       }
 }

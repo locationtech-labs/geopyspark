@@ -41,7 +41,7 @@ object PyramidWrapper {
     resolutionThreshold: Double,
     startZoom: Int,
     endZoom: Int,
-    options: java.util.Map[String, String]
+    returnedResampleMethod: String
   ): java.util.List[(Int, (JavaRDD[Array[Byte]], String), String)] = {
     val rdd: RDD[(K, MultibandTile)] =
       PythonTranslator.fromPython[(K, MultibandTile)](returnedRDD, Some(schema))
@@ -54,16 +54,10 @@ object PyramidWrapper {
     val zoomedLayout = ZoomedLayoutScheme(metadata.crs, tileSize, resolutionThreshold)
 
     val pyramidOptions = {
-      val scalaMap = options.asScala
-
-      if (scalaMap.isEmpty)
-        Pyramid.Options.DEFAULT
-      else {
-        val resampleMethod =
-          TilerOptions.getResampleMethod(scalaMap.get("resampleMethod"))
+      val resampleMethod =
+        TilerOptions.getResampleMethod(returnedResampleMethod)
 
         Pyramid.Options(resampleMethod=resampleMethod)
-      }
     }
 
     val leveledList =
@@ -83,7 +77,7 @@ object PyramidWrapper {
     resolutionThreshold: Double,
     startZoom: Int,
     endZoom: Int,
-    options: java.util.Map[String, String]
+    returnedResampleMethod: String
   ): java.util.List[(Int, (JavaRDD[Array[Byte]], String), String)] =
     keyType match {
       case "SpatialKey" =>
@@ -95,7 +89,7 @@ object PyramidWrapper {
           resolutionThreshold,
           startZoom,
           endZoom,
-          options)
+          returnedResampleMethod)
       case "SpaceTimeKey" =>
         buildPyramid[SpaceTimeKey, TileLayerMetadata[SpaceTimeKey]](
           returnedRDD,
@@ -105,6 +99,6 @@ object PyramidWrapper {
           resolutionThreshold,
           startZoom,
           endZoom,
-          options)
+          returnedResampleMethod)
     }
 }
