@@ -1,5 +1,6 @@
 import json
 
+from geopyspark.geotrellis.constants import SPATIAL, TILE, ZORDER
 from shapely.geometry import Polygon
 from shapely.wkt import dumps
 from urllib.parse import urlparse
@@ -114,13 +115,13 @@ def read(geopysc,
     tup = reader.read(key, layer_name, layer_zoom)
     schema = tup._2()
 
-    if rdd_type == "spatial":
+    if rdd_type == SPATIAL:
         jmetadata = store.metadataSpatial(layer_name, layer_zoom)
     else:
         jmetadata = store.metadataSpaceTime(layer_name, layer_zoom)
 
     metadata = json.loads(jmetadata)
-    ser = geopysc.create_tuple_serializer(schema, value_type="Tile")
+    ser = geopysc.create_tuple_serializer(schema, value_type=TILE)
 
     rdd = geopysc.create_python_rdd(tup._1(), ser)
 
@@ -170,13 +171,13 @@ def query(geopysc,
 
     schema = tup._2()
 
-    if rdd_type == "spatial":
+    if rdd_type == SPATIAL:
         jmetadata = store.metadataSpatial(layer_name, layer_zoom)
     else:
         jmetadata = store.metadataSpaceTime(layer_name, layer_zoom)
 
     metadata = json.loads(jmetadata)
-    ser = geopysc.create_tuple_serializer(schema, value_type="Tile")
+    ser = geopysc.create_tuple_serializer(schema, value_type=TILE)
 
     rdd = geopysc.create_python_rdd(tup._1(), ser)
 
@@ -189,7 +190,7 @@ def write(geopysc,
           layer_zoom,
           rdd,
           metadata,
-          index_strategy="zorder",
+          index_strategy=ZORDER,
           time_unit=None,
           options=None,
           **kwargs):
