@@ -32,7 +32,7 @@ def _construct_catalog(geopysc, new_uri, options):
             writer = geopysc.writer_factory.buildHadoop(store)
 
         elif backend == 'file':
-            store = geopysc.store_factory.buildFile(new_uri)
+            store = geopysc.store_factory.buildFile(new_uri[7:])
             reader = geopysc.reader_factory.buildFile(store, geopysc.sc)
             value_reader = geopysc.value_reader_factory.buildFile(store)
             writer = geopysc.writer_factory.buildFile(store)
