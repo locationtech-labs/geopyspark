@@ -31,6 +31,9 @@ abstract class ValueReaderWrapper() {
   def attributeStore: AttributeStore
   def valueReader: ValueReader[LayerId]
 
+  def getValueClass(id: LayerId): String =
+    attributeStore.readHeader[LayerHeader](id).valueClass
+
   def readTile(
     keyType: String,
     layerName: String,
@@ -40,19 +43,28 @@ abstract class ValueReaderWrapper() {
     zdt: String
   ): (Array[Byte], String) = {
     val id = LayerId(layerName, zoom)
+    val valueClass = getValueClass(id)
 
-    keyType match {
-      case "SpatialKey" => {
+    (keyType, valueClass) match {
+      case ("SpatialKey", "geotrellis.raster.Tile") => {
         val spatialKey = SpatialKey(col, row)
-        PythonTranslator
-          .toPython(valueReader.reader[SpatialKey, MultibandTile](id)
-          .read(spatialKey))
-        }
-      case "SpaceTimeKey" => {
-      val spaceKey = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
-      PythonTranslator
-        .toPython(valueReader.reader[SpaceTimeKey, MultibandTile](id)
-        .read(spaceKey))
+        val result = valueReader.reader[SpatialKey, Tile](id).read(spatialKey)
+        PythonTranslator.toPython(MultibandTile(result))
+      }
+      case ("SpatialKey", "geotrellis.raster.MultibandTile") => {
+        val spatialKey = SpatialKey(col, row)
+        val result = valueReader.reader[SpatialKey, MultibandTile](id).read(spatialKey)
+        PythonTranslator.toPython(result)
+      }
+      case ("SpaceTimeKey", "geotrellis.raster.Tile") => {
+        val spaceKey = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
+        val result = valueReader.reader[SpaceTimeKey, Tile](id).read(spaceKey)
+        PythonTranslator.toPython(MultibandTile(result))
+      }
+      case ("SpaceTimeKey", "geotrellis.raster.MultibandTile") => {
+        val spaceKey = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
+        val result = valueReader.reader[SpaceTimeKey, MultibandTile](id).read(spaceKey)
+        PythonTranslator.toPython(result)
       }
     }
   }
