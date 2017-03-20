@@ -1,5 +1,7 @@
 package geopyspark.geotrellis.io
 
+import geopyspark.geotrellis._
+
 import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.accumulo._
@@ -15,6 +17,9 @@ import spray.json._
 import org.apache.accumulo.core.client.security.tokens.PasswordToken
 import org.apache.spark._
 
+import scala.collection.JavaConverters._
+import collection.JavaConversions._
+import java.util.Map
 
 /**
   * Base wrapper class for various types of attribute store wrappers.
@@ -166,25 +171,23 @@ object AttributeStoreFactory {
     hosts: String,
     username: String,
     password: String,
-    replicationStrategy: String,
-    replicationFactor: Int,
-    localDc: String,
-    usedHostsPerRemoteDc: Int,
-    allowRemoteDCsForLocalConsistencyLevel: Int,
     attributeKeySpace: String,
-    attributeTable: String
+    attributeTable: String,
+    options: java.util.Map[String, Any]
   ) = {
+    val stringValues = Array("replicationStrategy", "localDc")
+    val (stringMap, intMap) = GeoTrellisUtils.convertToScalaMap(options, stringValues)
     val instance = BaseCassandraInstance(
       hosts.split(","),
       username,
       password,
-      if (replicationStrategy != "") replicationStrategy; else Cassandra.cfg.getString("replicationStrategy"),
-      if (replicationFactor > -1) replicationFactor; else Cassandra.cfg.getInt("replicationFactor"),
-      if (localDc != "") localDc; else Cassandra.cfg.getString("localDc"),
-      if (usedHostsPerRemoteDc > -1) usedHostsPerRemoteDc; else Cassandra.cfg.getInt("usedHostsPerRemoteDc"),
-      allowRemoteDCsForLocalConsistencyLevel match {
-        case 1 => true
-        case 0 => false
+      stringMap.getOrElse("replicationStrategy", Cassandra.cfg.getString("replicationStrategy")),
+      intMap.getOrElse("replicationFactor", Cassandra.cfg.getInt("replicationFactor")),
+      stringMap.getOrElse("localDc", Cassandra.cfg.getString("localDc")),
+      intMap.getOrElse("usedHostsPerRemoteDc", Cassandra.cfg.getInt("usedHostsPerRemoteDc")),
+      intMap.get("allowRemoteDCsForLocalConsistencyLevel") match {
+        case Some(1) => true
+        case Some(0) => false
         case _ => Cassandra.cfg.getBoolean("allowRemoteDCsForLocalConsistencyLevel")
       })
     new CassandraAttributeStoreWrapper(
@@ -202,7 +205,7 @@ object AttributeStoreFactory {
   ) = {
     val instance = HBaseInstance(
       zookeepers.split(","),
-      master,
+      if (master != "") master; else null,
       clientPort
     )
     new HBaseAttributeStoreWrapper(instance, attributeTable)
