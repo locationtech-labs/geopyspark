@@ -1,7 +1,10 @@
 export PYTHON := python3
 export PYSPARK_PYTHON := ipython
-export IMG := jupyter-geopyspark
 
+VERSION := 0
+ORG  := geodocker
+REPO := jupyter-geopyspark
+IMG  := quay.io/${ORG}/${REPO}
 JAR-PATH := geopyspark/jars/
 ASSEMBLYNAME := geotrellis-backend-assembly-0.1.0.jar
 BUILD-ASSEMBLY := geopyspark-backend/geotrellis/target/scala-2.11/${ASSEMBLYNAME}
@@ -25,11 +28,15 @@ ${WHEEL}: $(call rwildcard, geopyspark, *.py) setup.py ${DIST-ASSEMBLY}
 pyspark: ${DIST-ASSEMBLY}
 	pyspark --jars ${DIST-ASSEMBLY}
 
-docker-build: ${WHEEL}
-	docker build -t ${IMG}:latest .
+docker-build: ${WHEEL} ${DIST-ASSEMBLY}
+	cp -f ${DIST-ASSEMBLY} .
+	cp -f ${WHEEL} .
+	docker build -t ${IMG}:${VERSION} .
+	rm -f ${ASSEMBLYNAME}
+	rm -f ${WHEELNAME}
 
 docker-run:
-	docker run --rm --name geopyspark  -it -p 8000:8000 -v $(CURDIR)/notebooks:/opt/notebooks ${IMG}:latest ${CMD}
+	docker run --rm --name geopyspark -it -p 8000:8000 -v $(CURDIR)/notebooks:/opt/notebooks ${IMG}:${VERSION} ${CMD}
 
 docker-exec:
 	docker exec -it -u root geopyspark bash
