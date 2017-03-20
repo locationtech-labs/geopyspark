@@ -20,12 +20,12 @@ object S3GeoTiffRDDOptions {
   def default = S3GeoTiffRDD.Options.DEFAULT
 
   def setValues(javaMap: java.util.Map[String, Any]): S3GeoTiffRDD.Options = {
-    val stringValues = Array("timeTag", "timeFormat", "s3Client")
+    val stringValues = Array("timeTag", "timeFormat", "s3Client", "crs")
     val (stringMap, intMap) = GeoTrellisUtils.convertToScalaMap(javaMap, stringValues)
 
     val crs: Option[CRS] =
-      if (intMap.contains("crs"))
-        Some(CRS.fromEpsgCode(intMap("crs")))
+      if (stringMap.contains("crs"))
+        Some(CRS.fromName(stringMap("crs")))
       else
         None
 

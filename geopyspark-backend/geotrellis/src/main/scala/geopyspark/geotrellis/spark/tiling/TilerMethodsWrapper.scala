@@ -36,7 +36,7 @@ object TilerMethodsWrapper {
     returnedRdd: RDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
-    resampleMap: java.util.Map[String, String]
+    returnedResampleMethod: String
   ): (JavaRDD[Array[Byte]], String) = {
     val rdd: RDD[(K, V)] =
       PythonTranslator.fromPython[(K, V)](returnedRdd, Some(schema))
@@ -44,15 +44,9 @@ object TilerMethodsWrapper {
     val metadataAST = returnedMetadata.parseJson
     val metadata = metadataAST.convertTo[TileLayerMetadata[K2]]
 
-    val scalaMap = resampleMap.asScala
-
-    val cutRdd =
-      if (scalaMap.isEmpty)
-        rdd.cutTiles(metadata)
-      else {
+    val cutRdd = {
         val resampleMethod =
-          TilerOptions.getResampleMethod(scalaMap.get("resampleMethod"))
-
+          TilerOptions.getResampleMethod(returnedResampleMethod)
         rdd.cutTiles(metadata, resampleMethod)
       }
 
@@ -64,7 +58,7 @@ object TilerMethodsWrapper {
     returnedRdd: RDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
-    resampleMap: java.util.Map[String, String]
+    returnedResampleMethod: String
   ): (JavaRDD[Array[Byte]], String) =
     keyType match {
       case "ProjectedExtent" =>
@@ -72,13 +66,13 @@ object TilerMethodsWrapper {
           returnedRdd,
           schema,
           returnedMetadata,
-          resampleMap)
+          returnedResampleMethod)
       case "TemporalProjectedExtent" =>
         cutRDDTiles[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
           returnedRdd,
           schema,
           returnedMetadata,
-          resampleMap)
+          returnedResampleMethod)
     }
 
   private def toLayout[
@@ -89,19 +83,14 @@ object TilerMethodsWrapper {
     returnedRdd: RDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
-    options: java.util.Map[String, Any]
+    resampleMethod: String
   ): (JavaRDD[Array[Byte]], String) = {
     val rdd: RDD[(K, V)] = PythonTranslator.fromPython[(K, V)](returnedRdd, Some(schema))
 
     val metadataAST = returnedMetadata.parseJson
     val metadata = metadataAST.convertTo[TileLayerMetadata[K2]]
 
-    val returnedOptions =
-      if (options.isEmpty)
-        TilerOptions.default
-      else
-        TilerOptions.setValues(options)
-
+    val returnedOptions = TilerOptions.setValues(resampleMethod)
     val result = rdd.tileToLayout(metadata, returnedOptions)
 
     PythonTranslator.toPython(result)
@@ -112,7 +101,7 @@ object TilerMethodsWrapper {
     returnedRdd: RDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
-    options: java.util.Map[String, Any]
+    resampleMethod: String
   ): (JavaRDD[Array[Byte]], String) =
     keyType match {
       case "ProjectedExtent" =>
@@ -120,12 +109,12 @@ object TilerMethodsWrapper {
           returnedRdd,
           schema,
           returnedMetadata,
-          options)
+          resampleMethod)
       case "TemporalProjectedExtent" =>
         toLayout[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
           returnedRdd,
           schema,
           returnedMetadata,
-          options)
+          resampleMethod)
     }
 }
