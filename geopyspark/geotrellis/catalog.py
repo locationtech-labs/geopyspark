@@ -483,7 +483,7 @@ def write(geopysc,
 
     key = geopysc.map_key_input(rdd_type, True)
 
-    schema = metadata.schema
+    schema = geopysc.create_schema(key)
 
     if not time_unit:
         time_unit = ""
@@ -492,7 +492,7 @@ def write(geopysc,
                  layer_name,
                  layer_zoom,
                  rdd._jrdd,
-                 json.dumps(metadata),
                  schema,
+                 json.dumps(metadata),
                  time_unit,
                  index_strategy)
