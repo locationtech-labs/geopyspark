@@ -607,11 +607,11 @@ def write(geopysc,
     if not time_unit:
         time_unit = ""
 
-    writer.write(key,
-                 layer_name,
-                 layer_zoom,
-                 rdd._jrdd,
-                 schema,
-                 json.dumps(metadata),
-                 time_unit,
-                 index_strategy)
+    builds.writer.write(key,
+                        layer_name,
+                        layer_zoom,
+                        rdd._jrdd,
+                        schema,
+                        json.dumps(metadata),
+                        time_unit,
+                        index_strategy)
