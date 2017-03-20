@@ -6,6 +6,7 @@ will be in a multiband format; regardless of how the data was originally formatt
 
 import json
 
+from collections import namedtuple
 from geopyspark.geotrellis.constants import SPATIAL, TILE, ZORDER
 from shapely.geometry import Polygon
 from shapely.wkt import dumps
@@ -13,6 +14,9 @@ from urllib.parse import urlparse
 
 
 _mapped_builds = {}
+_mapped_serializers = {}
+_builds = namedtuple('Builds', ('store', 'reader', 'value_reader', 'writer'))
+
 
 
 def _construct_catalog(geopysc, new_uri, options):
@@ -24,16 +28,19 @@ def _construct_catalog(geopysc, new_uri, options):
         if backend == 'hdfs':
             store = geopysc.store_factory.buildHadoop(new_uri)
             reader = geopysc.reader_factory.buildHadoop(store, geopysc.sc)
+            value_reader = geopysc.value_reader_factory.buildHadoop(store)
             writer = geopysc.writer_factory.buildHadoop(store)
 
         elif backend == 'file':
             store = geopysc.store_factory.buildFile(new_uri)
             reader = geopysc.reader_factory.buildFile(store, geopysc.sc)
+            value_reader = geopysc.value_reader_factory.buildFile(store)
             writer = geopysc.writer_factory.buildFile(store)
 
         elif backend == 's3':
             store = geopysc.store_factory.buildS3(parsed_uri.netloc, parsed_uri.path[1:])
             reader = geopysc.reader_factory.buildS3(store, geopysc.sc)
+            value_reader = geopysc.value_reader_factory.buildS3(store)
             writer = geopysc.writer_factory.buildS3(store)
 
         elif backend == 'cassandra':
@@ -53,6 +60,7 @@ def _construct_catalog(geopysc, new_uri, options):
                 options)
 
             reader = geopysc.reader_factory.buildCassandra(store, geopysc.sc)
+            value_reader = geopysc.value_reader_factory.buildCassandra(store)
             writer = geopysc.writer_factory.buildCassandra(store,
                                                            parameter_dict['keyspace'],
                                                            parameter_dict['table'])
@@ -70,6 +78,7 @@ def _construct_catalog(geopysc, new_uri, options):
 
             store = geopysc.store_factory.buildHBase(zookeepers, master, port, table)
             reader = geopysc.reader_factory.buildHBase(store, geopysc.sc)
+            value_reader = geopysc.value_reader_factory.buildHBase(store)
             writer = geopysc.writer_factory.buildHBase(store, table)
 
         elif backend == 'accumulo':
@@ -88,6 +97,8 @@ def _construct_catalog(geopysc, new_uri, options):
                                                           store,
                                                           geopysc.sc)
 
+            value_reader = geopysc.value_reader_factory.buildAccumulo(store)
+
             writer = geopysc.writer_factory.buildAccumulo(split_parameters[1],
                                                           store,
                                                           split_parameters[2])
@@ -95,7 +106,10 @@ def _construct_catalog(geopysc, new_uri, options):
         else:
             raise Exception("Cannot find Attribute Store for, {}".format(backend))
 
-        _mapped_builds[new_uri] = (store, reader, writer)
+        _mapped_builds[new_uri] = _builds(store=store,
+                                          reader=reader,
+                                          value_reader=value_reader,
+                                          writer=writer)
 
 def read(geopysc,
          rdd_type,
@@ -123,7 +137,7 @@ def read(geopysc,
             represented by the constants: SPATIAL and SPACETIME. Note: All of the
             GeoTiffs must have the same saptial type.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
-        catalog to be read from. The shape of this string varies depending on backend.
+            catalog to be read from. The shape of this string varies depending on backend.
 
             Example uris for each backend:
                 Local Filesystem: file://my_folder/my_catalog/
@@ -134,7 +148,7 @@ def read(geopysc,
                 Accumulo: accumulo://username:password/zoo1, zoo2/instance/table
         layer_name (str): The name of the GeoTrellis catalog to be read from.
         layer_zoom (int): The zoom level of the layer that is to be read.
-        options (dict, optional): Additional parameters for reading the tile for specific backends.
+        options (dict, optional): Additional parameters for reading the layer for specific backends.
             The dictioanry is only used for Cassandra and HBase, no other backend requires this
             to be set.
 
@@ -186,17 +200,17 @@ def read(geopysc,
 
     _construct_catalog(geopysc, uri, options)
 
-    (store, reader, _) = _mapped_builds[uri]
+    builds = _mapped_builds[uri]
 
     key = geopysc.map_key_input(rdd_type, True)
 
-    tup = reader.read(key, layer_name, layer_zoom)
+    tup = builds.reader.read(key, layer_name, layer_zoom)
     schema = tup._2()
 
     if rdd_type == SPATIAL:
-        jmetadata = store.metadataSpatial(layer_name, layer_zoom)
+        jmetadata = builds.store.metadataSpatial(layer_name, layer_zoom)
     else:
-        jmetadata = store.metadataSpaceTime(layer_name, layer_zoom)
+        jmetadata = builds.store.metadataSpaceTime(layer_name, layer_zoom)
 
     metadata = json.loads(jmetadata)
     ser = geopysc.create_tuple_serializer(schema, value_type=TILE)
@@ -204,6 +218,111 @@ def read(geopysc,
     rdd = geopysc.create_python_rdd(tup._1(), ser)
 
     return (rdd, schema, metadata)
+
+def read_value(geopysc,
+               rdd_type,
+               uri,
+               layer_name,
+               layer_zoom,
+               col,
+               row,
+               zdt=None,
+               options=None,
+               **kwargs):
+
+    """Reads a single tile from a GeoTrellis catalog.
+    Unlike other functions in this module, this will not return a RDD, but rather
+    GeoPySpark formatted tile. This is the function to use when creating a tile server.
+
+    A tile can be read from various backends. These are the ones that are currently supported:
+        Local Filesystem
+        HDFS
+        S3
+        Cassandra
+        HBase
+        Accumulo
+
+    Args:
+        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        rdd_type (str): What the spatial type of the geotiffs are. This is
+            represented by the constants: SPATIAL and SPACETIME. Note: All of the
+            GeoTiffs must have the same saptial type.
+        uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
+            catalog to be read from. The shape of this string varies depending on backend.
+
+            Example uris for each backend:
+                Local Filesystem: file://my_folder/my_catalog/
+                HDFS: hdfs://my_folder/my_catalog/
+                S3: s3://my_bucket/my_catalog/
+                Cassandra: cassandra:name?username=user&password=pass&host=host1&keyspace=key&table=table
+                HBase: hbase://zoo1, zoo2: port/table
+                Accumulo: accumulo://username:password/zoo1, zoo2/instance/table
+        layer_name (str): The name of the GeoTrellis catalog to be read from.
+        layer_zoom (int): The zoom level of the layer that is to be read.
+        col (int): The col number of the tile within the layout. Cols run east to west.
+        row (int): The row number of the tile wihtin the layout. Row run north to south.
+        zdt (str): The Zone-Date-Time string of the tile. The string must be in a valid date-time
+            format. This parameter is only used when querying spatial-temporal data. The default
+            value is, None. If None, then only the spatial area will be querried.
+        options (dict, optional): Additional parameters for reading the tile for specific backends.
+            The dictioanry is only used for Cassandra and HBase, no other backend requires this
+            to be set.
+
+            Fields that can be set for Cassandra:
+                replicationStrategy (str, optional): If not specified, then 'SimpleStrategy' will
+                    be used.
+                replicationFactor (int, optional): If not specified, then 1 will be used.
+                localDc (str, optional): If not specified, then 'datacenter1' will be used.
+                usedHostsPerRemoteDc (int, optional): If not specified, then 0 will be used.
+                allowRemoteDCsForLocalConsistencyLevel (int, optional): If you'd like this feature,
+                    then the value would be 1, Otherwise, the value should be 0. If not specified,
+                    then 0 will be used.
+
+            Fields that can be set for HBase:
+                master (str, optional): If not specified, then 'null' will be used.
+        **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
+            be in camel case. If both options and keywords are set, then the options will be used.
+
+    Returns:
+        dict: A dictionary that contains the tile tile data.
+
+            The fields to represent the tile:
+                data (np.ndarray): The tile data itself is represented as a 3D, numpy array.
+                    Note, even if the data was originally singleband, it will be reformatted as
+                    a multiband tile and read and saved as such.
+                no_data_value (optional): The no data value of the tile. Can be a range of
+                    types including None.
+    """
+
+    if options:
+        options = options
+    elif kwargs:
+        options = kwargs
+    else:
+        options = {}
+
+    _construct_catalog(geopysc, uri, options)
+
+    builds = _mapped_builds[uri]
+
+    if not zdt:
+        zdt = ""
+
+    key = geopysc.map_key_input(rdd_type, True)
+
+    tup = builds.value_reader.readTile(key,
+                                       layer_name,
+                                       layer_zoom,
+                                       col,
+                                       row,
+                                       zdt)
+
+    ser = geopysc.create_value_serializer(tup._2(), TILE)
+
+    if uri not in _mapped_serializers:
+        _mapped_serializers[uri] = ser
+
+    return ser.loads(tup._1())[0]
 
 def query(geopysc,
           rdd_type,
@@ -260,7 +379,7 @@ def query(geopysc,
             The strings must be in a valid date-time format. This parameter is only used when
             querying spatial-temporal data. The default value is, None. If None, then only the
             spatial area will be querried.
-        options (dict, optional): Additional parameters for reading the tile for specific backends.
+        options (dict, optional): Additional parameters for querying the tile for specific backends.
             The dictioanry is only used for Cassandra and HBase, no other backend requires this
             to be set.
 
@@ -311,7 +430,7 @@ def query(geopysc,
 
     _construct_catalog(geopysc, uri, options)
 
-    (store, reader, _) = _mapped_builds[uri]
+    builds = _mapped_builds[uri]
 
     key = geopysc.map_key_input(rdd_type, True)
 
@@ -319,27 +438,27 @@ def query(geopysc,
         time_intervals = []
 
     if isinstance(intersects, Polygon):
-        tup = reader.query(key,
-                           layer_name,
-                           layer_zoom,
-                           dumps(intersects),
-                           time_intervals)
+        tup = builds.reader.query(key,
+                                  layer_name,
+                                  layer_zoom,
+                                  dumps(intersects),
+                                  time_intervals)
 
     elif isinstance(intersects, str):
-        tup = reader.query(key,
-                           layer_name,
-                           layer_zoom,
-                           intersects,
-                           time_intervals)
+        tup = builds.reader.query(key,
+                                  layer_name,
+                                  layer_zoom,
+                                  intersects,
+                                  time_intervals)
     else:
         raise Exception("Could not query intersection", intersects)
 
     schema = tup._2()
 
     if rdd_type == SPATIAL:
-        jmetadata = store.metadataSpatial(layer_name, layer_zoom)
+        jmetadata = builds.store.metadataSpatial(layer_name, layer_zoom)
     else:
-        jmetadata = store.metadataSpaceTime(layer_name, layer_zoom)
+        jmetadata = builds.store.metadataSpaceTime(layer_name, layer_zoom)
 
     metadata = json.loads(jmetadata)
     ser = geopysc.create_tuple_serializer(schema, value_type=TILE)
@@ -450,7 +569,7 @@ def write(geopysc,
                 and 'resolution' is the temporal resolution. Both 'min_date' and 'max_date'
                 must be in a valid date-time format.
 
-        options (dict, optional): Additional parameters for writing the tile layer for specific
+        options (dict, optional): Additional parameters for writing the layer for specific
             backends. The dictioanry is only used for Cassandra and HBase, no other backend
             requires this to be set.
 
@@ -479,7 +598,7 @@ def write(geopysc,
 
     _construct_catalog(geopysc, uri, options)
 
-    (_, _, writer) = _mapped_builds[uri]
+    builds = _mapped_builds[uri]
 
     key = geopysc.map_key_input(rdd_type, True)
 
