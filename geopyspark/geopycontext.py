@@ -65,6 +65,10 @@ class GeoPyContext(object):
     def pyramid_builder(self):
         return self._jvm.geopyspark.geotrellis.spark.pyramid.PyramidWrapper
 
+    @property
+    def rdd_reprojector(self):
+        return self._jvm.geopyspark.geotrellis.spark.reproject.ReprojectWrapper
+
     @staticmethod
     def map_key_input(key_type, is_boundable):
         if is_boundable:
