@@ -247,6 +247,61 @@ def collect_pyramid_metadata(geopysc,
 
     return (result._1(), json.loads(result._2()))
 
+
+def reproject(geopysc,
+              rdd_type,
+              keyed_rdd,
+              tile_layer_metadata,
+              dest_crs,
+              match_layer_extent=False):
+
+    reproject_wrapper = geopysc.rdd_reprojector
+    key = geopysc.map_key_input(rdd_type, True)
+
+    (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, keyed_rdd)
+
+    result = reproject_wrapper.reproject(key,
+                                         java_rdd.rdd(),
+                                         schema,
+                                         json.dumps(tile_layer_metadata),
+                                         dest_crs,
+                                         match_layer_extent)
+
+    (rdd, returned_schema) = (result._2()._1(), result._2()._2())
+    ser = geopysc.create_tuple_serializer(returned_schema, value_type=TILE)
+    returned_rdd = geopysc.create_python_rdd(rdd, ser)
+
+    return (returned_rdd, json.loads(result._3()))
+
+def reproject_pyramid(geopysc,
+                      rdd_type,
+                      keyed_rdd,
+                      tile_layer_metadata,
+                      dest_crs,
+                      tile_size,
+                      resolution_threshold=0.1,
+                      match_layer_extent=False):
+
+    reproject_wrapper = geopysc.rdd_reprojector
+    key = geopysc.map_key_input(rdd_type, True)
+
+    (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, keyed_rdd)
+
+    result = reproject_wrapper.reprojectWithZoom(key,
+                                                 java_rdd.rdd(),
+                                                 schema,
+                                                 json.dumps(tile_layer_metadata),
+                                                 dest_crs,
+                                                 match_layer_extent,
+                                                 tile_size,
+                                                 resolution_threshold)
+
+    (rdd, returned_schema) = (result._2()._1(), result._2()._2())
+    ser = geopysc.create_tuple_serializer(returned_schema, value_type=TILE)
+    returned_rdd = geopysc.create_python_rdd(rdd, ser)
+
+    return (result._1(), returned_rdd, json.loads(result._3()))
+
 def cut_tiles(geopysc,
               rdd_type,
               raster_rdd,
