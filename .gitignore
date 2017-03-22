@@ -97,3 +97,6 @@ notebooks
 
 # GeoPySpark-backend jar
 geopyspark/jars/*.jar
+
+# Unit test performance results
+prof/
