@@ -17,6 +17,7 @@ import spray.json._
 
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.api.java.JavaRDD
 
 import scala.collection.JavaConverters._
 import collection.JavaConversions._
@@ -31,7 +32,7 @@ object TileLayerMetadataCollector {
   T <: CellGrid: AvroRecordCodec: ClassTag,
   K2: Boundable: SpatialComponent: JsonFormat
   ](
-    returnedRdd: RDD[Array[Byte]],
+    returnedRdd: JavaRDD[Array[Byte]],
     schemaJson: String,
     pythonExtent: java.util.Map[String, Double],
     pythonTileLayout: java.util.Map[String, Int],
@@ -55,7 +56,7 @@ object TileLayerMetadataCollector {
 
   def collectPythonMetadata(
     keyType: String,
-    returnedRdd: RDD[Array[Byte]],
+    returnedRdd: JavaRDD[Array[Byte]],
     schemaJson: String,
     pythonExtent: java.util.Map[String, Double],
     pythonTileLayout: java.util.Map[String, Int],
@@ -83,7 +84,7 @@ object TileLayerMetadataCollector {
     T <: CellGrid: AvroRecordCodec: ClassTag,
     K2: Boundable: SpatialComponent: JsonFormat
   ](
-    returnedRdd: RDD[Array[Byte]],
+    returnedRdd: JavaRDD[Array[Byte]],
     schemaJson: String,
     crs: String,
     tileSize: Int,
@@ -105,7 +106,7 @@ object TileLayerMetadataCollector {
 
   def collectPythonPyramidMetadata(
     keyType: String,
-    returnedRDD: RDD[Array[Byte]],
+    returnedRDD: JavaRDD[Array[Byte]],
     schemaJson: String,
     crs: String,
     tileSize: Int,
