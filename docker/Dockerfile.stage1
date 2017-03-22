@@ -1,0 +1,12 @@
+FROM quay.io/geodocker/jupyter:3
+
+COPY archives/geotrellis-backend-assembly-0.1.0.jar /blobs/
+COPY archives/gdal-and-friends.tar.gz /blobs/
+COPY archives/geopyspark-and-friends.tar.gz /blobs/
+COPY archives/geotrellis-backend-assembly-0.1.0.jar /blobs/
+COPY scripts/install-blobs.sh /scripts
+COPY kernels/local/kernel.json /usr/local/share/jupyter/kernels/pyspark/kernel.json
+COPY kernels/yarn/kernel.json /usr/local/share/jupyter/kernels/pysparkyarn/kernel.json
+
+ENV LD_LIBRARY_PATH /home/hadoop/local/gdal/lib
+RUN /scripts/install-blobs.sh

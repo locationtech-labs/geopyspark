@@ -1,3 +1,4 @@
+*.jar
 *.tar.bz2
 *.tar.gz
 *.whl
