@@ -11,6 +11,8 @@ class AvroSerializer(FramedSerializer):
                  decoding_method=None,
                  encoding_method=None):
 
+        super().__init__()
+
         self.schema_string = schema
 
         if decoding_method:
@@ -45,11 +47,7 @@ class AvroSerializer(FramedSerializer):
     def datum_writer(self):
         return avro.io.DatumWriter(self.schema)
 
-    """
-    Serialize an object into a byte array.
-    When batching is used, this will be called with an array of objects.
-    """
-    def dumps(self, obj):
+    def _dumps(self, obj):
         bytes_writer = io.BytesIO()
 
         encoder = avro.io.BinaryEncoder(bytes_writer)
@@ -61,6 +59,17 @@ class AvroSerializer(FramedSerializer):
             self.datum_writer.write(obj, encoder)
 
         return bytes_writer.getvalue()
+
+    """
+    Serialize an object into a byte array.
+    When batching is used, this will be called with an array of objects.
+    """
+    def dumps(self, obj):
+        if isinstance(obj, list):
+            for x in obj:
+                return self._dumps(x)
+        else:
+            return self._dumps(obj)
 
     """
     Deserializes a byte array into a collection of python objects.
