@@ -21,10 +21,7 @@ def _convert_to_java_rdd(geopysc, rdd_type, raster_rdd):
         ser = geopysc.create_tuple_serializer(schema, key_type=None, value_type=TILE)
         reserialized_rdd = raster_rdd._reserialize(ser)
 
-        avro_ser = reserialized_rdd._jrdd_deserializer.serializer
-        dumped = raster_rdd.map(lambda value: avro_ser.dumps(value))
-
-        return (dumped._to_java_object_rdd(), schema)
+        return (reserialized_rdd._jrdd, schema)
 
 def collect_metadata(geopysc,
                      rdd_type,
@@ -229,8 +226,7 @@ def collect_pyramid_metadata(geopysc,
     metadata_wrapper = geopysc.tile_layer_metadata_collecter
     key = geopysc.map_key_input(rdd_type, False)
 
-    #(java_rdd, schema) = _convert_to_java_rdd(geopysc, key, raster_rdd)
-    schema = raster_rdd._jrdd_deserializer.serializer.schema_string
+    (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, raster_rdd)
 
     if output_crs:
         output_crs = output_crs
@@ -238,7 +234,7 @@ def collect_pyramid_metadata(geopysc,
         output_crs = ""
 
     result = metadata_wrapper.collectPythonPyramidMetadata(key,
-                                                           raster_rdd._jrdd,
+                                                           java_rdd,
                                                            schema,
                                                            crs,
                                                            tile_size,
