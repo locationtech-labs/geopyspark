@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-USER=$1
-GROUP=$2
+USERID=$1
+GROUPID=$2
 
 export CPPFLAGS="-I$HOME/local/gdal/include"
 export CFLAGS="-I$HOME/local/gdal/include"
@@ -46,10 +46,10 @@ make install
 
 # build gdal
 cd $HOME/local/src/gdal-2.1.3
-./configure --prefix=$HOME/local/gdal && make && make install
+./configure --prefix=$HOME/local/gdal && (make -j || make) && make install
 
 # archive binaries
 cd $HOME/local/gdal
 tar acvf /archives/gdal-and-friends.tar.gz .
 
-chown -R $USER:$GROUP /archives
+chown -R $USERID:$GROUPID /archives

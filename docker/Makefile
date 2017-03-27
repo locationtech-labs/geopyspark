@@ -35,13 +35,13 @@ archives/gdal-and-friends.tar.gz: $(SRC) scripts/build-blobs.sh archives/zlib-1.
 	docker run -it --rm \
            -v $(PWD)/archives:/archives:rw \
            -v $(PWD)/scripts:/scripts:ro \
-           $(STAGE0) /scripts/build-blobs.sh $(id -u) $(id -g)
+           $(STAGE0) /scripts/build-blobs.sh $(shell id -u) $(shell id -g)
 
 archives/geopyspark-and-friends.tar.gz: $(WHL) scripts/gather-libs.sh archives/gdal-and-friends.tar.gz
 	docker run -it --rm \
           -v $(PWD)/archives:/archives:rw \
           -v $(PWD)/scripts:/scripts:ro \
-          $(STAGE0) /scripts/gather-libs.sh $(id -u) $(id -g)
+          $(STAGE0) /scripts/gather-libs.sh $(shell id -u) $(shell id -g)
 
 stage1: Dockerfile.stage1 archives/gdal-and-friends.tar.gz archives/geopyspark-and-friends.tar.gz
 	docker build -t $(STAGE1) -f Dockerfile.stage1 .
