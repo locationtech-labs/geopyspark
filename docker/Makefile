@@ -40,6 +40,7 @@ archives/gdal-and-friends.tar.gz: $(SRC) scripts/build-blobs.sh archives/zlib-1.
 archives/geopyspark-and-friends.tar.gz: $(WHL) scripts/gather-libs.sh archives/gdal-and-friends.tar.gz
 	docker run -it --rm \
           -v $(PWD)/archives:/archives:rw \
+          -v $(PWD)/archives/pip-cache:/root/.cache/pip:rw \
           -v $(PWD)/scripts:/scripts:ro \
           $(STAGE0) /scripts/gather-libs.sh $(shell id -u) $(shell id -g)
 
