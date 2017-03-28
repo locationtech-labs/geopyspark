@@ -33,7 +33,7 @@ object TilerMethodsWrapper {
     V <: CellGrid: AvroRecordCodec: ClassTag: (? => TileMergeMethods[V]): (? => TilePrototypeMethods[V]),
     K2: Boundable: SpatialComponent: ClassTag: AvroRecordCodec: JsonFormat
   ](
-    returnedRdd: RDD[Array[Byte]],
+    returnedRdd: JavaRDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
     returnedResampleMethod: String
@@ -55,7 +55,7 @@ object TilerMethodsWrapper {
 
   def cutTiles(
     keyType: String,
-    returnedRdd: RDD[Array[Byte]],
+    returnedRdd: JavaRDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
     returnedResampleMethod: String
@@ -80,7 +80,7 @@ object TilerMethodsWrapper {
     V <: CellGrid: AvroRecordCodec: ClassTag: (? => TileMergeMethods[V]): (? => TilePrototypeMethods[V]),
     K2: Boundable: SpatialComponent: ClassTag: AvroRecordCodec: JsonFormat
   ](
-    returnedRdd: RDD[Array[Byte]],
+    returnedRdd: JavaRDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
     resampleMethod: String
@@ -98,7 +98,7 @@ object TilerMethodsWrapper {
 
   def tileToLayout(
     keyType: String,
-    returnedRdd: RDD[Array[Byte]],
+    returnedRdd: JavaRDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
     resampleMethod: String

@@ -23,7 +23,7 @@ object ReprojectWrapper {
   private def reprojectRDD[
     K: SpatialComponent: ClassTag: Boundable: AvroRecordCodec: JsonFormat
   ](
-    returnedRDD: RDD[Array[Byte]],
+    returnedRDD: JavaRDD[Array[Byte]],
     schema: String,
     metadata: TileLayerMetadata[K],
     destCRS: String,
@@ -44,7 +44,7 @@ object ReprojectWrapper {
 
   def reproject(
     keyType: String,
-    returnedRDD: RDD[Array[Byte]],
+    returnedRDD: JavaRDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
     destCRS: String,
@@ -69,7 +69,7 @@ object ReprojectWrapper {
 
   def reprojectWithZoom(
     keyType: String,
-    returnedRDD: RDD[Array[Byte]],
+    returnedRDD: JavaRDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
     destCRS: String,

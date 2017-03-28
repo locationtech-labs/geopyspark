@@ -22,9 +22,9 @@ object MergeMethodsWrapper {
     K: AvroRecordCodec: ClassTag,
     V <: CellGrid: AvroRecordCodec: ClassTag: (? => TileMergeMethods[V])
   ](
-    self: RDD[Array[Byte]],
+    self: JavaRDD[Array[Byte]],
     selfSchema: String,
-    other: RDD[Array[Byte]],
+    other: JavaRDD[Array[Byte]],
     otherSchema: String
   ): (JavaRDD[Array[Byte]], String) = {
     val rdd1: RDD[(K, V)] = PythonTranslator.fromPython[(K, V)](self, Some(selfSchema))
@@ -37,9 +37,9 @@ object MergeMethodsWrapper {
 
   def merge(
     keyType: String,
-    self: RDD[Array[Byte]],
+    self: JavaRDD[Array[Byte]],
     selfSchema: String,
-    other: RDD[Array[Byte]],
+    other: JavaRDD[Array[Byte]],
     otherSchema: String
   ): (JavaRDD[Array[Byte]], String) =
     keyType match {

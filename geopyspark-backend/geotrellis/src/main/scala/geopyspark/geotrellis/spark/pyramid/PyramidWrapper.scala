@@ -34,7 +34,7 @@ object PyramidWrapper {
     K: SpatialComponent: AvroRecordCodec: ClassTag: JsonFormat,
     M: Component[?, LayoutDefinition]: Component[?, Bounds[K]]
   ](
-    returnedRDD: RDD[Array[Byte]],
+    returnedRDD: JavaRDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
     tileSize: Int,
@@ -70,7 +70,7 @@ object PyramidWrapper {
 
   def buildPythonPyramid(
     keyType: String,
-    returnedRDD: RDD[Array[Byte]],
+    returnedRDD: JavaRDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
     tileSize: Int,
