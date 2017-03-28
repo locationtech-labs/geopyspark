@@ -12,9 +12,9 @@ class ProjectedExtentSchemaTest(BaseTestClass):
     java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
 
     projected_extents = [
-        {'epsg': 2004, 'extent': {'xmin': 0, 'ymin': 0, 'xmax': 1, 'ymax': 1}},
-        {'epsg': 2004, 'extent': {'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}},
-        {'epsg': 2004, 'extent': {'xmin': 5, 'ymin': 6, 'xmax': 7, 'ymax': 8}}]
+        {'epsg': 2004, 'extent': {'xmax': 1.0, 'xmin': 0.0, 'ymax': 1.0, 'ymin': 0.0}, 'proj4': None},
+        {'epsg': 2004, 'extent': {'xmax': 3.0, 'xmin': 1.0, 'ymax': 4.0, 'ymin': 2.0}, 'proj4': None},
+        {'epsg': 2004, 'extent': {'xmax': 7.0, 'xmin': 5.0, 'ymax': 8.0, 'ymin': 6.0}, 'proj4': None}]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
     ew = BaseTestClass.geopysc.pysc._gateway.jvm.ProjectedExtentWrapper

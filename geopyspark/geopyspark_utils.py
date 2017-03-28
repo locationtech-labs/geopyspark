@@ -40,12 +40,6 @@ def setup_environment():
 
     jar_string = ','.join(jars)
 
-    try:
-        backend_jar = [backend for backend in jars if JAR_FILE in backend][0]
-    except:
-        raise IOError("Failed to find driver jar, {}. Looked at these paths {}"
-                      .format(JAR_FILE, possible_jars))
-
     os.environ['JARS'] = jar_string
     os.environ["PYSPARK_PYTHON"] = "python3"
     os.environ["PYSPARK_DRIVER_PYTHON"] = "python3"
@@ -53,4 +47,4 @@ def setup_environment():
             --driver-class-path {} \
             --driver-memory 8G \
             --executor-memory 8G \
-            pyspark-shell".format(jar_string, backend_jar)
+            pyspark-shell".format(jar_string)
