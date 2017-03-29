@@ -36,6 +36,7 @@ cache:
   directories:
   - ./archives
   - $HOME/.ivy2
+  - $HOME/.cache/pip
 
 notifications:
   email:
