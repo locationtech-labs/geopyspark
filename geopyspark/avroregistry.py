@@ -13,7 +13,7 @@ class AvroRegistry(object):
         if isinstance(cells, bytes):
             cells = bytearray(cells)
 
-        # cols and rows are opposte for GeoTrellis ArrayTiles and Numpy Arrays
+        # cols and rows are opposite for GeoTrellis ArrayTiles and Numpy Arrays
         arr = np.array(cells).reshape(schema_dict['rows'], schema_dict['cols'])
 
         return arr

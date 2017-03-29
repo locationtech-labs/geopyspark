@@ -15,7 +15,7 @@ SPACETIME = 'spacetime'
 
 """
 Indicates the type value that needs to be serialized/deserialized. Both singleband
-and multiband GeoTiffs are reffered to as this.
+and multiband GeoTiffs are referred to as this.
 """
 TILE = 'Tile'
 
@@ -58,13 +58,13 @@ ZORDER = 'zorder'
 A key indexing method. Works for RDDs that contain both SpatialKeys and SpacetimeKeys.
 Note, indexes are determined by the x, y, and if SPACETIME, the temporal resolutions of
 a point. This is expressed in bits, and has a max value of 62. Thus if the sum of those
-resolutions are greate than 62, then the indexing will fail
+resolutions are greater than 62, then the indexing will fail
 """
 HILBERT = 'hilbert'
 
 """A key indexing method. Works only for RDDs that contain SpatialKeys.
 This method provides the fastest lookup of all the key indexing method, however, it does not give
-good locality guarntees. It is reccomended then that this method should only be used when locality
+good locality guarantees. It is recommended then that this method should only be used when locality
 is not important for your analysis.
 """
 ROWMAJOR = 'rowmajor'
