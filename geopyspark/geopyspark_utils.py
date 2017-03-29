@@ -44,7 +44,6 @@ def setup_environment():
     os.environ["PYSPARK_PYTHON"] = "python3"
     os.environ["PYSPARK_DRIVER_PYTHON"] = "python3"
     os.environ["PYSPARK_SUBMIT_ARGS"] = "--jars {} \
-            --driver-class-path {} \
             --driver-memory 8G \
             --executor-memory 8G \
             pyspark-shell".format(jar_string)
