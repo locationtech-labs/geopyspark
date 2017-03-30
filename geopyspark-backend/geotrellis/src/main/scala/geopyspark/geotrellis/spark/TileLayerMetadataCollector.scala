@@ -29,7 +29,6 @@ import scala.reflect.ClassTag
 object TileLayerMetadataCollector {
   private def createCollection[
   K: GetComponent[?, ProjectedExtent]: (? => TilerKeyMethods[K, K2]): AvroRecordCodec: ClassTag,
-  T <: CellGrid: AvroRecordCodec: ClassTag,
   K2: Boundable: SpatialComponent: JsonFormat
   ](
     returnedRdd: JavaRDD[Array[Byte]],
@@ -40,7 +39,7 @@ object TileLayerMetadataCollector {
   ): String = {
 
     val rdd =
-      PythonTranslator.fromPython[(K, T)](returnedRdd, Some(schemaJson))
+      PythonTranslator.fromPython[(K, MultibandTile)](returnedRdd, Some(schemaJson))
 
     val layoutDefinition = LayoutDefinition(pythonExtent.toExtent,
       pythonTileLayout.toTileLayout)
@@ -64,14 +63,14 @@ object TileLayerMetadataCollector {
   ): String =
     keyType match {
       case "ProjectedExtent" =>
-        createCollection[ProjectedExtent, MultibandTile, SpatialKey](
+        createCollection[ProjectedExtent, SpatialKey](
           returnedRdd,
           schemaJson,
           pythonExtent,
           pythonTileLayout,
           outputCrs)
       case "TemporalProjectedExtent" =>
-        createCollection[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
+        createCollection[TemporalProjectedExtent, SpaceTimeKey](
           returnedRdd,
           schemaJson,
           pythonExtent,
@@ -81,30 +80,26 @@ object TileLayerMetadataCollector {
 
   private def createPyramidCollection[
     K: GetComponent[?, ProjectedExtent]: (? => TilerKeyMethods[K, K2]): AvroRecordCodec: ClassTag,
-    T <: CellGrid: AvroRecordCodec: ClassTag,
     K2: Boundable: SpatialComponent: JsonFormat
   ](
     returnedRdd: JavaRDD[Array[Byte]],
     schemaJson: String,
-    crs: String,
-    tileSize: Int,
-    resolutionThreshold: Double,
+    zoomedLayoutScheme: ZoomedLayoutScheme,
     maxZoom: Int,
     outputCrs: String
   ): (Int, String) = {
-    val rdd = PythonTranslator.fromPython[(K, T)](returnedRdd, Some(schemaJson))
-    val zoomedLayout= ZoomedLayoutScheme(CRS.fromName(crs), tileSize, resolutionThreshold)
+    val rdd = PythonTranslator.fromPython[(K, MultibandTile)](returnedRdd, Some(schemaJson))
 
     val (zoomLevel, metadata) =
       outputCrs match {
-        case "" => TileLayerMetadata.fromRdd(rdd, zoomedLayout, maxZoom)
-        case projection => TileLayerMetadata.fromRdd(rdd, CRS.fromName(projection), zoomedLayout, maxZoom)
+        case "" => TileLayerMetadata.fromRdd(rdd, zoomedLayoutScheme, maxZoom)
+        case projection => TileLayerMetadata.fromRdd(rdd, CRS.fromName(projection), zoomedLayoutScheme, maxZoom)
       }
 
     (zoomLevel, metadata.toJson.compactPrint)
   }
 
-  def collectPythonPyramidMetadata(
+  def collectPythonMetadata(
     keyType: String,
     returnedRDD: JavaRDD[Array[Byte]],
     schemaJson: String,
@@ -116,22 +111,61 @@ object TileLayerMetadataCollector {
   ): (Int, String) =
       keyType match {
         case "ProjectedExtent" =>
-          createPyramidCollection[ProjectedExtent, MultibandTile, SpatialKey](
+          createPyramidCollection[ProjectedExtent, SpatialKey](
             returnedRDD,
             schemaJson,
-            crs,
-            tileSize,
-            resolutionThreshold,
+            ZoomedLayoutScheme(CRS.fromName(crs), tileSize, resolutionThreshold),
             maxZoom,
             outputCrs)
         case "TemporalProjectedExtent" =>
-          createPyramidCollection[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
+          createPyramidCollection[TemporalProjectedExtent, SpaceTimeKey](
             returnedRDD,
             schemaJson,
-            crs,
-            tileSize,
-            resolutionThreshold,
+            ZoomedLayoutScheme(CRS.fromName(crs), tileSize, resolutionThreshold),
             maxZoom,
+            outputCrs)
+      }
+
+  private def createPyramidCollection[
+    K: GetComponent[?, ProjectedExtent]: (? => TilerKeyMethods[K, K2]): AvroRecordCodec: ClassTag,
+    K2: Boundable: SpatialComponent: JsonFormat
+  ](
+    returnedRdd: JavaRDD[Array[Byte]],
+    schemaJson: String,
+    floatingLayoutScheme: FloatingLayoutScheme,
+    outputCrs: String
+  ): (Int, String) = {
+    val rdd = PythonTranslator.fromPython[(K, MultibandTile)](returnedRdd, Some(schemaJson))
+
+    val (zoomLevel, metadata) =
+      outputCrs match {
+        case "" => TileLayerMetadata.fromRdd(rdd, floatingLayoutScheme)
+        case projection => TileLayerMetadata.fromRdd(rdd, CRS.fromName(projection), floatingLayoutScheme)
+      }
+
+    (zoomLevel, metadata.toJson.compactPrint)
+  }
+
+  def collectPythonMetadata(
+    keyType: String,
+    returnedRDD: JavaRDD[Array[Byte]],
+    schemaJson: String,
+    tileCols: Int,
+    tileRows: Int,
+    outputCrs: String
+  ): (Int, String) =
+      keyType match {
+        case "ProjectedExtent" =>
+          createPyramidCollection[ProjectedExtent, SpatialKey](
+            returnedRDD,
+            schemaJson,
+            FloatingLayoutScheme(tileCols, tileRows),
+            outputCrs)
+        case "TemporalProjectedExtent" =>
+          createPyramidCollection[TemporalProjectedExtent, SpaceTimeKey](
+            returnedRDD,
+            schemaJson,
+            FloatingLayoutScheme(tileCols, tileRows),
             outputCrs)
       }
 }
