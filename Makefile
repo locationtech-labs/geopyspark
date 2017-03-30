@@ -7,22 +7,22 @@ WHEEL := dist/geopyspark-0.1.0-py3-none-any.whl
 JAR-PATH := geopyspark/jars/
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 
-install: ${ASSEMBLY} ${JAR-PATH}
+install: assembly ${JAR-PATH}
 	${PYTHON} setup.py install --user --force --prefix=
 
-${ASSEMBLY}: $(call rwildcard, geopyspark-backend/src, *.scala) geopyspark-backend/build.sbt
+assembly:
 	(cd geopyspark-backend && ./sbt "project geotrellis-backend" assembly)
 
 ${JAR-PATH}: $(call rwildcard, geopyspark-backend/, *.jar) $(ASSEMBLY)
-	cp $(ASSEMBLY) $(JAR-PATH)
+	mv $(ASSEMBLY) $(JAR-PATH)
 
 ${WHEEL}: $(call rwildcard, geopyspark, *.py) setup.py
 	${PYTHON} setup.py bdist_wheel
 
-wheel: ${ASSEMBLY} ${JAR-PATH} ${WHEEL}
+wheel: assembly ${JAR-PATH} ${WHEEL}
 
 pyspark:
-	pyspark --jars ${ASSEMBLY}
+	pyspark --jars $(ASSEMBLY)
 
 docker-build: ${WHEEL}
 	docker build -t ${IMG}:latest .
