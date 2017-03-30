@@ -52,7 +52,7 @@ object ReprojectWrapper {
     (zoom, PythonTranslator.toPython(reprojectedRDD), metadata.toJson.compactPrint)
   }
 
-  def reprojectWithLayout(
+  def reproject(
     keyType: String,
     returnedRDD: JavaRDD[Array[Byte]],
     schema: String,
@@ -80,16 +80,16 @@ object ReprojectWrapper {
       }
     }
 
-  def reprojectWithZoom(
+  def reproject(
     keyType: String,
     returnedRDD: JavaRDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
     destCRS: String,
-    matchLayerExtent: Boolean,
     tileSize: Int,
+    resolutionThreshold: Double,
     returnedResampleMethod: String,
-    resolutionThreshold: Double
+    matchLayerExtent: Boolean
   ): (Int, (JavaRDD[Array[Byte]], String), String) =
     keyType match {
       case "SpatialKey" => {
