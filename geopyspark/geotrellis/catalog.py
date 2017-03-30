@@ -1,4 +1,4 @@
-"""Methods for reading, querying, and saving tile layers to and from Geotrellis Catalogs.
+"""Methods for reading, querying, and saving tile layers to and from GeoTrellis Catalogs.
 
 Because GeoPySpark represents all raster data as 3D numpy arrays, data that is read/written out
 will be in a multiband format; regardless of how the data was originally formatted.
@@ -149,7 +149,7 @@ def read(geopysc,
         layer_name (str): The name of the GeoTrellis catalog to be read from.
         layer_zoom (int): The zoom level of the layer that is to be read.
         options (dict, optional): Additional parameters for reading the layer for specific backends.
-            The dictioanry is only used for Cassandra and HBase, no other backend requires this
+            The dictionary is only used for Cassandra and HBase, no other backend requires this
             to be set.
 
             Fields that can be set for Cassandra:
@@ -164,7 +164,7 @@ def read(geopysc,
 
             Fields that can be set for HBase:
                 master (str, optional): If not specified, then 'null' will be used.
-        **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
+        **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
@@ -246,7 +246,7 @@ def read_value(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
 
@@ -260,12 +260,12 @@ def read_value(geopysc,
         layer_name (str): The name of the GeoTrellis catalog to be read from.
         layer_zoom (int): The zoom level of the layer that is to be read.
         col (int): The col number of the tile within the layout. Cols run east to west.
-        row (int): The row number of the tile wihtin the layout. Row run north to south.
+        row (int): The row number of the tile within the layout. Row run north to south.
         zdt (str): The Zone-Date-Time string of the tile. The string must be in a valid date-time
             format. This parameter is only used when querying spatial-temporal data. The default
-            value is, None. If None, then only the spatial area will be querried.
+            value is, None. If None, then only the spatial area will be queried.
         options (dict, optional): Additional parameters for reading the tile for specific backends.
-            The dictioanry is only used for Cassandra and HBase, no other backend requires this
+            The dictionary is only used for Cassandra and HBase, no other backend requires this
             to be set.
 
             Fields that can be set for Cassandra:
@@ -280,7 +280,7 @@ def read_value(geopysc,
 
             Fields that can be set for HBase:
                 master (str, optional): If not specified, then 'null' will be used.
-        **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
+        **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
