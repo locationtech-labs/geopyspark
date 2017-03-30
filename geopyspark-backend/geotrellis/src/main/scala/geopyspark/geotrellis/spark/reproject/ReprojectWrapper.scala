@@ -109,6 +109,34 @@ object ReprojectWrapper {
     }
 
   def reproject(
+    keyType: String,
+    returnedRDD: JavaRDD[Array[Byte]],
+    schema: String,
+    returnedMetadata: String,
+    destCRS: String,
+    tileCols: Int,
+    tileRows: Int,
+    returnedResampleMethod: String,
+    matchLayerExtent: Boolean
+  ): (Int, (JavaRDD[Array[Byte]], String), String) =
+    keyType match {
+      case "SpatialKey" => {
+        val metadataAST = returnedMetadata.parseJson
+        val metadata = metadataAST.convertTo[TileLayerMetadata[SpatialKey]]
+        val layout = Left(FloatingLayoutScheme(tileCols, tileRows))
+
+        reprojectRDD[SpatialKey](returnedRDD, schema, metadata, destCRS, layout, matchLayerExtent, returnedResampleMethod)
+      }
+      case "SpaceTimeKey" => {
+        val metadataAST = returnedMetadata.parseJson
+        val metadata = metadataAST.convertTo[TileLayerMetadata[SpaceTimeKey]]
+        val layout = Left(FloatingLayoutScheme(tileCols, tileRows))
+
+        reprojectRDD[SpaceTimeKey](returnedRDD, schema, metadata, destCRS, layout, matchLayerExtent, returnedResampleMethod)
+      }
+    }
+
+  def reproject(
     returnedRDD: JavaRDD[Array[Byte]],
     schema: String,
     destCRS: String,
