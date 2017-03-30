@@ -3,7 +3,8 @@ import unittest
 import rasterio
 
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-from geopyspark.geotrellis.tile_layer import collect_metadata, collect_pyramid_metadata
+from geopyspark.geotrellis.tile_layer import (collect_metadata,
+                                              collect_pyramid_floating_metadata)
 from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.constants import SPATIAL
@@ -54,7 +55,6 @@ class TileLayerMetadataTest(BaseTestClass):
 
         self.check_results(self.actual, expected)
 
-
     def test_collection_python_rdd(self):
         data = rasterio.open(self.dir_path)
         tile_dict = {'data': data.read(), 'no_data_value': data.nodata}
@@ -65,6 +65,19 @@ class TileLayerMetadataTest(BaseTestClass):
                                   rasterio_rdd,
                                   self.extent,
                                   self.layout)
+
+        expected = [[result['layoutDefinition']['extent'],
+                     result['layoutDefinition']['tileLayout']],
+                    result['extent']]
+
+        self.check_results(self.actual, expected)
+
+    def test_collection_floating(self):
+        (_, result) = collect_pyramid_floating_metadata(BaseTestClass.geopysc,
+                                                        SPATIAL,
+                                                        self.rdd,
+                                                        self.cols,
+                                                        self.rows)
 
         expected = [[result['layoutDefinition']['extent'],
                      result['layoutDefinition']['tileLayout']],
