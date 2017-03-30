@@ -24,13 +24,15 @@ def setup_environment():
     current_location = path.dirname(path.realpath(__file__))
 
     local_prefixes = [
-        path.join(current_location, 'jars/'),
-        path.join(os.getcwd(), 'jars/')
+        path.abspath(path.join(current_location, 'jars/')),
+        path.abspath(path.join(os.getcwd(), 'jars/'))
     ]
 
     possible_jars = [path.join(prefix, '*.jar') for prefix in local_prefixes]
-    possible_jars.append(path.abspath(resource_filename('geopyspark.jars',
-                                                        JAR_FILE)))
+    jar = path.abspath(resource_filename('geopyspark.jars', JAR_FILE))
+    jar_dir = os.path.dirname(jar)
+    if jar_dir not in local_prefixes:
+        possible_jars.append(jar)
 
     returned = [glob.glob(jar_files) for jar_files in possible_jars]
     jars = [jar for sublist in returned for jar in sublist]
