@@ -508,15 +508,15 @@ def reproject_pyramid_layout(geopysc,
 
     (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, keyed_rdd)
 
-    result = reproject_wrapper.reprojectWithLayout(key,
-                                                   java_rdd,
-                                                   schema,
-                                                   json.dumps(tile_layer_metadata),
-                                                   dest_crs,
-                                                   layout_extent,
-                                                   tile_layout,
-                                                   resample_method,
-                                                   match_layer_extent)
+    result = reproject_wrapper.reproject(key,
+                                         java_rdd,
+                                         schema,
+                                         json.dumps(tile_layer_metadata),
+                                         dest_crs,
+                                         layout_extent,
+                                         tile_layout,
+                                         resample_method,
+                                         match_layer_extent)
 
     (rdd, returned_schema) = (result._2()._1(), result._2()._2())
     ser = geopysc.create_tuple_serializer(returned_schema, value_type=TILE)
@@ -662,15 +662,15 @@ def reproject_pyramid_zoom(geopysc,
 
     (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, keyed_rdd)
 
-    result = reproject_wrapper.reprojectWithZoom(key,
-                                                 java_rdd,
-                                                 schema,
-                                                 json.dumps(tile_layer_metadata),
-                                                 dest_crs,
-                                                 match_layer_extent,
-                                                 tile_size,
-                                                 resample_method,
-                                                 resolution_threshold)
+    result = reproject_wrapper.reproject(key,
+                                         java_rdd,
+                                         schema,
+                                         json.dumps(tile_layer_metadata),
+                                         dest_crs,
+                                         tile_size,
+                                         resolution_threshold,
+                                         resample_method,
+                                         match_layer_extent)
 
     (rdd, returned_schema) = (result._2()._1(), result._2()._2())
     ser = geopysc.create_tuple_serializer(returned_schema, value_type=TILE)
