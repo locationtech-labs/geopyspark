@@ -968,3 +968,32 @@ def pyramid(geopysc,
         return (tile_layer._1(), returned_rdd, json.loads(tile_layer._3()))
 
     return [_formatter(tile_layer) for tile_layer in result]
+
+
+def focal(geopysc,
+          rdd_type,
+          keyed_rdd,
+          metadata,
+          op,
+          neighborhood,
+          param1=0.0, param2=0.0, param3=0.0):
+
+    focal_wrapper = geopysc.rdd_focal
+    key_type = geopysc.map_key_input(rdd_type, True)
+
+    (java_rdd, schema1) = _convert_to_java_rdd(geopysc, key_type, keyed_rdd)
+
+    result = focal_wrapper.focal(key_type,
+                                 java_rdd,
+                                 schema1,
+                                 json.dumps(metadata),
+                                 op,
+                                 neighborhood,
+                                 param1, param2, param3)
+
+    rdd = result._1()
+    schema2 = result._2()
+    ser = geopysc.create_tuple_serializer(schema2, value_type=TILE)
+    returned_rdd = geopysc.create_python_rdd(rdd, ser)
+
+    return returned_rdd
