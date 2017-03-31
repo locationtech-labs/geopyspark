@@ -55,8 +55,8 @@ class KeyValueRecordSchemaTest(unittest.TestCase):
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
-    @pytest.mark.skipif('TRAVIS' in os.environ,
-                        reason="Encoding using methods in Main cuases issues on Travis")
+    # @pytest.mark.skipif('TRAVIS' in os.environ,
+    #                     reason="Encoding using methods in Main cuases issues on Travis")
     def test_encoded_kvs(self):
         encoded = self.rdd.map(lambda s: encoder(s))
         actual_kvs = encoded.collect()
