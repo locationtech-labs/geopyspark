@@ -133,12 +133,15 @@ object TileLayerMetadataCollector {
     returnedRdd: JavaRDD[Array[Byte]],
     schemaJson: String,
     floatingLayoutScheme: FloatingLayoutScheme,
-    crs: String
+    outputCrs: String
   ): (Int, String) = {
     val rdd = PythonTranslator.fromPython[(K, MultibandTile)](returnedRdd, Some(schemaJson))
 
     val (zoomLevel, metadata) =
-      TileLayerMetadata.fromRdd(rdd, CRS.fromName(crs), floatingLayoutScheme)
+      outputCrs match {
+        case "" => rdd.collectMetadata(floatingLayoutScheme)
+        case crs => rdd.collectMetadata(CRS.fromName(crs), floatingLayoutScheme)
+      }
 
     (zoomLevel, metadata.toJson.compactPrint)
   }
@@ -147,9 +150,9 @@ object TileLayerMetadataCollector {
     keyType: String,
     returnedRDD: JavaRDD[Array[Byte]],
     schemaJson: String,
-    crs: String,
     tileCols: Int,
-    tileRows: Int
+    tileRows: Int,
+    outputCrs: String
   ): (Int, String) =
       keyType match {
         case "ProjectedExtent" =>
@@ -157,12 +160,12 @@ object TileLayerMetadataCollector {
             returnedRDD,
             schemaJson,
             FloatingLayoutScheme(tileCols, tileRows),
-            crs)
+            outputCrs)
         case "TemporalProjectedExtent" =>
           createPyramidCollection[TemporalProjectedExtent, SpaceTimeKey](
             returnedRDD,
             schemaJson,
             FloatingLayoutScheme(tileCols, tileRows),
-            crs)
+            outputCrs)
       }
 }
