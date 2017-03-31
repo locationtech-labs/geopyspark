@@ -247,15 +247,20 @@ def collect_pyramid_zoomed_metadata(geopysc,
 def collect_pyramid_floating_metadata(geopysc,
                                       rdd_type,
                                       raster_rdd,
-                                      crs,
                                       tile_cols,
-                                      tile_rows):
+                                      tile_rows,
+                                      output_crs=None):
 
     """Collects the metadata of an RDD as well as the zoom level of the RDD.
 
     TODO: Finish the rest of the docs.
 
     """
+
+    if output_crs:
+        output_crs = output_crs
+    else:
+        output_crs = ""
 
     metadata_wrapper = geopysc.tile_layer_metadata_collecter
     key = geopysc.map_key_input(rdd_type, False)
@@ -265,9 +270,9 @@ def collect_pyramid_floating_metadata(geopysc,
     result = metadata_wrapper.collectPythonMetadata(key,
                                                     java_rdd,
                                                     schema,
-                                                    crs,
                                                     tile_cols,
-                                                    tile_rows)
+                                                    tile_rows,
+                                                    output_crs)
     return (result._1(), json.loads(result._2()))
 
 def reproject(geopysc,

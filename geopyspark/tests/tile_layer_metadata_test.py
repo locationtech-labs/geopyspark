@@ -76,7 +76,6 @@ class TileLayerMetadataTest(BaseTestClass):
         (_, result) = collect_pyramid_floating_metadata(BaseTestClass.geopysc,
                                                         SPATIAL,
                                                         self.rdd,
-                                                        "EPSG:{}".format(self.projected_extent['epsg']),
                                                         self.cols,
                                                         self.rows)
 
