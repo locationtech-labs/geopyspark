@@ -59,16 +59,18 @@ class ReprojectTest(BaseTestClass):
         self.assertDictEqual(layout_definition, new_metadata['layoutDefinition'])
 
     def test_same_crs_zoom(self):
-        (_, _, new_metadata) = reproject_with_zoomed_layout(BaseTestClass.geopysc,
-                                                            SPATIAL,
-                                                            self.laid_out_rdd,
-                                                            self.metadata,
-                                                            "EPSG:4326",
-                                                            self.expected_cols)
+        (_, new_rdd, new_metadata) = reproject_with_zoomed_layout(BaseTestClass.geopysc,
+                                                                  SPATIAL,
+                                                                  self.laid_out_rdd,
+                                                                  self.metadata,
+                                                                  "EPSG:4326",
+                                                                  self.expected_cols)
 
-        layout_definition = {'tileLayout': self.layout, 'extent': self.extent}
+        actual_tile = new_rdd.first()[1]['data']
+        (_, actual_rows, actual_cols) = actual_tile.shape
 
-        self.assertDictEqual(layout_definition, new_metadata['layoutDefinition'])
+        self.assertTrue(self.expected_cols >= actual_cols)
+        self.assertTrue(self.expected_rows >= actual_rows)
 
     def test_different_crs_layout(self):
         (_, new_rdd, new_metadata) = reproject_with_tile_layout(BaseTestClass.geopysc,

@@ -47,9 +47,13 @@ object ReprojectWrapper {
         matchLayerExtent=matchLayerExtent)
     }
 
-    val (zoom, reprojectedRDD) = TileRDDReproject(contextRDD, crs, layout, options)
+    val (zoom, reprojectedRDD) =
+      layout match {
+        case Left(scheme) => contextRDD.reproject(crs, scheme, options)
+        case Right(layout) => contextRDD.reproject(crs, layout, options)
+      }
 
-    (zoom, PythonTranslator.toPython(reprojectedRDD), metadata.toJson.compactPrint)
+    (zoom, PythonTranslator.toPython(reprojectedRDD), reprojectedRDD.metadata.toJson.compactPrint)
   }
 
   def reproject(
@@ -95,14 +99,14 @@ object ReprojectWrapper {
       case "SpatialKey" => {
         val metadataAST = returnedMetadata.parseJson
         val metadata = metadataAST.convertTo[TileLayerMetadata[SpatialKey]]
-        val layout = Left(ZoomedLayoutScheme(metadata.crs, tileSize, resolutionThreshold))
+        val layout = Left(ZoomedLayoutScheme(CRS.fromName(destCRS), tileSize, resolutionThreshold))
 
         reprojectRDD[SpatialKey](returnedRDD, schema, metadata, destCRS, layout, matchLayerExtent, returnedResampleMethod)
       }
       case "SpaceTimeKey" => {
         val metadataAST = returnedMetadata.parseJson
         val metadata = metadataAST.convertTo[TileLayerMetadata[SpaceTimeKey]]
-        val layout = Left(ZoomedLayoutScheme(metadata.crs, tileSize, resolutionThreshold))
+        val layout = Left(ZoomedLayoutScheme(CRS.fromName(destCRS), tileSize, resolutionThreshold))
 
         reprojectRDD[SpaceTimeKey](returnedRDD, schema, metadata, destCRS, layout, matchLayerExtent, returnedResampleMethod)
       }
