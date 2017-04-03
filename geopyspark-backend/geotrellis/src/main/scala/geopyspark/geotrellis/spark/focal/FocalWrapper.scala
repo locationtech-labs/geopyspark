@@ -20,6 +20,7 @@ import scala.reflect.ClassTag
 
 
 object FocalWrapper {
+
   private def focal[K: SpatialComponent: ClassTag: AvroRecordCodec: JsonFormat](
     javaRdd: JavaRDD[Array[Byte]],
     schema: String,
@@ -29,18 +30,20 @@ object FocalWrapper {
     _param1: Double, _param2: Double, _param3: Double
   ): (JavaRDD[Array[Byte]], String) = {
     val _rdd = PythonTranslator.fromPython[(K, MultibandTile)](javaRdd, Some(schema))
-      val rdd: RDD[(K, Tile)] = ContextRDD(
-        _rdd.map({ case (k, v) => (k, v.band(0)) }),
-        metadata
-      )
+    val rdd: RDD[(K, Tile)] = ContextRDD(
+      _rdd.map({ case (k, v) => (k, v.band(0)) }),
+      metadata
+    )
     val neighborhood = _neighborhood match {
       case "annulus" => Annulus(_param1, _param2)
       case "nesw" => Nesw(_param1.toInt)
       case "square" => Square(_param1.toInt)
       case "wedge" => Wedge(_param1, _param2, _param3)
+      case _ if (_op == "Aspect" || _op == "Slope") => Square(1)
       case _ => throw new Exception
     }
     val target = TargetCell.All
+    val cellSize = metadata.layout.cellSize
     val op: ((Tile, Option[GridBounds]) => Tile) = _op match {
       case "Sum" => { (tile, bounds) => Sum(tile, neighborhood, bounds, target) }
       case "Min" => { (tile, bounds) => Min(tile, neighborhood, bounds, target) }
@@ -49,6 +52,8 @@ object FocalWrapper {
       case "Median" => { (tile, bounds) => Median(tile, neighborhood, bounds, target) }
       case "Mode" => { (tile, bounds) => Mode(tile, neighborhood, bounds, target) }
       case "StandardDeviation" => { (tile, bounds) => StandardDeviation(tile, neighborhood, bounds, target) }
+      case "Aspect" => { (tile, bounds) => Aspect(tile, neighborhood, bounds, cellSize, target) }
+      case "Slope" => { (tile, bounds) => Slope(tile, neighborhood, bounds, cellSize, _param1, target) }
       case _ => throw new Exception
     }
 
