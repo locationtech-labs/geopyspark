@@ -2,7 +2,7 @@ import os
 import unittest
 
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-from geopyspark.geotrellis.tile_layer import reproject, collect_metadata, tile_to_layout
+from geopyspark.geotrellis.tile_layer import reproject_to_layout, collect_metadata, tile_to_layout
 from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.constants import SPATIAL
@@ -19,13 +19,15 @@ class ReprojectTest(BaseTestClass):
 
     extent = value[0]['extent']
 
-    (_, _rows, _cols) = value[1]['data'].shape
+    expected_tile = value[1]['data']
+
+    (_, expected_rows, expected_cols) = expected_tile.shape
 
     layout = {
         "layoutCols": 1,
         "layoutRows": 1,
-        "tileCols": _cols,
-        "tileRows": _rows
+        "tileCols": expected_cols,
+        "tileRows": expected_rows
     }
 
     metadata = collect_metadata(BaseTestClass.geopysc,
@@ -40,25 +42,77 @@ class ReprojectTest(BaseTestClass):
                                   rdd,
                                   metadata)
 
-    def test_same_crs(self):
-        (_, new_metadata) = reproject(BaseTestClass.geopysc,
-                                      SPATIAL,
-                                      self.laid_out_rdd,
-                                      self.metadata,
-                                      "EPSG:4326")
+    def test_same_crs_layout(self):
+        (_, _, new_metadata) = reproject_to_layout(BaseTestClass.geopysc,
+                                                   SPATIAL,
+                                                   self.laid_out_rdd,
+                                                   self.metadata,
+                                                   "EPSG:4326",
+                                                   layout_extent=self.extent,
+                                                   tile_layout=self.layout)
 
-        self.assertEqual(self.crs, new_metadata['crs'])
+        layout_definition = {'tileLayout': self.layout, 'extent': self.extent}
 
-    def test_different_crs(self):
-        (_, new_metadata) = reproject(BaseTestClass.geopysc,
-                                      SPATIAL,
-                                      self.laid_out_rdd,
-                                      self.metadata,
-                                      "EPSG:4324")
+        self.assertDictEqual(layout_definition, new_metadata['layoutDefinition'])
 
-        actual = '+proj=longlat +datum=WGS84 +no_defs '
+    def test_same_crs_zoom(self):
+        (_, new_rdd, new_metadata) = reproject_to_layout(BaseTestClass.geopysc,
+                                                         SPATIAL,
+                                                         self.laid_out_rdd,
+                                                         self.metadata,
+                                                         "EPSG:4326",
+                                                         tile_size=self.expected_cols,
+                                                         resolution_threshold=0.1)
 
-        self.assertEqual(actual, new_metadata['crs'])
+        actual_tile = new_rdd.first()[1]['data']
+        (_, actual_rows, actual_cols) = actual_tile.shape
+
+        self.assertTrue(self.expected_cols >= actual_cols)
+        self.assertTrue(self.expected_rows >= actual_rows)
+
+    def test_different_crs_layout(self):
+        (_, new_rdd, new_metadata) = reproject_to_layout(BaseTestClass.geopysc,
+                                                         SPATIAL,
+                                                         self.laid_out_rdd,
+                                                         self.metadata,
+                                                         "EPSG:4324",
+                                                         layout_extent=self.extent,
+                                                         tile_layout=self.layout)
+
+        actual_tile = new_rdd.first()[1]['data']
+        (_, actual_rows, actual_cols) = actual_tile.shape
+
+        self.assertTrue(self.expected_cols >= actual_cols)
+        self.assertTrue(self.expected_rows >= actual_rows)
+
+    def test_different_crs_zoom(self):
+        (_, new_rdd, new_metadata) = reproject_to_layout(BaseTestClass.geopysc,
+                                                         SPATIAL,
+                                                         self.laid_out_rdd,
+                                                         self.metadata,
+                                                         "EPSG:4324",
+                                                         tile_size=500,
+                                                         resolution_threshold=0.1)
+
+        actual_tile = new_rdd.first()[1]['data']
+        (_, actual_rows, actual_cols) = actual_tile.shape
+
+        self.assertTrue(self.expected_cols >= actual_cols)
+        self.assertTrue(self.expected_rows >= actual_rows)
+
+    def test_different_crs_float(self):
+        (_, new_rdd, new_metadata) = reproject_to_layout(BaseTestClass.geopysc,
+                                                         SPATIAL,
+                                                         self.laid_out_rdd,
+                                                         self.metadata,
+                                                         "EPSG:4324",
+                                                         tile_size=500)
+
+        actual_tile = new_rdd.first()[1]['data']
+        (_, actual_rows, actual_cols) = actual_tile.shape
+
+        self.assertTrue(self.expected_cols >= actual_cols)
+        self.assertTrue(self.expected_rows >= actual_rows)
 
 
 if __name__ == "__main__":
