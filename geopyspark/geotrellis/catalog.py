@@ -26,22 +26,22 @@ def _construct_catalog(geopysc, new_uri, options):
         backend = parsed_uri.scheme
 
         if backend == 'hdfs':
-            store = geopysc.store_factory.buildHadoop(new_uri)
-            reader = geopysc.reader_factory.buildHadoop(store, geopysc.sc)
-            value_reader = geopysc.value_reader_factory.buildHadoop(store)
-            writer = geopysc.writer_factory.buildHadoop(store)
+            store = geopysc._store_factory.buildHadoop(new_uri)
+            reader = geopysc._reader_factory.buildHadoop(store, geopysc.sc)
+            value_reader = geopysc._value_reader_factory.buildHadoop(store)
+            writer = geopysc._writer_factory.buildHadoop(store)
 
         elif backend == 'file':
-            store = geopysc.store_factory.buildFile(new_uri[7:])
-            reader = geopysc.reader_factory.buildFile(store, geopysc.sc)
-            value_reader = geopysc.value_reader_factory.buildFile(store)
-            writer = geopysc.writer_factory.buildFile(store)
+            store = geopysc._store_factory.buildFile(new_uri[7:])
+            reader = geopysc._reader_factory.buildFile(store, geopysc.sc)
+            value_reader = geopysc._value_reader_factory.buildFile(store)
+            writer = geopysc._writer_factory.buildFile(store)
 
         elif backend == 's3':
-            store = geopysc.store_factory.buildS3(parsed_uri.netloc, parsed_uri.path[1:])
-            reader = geopysc.reader_factory.buildS3(store, geopysc.sc)
-            value_reader = geopysc.value_reader_factory.buildS3(store)
-            writer = geopysc.writer_factory.buildS3(store)
+            store = geopysc._store_factory.buildS3(parsed_uri.netloc, parsed_uri.path[1:])
+            reader = geopysc._reader_factory.buildS3(store, geopysc.sc)
+            value_reader = geopysc._value_reader_factory.buildS3(store)
+            writer = geopysc._writer_factory.buildS3(store)
 
         elif backend == 'cassandra':
             parameters = parsed_uri.query.split('&')
@@ -51,7 +51,7 @@ def _construct_catalog(geopysc, new_uri, options):
                 split_param = param.split('=', 1)
                 parameter_dict[split_param[0]] = split_param[1]
 
-            store = geopysc.store_factory.buildCassandra(
+            store = geopysc._store_factory.buildCassandra(
                 parameter_dict['host'],
                 parameter_dict['username'],
                 parameter_dict['password'],
@@ -59,9 +59,9 @@ def _construct_catalog(geopysc, new_uri, options):
                 parameter_dict['table'],
                 options)
 
-            reader = geopysc.reader_factory.buildCassandra(store, geopysc.sc)
-            value_reader = geopysc.value_reader_factory.buildCassandra(store)
-            writer = geopysc.writer_factory.buildCassandra(store,
+            reader = geopysc._reader_factory.buildCassandra(store, geopysc.sc)
+            value_reader = geopysc._value_reader_factory.buildCassandra(store)
+            writer = geopysc._writer_factory.buildCassandra(store,
                                                            parameter_dict['keyspace'],
                                                            parameter_dict['table'])
 
@@ -76,10 +76,10 @@ def _construct_catalog(geopysc, new_uri, options):
             else:
                 master = ""
 
-            store = geopysc.store_factory.buildHBase(zookeepers, master, port, table)
-            reader = geopysc.reader_factory.buildHBase(store, geopysc.sc)
-            value_reader = geopysc.value_reader_factory.buildHBase(store)
-            writer = geopysc.writer_factory.buildHBase(store, table)
+            store = geopysc._store_factory.buildHBase(zookeepers, master, port, table)
+            reader = geopysc._reader_factory.buildHBase(store, geopysc.sc)
+            value_reader = geopysc._value_reader_factory.buildHBase(store)
+            writer = geopysc._writer_factory.buildHBase(store, table)
 
         elif backend == 'accumulo':
 
@@ -87,19 +87,19 @@ def _construct_catalog(geopysc, new_uri, options):
             (user, password) = parsed_uri.netloc.split(':')
             split_parameters = parsed_uri.path.split('/')[1:]
 
-            store = geopysc.store_factory.buildAccumulo(split_parameters[0],
+            store = geopysc._store_factory.buildAccumulo(split_parameters[0],
                                                         split_parameters[1],
                                                         user,
                                                         password,
                                                         split_parameters[2])
 
-            reader = geopysc.reader_factory.buildAccumulo(split_parameters[1],
+            reader = geopysc._reader_factory.buildAccumulo(split_parameters[1],
                                                           store,
                                                           geopysc.sc)
 
-            value_reader = geopysc.value_reader_factory.buildAccumulo(store)
+            value_reader = geopysc._value_reader_factory.buildAccumulo(store)
 
-            writer = geopysc.writer_factory.buildAccumulo(split_parameters[1],
+            writer = geopysc._writer_factory.buildAccumulo(split_parameters[1],
                                                           store,
                                                           split_parameters[2])
 

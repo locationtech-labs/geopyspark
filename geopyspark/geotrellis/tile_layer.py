@@ -109,7 +109,7 @@ def collect_metadata(geopysc,
                         instant (int): The time stamp of the tile.
     """
 
-    metadata_wrapper = geopysc.tile_layer_metadata_collecter
+    metadata_wrapper = geopysc._tile_layer_metadata_collecter
     key = geopysc.map_key_input(rdd_type, False)
 
     (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, raster_rdd)
@@ -223,7 +223,7 @@ def collect_pyramid_metadata(geopysc,
                             instant (int): The time stamp of the tile.
     """
 
-    metadata_wrapper = geopysc.tile_layer_metadata_collecter
+    metadata_wrapper = geopysc._tile_layer_metadata_collecter
     key = geopysc.map_key_input(rdd_type, False)
 
     (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, raster_rdd)
@@ -262,7 +262,7 @@ def collect_floating_metadata(geopysc,
     else:
         output_crs = ""
 
-    metadata_wrapper = geopysc.tile_layer_metadata_collecter
+    metadata_wrapper = geopysc._tile_layer_metadata_collecter
     key = geopysc.map_key_input(rdd_type, False)
 
     (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, raster_rdd)
@@ -281,7 +281,13 @@ def reproject(geopysc,
               resample_method=NEARESTNEIGHBOR,
               error_threshold=0.125):
 
-    reproject_wrapper = geopysc.rdd_reprojector
+    """Reprojects the tiles within a RDD to a new projection.
+
+    TODO: Write the remaining docs.
+
+    """
+
+    reproject_wrapper = geopysc._rdd_reprojector
     key = geopysc.map_key_input(SPATIAL, False)
 
     (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, raster_rdd)
@@ -407,7 +413,7 @@ def reproject_to_layout(geopysc,
     if kwargs and not layer_layout:
         layer_layout = kwargs
 
-    reproject_wrapper = geopysc.rdd_reprojector
+    reproject_wrapper = geopysc._rdd_reprojector
     key = geopysc.map_key_input(rdd_type, True)
 
     (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, keyed_rdd)
@@ -551,7 +557,7 @@ def cut_tiles(geopysc,
                         types including None.
 
     """
-    tiler_wrapper = geopysc.tile_layer_methods
+    tiler_wrapper = geopysc._tile_layer_methods
     key = geopysc.map_key_input(rdd_type, False)
 
     (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, raster_rdd)
@@ -668,7 +674,7 @@ def tile_to_layout(geopysc,
                 MIN
 
     """
-    tiler_wrapper = geopysc.tile_layer_methods
+    tiler_wrapper = geopysc._tile_layer_methods
     key = geopysc.map_key_input(rdd_type, False)
 
     (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, raster_rdd)
@@ -779,7 +785,7 @@ def merge_tiles(geopysc,
                         types including None.
 
     """
-    merge_wrapper = geopysc.tile_layer_merge
+    merge_wrapper = geopysc._tile_layer_merge
     key = geopysc.map_key_input(rdd_type, False)
 
     (java_rdd_1, schema_1) = _convert_to_java_rdd(geopysc, key, rdd_1)
@@ -939,7 +945,7 @@ def pyramid(geopysc,
     """
 
 
-    pyramider = geopysc.pyramid_builder
+    pyramider = geopysc._pyramid_builder
     key = geopysc.map_key_input(rdd_type, True)
 
     (java_rdd, schema) = _convert_to_java_rdd(geopysc, key, base_raster_rdd)
