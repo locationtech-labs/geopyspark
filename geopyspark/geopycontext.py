@@ -74,6 +74,10 @@ class GeoPyContext(object):
         return self._jvm.geopyspark.geotrellis.spark.focal.FocalWrapper
 
     @property
+    def rdd_stitch(self):
+        return self._jvm.geopyspark.geotrellis.spark.stitch.StitchWrapper
+
+    @property
     def rdd_costdistance(self):
         return self._jvm.geopyspark.geotrellis.spark.costdistance.CostDistanceWrapper
 
