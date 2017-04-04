@@ -2,10 +2,7 @@ import os
 import unittest
 
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-from geopyspark.geotrellis.tile_layer import (reproject_with_tile_layout,
-                                              reproject_with_zoomed_layout,
-                                              collect_metadata,
-                                              tile_to_layout)
+from geopyspark.geotrellis.tile_layer import reproject_to_layout, collect_metadata, tile_to_layout
 from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.constants import SPATIAL
@@ -46,25 +43,26 @@ class ReprojectTest(BaseTestClass):
                                   metadata)
 
     def test_same_crs_layout(self):
-        (_, _, new_metadata) = reproject_with_tile_layout(BaseTestClass.geopysc,
-                                                          SPATIAL,
-                                                          self.laid_out_rdd,
-                                                          self.metadata,
-                                                          "EPSG:4326",
-                                                          self.extent,
-                                                          self.layout)
+        (_, _, new_metadata) = reproject_to_layout(BaseTestClass.geopysc,
+                                                   SPATIAL,
+                                                   self.laid_out_rdd,
+                                                   self.metadata,
+                                                   "EPSG:4326",
+                                                   layout_extent=self.extent,
+                                                   tile_layout=self.layout)
 
         layout_definition = {'tileLayout': self.layout, 'extent': self.extent}
 
         self.assertDictEqual(layout_definition, new_metadata['layoutDefinition'])
 
     def test_same_crs_zoom(self):
-        (_, new_rdd, new_metadata) = reproject_with_zoomed_layout(BaseTestClass.geopysc,
-                                                                  SPATIAL,
-                                                                  self.laid_out_rdd,
-                                                                  self.metadata,
-                                                                  "EPSG:4326",
-                                                                  self.expected_cols)
+        (_, new_rdd, new_metadata) = reproject_to_layout(BaseTestClass.geopysc,
+                                                         SPATIAL,
+                                                         self.laid_out_rdd,
+                                                         self.metadata,
+                                                         "EPSG:4326",
+                                                         tile_size=self.expected_cols,
+                                                         resolution_threshold=0.1)
 
         actual_tile = new_rdd.first()[1]['data']
         (_, actual_rows, actual_cols) = actual_tile.shape
@@ -73,13 +71,13 @@ class ReprojectTest(BaseTestClass):
         self.assertTrue(self.expected_rows >= actual_rows)
 
     def test_different_crs_layout(self):
-        (_, new_rdd, new_metadata) = reproject_with_tile_layout(BaseTestClass.geopysc,
-                                                                SPATIAL,
-                                                                self.laid_out_rdd,
-                                                                self.metadata,
-                                                                "EPSG:4324",
-                                                                self.extent,
-                                                                self.layout)
+        (_, new_rdd, new_metadata) = reproject_to_layout(BaseTestClass.geopysc,
+                                                         SPATIAL,
+                                                         self.laid_out_rdd,
+                                                         self.metadata,
+                                                         "EPSG:4324",
+                                                         layout_extent=self.extent,
+                                                         tile_layout=self.layout)
 
         actual_tile = new_rdd.first()[1]['data']
         (_, actual_rows, actual_cols) = actual_tile.shape
@@ -88,12 +86,27 @@ class ReprojectTest(BaseTestClass):
         self.assertTrue(self.expected_rows >= actual_rows)
 
     def test_different_crs_zoom(self):
-        (_, new_rdd, new_metadata) = reproject_with_zoomed_layout(BaseTestClass.geopysc,
-                                                                  SPATIAL,
-                                                                  self.laid_out_rdd,
-                                                                  self.metadata,
-                                                                  "EPSG:4324",
-                                                                  500)
+        (_, new_rdd, new_metadata) = reproject_to_layout(BaseTestClass.geopysc,
+                                                         SPATIAL,
+                                                         self.laid_out_rdd,
+                                                         self.metadata,
+                                                         "EPSG:4324",
+                                                         tile_size=500,
+                                                         resolution_threshold=0.1)
+
+        actual_tile = new_rdd.first()[1]['data']
+        (_, actual_rows, actual_cols) = actual_tile.shape
+
+        self.assertTrue(self.expected_cols >= actual_cols)
+        self.assertTrue(self.expected_rows >= actual_rows)
+
+    def test_different_crs_float(self):
+        (_, new_rdd, new_metadata) = reproject_to_layout(BaseTestClass.geopysc,
+                                                         SPATIAL,
+                                                         self.laid_out_rdd,
+                                                         self.metadata,
+                                                         "EPSG:4324",
+                                                         tile_size=500)
 
         actual_tile = new_rdd.first()[1]['data']
         (_, actual_rows, actual_cols) = actual_tile.shape
