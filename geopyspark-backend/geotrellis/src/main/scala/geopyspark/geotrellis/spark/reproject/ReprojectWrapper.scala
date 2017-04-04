@@ -23,21 +23,17 @@ import org.apache.spark.api.java.JavaRDD
 import scala.reflect.ClassTag
 
 object ReprojectWrapper {
-  private def reprojectRDD[
-    K: SpatialComponent: ClassTag: Boundable: AvroRecordCodec: JsonFormat
-  ](
+  private def reprojectRDD(
+    keyType: String,
     returnedRDD: JavaRDD[Array[Byte]],
     schema: String,
-    metadata: TileLayerMetadata[K],
+    returnedMetadata: String,
     destCRS: String,
     layout: Either[LayoutScheme, LayoutDefinition],
     matchLayerExtent: Boolean,
     resampleMethod: String
   ): (Int, (JavaRDD[Array[Byte]], String), String) = {
-    val rdd: RDD[(K, MultibandTile)] =
-      PythonTranslator.fromPython[(K, MultibandTile)](returnedRDD, Some(schema))
-
-    val contextRDD = ContextRDD(rdd, metadata)
+    val metadataAST = returnedMetadata.parseJson
     val crs = CRS.fromName(destCRS)
 
     val options = {
@@ -47,13 +43,41 @@ object ReprojectWrapper {
         matchLayerExtent=matchLayerExtent)
     }
 
-    val (zoom, reprojectedRDD) =
-      layout match {
-        case Left(scheme) => contextRDD.reproject(crs, scheme, options)
-        case Right(layout) => contextRDD.reproject(crs, layout, options)
+    keyType match {
+      case "SpatialKey" => {
+        val metadata = metadataAST.convertTo[TileLayerMetadata[SpatialKey]]
+
+        val rdd: RDD[(SpatialKey, MultibandTile)] =
+          PythonTranslator.fromPython[(SpatialKey, MultibandTile)](returnedRDD, Some(schema))
+
+        val context = ContextRDD(rdd, metadata)
+
+        val (zoom, reprojectedRDD) =
+          layout match {
+            case Left(scheme) => context.reproject(crs, scheme, options)
+            case Right(layout) => context.reproject(crs, layout, options)
+          }
+
+        (zoom, PythonTranslator.toPython(reprojectedRDD), reprojectedRDD.metadata.toJson.compactPrint)
       }
 
-    (zoom, PythonTranslator.toPython(reprojectedRDD), reprojectedRDD.metadata.toJson.compactPrint)
+      case "SpaceTimeKey" => {
+        val metadata = metadataAST.convertTo[TileLayerMetadata[SpaceTimeKey]]
+
+        val rdd: RDD[(SpaceTimeKey, MultibandTile)] =
+          PythonTranslator.fromPython[(SpaceTimeKey, MultibandTile)](returnedRDD, Some(schema))
+
+        val context = ContextRDD(rdd, metadata)
+
+        val (zoom, reprojectedRDD) =
+          layout match {
+            case Left(scheme) => context.reproject(crs, scheme, options)
+            case Right(layout) => context.reproject(crs, layout, options)
+          }
+
+        (zoom, PythonTranslator.toPython(reprojectedRDD), reprojectedRDD.metadata.toJson.compactPrint)
+      }
+    }
   }
 
   def reproject(
@@ -66,22 +90,17 @@ object ReprojectWrapper {
     tileLayout: java.util.Map[String, Int],
     resampleMethod: String,
     matchLayerExtent: Boolean
-  ): (Int, (JavaRDD[Array[Byte]], String), String) =
-    keyType match {
-      case "SpatialKey" => {
-        val metadataAST = returnedMetadata.parseJson
-        val metadata = metadataAST.convertTo[TileLayerMetadata[SpatialKey]]
-        val layout = Right(LayoutDefinition(layoutExtent.toExtent, tileLayout.toTileLayout))
+  ): (Int, (JavaRDD[Array[Byte]], String), String) = {
+      val layout = Right(LayoutDefinition(layoutExtent.toExtent, tileLayout.toTileLayout))
 
-        reprojectRDD[SpatialKey](returnedRDD, schema, metadata, destCRS, layout, matchLayerExtent, resampleMethod)
-      }
-      case "SpaceTimeKey" => {
-        val metadataAST = returnedMetadata.parseJson
-        val metadata = metadataAST.convertTo[TileLayerMetadata[SpaceTimeKey]]
-        val layout = Right(LayoutDefinition(layoutExtent.toExtent, tileLayout.toTileLayout))
-
-        reprojectRDD[SpaceTimeKey](returnedRDD, schema, metadata, destCRS, layout, matchLayerExtent, resampleMethod)
-      }
+      reprojectRDD(keyType,
+        returnedRDD,
+        schema,
+        returnedMetadata,
+        destCRS,
+        layout,
+        matchLayerExtent,
+        resampleMethod)
     }
 
   def reproject(
@@ -94,23 +113,18 @@ object ReprojectWrapper {
     resolutionThreshold: Double,
     resampleMethod: String,
     matchLayerExtent: Boolean
-  ): (Int, (JavaRDD[Array[Byte]], String), String) =
-    keyType match {
-      case "SpatialKey" => {
-        val metadataAST = returnedMetadata.parseJson
-        val metadata = metadataAST.convertTo[TileLayerMetadata[SpatialKey]]
-        val layout = Left(ZoomedLayoutScheme(CRS.fromName(destCRS), tileSize, resolutionThreshold))
+  ): (Int, (JavaRDD[Array[Byte]], String), String) = {
+    val layout = Left(ZoomedLayoutScheme(CRS.fromName(destCRS), tileSize, resolutionThreshold))
 
-        reprojectRDD[SpatialKey](returnedRDD, schema, metadata, destCRS, layout, matchLayerExtent, resampleMethod)
-      }
-      case "SpaceTimeKey" => {
-        val metadataAST = returnedMetadata.parseJson
-        val metadata = metadataAST.convertTo[TileLayerMetadata[SpaceTimeKey]]
-        val layout = Left(ZoomedLayoutScheme(CRS.fromName(destCRS), tileSize, resolutionThreshold))
-
-        reprojectRDD[SpaceTimeKey](returnedRDD, schema, metadata, destCRS, layout, matchLayerExtent, resampleMethod)
-      }
-    }
+    reprojectRDD(keyType,
+      returnedRDD,
+      schema,
+      returnedMetadata,
+      destCRS,
+      layout,
+      matchLayerExtent,
+      resampleMethod)
+  }
 
   def reproject(
     keyType: String,
@@ -121,23 +135,18 @@ object ReprojectWrapper {
     tileSize: Int,
     resampleMethod: String,
     matchLayerExtent: Boolean
-  ): (Int, (JavaRDD[Array[Byte]], String), String) =
-    keyType match {
-      case "SpatialKey" => {
-        val metadataAST = returnedMetadata.parseJson
-        val metadata = metadataAST.convertTo[TileLayerMetadata[SpatialKey]]
-        val layout = Left(FloatingLayoutScheme(tileSize))
+  ): (Int, (JavaRDD[Array[Byte]], String), String) = {
+    val layout = Left(FloatingLayoutScheme(tileSize))
 
-        reprojectRDD[SpatialKey](returnedRDD, schema, metadata, destCRS, layout, matchLayerExtent, resampleMethod)
-      }
-      case "SpaceTimeKey" => {
-        val metadataAST = returnedMetadata.parseJson
-        val metadata = metadataAST.convertTo[TileLayerMetadata[SpaceTimeKey]]
-        val layout = Left(FloatingLayoutScheme(tileSize))
-
-        reprojectRDD[SpaceTimeKey](returnedRDD, schema, metadata, destCRS, layout, matchLayerExtent, resampleMethod)
-      }
-    }
+    reprojectRDD(keyType,
+      returnedRDD,
+      schema,
+      returnedMetadata,
+      destCRS,
+      layout,
+      matchLayerExtent,
+      resampleMethod)
+  }
 
   def reproject(
     returnedRDD: JavaRDD[Array[Byte]],
