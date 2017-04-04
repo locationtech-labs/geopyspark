@@ -129,14 +129,14 @@ def collect_metadata(geopysc,
     return json.loads(metadata)
 
 
-def collect_pyramid_zoomed_metadata(geopysc,
-                                    rdd_type,
-                                    raster_rdd,
-                                    crs,
-                                    tile_size,
-                                    resolution_threshold=0.1,
-                                    max_zoom=12,
-                                    output_crs=None):
+def collect_pyramid_metadata(geopysc,
+                             rdd_type,
+                             raster_rdd,
+                             crs,
+                             tile_size,
+                             resolution_threshold=0.1,
+                             max_zoom=12,
+                             output_crs=None):
 
     """Collects the metadata of an RDD as well as the zoom level of the RDD.
 
@@ -244,12 +244,12 @@ def collect_pyramid_zoomed_metadata(geopysc,
 
     return (result._1(), json.loads(result._2()))
 
-def collect_pyramid_floating_metadata(geopysc,
-                                      rdd_type,
-                                      raster_rdd,
-                                      tile_cols,
-                                      tile_rows,
-                                      output_crs=None):
+def collect_floating_metadata(geopysc,
+                              rdd_type,
+                              raster_rdd,
+                              tile_cols,
+                              tile_rows,
+                              output_crs=None):
 
     """Collects the metadata of an RDD as well as the zoom level of the RDD.
 
