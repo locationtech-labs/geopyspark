@@ -106,5 +106,11 @@ WEDGE = 'wedge'
 """Focal operation type: Sum."""
 SUM = 'Sum'
 
+"""Focal operation type: Aspect."""
+ASPECT = 'Aspect'
+
+"""Focal operation type: Slope."""
+SLOPE = 'Slope'
+
 """Focal operation type: Standard Deviation."""
 STANDARDDEVIATION = 'StandardDeviation'
