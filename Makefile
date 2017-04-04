@@ -13,19 +13,19 @@ install: ${DIST-ASSEMBLY} ${WHEEL}
 	${PYTHON} setup.py install --user --force --prefix=
 
 ${DIST-ASSEMBLY}: ${BUILD-ASSEMBLY}
-	mv -f ${BUILD-ASSEMBLY} ${JAR-PATH}
+	cp -f ${BUILD-ASSEMBLY} ${JAR-PATH}
 
 ${BUILD-ASSEMBLY}: $(call rwildcard, geopyspark-backend/, *.jar)
 	(cd geopyspark-backend && ./sbt "project geotrellis-backend" assembly)
 
-${WHEEL}: $(call rwildcard, geopyspark, *.py) setup.py ${DIST-ASSEMBLY}
+${WHEEL}: $(call rwildcard, geopyspark, *.py) setup.py
 	${PYTHON} setup.py bdist_wheel
 
 pyspark: ${DIST-ASSEMBLY}
 	pyspark --jars ${DIST-ASSEMBLY}
 
-docker/archives/${ASSEMBLYNAME}: ${ASSEMBLY}
-	cp -f ${ASSEMBLY} docker/archives/${ASSEMBLYNAME}
+docker/archives/${ASSEMBLYNAME}: ${DIST-ASSEMBLY}
+	cp -f ${DIST-ASSEMBLY} docker/archives/${ASSEMBLYNAME}
 
 docker/archives/${WHEELNAME}: ${WHEEL}
 	cp -f ${WHEEL} docker/archives/${WHEELNAME}

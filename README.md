@@ -10,5 +10,3 @@ It is currently under development, and is pre-alpha quality.
  - `wheel` - build python `geopyspark` wheel for distribution
  - `pyspark` - start pyspark shell with project jars
  - `docker-build` - build docker image for Jupyter with `geopyspark`
- - `docker-run` - run docker image for Jupyter with `geopyspark`
- - `docker-exec` - start a shell in current docker image
