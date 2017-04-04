@@ -36,7 +36,7 @@ def collect_metadata(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants, SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         raster_rdd(RDD): An RDD that contains tuples of (projection_info, tile).
             projection_info (dict): Contains the area on Earth the tile represents in addition to
                 the tile's projection information. There are two different types of projection_info,
@@ -144,7 +144,7 @@ def collect_pyramid_metadata(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         raster_rdd(RDD): An RDD that contains tuples of (projection_info, tile).
             projection_info (dict): Contains the area on Earth the tile represents in addition to
                 the tile's projection information. There are two different types of projection_info,
@@ -324,7 +324,7 @@ def reproject_to_layout(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         tile_layer_metadata (dict): The metadata for this tile layer. This provides
             the information needed to resample the old tiles and create new ones.
 
@@ -349,7 +349,7 @@ def reproject_to_layout(geopysc,
         dest_crs (str): The CRS that the tiles should be reprojected to. Must be in well-known name
             format. This can be same,or a different than what's in the tile_layer_metadata.
         match_layer_extent (bool): Should the reprojection attempt to match the total layer's
-            extent. Defualts to False. This should only be used with small extents, as seems can
+            extent. Defaults to False. This should only be used with small extents, as seems can
             occur if the extent is too large.
 
     Returns:
@@ -467,7 +467,7 @@ def cut_tiles(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         raster_rdd(RDD): An RDD that contains tuples of (projection_info, tile).
             projection_info (dict): Contains the area on Earth the tile represents in addition to
                 the tile's projection information. There are two different types of projection_info,
@@ -584,7 +584,7 @@ def tile_to_layout(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         raster_rdd(RDD): An RDD that contains tuples of (projection_info, tile).
             projection_info (dict): Contains the area on Earth the tile represents in addition to
                 the tile's projection information. There are two different types of projection_info,
@@ -700,7 +700,7 @@ def merge_tiles(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         rdd_1(RDD): An RDD that contains tuples of (projection_info, tile).
             projection_info (dict): Contains the area on Earth the tile represents in addition to
                 the tile's projection information. There are two different types of projection_info,
@@ -817,7 +817,7 @@ def pyramid(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         base_raster_rdd(RDD): A RDD that contains tuples of dictionaries, (key, tile).
             key (dict): The index of the tile within the layer. There are two different types
                 of keys, SpatialKeys and SpaceTimeKeys. SpatialKeys deal with data that have just
