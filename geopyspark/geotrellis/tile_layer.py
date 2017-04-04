@@ -6,6 +6,7 @@ spatial/spatial-temporal information of that area. Metadata contains the project
 area information of the layer.
 """
 import json
+import shapely.wkt
 
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.geotrellis.constants import NEARESTNEIGHBOR, TILE, SPATIAL
@@ -978,7 +979,7 @@ def focal(geopysc,
           neighborhood,
           param1=0.0, param2=0.0, param3=0.0):
 
-    """Reprojects the tiles within a RDD to a new projection.
+    """Performs the given focal operation on the layer contained in the RDD.
 
     The returned RDD is the result of applying the given focal
     operation to the input RDD.
@@ -1102,6 +1103,142 @@ def focal(geopysc,
                                  op,
                                  neighborhood,
                                  param1, param2, param3)
+
+    rdd = result._1()
+    schema2 = result._2()
+    ser = geopysc.create_tuple_serializer(schema2, value_type=TILE)
+    returned_rdd = geopysc.create_python_rdd(rdd, ser)
+
+    return returned_rdd
+
+def costdistance(geopysc,
+                 rdd_type,
+                 keyed_rdd,
+                 metadata,
+                 geometries,
+                 max_distance):
+
+    """Perform cost distance with the given (friction) layer and the given input geometries.
+
+    The returned RDD contains the cost-distance layer RDD.
+
+    Args:
+        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        rdd_type (str): What the spatial type of the geotiffs are. This is
+            represented by the constants: SPATIAL and SPACETIME. Note: All of the
+            GeoTiffs must have the same spatial type.
+        keyed_rdd (RDD): A RDD that contains tuples of dictionaries, (key, tile).
+            key (dict): The index of the tile within the layer. There are two different types
+                of keys, SpatialKeys and SpaceTimeKeys. SpatialKeys deal with data that have just
+                a spatial component, whereas SpaceTimeKeys are for data with both a spatial and
+                time component.
+
+                Both SpatialKeys and SpaceTimeKeys share these fields:
+                    col (int): The column number of the grid, runs east to west.
+                    row (int): The row number of the grid, runs north to south.
+
+                SpaceTimeKeys also have an additional field:
+                    instant (int): The time stamp of the tile.
+            tile (dict): The data of the tile.
+
+                The fields to represent the tile:
+                    data (np.ndarray): The tile data itself is represented as a 3D, numpy array.
+                        Note, even if the data was originally singleband, it will be reformatted as
+                        a multiband tile and read and saved as such.
+                    no_data_value (optional): The no data value of the tile. Can be a range of
+                        types including None.
+        metadata (dict): The metadata for this tile layer. This provides
+            the information needed to resample the old tiles and create new ones.
+
+            The fields that are used to represent the metadata:
+                cellType (str): The value type of every cell within the rasters.
+                layoutDefinition (dict): Defines the raster layout of the rasters.
+
+                The fields that are used to represent the layoutDefinition:
+                    extent (dict): The area covered by the layout tiles.
+                    tileLayout (dict): The tile layout of the rasters.
+                extent (dict): The extent that covers the tiles.
+                crs (str): The CRS that the rasters are projected in.
+                bounds (dict): Represents the positions of the tile layer tiles within a gird.
+
+                    The fields that are used to represent the bounds:
+                        minKey (dict): Represents where the tile layer begins in the gird.
+                        maxKey (dict): Represents where the tile layer ends in the gird.
+
+                        The fields that are used to represent the minKey and maxKey:
+                            col (int): The column number of the grid, runs east to west.
+                            row (int): The row number of the grid, runs north to south.
+        geometries (list): A list of shapely geometries to use as starting points (must be in the same CRS as the friction layer).
+        max_distance (float): The maximum cost that a path may reach before pruning.
+
+    Returns:
+        tuple: A tuple containing (rdd, metadata).
+            rdd (RDD): A layer containing the result of the focal operation.
+
+                key (dict): The index of the tile within the layer. There are two different
+                    types of keys, SpatialKeys and SpaceTimeKeys. SpatialKeys deal with data that
+                    have just a spatial component, whereas SpaceTimeKeys are for data with both a
+                    spatial and time component.
+
+                    Both SpatialKeys and SpaceTimeKeys share these fields:
+                        col (int): The column number of the grid, runs east to west.
+                        row (int): The row number of the grid, runs north to south.
+
+                    SpaceTimeKeys also have an additional field:
+                        instant (int): The time stamp of the tile.
+                tile (dict): The data of the tile.
+
+                    The fields to represent the tile:
+                        data (np.ndarray): The tile data itself is represented as a 3D, numpy
+                            array.  Note, even if the data was originally singleband, it will
+                            be reformatted as a multiband tile and read and saved as such.
+                        no_data_value (optional): The no data value of the tile. Can be a range of
+                            types including None.
+            metadata (dict): The metadata for the RDD.
+                dict: The dictionary representation of the RDD's metadata.
+                    The fields that are used to represent the metadata:
+                        cellType (str): The value type of every cell within the rasters.
+                        layoutDefinition (dict): Defines the raster layout of the rasters.
+
+                        The fields that are used to represent the layoutDefinition:
+                            extent (dict): The area covered by the layout tiles.
+                            tileLayout (dict): The tile layout of the rasters.
+                        extent (dict): The extent that covers the tiles.
+                        crs (str): The CRS that the rasters are projected in.
+                        bounds (dict): Represents the positions of the tile layer's tiles within
+                            a gird.  These positions are represented by keys. There are two
+                            different types of keys, SpatialKeys and SpaceTimeKeys. SpatialKeys are
+                            for data that only have a spatial component while SpaceTimeKeys are for
+                            data with both spatial and temporal components.
+
+                            Both SpatialKeys and SpaceTimeKeys share these fields:
+                                The fields that are used to represent the bounds:
+                                    minKey (dict): Represents where the tile layer begins in the
+                                        gird.
+                                    maxKey (dict): Represents where the tile layer ends in the gird.
+
+                                    The fields that are used to represent the minKey and maxKey:
+                                        col (int): The column number of the grid, runs east to west.
+                                        row (int): The row number of the grid, runs north to south.
+
+                            SpaceTimeKeys also have an additional field:
+                                instant (int): The time stamp of the tile.
+
+    """
+
+    costdistance_wrapper = geopysc.rdd_costdistance
+    key_type = geopysc.map_key_input(rdd_type, True)
+
+    (java_rdd, schema1) = _convert_to_java_rdd(geopysc, key_type, keyed_rdd)
+
+    wkts = [shapely.wkt.dumps(g) for g in geometries]
+
+    result = costdistance_wrapper.costdistance(key_type,
+                                               java_rdd,
+                                               schema1,
+                                               json.dumps(metadata),
+                                               wkts, max_distance,
+                                               geopysc.pysc._jsc.sc())
 
     rdd = result._1()
     schema2 = result._2()
