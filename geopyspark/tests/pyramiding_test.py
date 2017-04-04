@@ -4,7 +4,7 @@ import rasterio
 
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.tile_layer import (collect_metadata,
-                                              collect_pyramid_zoomed_metadata,
+                                              collect_pyramid_metadata,
                                               tile_to_layout,
                                               pyramid)
 from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
@@ -20,11 +20,11 @@ class PyramidingTest(BaseTestClass):
     rdd = geotiff_rdd(BaseTestClass.geopysc, SPATIAL, dir_path)
 
     def test_pyramid_building(self):
-        (zoom, metadata) = collect_pyramid_zoomed_metadata(BaseTestClass.geopysc,
-                                                           SPATIAL,
-                                                           self.rdd,
-                                                           "EPSG:4326",
-                                                           1024)
+        (zoom, metadata) = collect_pyramid_metadata(BaseTestClass.geopysc,
+                                                    SPATIAL,
+                                                    self.rdd,
+                                                    "EPSG:4326",
+                                                    1024)
 
         laid_out = tile_to_layout(BaseTestClass.geopysc,
                                   SPATIAL,
