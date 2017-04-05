@@ -36,6 +36,7 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
 }
 
 class SpatialTiledRasterRDD(
+  val zoomLevel: Option[Int],
   val rdd: RDD[(SpatialKey, MultibandTile)] with Metadata[TileLayerMetadata[SpatialKey]]
 ) extends TiledRasterRDD[SpatialKey] {
 
@@ -60,13 +61,15 @@ class SpatialTiledRasterRDD(
       }
     import Reproject.Options
     // TODO: return the zoom as well as RDD
-    new SpatialTiledRasterRDD(TileRDDReproject(rdd, _crs, schemeOrLayout, Options.DEFAULT)._2)
+    val (zoom, reprojected) = TileRDDReproject(rdd, _crs, schemeOrLayout, Options.DEFAULT)
+    new SpatialTiledRasterRDD(Some(zoom), reprojected)
   }
 
 }
 
 
 class TemporalTiledRasterRDD(
+  val zoomLevel: Option[Int],
   val rdd: RDD[(SpaceTimeKey, MultibandTile)] with Metadata[TileLayerMetadata[SpaceTimeKey]]
 ) extends TiledRasterRDD[SpaceTimeKey] {
 
