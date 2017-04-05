@@ -22,51 +22,51 @@ class GeoPyContext(object):
         self.avroregistry = AvroRegistry()
 
     @property
-    def schema_producer(self):
+    def _schema_producer(self):
         return self._jvm.geopyspark.geotrellis.SchemaProducer
 
     @property
-    def hadoop_geotiff_rdd(self):
+    def _hadoop_geotiff_rdd(self):
         return self._jvm.geopyspark.geotrellis.io.hadoop.HadoopGeoTiffRDDWrapper
 
     @property
-    def s3_geotiff_rdd(self):
+    def _s3_geotiff_rdd(self):
         return self._jvm.geopyspark.geotrellis.io.s3.S3GeoTiffRDDWrapper
 
     @property
-    def store_factory(self):
+    def _store_factory(self):
         return self._jvm.geopyspark.geotrellis.io.AttributeStoreFactory
 
     @property
-    def reader_factory(self):
+    def _reader_factory(self):
         return self._jvm.geopyspark.geotrellis.io.LayerReaderFactory
 
     @property
-    def value_reader_factory(self):
+    def _value_reader_factory(self):
         return self._jvm.geopyspark.geotrellis.io.ValueReaderFactory
 
     @property
-    def writer_factory(self):
+    def _writer_factory(self):
         return self._jvm.geopyspark.geotrellis.io.LayerWriterFactory
 
     @property
-    def tile_layer_metadata_collecter(self):
+    def _tile_layer_metadata_collecter(self):
         return self._jvm.geopyspark.geotrellis.spark.TileLayerMetadataCollector
 
     @property
-    def tile_layer_methods(self):
+    def _tile_layer_methods(self):
         return self._jvm.geopyspark.geotrellis.spark.tiling.TilerMethodsWrapper
 
     @property
-    def tile_layer_merge(self):
+    def _tile_layer_merge(self):
         return self._jvm.geopyspark.geotrellis.spark.merge.MergeMethodsWrapper
 
     @property
-    def pyramid_builder(self):
+    def _pyramid_builder(self):
         return self._jvm.geopyspark.geotrellis.spark.pyramid.PyramidWrapper
 
     @property
-    def rdd_reprojector(self):
+    def _rdd_reprojector(self):
         return self._jvm.geopyspark.geotrellis.spark.reproject.ReprojectWrapper
 
     @staticmethod
@@ -87,7 +87,7 @@ class GeoPyContext(object):
                 raise Exception("Could not find key type that matches", key_type)
 
     def create_schema(self, key_type):
-        return self.schema_producer.getSchema(key_type)
+        return self._schema_producer.getSchema(key_type)
 
     def create_tuple_serializer(self, schema, key_type=None, value_type=None):
         decoder = \
@@ -111,13 +111,3 @@ class GeoPyContext(object):
             return RDD(jrdd, self.pysc, serializer)
         else:
             return RDD(jrdd, self.pysc, AutoBatchedSerializer(serializer))
-
-    @staticmethod
-    def reserialize_python_rdd(rdd, serializer):
-        return rdd._reserialize(AutoBatchedSerializer(serializer))
-
-    def stop(self):
-        self.pysc.stop()
-
-    def close_gateway(self):
-        self.pysc._gateway.close()
