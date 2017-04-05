@@ -1,7 +1,7 @@
 export PYTHON := python3
 export PYSPARK_PYTHON := ipython
 
-JAR-PATH := geopyspark/jars/
+JAR-PATH := geopyspark/jars
 ASSEMBLYNAME := geotrellis-backend-assembly-0.1.0.jar
 BUILD-ASSEMBLY := geopyspark-backend/geotrellis/target/scala-2.11/${ASSEMBLYNAME}
 DIST-ASSEMBLY := ${JAR-PATH}/${ASSEMBLYNAME}
@@ -13,7 +13,7 @@ install: ${DIST-ASSEMBLY} ${WHEEL}
 	${PYTHON} setup.py install --user --force --prefix=
 
 ${DIST-ASSEMBLY}: ${BUILD-ASSEMBLY}
-	cp -f ${BUILD-ASSEMBLY} ${JAR-PATH}
+	cp -f ${BUILD-ASSEMBLY} ${DIST-ASSEMBLY}
 
 ${BUILD-ASSEMBLY}: $(call rwildcard, geopyspark-backend/, *.jar)
 	(cd geopyspark-backend && ./sbt "project geotrellis-backend" assembly)
