@@ -9,6 +9,7 @@ import json
 import shapely.wkt
 import copy
 import numpy as np
+import shapely.wkt
 
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.geotrellis.constants import NEARESTNEIGHBOR, TILE, SPATIAL
@@ -692,6 +693,32 @@ def tile_to_layout(geopysc,
     ser = geopysc.create_tuple_serializer(result._2(), value_type=TILE)
 
     return geopysc.create_python_rdd(result._1(), ser)
+
+def geotrellis_mask(geopysc,
+                    rdd_type,
+                    keyed_rdd,
+                    metadata,
+                    geometries):
+
+    mask_wrapper = geopysc.rdd_mask
+    key_type = geopysc.map_key_input(rdd_type, True)
+
+    (java_rdd, schema1) = _convert_to_java_rdd(geopysc, key_type, keyed_rdd)
+
+    wkts = [shapely.wkt.dumps(g) for g in geometries]
+
+    result = mask_wrapper.mask(key_type,
+                               java_rdd,
+                               schema1,
+                               json.dumps(metadata),
+                               wkts)
+
+    rdd = result._1()
+    schema2 = result._2()
+    ser = geopysc.create_tuple_serializer(schema2, value_type=TILE)
+    returned_rdd = geopysc.create_python_rdd(rdd, ser)
+
+    return returned_rdd
 
 def python_mask(rdd,
                 metadata,

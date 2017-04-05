@@ -4,7 +4,7 @@ import rasterio
 import numpy as np
 
 from shapely.geometry import Polygon
-from geopyspark.geotrellis.tile_layer import python_mask
+from geopyspark.geotrellis.tile_layer import python_mask, geotrellis_mask
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.constants import SPATIAL
 
@@ -37,10 +37,22 @@ class CostDistanceTest(BaseTestClass):
                     'extent': extent,
                     'tileLayout': layout}}
 
-    def test_costdistance_finite(self):
-        poly = Polygon([(17, 17), (42, 17), (42, 42), (17, 42)])
-        result = python_mask(self.rdd, self.metadata, [poly])
+    geometries = [Polygon([(17, 17), (42, 17), (42, 42), (17, 42)])]
+
+    def test_python_mask(self):
+        result = python_mask(self.rdd, self.metadata, self.geometries)
+        n = result.map(lambda kv: np.sum(kv[1]['data'])).reduce(lambda a,b: a + b)
+        self.assertEqual(n, -50)
+
+    def test_geotrellis_mask(self):
+        result = geotrellis_mask(geopysc=self.geopysc,
+                                 rdd_type=SPATIAL,
+                                 keyed_rdd=self.rdd,
+                                 metadata=self.metadata,
+                                 geometries=self.geometries)
         print(result.collect())
+        n = result.map(lambda kv: np.sum(kv[1]['data'])).reduce(lambda a,b: a + b)
+        self.assertEqual(n, 25.0)
 
 if __name__ == "__main__":
     unittest.main()

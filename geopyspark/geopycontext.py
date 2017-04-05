@@ -81,6 +81,10 @@ class GeoPyContext(object):
     def rdd_costdistance(self):
         return self._jvm.geopyspark.geotrellis.spark.costdistance.CostDistanceWrapper
 
+    @property
+    def rdd_mask(self):
+        return self._jvm.geopyspark.geotrellis.spark.mask.MaskWrapper
+
     @staticmethod
     def map_key_input(key_type, is_boundable):
         if is_boundable:
