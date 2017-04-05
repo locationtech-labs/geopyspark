@@ -7,6 +7,7 @@ will be in a multiband format; regardless of how the data was originally formatt
 import json
 
 from collections import namedtuple
+from geopyspark.rdd import TiledRasterRDD
 from geopyspark.geotrellis.constants import SPATIAL, TILE, ZORDER
 from shapely.geometry import Polygon
 from shapely.wkt import dumps
@@ -203,21 +204,9 @@ def read(geopysc,
     builds = _mapped_builds[uri]
 
     key = geopysc.map_key_input(rdd_type, True)
+    srdd = builds.reader.read(key, layer_name, layer_zoom)
 
-    tup = builds.reader.read(key, layer_name, layer_zoom)
-    schema = tup._2()
-
-    if rdd_type == SPATIAL:
-        jmetadata = builds.store.metadataSpatial(layer_name, layer_zoom)
-    else:
-        jmetadata = builds.store.metadataSpaceTime(layer_name, layer_zoom)
-
-    metadata = json.loads(jmetadata)
-    ser = geopysc.create_tuple_serializer(schema, value_type=TILE)
-
-    rdd = geopysc.create_python_rdd(tup._1(), ser)
-
-    return (rdd, schema, metadata)
+    return TiledRasterRDD(geopysc, key, srdd)
 
 def read_value(geopysc,
                rdd_type,
@@ -438,34 +427,22 @@ def query(geopysc,
         time_intervals = []
 
     if isinstance(intersects, Polygon):
-        tup = builds.reader.query(key,
-                                  layer_name,
-                                  layer_zoom,
-                                  dumps(intersects),
-                                  time_intervals)
+        srdd = builds.reader.query(key,
+                                   layer_name,
+                                   layer_zoom,
+                                   dumps(intersects),
+                                   time_intervals)
 
     elif isinstance(intersects, str):
-        tup = builds.reader.query(key,
-                                  layer_name,
-                                  layer_zoom,
-                                  intersects,
-                                  time_intervals)
+        srdd = builds.reader.query(key,
+                                   layer_name,
+                                   layer_zoom,
+                                   intersects,
+                                   time_intervals)
     else:
         raise Exception("Could not query intersection", intersects)
 
-    schema = tup._2()
-
-    if rdd_type == SPATIAL:
-        jmetadata = builds.store.metadataSpatial(layer_name, layer_zoom)
-    else:
-        jmetadata = builds.store.metadataSpaceTime(layer_name, layer_zoom)
-
-    metadata = json.loads(jmetadata)
-    ser = geopysc.create_tuple_serializer(schema, value_type=TILE)
-
-    rdd = geopysc.create_python_rdd(tup._1(), ser)
-
-    return (rdd, schema, metadata)
+    return TiledRasterRDD(geopysc, key, srdd)
 
 def write(geopysc,
           rdd_type,
