@@ -66,7 +66,7 @@ class SpatialTiledRasterRDD(
 }
 
 
-class SpatialTemporalTiledRasterRDD(
+class TemporalTiledRasterRDD(
   val rdd: RDD[(SpaceTimeKey, MultibandTile)] with Metadata[TileLayerMetadata[SpaceTimeKey]]
 ) extends TiledRasterRDD[SpaceTimeKey] {
 

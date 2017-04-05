@@ -1,12 +1,5 @@
 package geopyspark.geotrellis
 
-import geotrellis.raster._
-import geotrellis.vector._
-import geotrellis.spark._
-import geotrellis.spark.tiling._
-import org.apache.spark.rdd._
-
-
 import geotrellis.util._
 import geotrellis.proj4._
 import geotrellis.vector._
@@ -28,12 +21,15 @@ import spray.json.DefaultJsonProtocol._
 import org.apache.spark._
 import org.apache.spark.rdd._
 import org.apache.spark.api.java.JavaRDD
-import scala.util._
-import scala.collection.JavaConverters._
-import collection.JavaConversions._
-import java.util.Map
 
 import scala.reflect._
+import scala.util._
+import scala.collection.JavaConverters._
+
+import collection.JavaConversions._
+
+import java.util.Map
+
 
 object TileRDD {
   def getResampleMethod(resampleMethod: String): ResampleMethod =
@@ -118,8 +114,7 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
   def tileToLayout(tileLayerMetadata: String, resampleMethod: String): TiledRasterRDD[SpatialKey] = {
     val md = tileLayerMetadata.parseJson.convertTo[TileLayerMetadata[SpatialKey]]
     val rm = TileRDD.getResampleMethod(resampleMethod)
-    new SpatialTiledRasterRDD(
-      MultibandTileLayerRDD(rdd.tileToLayout(md, rm), md))
+    new SpatialTiledRasterRDD(MultibandTileLayerRDD(rdd.tileToLayout(md, rm), md))
   }
 
   def reproject(target_crs: String, resampleMethod: String): ProjectedRasterRDD = {
@@ -151,13 +146,13 @@ class TemporalProjectedRasterRDD(val rdd: RDD[(TemporalProjectedExtent, Multiban
     val md = layerMetadata.parseJson.convertTo[TileLayerMetadata[SpaceTimeKey]]
     val rm = TileRDD.getResampleMethod(resampleMethod)
     val tiles = rdd.cutTiles[SpaceTimeKey](md, rm)
-    new SpatialTemporalTiledRasterRDD(MultibandTileLayerRDD(tiles, md))
+    new TemporalTiledRasterRDD(MultibandTileLayerRDD(tiles, md))
   }
 
   def tileToLayout(layerMetadata: String, resampleMethod: String): TiledRasterRDD[SpaceTimeKey] = {
     val md = layerMetadata.parseJson.convertTo[TileLayerMetadata[SpaceTimeKey]]
     val rm = TileRDD.getResampleMethod(resampleMethod)
-    new SpatialTemporalTiledRasterRDD(MultibandTileLayerRDD(rdd.tileToLayout(md, rm), md))
+    new TemporalTiledRasterRDD(MultibandTileLayerRDD(rdd.tileToLayout(md, rm), md))
   }
 
   def reproject(target_crs: String, resampleMethod: String): TemporalProjectedRasterRDD = {
