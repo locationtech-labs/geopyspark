@@ -1,6 +1,5 @@
 export PYTHON := python3
 export PYSPARK_PYTHON := ipython
-export IMG := jupyter-geopyspark
 
 JAR-PATH := geopyspark/jars/
 ASSEMBLYNAME := geotrellis-backend-assembly-0.1.0.jar
@@ -14,25 +13,25 @@ install: ${DIST-ASSEMBLY} ${WHEEL}
 	${PYTHON} setup.py install --user --force --prefix=
 
 ${DIST-ASSEMBLY}: ${BUILD-ASSEMBLY}
-	mv -f ${BUILD-ASSEMBLY} ${JAR-PATH}
+	cp -f ${BUILD-ASSEMBLY} ${JAR-PATH}
 
 ${BUILD-ASSEMBLY}: $(call rwildcard, geopyspark-backend/, *.jar)
 	(cd geopyspark-backend && ./sbt "project geotrellis-backend" assembly)
 
-${WHEEL}: $(call rwildcard, geopyspark, *.py) setup.py ${DIST-ASSEMBLY}
+${WHEEL}: $(call rwildcard, geopyspark, *.py) setup.py
 	${PYTHON} setup.py bdist_wheel
 
 pyspark: ${DIST-ASSEMBLY}
 	pyspark --jars ${DIST-ASSEMBLY}
 
-docker-build: ${WHEEL}
-	docker build -t ${IMG}:latest .
+docker/archives/${ASSEMBLYNAME}: ${DIST-ASSEMBLY}
+	cp -f ${DIST-ASSEMBLY} docker/archives/${ASSEMBLYNAME}
 
-docker-run:
-	docker run --rm --name geopyspark  -it -p 8000:8000 -v $(CURDIR)/notebooks:/opt/notebooks ${IMG}:latest ${CMD}
+docker/archives/${WHEELNAME}: ${WHEEL}
+	cp -f ${WHEEL} docker/archives/${WHEELNAME}
 
-docker-exec:
-	docker exec -it -u root geopyspark bash
+docker-build: docker/archives/${ASSEMBLYNAME} docker/archives/${WHEELNAME}
+	(cd docker && make stage1)
 
 clean:
 	(cd geopyspark-backend && ./sbt "project geotrellis-backend" clean)
