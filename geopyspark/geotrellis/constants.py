@@ -50,6 +50,25 @@ MAX = 'Max'
 """A resampling method."""
 MIN = 'Min'
 
+RESAMPLE_METHODS = [
+    NEARESTNEIGHBOR,
+    BILINEAR,
+    CUBICCONVOLUTION,
+    LANCZOS,
+    AVERAGE,
+    MODE,
+    MEDIAN,
+    MAX,
+    MIN
+]
+
+
+"""Layout scheme to match resolution of the closest level of TMS pyramid"""
+ZOOM = 'zoom'
+
+"""Layout scheme to match resolution of source rasters"""
+FLOATING = 'float'
+
 
 """A key indexing method. Works for RDDs that contain both SpatialKeys and SpacetimeKeys."""
 ZORDER = 'zorder'

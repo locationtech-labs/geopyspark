@@ -24,6 +24,7 @@ lazy val commonSettings = Seq(
   addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
 )
 
+scalaVersion := Version.scala
 
 lazy val root = Project("root", file(".")).
   dependsOn(geotrellisProject)

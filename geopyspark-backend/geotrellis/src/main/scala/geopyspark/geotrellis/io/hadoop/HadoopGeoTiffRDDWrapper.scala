@@ -47,7 +47,8 @@ object HadoopGeoTiffRDDWrapper {
   def getRDD(
     keyType: String,
     path: String,
-    sc: SparkContext): (JavaRDD[Array[Byte]], String) =
+    sc: SparkContext
+  ): (JavaRDD[Array[Byte]], String) =
     keyType match {
       case "ProjectedExtent" =>
         PythonTranslator.toPython(HadoopGeoTiffRDD.spatialMultiband(path)(sc))
