@@ -113,11 +113,3 @@ def geotiff_rdd(geopysc,
                                                       geopysc.sc)
 
     return RasterRDD(geopysc, rdd_type, srdd)
-
-
-def geotiff_raster_rdd(geopysc, rdd_type, uri, options=None, **kwargs):
-    key = geopysc.map_key_input(rdd_type, False)
-    if kwargs and not options:
-        options = kwargs
-    srdd = geopysc._jvm.geopyspark.geotrellis.GeoTiffRDD.getRDD(geopysc.sc, key, uri)
-    return RasterRDD(geopysc, rdd_type, srdd)
