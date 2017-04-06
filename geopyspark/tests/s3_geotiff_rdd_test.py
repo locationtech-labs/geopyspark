@@ -66,7 +66,7 @@ class Singleband(S3GeoTiffIOTest, BaseTestClass):
         self.client.putObject(self.bucket, self.key, self.data)
         result = geotiff_rdd(BaseTestClass.geopysc, SPATIAL, self.uri, opt)
 
-        return [tile[1] for tile in result.collect()]
+        return [tile[1] for tile in result.to_numpy_rdd().collect()]
 
     def test_whole_tiles(self):
 
@@ -116,7 +116,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
                              self.uri,
                              opt)
 
-        return [tile[1] for tile in result.collect()]
+        return [tile[1] for tile in result.to_numpy_rdd().collect()]
 
     def test_whole_tiles(self):
         geotrellis_tiles = self.read_multiband_geotrellis()
