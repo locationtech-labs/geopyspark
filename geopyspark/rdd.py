@@ -1,6 +1,6 @@
 import json
 
-from geopyspark.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, FLOAT
+from geopyspark.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, FLOAT, TILE
 
 
 class RasterRDD(object):
@@ -11,16 +11,25 @@ class RasterRDD(object):
         self.rdd_type = rdd_type
         self.srdd = srdd
 
+    @staticmethod
+    def from_numpy_rdd(geopysc, numpy_rdd, rdd_type):
+        key = geopysc.map_key_input(rdd_type)
+
+        schema = geopysc.create_schema(key)
+        ser = geopysc.create_tuple_serializer(schema, key_type=None, value_type=TILE)
+        reserialized_rdd = numpy_rdd._reserialize(ser)
+
+        if key == "ProjectedExtent":
+            srdd = geopysc.projected_raster_rdd.apply(reserialized_rdd, ser)
+        else:
+            srdd = geopysc.temporal_raster_rdd.apply(reserialized_rdd, ser)
+
+        return RasterRDD(geopysc, key, srdd)
+
     def to_numpy_rdd(self):
         result = self.srdd.toAvroRDD()
-        ser = self.geopysc.create_tuple_serializer(result._2(), value_type="Tile")
+        ser = self.geopysc.create_tuple_serializer(result._2(), value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
-
-    '''
-    @static
-    def from_numpy_rdd(numpy_rdd):
-        pass
-    '''
 
     def collect_metadata(self, crs=None, extent=None, layout=None, tile_size=256):
         """Iterate over RDD records and generate layer metadata desribing the contained rasters.
