@@ -125,7 +125,7 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
 
 }
 
-class TemporalProjectedRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) extends RasterRDD[TemporalProjectedExtent] {
+class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) extends RasterRDD[TemporalProjectedExtent] {
 
   def collectMetadata(crs: Option[CRS], extent: Option[Extent], layout: Option[TileLayout], tileSize: Int): String = {
       (crs, extent, layout) match {
@@ -155,9 +155,9 @@ class TemporalProjectedRasterRDD(val rdd: RDD[(TemporalProjectedExtent, Multiban
     new TemporalTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(md, rm), md))
   }
 
-  def reproject(target_crs: String, resampleMethod: String): TemporalProjectedRasterRDD = {
+  def reproject(target_crs: String, resampleMethod: String): TemporalRasterRDD = {
     val tcrs = TileRDD.getCRS(target_crs).get
     val resample = TileRDD.getResampleMethod(resampleMethod)
-    new TemporalProjectedRasterRDD(rdd.reproject(tcrs, resample))
+    new TemporalRasterRDD(rdd.reproject(tcrs, resample))
   }
 }
