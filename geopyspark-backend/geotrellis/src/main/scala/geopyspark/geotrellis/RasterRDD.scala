@@ -170,3 +170,19 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
     new TemporalRasterRDD(rdd.reproject(tcrs, resample))
   }
 }
+
+object ProjectedRasterRDD {
+  def apply(javaRDD: JavaRDD[Array[Byte]], schema: String): ProjectedRasterRDD =
+    ProjectedRasterRDD(PythonTranslator.fromPython(javaRDD, Some(schema)))
+
+  def apply(rdd: RDD[(ProjectedExtent, MultibandTile)]): ProjectedRasterRDD =
+    new ProjectedRasterRDD(rdd)
+}
+
+object TemporalRasterRDD {
+  def apply(javaRDD: JavaRDD[Array[Byte]], schema: String): TemporalRasterRDD =
+    TemporalRasterRDD(PythonTranslator.fromPython(javaRDD, Some(schema)))
+
+  def apply(rdd: RDD[(TemporalProjectedExtent, MultibandTile)]): TemporalRasterRDD =
+    new TemporalRasterRDD(rdd)
+}
