@@ -90,30 +90,29 @@ def geotiff_rdd(geopysc,
         (bucket, prefix) = key_and_bucket_uri.split("/", 1)
 
         if not options:
-            result = geopysc._s3_geotiff_rdd.getRDD(key,
-                                                    bucket,
-                                                    prefix,
-                                                    geopysc.sc)
+            srdd = geopysc._s3_geotiff_rdd.getRDD(key,
+                                                  bucket,
+                                                  prefix,
+                                                  geopysc.sc)
         else:
-            result = geopysc._s3_geotiff_rdd.getRDD(key,
-                                                    bucket,
-                                                    prefix,
-                                                    options,
-                                                    geopysc.sc)
+            srdd = geopysc._s3_geotiff_rdd.getRDD(key,
+                                                  bucket,
+                                                  prefix,
+                                                  options,
+                                                  geopysc.sc)
 
     else:
         if not options:
-            result = geopysc._hadoop_geotiff_rdd.getRDD(key,
-                                                        uri,
-                                                        geopysc.sc)
+            srdd = geopysc._hadoop_geotiff_rdd.getRDD(key,
+                                                      uri,
+                                                      geopysc.sc)
         else:
-            result = geopysc._hadoop_geotiff_rdd.getRDD(key,
-                                                        uri,
-                                                        options,
-                                                        geopysc.sc)
+            srdd = geopysc._hadoop_geotiff_rdd.getRDD(key,
+                                                      uri,
+                                                      options,
+                                                      geopysc.sc)
 
-    ser = geopysc.create_tuple_serializer(result._2(), value_type=TILE)
-    return geopysc.create_python_rdd(result._1(), ser)
+    return RasterRDD(geopysc, rdd_type, srdd)
 
 
 def geotiff_raster_rdd(geopysc, rdd_type, uri, options=None, **kwargs):
