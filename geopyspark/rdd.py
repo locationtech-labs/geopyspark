@@ -16,9 +16,11 @@ class RasterRDD(object):
         ser = self.geopysc.create_tuple_serializer(result._2(), value_type="Tile")
         return self.geopysc.create_python_rdd(result._1(), ser)
 
+    '''
     @static
     def from_numpy_rdd(numpy_rdd):
         pass
+    '''
 
     def collect_metadata(self, crs=None, extent=None, layout=None, tile_size=256):
         """Iterate over RDD records and generate layer metadata desribing the contained rasters.
