@@ -47,6 +47,7 @@ def setup_environment():
     os.environ["PYSPARK_DRIVER_PYTHON"] = "python3"
     os.environ["PYSPARK_SUBMIT_ARGS"] = "--jars {} \
             --conf spark.ui.enabled=false \
+            --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
             --driver-memory 8G \
             --executor-memory 8G \
             pyspark-shell".format(jar_string)

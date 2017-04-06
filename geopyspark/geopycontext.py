@@ -73,6 +73,14 @@ class GeoPyContext(object):
     def rdd_focal(self):
         return self._jvm.geopyspark.geotrellis.spark.focal.FocalWrapper
 
+    @property
+    def rdd_stitch(self):
+        return self._jvm.geopyspark.geotrellis.spark.stitch.StitchWrapper
+
+    @property
+    def rdd_costdistance(self):
+        return self._jvm.geopyspark.geotrellis.spark.costdistance.CostDistanceWrapper
+
     @staticmethod
     def map_key_input(key_type, is_boundable):
         if is_boundable:
