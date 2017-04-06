@@ -1,5 +1,7 @@
 package geopyspark.geotrellis
 
+import geopyspark.geotrellis.GeoTrellisUtils._
+
 import geotrellis.util._
 import geotrellis.proj4._
 import geotrellis.vector._
@@ -70,16 +72,27 @@ abstract class RasterRDD[K: AvroRecordCodec: ClassTag] extends TileRDD[K] {
   /** Encode RDD as Avro bytes and return it with avro schema used */
   def toAvroRDD(): (JavaRDD[Array[Byte]], String) = PythonTranslator.toPython(rdd)
 
-  // TODO: get rid of this overload, just use the String interface
-  protected def collectMetadata(crs: Option[CRS], extent: Option[Extent], layout: Option[TileLayout], tileSize: Int): String
+  def collectMetadata(
+    extent: java.util.Map[String, Double],
+    layout: java.util.Map[String, Int],
+    crs: String
+  ): String = {
+    val layoutDefinition = Right(LayoutDefinition(extent.toExtent, layout.toTileLayout))
 
-  def collect_metadata(crs: String, extent: String, layout: String, tileSize: Int): String =
-    collectMetadata(
-      crs = Option(crs).flatMap(TileRDD.getCRS),
-      extent = Option(extent).flatMap(_.parseJson.convertTo[Option[Extent]]),
-      layout = Option(layout).flatMap(_.parseJson.convertTo[Option[TileLayout]]),
-      tileSize = tileSize
-    )
+    collectMetadata(layoutDefinition, crs)
+  }
+
+  def collectMetadata(tileSize: String, crs: String): String = {
+    val layoutScheme =
+      if (tileSize != "")
+        Left(FloatingLayoutScheme(tileSize.toInt))
+      else
+        Left(FloatingLayoutScheme())
+
+    collectMetadata(layoutScheme, crs)
+  }
+
+  def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: String): String
 
   def cutTiles(layerMetadata: String, resampleMethod: String): TiledRasterRDD[_]
 
@@ -90,19 +103,17 @@ abstract class RasterRDD[K: AvroRecordCodec: ClassTag] extends TileRDD[K] {
 
 class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends RasterRDD[ProjectedExtent] {
 
-  def collectMetadata(crs: Option[CRS], extent: Option[Extent], layout: Option[TileLayout], tileSize: Int): String = {
-      (crs, extent, layout) match {
-        case (Some(crs), Some(extent), Some(layout)) =>
-          rdd.collectMetadata[SpatialKey](crs, LayoutDefinition(extent, layout))
-        case (None, Some(extent), Some(layout)) =>
-          rdd.collectMetadata[SpatialKey](LayoutDefinition(extent, layout))
-        case (Some(crs), _, _) =>
-          rdd.collectMetadata[SpatialKey](crs, FloatingLayoutScheme(tileSize, tileSize))._2
-        case (None, None, None) =>
-          rdd.collectMetadata[SpatialKey](FloatingLayoutScheme(tileSize, tileSize))._2
-        case _ =>
-          throw new IllegalArgumentException(s"Can't handle $crs, $extent, $layout, $tileSize")
-      }
+  def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: String): String = {
+    (TileRDD.getCRS(crs), layout) match {
+      case (Some(crs), Right(layoutDefinition)) =>
+          rdd.collectMetadata[SpatialKey](crs, layoutDefinition)
+      case (None, Right(layoutDefinition)) =>
+          rdd.collectMetadata[SpatialKey](layoutDefinition)
+      case (Some(crs), Left(layoutScheme)) =>
+          rdd.collectMetadata[SpatialKey](crs, layoutScheme)._2
+      case (None, Left(layoutScheme)) =>
+          rdd.collectMetadata[SpatialKey](layoutScheme)._2
+    }
   }.toJson.compactPrint
 
   def cutTiles(layerMetadata: String, resampleMethod: String): TiledRasterRDD[SpatialKey] = {
@@ -127,19 +138,17 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
 
 class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) extends RasterRDD[TemporalProjectedExtent] {
 
-  def collectMetadata(crs: Option[CRS], extent: Option[Extent], layout: Option[TileLayout], tileSize: Int): String = {
-      (crs, extent, layout) match {
-        case (Some(crs), Some(extent), Some(layout)) =>
-          rdd.collectMetadata[SpaceTimeKey](crs, LayoutDefinition(extent, layout))
-        case (None, Some(extent), Some(layout)) =>
-          rdd.collectMetadata[SpaceTimeKey](LayoutDefinition(extent, layout))
-        case (Some(crs), _, _) =>
-          rdd.collectMetadata[SpaceTimeKey](crs, FloatingLayoutScheme(tileSize, tileSize))._2
-        case (None, None, None) =>
-          rdd.collectMetadata[SpaceTimeKey](FloatingLayoutScheme())._2
-        case _ =>
-          throw new IllegalArgumentException(s"Can't handle $crs, $extent, $layout, $tileSize")
-      }
+  def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: String): String = {
+    (TileRDD.getCRS(crs), layout) match {
+      case (Some(crs), Right(layoutDefinition)) =>
+          rdd.collectMetadata[SpaceTimeKey](crs, layoutDefinition)
+      case (None, Right(layoutDefinition)) =>
+          rdd.collectMetadata[SpaceTimeKey](layoutDefinition)
+      case (Some(crs), Left(layoutScheme)) =>
+          rdd.collectMetadata[SpaceTimeKey](crs, layoutScheme)._2
+      case (None, Left(layoutScheme)) =>
+          rdd.collectMetadata[SpaceTimeKey](layoutScheme)._2
+    }
   }.toJson.compactPrint
 
   def cutTiles(layerMetadata: String, resampleMethod: String): TiledRasterRDD[SpaceTimeKey] = {
