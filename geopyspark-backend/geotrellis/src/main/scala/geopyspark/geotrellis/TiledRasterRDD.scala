@@ -23,6 +23,13 @@ import scala.reflect._
 
 abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: ClassTag] extends TileRDD[K] {
   def rdd: RDD[(K, MultibandTile)] with Metadata[TileLayerMetadata[K]]
+  def zoomLevel: Option[Int]
+
+  def getZoom: Int =
+    zoomLevel match {
+      case None => -1
+      case Some(z) => z
+    }
 
   /** Encode RDD as Avro bytes and return it with avro schema used */
   def toAvroRDD(): (JavaRDD[Array[Byte]], String) = PythonTranslator.toPython(rdd)
