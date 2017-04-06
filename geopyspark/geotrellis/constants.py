@@ -90,3 +90,27 @@ MONTHS = 'months'
 
 """A time unit used with ZORDER."""
 YEARS = 'years'
+
+"""Neighborhood type: Annulus."""
+ANNULUS = 'annulus'
+
+"""Neighborhood type: Nesw."""
+NESW = 'nesw'
+
+"""Neighborhood type: Square."""
+SQUARE = 'square'
+
+"""Neighborhood type: Wedge."""
+WEDGE = 'wedge'
+
+"""Focal operation type: Sum."""
+SUM = 'Sum'
+
+"""Focal operation type: Aspect."""
+ASPECT = 'Aspect'
+
+"""Focal operation type: Slope."""
+SLOPE = 'Slope'
+
+"""Focal operation type: Standard Deviation."""
+STANDARDDEVIATION = 'StandardDeviation'

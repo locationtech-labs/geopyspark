@@ -36,7 +36,7 @@ def collect_metadata(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants, SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         raster_rdd(RDD): An RDD that contains tuples of (projection_info, tile).
             projection_info (dict): Contains the area on Earth the tile represents in addition to
                 the tile's projection information. There are two different types of projection_info,
@@ -144,7 +144,7 @@ def collect_pyramid_metadata(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         raster_rdd(RDD): An RDD that contains tuples of (projection_info, tile).
             projection_info (dict): Contains the area on Earth the tile represents in addition to
                 the tile's projection information. There are two different types of projection_info,
@@ -324,7 +324,7 @@ def reproject_to_layout(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         tile_layer_metadata (dict): The metadata for this tile layer. This provides
             the information needed to resample the old tiles and create new ones.
 
@@ -349,7 +349,7 @@ def reproject_to_layout(geopysc,
         dest_crs (str): The CRS that the tiles should be reprojected to. Must be in well-known name
             format. This can be same,or a different than what's in the tile_layer_metadata.
         match_layer_extent (bool): Should the reprojection attempt to match the total layer's
-            extent. Defualts to False. This should only be used with small extents, as seems can
+            extent. Defaults to False. This should only be used with small extents, as seems can
             occur if the extent is too large.
 
     Returns:
@@ -467,7 +467,7 @@ def cut_tiles(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         raster_rdd(RDD): An RDD that contains tuples of (projection_info, tile).
             projection_info (dict): Contains the area on Earth the tile represents in addition to
                 the tile's projection information. There are two different types of projection_info,
@@ -584,7 +584,7 @@ def tile_to_layout(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         raster_rdd(RDD): An RDD that contains tuples of (projection_info, tile).
             projection_info (dict): Contains the area on Earth the tile represents in addition to
                 the tile's projection information. There are two different types of projection_info,
@@ -700,7 +700,7 @@ def merge_tiles(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         rdd_1(RDD): An RDD that contains tuples of (projection_info, tile).
             projection_info (dict): Contains the area on Earth the tile represents in addition to
                 the tile's projection information. There are two different types of projection_info,
@@ -817,7 +817,7 @@ def pyramid(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            GeoTiffs must have the same spatial type.
         base_raster_rdd(RDD): A RDD that contains tuples of dictionaries, (key, tile).
             key (dict): The index of the tile within the layer. There are two different types
                 of keys, SpatialKeys and SpaceTimeKeys. SpatialKeys deal with data that have just
@@ -968,3 +968,144 @@ def pyramid(geopysc,
         return (tile_layer._1(), returned_rdd, json.loads(tile_layer._3()))
 
     return [_formatter(tile_layer) for tile_layer in result]
+
+
+def focal(geopysc,
+          rdd_type,
+          keyed_rdd,
+          metadata,
+          op,
+          neighborhood,
+          param1=0.0, param2=0.0, param3=0.0):
+
+    """Reprojects the tiles within a RDD to a new projection.
+
+    The returned RDD is the result of applying the given focal
+    operation to the input RDD.
+
+    Args:
+        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        rdd_type (str): What the spatial type of the geotiffs are. This is
+            represented by the constants: SPATIAL and SPACETIME. Note: All of the
+            GeoTiffs must have the same spatial type.
+        keyed_rdd (RDD): A RDD that contains tuples of dictionaries, (key, tile).
+            key (dict): The index of the tile within the layer. There are two different types
+                of keys, SpatialKeys and SpaceTimeKeys. SpatialKeys deal with data that have just
+                a spatial component, whereas SpaceTimeKeys are for data with both a spatial and
+                time component.
+
+                Both SpatialKeys and SpaceTimeKeys share these fields:
+                    col (int): The column number of the grid, runs east to west.
+                    row (int): The row number of the grid, runs north to south.
+
+                SpaceTimeKeys also have an additional field:
+                    instant (int): The time stamp of the tile.
+            tile (dict): The data of the tile.
+
+                The fields to represent the tile:
+                    data (np.ndarray): The tile data itself is represented as a 3D, numpy array.
+                        Note, even if the data was originally singleband, it will be reformatted as
+                        a multiband tile and read and saved as such.
+                    no_data_value (optional): The no data value of the tile. Can be a range of
+                        types including None.
+        metadata (dict): The metadata for this tile layer. This provides
+            the information needed to resample the old tiles and create new ones.
+
+            The fields that are used to represent the metadata:
+                cellType (str): The value type of every cell within the rasters.
+                layoutDefinition (dict): Defines the raster layout of the rasters.
+
+                The fields that are used to represent the layoutDefinition:
+                    extent (dict): The area covered by the layout tiles.
+                    tileLayout (dict): The tile layout of the rasters.
+                extent (dict): The extent that covers the tiles.
+                crs (str): The CRS that the rasters are projected in.
+                bounds (dict): Represents the positions of the tile layer tiles within a gird.
+
+                    The fields that are used to represent the bounds:
+                        minKey (dict): Represents where the tile layer begins in the gird.
+                        maxKey (dict): Represents where the tile layer ends in the gird.
+
+                        The fields that are used to represent the minKey and maxKey:
+                            col (int): The column number of the grid, runs east to west.
+                            row (int): The row number of the grid, runs north to south.
+        op (int): The focal operation to apply (e.g. SUM, ASPECT, SLOPE).
+        neighborhood (str): The type of neighborhood to use (e.g. ANNULUS, SQUARE).
+        param1 (float): For SLOPE this is the zFactor, otherwise it is the first argument to the neighborhood.
+        param2 (float): The second argument to the neighborhood.
+        param3 (float): The third argument to the neighborhood.
+
+    Returns:
+        tuple: A tuple containing (rdd, metadata).
+            rdd (RDD): A layer containing the result of the focal operation.
+
+                key (dict): The index of the tile within the layer. There are two different
+                    types of keys, SpatialKeys and SpaceTimeKeys. SpatialKeys deal with data that
+                    have just a spatial component, whereas SpaceTimeKeys are for data with both a
+                    spatial and time component.
+
+                    Both SpatialKeys and SpaceTimeKeys share these fields:
+                        col (int): The column number of the grid, runs east to west.
+                        row (int): The row number of the grid, runs north to south.
+
+                    SpaceTimeKeys also have an additional field:
+                        instant (int): The time stamp of the tile.
+                tile (dict): The data of the tile.
+
+                    The fields to represent the tile:
+                        data (np.ndarray): The tile data itself is represented as a 3D, numpy
+                            array.  Note, even if the data was originally singleband, it will
+                            be reformatted as a multiband tile and read and saved as such.
+                        no_data_value (optional): The no data value of the tile. Can be a range of
+                            types including None.
+            metadata (dict): The metadata for the RDD.
+                dict: The dictionary representation of the RDD's metadata.
+                    The fields that are used to represent the metadata:
+                        cellType (str): The value type of every cell within the rasters.
+                        layoutDefinition (dict): Defines the raster layout of the rasters.
+
+                        The fields that are used to represent the layoutDefinition:
+                            extent (dict): The area covered by the layout tiles.
+                            tileLayout (dict): The tile layout of the rasters.
+                        extent (dict): The extent that covers the tiles.
+                        crs (str): The CRS that the rasters are projected in.
+                        bounds (dict): Represents the positions of the tile layer's tiles within
+                            a gird.  These positions are represented by keys. There are two
+                            different types of keys, SpatialKeys and SpaceTimeKeys. SpatialKeys are
+                            for data that only have a spatial component while SpaceTimeKeys are for
+                            data with both spatial and temporal components.
+
+                            Both SpatialKeys and SpaceTimeKeys share these fields:
+                                The fields that are used to represent the bounds:
+                                    minKey (dict): Represents where the tile layer begins in the
+                                        gird.
+                                    maxKey (dict): Represents where the tile layer ends in the gird.
+
+                                    The fields that are used to represent the minKey and maxKey:
+                                        col (int): The column number of the grid, runs east to west.
+                                        row (int): The row number of the grid, runs north to south.
+
+                            SpaceTimeKeys also have an additional field:
+                                instant (int): The time stamp of the tile.
+
+    """
+
+    focal_wrapper = geopysc.rdd_focal
+    key_type = geopysc.map_key_input(rdd_type, True)
+
+    (java_rdd, schema1) = _convert_to_java_rdd(geopysc, key_type, keyed_rdd)
+
+    result = focal_wrapper.focal(key_type,
+                                 java_rdd,
+                                 schema1,
+                                 json.dumps(metadata),
+                                 op,
+                                 neighborhood,
+                                 param1, param2, param3)
+
+    rdd = result._1()
+    schema2 = result._2()
+    ser = geopysc.create_tuple_serializer(schema2, value_type=TILE)
+    returned_rdd = geopysc.create_python_rdd(rdd, ser)
+
+    return returned_rdd

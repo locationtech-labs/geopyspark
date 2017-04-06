@@ -69,6 +69,10 @@ class GeoPyContext(object):
     def _rdd_reprojector(self):
         return self._jvm.geopyspark.geotrellis.spark.reproject.ReprojectWrapper
 
+    @property
+    def rdd_focal(self):
+        return self._jvm.geopyspark.geotrellis.spark.focal.FocalWrapper
+
     @staticmethod
     def map_key_input(key_type, is_boundable):
         if is_boundable:
