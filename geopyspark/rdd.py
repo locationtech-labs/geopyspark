@@ -1,5 +1,7 @@
-from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, FLOAT
 import json
+
+from geopyspark.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, FLOAT
+
 
 class RasterRDD(object):
     """Holds an RDD of GeoTrellis rasters"""
