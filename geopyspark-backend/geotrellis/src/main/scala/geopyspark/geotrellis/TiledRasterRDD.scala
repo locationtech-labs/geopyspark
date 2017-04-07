@@ -12,16 +12,21 @@ import geotrellis.raster.merge._
 import geotrellis.raster.prototype._
 import geotrellis.raster.resample._
 import geotrellis.spark._
+import geotrellis.spark.pyramid._
 import geotrellis.spark.reproject._
 import geotrellis.spark.io._
 import geotrellis.spark.io.json._
 import geotrellis.spark.io.avro._
 import geotrellis.spark.tiling._
-import org.apache.spark.api.java.JavaRDD
-import org.apache.spark.rdd._
+
 import spray.json._
 import spray.json.DefaultJsonProtocol._
+
+import org.apache.spark.rdd._
+import org.apache.spark.api.java.JavaRDD
+
 import scala.reflect._
+import scala.collection.JavaConverters._
 
 
 abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: ClassTag] extends TileRDD[K] {
@@ -97,6 +102,25 @@ class SpatialTiledRasterRDD(
     val (zoom, reprojected) = TileRDDReproject(rdd, crs, layout, options)
     new SpatialTiledRasterRDD(Some(zoom), reprojected)
   }
+
+  def pyramid(
+    tileSize: Int,
+    resolutionThreshold: Double,
+    startZoom: Int,
+    endZoom: Int,
+    resampleMethod: String
+  ): java.util.List[SpatialTiledRasterRDD] = {
+    val leveledList =
+      Pyramid.levelStream(
+        rdd,
+        ZoomedLayoutScheme(rdd.metadata.crs, tileSize, resolutionThreshold),
+        startZoom,
+        endZoom,
+        Pyramid.Options(resampleMethod=TileRDD.getResampleMethod(resampleMethod))
+      )
+
+    leveledList.map{ x => new SpatialTiledRasterRDD(Some(x._1), x._2) }.toList.asJava
+  }
 }
 
 
@@ -112,5 +136,24 @@ class TemporalTiledRasterRDD(
   ): TiledRasterRDD[SpaceTimeKey] = {
     val (zoom, reprojected) = TileRDDReproject(rdd, crs, layout, options)
     new TemporalTiledRasterRDD(Some(zoom), reprojected)
+  }
+
+  def pyramid(
+    tileSize: Int,
+    resolutionThreshold: Double,
+    startZoom: Int,
+    endZoom: Int,
+    resampleMethod: String
+  ): java.util.List[TemporalTiledRasterRDD] = {
+    val leveledList =
+      Pyramid.levelStream(
+        rdd,
+        ZoomedLayoutScheme(rdd.metadata.crs, tileSize, resolutionThreshold),
+        startZoom,
+        endZoom,
+        Pyramid.Options(resampleMethod=TileRDD.getResampleMethod(resampleMethod))
+      )
+
+    leveledList.map{ x => new TemporalTiledRasterRDD(Some(x._1), x._2) }.toList.asJava
   }
 }
