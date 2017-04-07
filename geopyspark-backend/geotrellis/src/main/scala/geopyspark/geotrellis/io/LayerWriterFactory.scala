@@ -87,15 +87,6 @@ abstract class LayerWriterWrapper {
       }
     }
   }
-
-  def write(
-    layerName: String,
-    tiledRasterRDD: Seq[TiledRasterRDD[_]],
-    timeString: String,
-    indexStrategy: String
-  ): Unit =
-    // TODO: Find a way to iterate through the sequence without checking the type for each tiledRasterRDD
-    tiledRasterRDD.foreach { tiledRDD => write(layerName, tiledRDD, timeString, indexStrategy) }
 }
 
 
