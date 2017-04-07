@@ -579,16 +579,7 @@ def write(geopysc,
     if not time_unit:
         time_unit = ""
 
-    if isinstance(tiled_raster_rdd, TiledRasterRDD):
-        builds.writer.write(layer_name,
-                            tiled_raster_rdd.srdd,
-                            time_unit,
-                            index_strategy)
-
-    elif isinstance(tiled_raster_rdd, JavaObject):
-        builds.writer.write(layer_name,
-                            tiled_raster_rdd,
-                            time_unit,
-                            index_strategy)
-    else:
-        raise TypeError("{} cannot be written as a GeoTrellis layer".format(tiled_raster_rdd))
+    builds.writer.write(layer_name,
+                        tiled_raster_rdd.srdd,
+                        time_unit,
+                        index_strategy)
