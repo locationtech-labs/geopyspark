@@ -11,7 +11,7 @@ mkdir -p $HOME/local/src
 cd $HOME/local/src
 
 # untar source
-for archive in zlib-1.2.11.tar.gz libpng-1.6.28.tar.gz geos-3.6.1.tar.bz2 proj-4.9.3.tar.gz lcms2-2.8.tar.gz v2.1.2.tar.gz gdal-2.1.3.tar.gz
+for archive in zlib-1.2.11.tar.gz libpng-1.6.28.tar.gz geos-3.6.1.tar.bz2 proj-4.9.3.tar.gz lcms2-2.8.tar.gz openjpeg-v2.1.2.tar.gz gdal-2.1.3.tar.gz
 do
     tar axvf /archives/$archive
 done
@@ -46,7 +46,7 @@ make install
 
 # build gdal
 cd $HOME/local/src/gdal-2.1.3
-./configure --prefix=$HOME/local/gdal && (make -j33 || make) && make install
+./configure --prefix=$HOME/local/gdal && (make -k -j33 || make) && make install
 
 # archive binaries
 cd $HOME/local/gdal
