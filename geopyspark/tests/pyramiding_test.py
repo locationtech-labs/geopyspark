@@ -4,10 +4,6 @@ import rasterio
 
 from geopyspark.constants import SPATIAL
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-from geopyspark.geotrellis.tile_layer import (collect_metadata,
-                                              collect_pyramid_metadata,
-                                              tile_to_layout,
-                                              pyramid)
 from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
 
@@ -20,31 +16,19 @@ class PyramidingTest(BaseTestClass):
     rdd = geotiff_rdd(BaseTestClass.geopysc, SPATIAL, dir_path)
 
     def test_pyramid_building(self):
-        (zoom, metadata) = collect_pyramid_metadata(BaseTestClass.geopysc,
-                                                    SPATIAL,
-                                                    self.rdd,
-                                                    "EPSG:4326",
-                                                    1024)
+        metadata = self.rdd.collect_metadata(crs="EPSG:4326")
 
-        laid_out = tile_to_layout(BaseTestClass.geopysc,
-                                  SPATIAL,
-                                  self.rdd,
-                                  metadata)
+        laid_out = self.rdd.tile_to_layout(metadata)
 
-        result = pyramid(BaseTestClass.geopysc,
-                         rdd_type=SPATIAL,
-                         base_raster_rdd=laid_out,
-                         layer_metadata=metadata,
-                         tile_size=1024,
-                         start_zoom=1,
-                         end_zoom=12)
+        result = laid_out.pyramid(start_zoom=1, end_zoom=12)
 
         previous_layout_cols = None
         previous_layout_rows = None
 
-        for x in result:
-            layout_cols = x[2]['layoutDefinition']['tileLayout']['layoutCols']
-            layout_rows = x[2]['layoutDefinition']['tileLayout']['layoutRows']
+        for x in result[1:]:
+            metadata = x.layer_metadata
+            layout_cols = metadata['layoutDefinition']['tileLayout']['layoutCols']
+            layout_rows = metadata['layoutDefinition']['tileLayout']['layoutRows']
 
             if previous_layout_cols and previous_layout_rows:
                 self.assertEqual(layout_cols*2, previous_layout_cols)
