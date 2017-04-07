@@ -55,6 +55,7 @@ class RasterRDD(object):
 
     def reproject(self, target_crs, resample_method=NEARESTNEIGHBOR):
         """Reproject every individual raster to target_crs, does not sample past tile boundary"""
+        assert(resample_method in RESAMPLE_METHODS)
         return RasterRDD(self.geopysc, self.rdd_type,
                          self.srdd.reproject(target_crs, resample_method))
 
@@ -103,6 +104,8 @@ class TiledRasterRDD(object):
         """Reproject RDD as tiled raster layer, samples surrounding tiles
         `extent` and `layout` may be specified if `scheme` is FLOAT
         """
+
+        assert(resample_method in RESAMPLE_METHODS)
 
         if extent and layout:
             srdd = self.srdd.reproject(extent, layout, target_crs, resample_method)
