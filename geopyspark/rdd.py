@@ -98,13 +98,20 @@ class TiledRasterRDD(object):
         ser = self.geopysc.create_tuple_serializer(result._2(), value_type="Tile")
         return self.geopysc.create_python_rdd(result._1(), ser)
 
-    def reproject(self, target_crs, scheme=FLOAT, tile_size=256, resample_method=NEARESTNEIGHBOR,
-                  resolution_threshold=0.1, extent=None, layout=None):
+    def reproject(self, target_crs, extent=None, layout=None, scheme=FLOAT, tile_size=256,
+                  resolution_threshold=0.1, resample_method=NEARESTNEIGHBOR):
         """Reproject RDD as tiled raster layer, samples surrounding tiles
         `extent` and `layout` may be specified if `scheme` is FLOAT
         """
-        srdd = self.srdd.reproject(target_crs, scheme, tile_size, resample_method,
-                                     resolution_threshold, extent, layout)
+
+        if extent and layout:
+            srdd = self.srdd.reproject(extent, layout, target_crs, resample_method)
+        elif not extent and not layout:
+            srdd = self.srdd.reproject(scheme, tile_size, resolution_threshold,
+                                       target_crs, resample_method)
+        else:
+            raise TypeError("Could not collect reproject RDD with {} and {}".format(extent, layout))
+
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
     def tile_to_layout(self, layout):
