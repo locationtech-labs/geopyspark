@@ -128,10 +128,10 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
     new SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(md, rm), md))
   }
 
-  def reproject(target_crs: String, resampleMethod: String): ProjectedRasterRDD = {
-    val tcrs = TileRDD.getCRS(target_crs).get
+  def reproject(targetCRS: String, resampleMethod: String): ProjectedRasterRDD = {
+    val crs = TileRDD.getCRS(targetCRS).get
     val resample = TileRDD.getResampleMethod(resampleMethod)
-    new ProjectedRasterRDD(rdd.reproject(tcrs, resample))
+    new ProjectedRasterRDD(rdd.reproject(crs, resample))
   }
 
 }
@@ -164,10 +164,10 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
     new TemporalTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(md, rm), md))
   }
 
-  def reproject(target_crs: String, resampleMethod: String): TemporalRasterRDD = {
-    val tcrs = TileRDD.getCRS(target_crs).get
+  def reproject(targetCRS: String, resampleMethod: String): TemporalRasterRDD = {
+    val crs = TileRDD.getCRS(targetCRS).get
     val resample = TileRDD.getResampleMethod(resampleMethod)
-    new TemporalRasterRDD(rdd.reproject(tcrs, resample))
+    new TemporalRasterRDD(rdd.reproject(crs, resample))
   }
 }
 
