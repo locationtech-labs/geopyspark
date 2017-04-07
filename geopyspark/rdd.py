@@ -120,8 +120,14 @@ class TiledRasterRDD(object):
     def tile_to_layout(self, layout):
         pass
 
-    def pyramid(self, start_zoom, end_zoom, resample_method):
-        pass
+    def pyramid(self, start_zoom, end_zoom, tile_size=256, resolution_threshold=0.1,
+                resample_method=NEARESTNEIGHBOR):
+
+        assert(resample_method in RESAMPLE_METHODS)
+
+        result = self.srdd.pyramid(tile_size, resolution_threshold, start_zoom, end_zoom, resample_method)
+
+        return [TiledRasterRDD(self.geopysc, self.rdd_type, srdd) for srdd in result]
 
     def focal(self):
         pass
