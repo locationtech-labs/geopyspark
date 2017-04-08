@@ -1,9 +1,9 @@
 import os
 import unittest
 
-from geopyspark.constants import SPATIAL, ZOOM
+from geopyspark.geotrellis.constants import SPATIAL, ZOOM
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
+from geopyspark.geotrellis.geotiff_rdd import get
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -13,7 +13,7 @@ check_directory()
 class ReprojectTest(BaseTestClass):
     dir_path = geotiff_test_path("all-ones.tif")
 
-    rdd = geotiff_rdd(BaseTestClass.geopysc, SPATIAL, dir_path)
+    rdd = get(BaseTestClass.geopysc, SPATIAL, dir_path)
     value = rdd.to_numpy_rdd().collect()[0]
 
     extent = value[0]['extent']

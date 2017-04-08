@@ -2,9 +2,9 @@ import os
 import unittest
 import rasterio
 
-from geopyspark.constants import SPATIAL
+from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
+from geopyspark.geotrellis.geotiff_rdd import get
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -13,7 +13,7 @@ check_directory()
 
 class PyramidingTest(BaseTestClass):
     dir_path = geotiff_test_path("all-ones.tif")
-    rdd = geotiff_rdd(BaseTestClass.geopysc, SPATIAL, dir_path)
+    rdd = get(BaseTestClass.geopysc, SPATIAL, dir_path)
 
     def test_pyramid_building(self):
         metadata = self.rdd.collect_metadata(crs="EPSG:4326")

@@ -2,14 +2,14 @@ import os
 import unittest
 import rasterio
 
-from geopyspark.rdd import RasterRDD
-from geopyspark.constants import SPATIAL
+from geopyspark.geotrellis.rdd import RasterRDD
+from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.tile_layer import (collect_metadata,
                                               cut_tiles,
                                               merge_tiles,
                                               tile_to_layout)
-from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
+from geopyspark.geotrellis.geotiff_rdd import get
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -18,7 +18,7 @@ check_directory()
 
 class TileLayerMethodsTest(BaseTestClass):
     dir_path = geotiff_test_path("all-ones.tif")
-    hadoop_rdd = geotiff_rdd(BaseTestClass.geopysc, SPATIAL, dir_path)
+    hadoop_rdd = get(BaseTestClass.geopysc, SPATIAL, dir_path)
 
     data = rasterio.open(dir_path)
     no_data = data.nodata
