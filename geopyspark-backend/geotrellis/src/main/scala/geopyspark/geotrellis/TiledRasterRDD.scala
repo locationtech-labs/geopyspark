@@ -46,14 +46,6 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
 
   def layerMetadata: String = rdd.metadata.toJson.prettyPrint
 
-  private def getReprojectOptions(resampleMethod: String): Reproject.Options = {
-    import Reproject.Options
-
-    val method = TileRDD.getResampleMethod(resampleMethod)
-
-    Options(geotrellis.raster.reproject.Reproject.Options(method=method))
-  }
-
   def reproject(
     extent: java.util.Map[String, Double],
     layout: java.util.Map[String, Int],

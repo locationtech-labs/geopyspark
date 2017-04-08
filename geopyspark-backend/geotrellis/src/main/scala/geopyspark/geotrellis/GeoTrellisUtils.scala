@@ -4,6 +4,7 @@ import geotrellis.proj4._
 import geotrellis.raster._
 import geotrellis.vector._
 import geotrellis.spark._
+import geotrellis.spark.reproject._
 import geotrellis.spark.tiling._
 
 import org.apache.spark.rdd._
@@ -29,6 +30,14 @@ object GeoTrellisUtils {
         .mapValues(x => x.asInstanceOf[String])
 
     (stringMap, intMap)
+  }
+
+  def getReprojectOptions(resampleMethod: String): Reproject.Options = {
+    import Reproject.Options
+
+    val method = TileRDD.getResampleMethod(resampleMethod)
+
+    Options(geotrellis.raster.reproject.Reproject.Options(method=method))
   }
 
   implicit class JavaMapExtensions(m: java.util.Map[String, _]) {
