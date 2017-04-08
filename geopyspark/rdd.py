@@ -20,9 +20,9 @@ class RasterRDD(object):
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
         if key == "ProjectedExtent":
-            srdd = geopysc._projected_raster_rdd.apply(reserialized_rdd._jrdd, schema)
+            srdd = geopysc._projected_raster_rdd.fromAvroEncodedRDD(reserialized_rdd._jrdd, schema)
         else:
-            srdd = geopysc._temporal_raster_rdd.apply(reserialized_rdd._jrdd, schema)
+            srdd = geopysc._temporal_raster_rdd.fromAvroEncodedRDD(reserialized_rdd._jrdd, schema)
 
         return cls(geopysc, key, srdd)
 

@@ -172,7 +172,7 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
 }
 
 object ProjectedRasterRDD {
-  def apply(javaRDD: JavaRDD[Array[Byte]], schema: String): ProjectedRasterRDD =
+  def fromAvroEncodedRDD(javaRDD: JavaRDD[Array[Byte]], schema: String): ProjectedRasterRDD =
     ProjectedRasterRDD(PythonTranslator.fromPython(javaRDD, Some(schema)))
 
   def apply(rdd: RDD[(ProjectedExtent, MultibandTile)]): ProjectedRasterRDD =
@@ -180,7 +180,7 @@ object ProjectedRasterRDD {
 }
 
 object TemporalRasterRDD {
-  def apply(javaRDD: JavaRDD[Array[Byte]], schema: String): TemporalRasterRDD =
+  def fromAvroEncodedRDD(javaRDD: JavaRDD[Array[Byte]], schema: String): TemporalRasterRDD =
     TemporalRasterRDD(PythonTranslator.fromPython(javaRDD, Some(schema)))
 
   def apply(rdd: RDD[(TemporalProjectedExtent, MultibandTile)]): TemporalRasterRDD =
