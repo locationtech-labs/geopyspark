@@ -33,10 +33,10 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
   def rdd: RDD[(K, MultibandTile)] with Metadata[TileLayerMetadata[K]]
   def zoomLevel: Option[Int]
 
-  def getZoom: Int =
+  def getZoom: Integer =
     zoomLevel match {
-      case None => -1
-      case Some(z) => z
+      case None => null
+      case Some(z) => new Integer(z)
     }
 
   /** Encode RDD as Avro bytes and return it with avro schema used */

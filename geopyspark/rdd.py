@@ -89,11 +89,6 @@ class TiledRasterRDD(object):
     def zoom_level(self):
         zoom = self.srdd.getZoom()
 
-        if zoom >= 0:
-            return zoom
-        else:
-            raise AttributeError("Tile layer does not have a corresponding zoom level")
-
     def to_numpy_rdd(self):
         result = self.srdd.toAvroRDD()
         ser = self.geopysc.create_tuple_serializer(result._2(), value_type="Tile")
