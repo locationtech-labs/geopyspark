@@ -8,43 +8,45 @@ from collections import namedtuple
 from urllib.parse import urlparse
 
 from geopyspark.rdd import TiledRasterRDD
-from geopyspark.constants import SPATIAL, TILE, ZORDER
+from geopyspark.constants import TILE, ZORDER
 
 from shapely.geometry import Polygon
 from shapely.wkt import dumps
 
-from py4j.java_gateway import JavaObject
 
-
-_mapped_builds = {}
+_mapped_chached = {}
 _mapped_serializers = {}
-_builds = namedtuple('Builds', ('store', 'reader', 'value_reader', 'writer'))
-
+_chached = namedtuple('Cached', ('store', 'reader', 'value_reader', 'writer'))
 
 
 def _construct_catalog(geopysc, new_uri, options):
-    if new_uri not in _mapped_builds:
+    if new_uri not in _mapped_chached:
+
+        store_factory = geopysc._jvm.geopyspark.geotrellis.io.AttributeStoreFactory
+        reader_factory = geopysc._jvm.geopyspark.geotrellis.io.LayerReaderFactory
+        value_reader_factory = geopysc._jvm.geopyspark.geotrellis.io.ValueReaderFactory
+        writer_factory = geopysc._jvm.geopyspark.geotrellis.io.LayerWriterFactory
 
         parsed_uri = urlparse(new_uri)
         backend = parsed_uri.scheme
 
         if backend == 'hdfs':
-            store = geopysc._store_factory.buildHadoop(new_uri)
-            reader = geopysc._reader_factory.buildHadoop(store, geopysc.sc)
-            value_reader = geopysc._value_reader_factory.buildHadoop(store)
-            writer = geopysc._writer_factory.buildHadoop(store)
+            store = store_factory.buildHadoop(new_uri)
+            reader = reader_factory.buildHadoop(store, geopysc.sc)
+            value_reader = value_reader_factory.buildHadoop(store)
+            writer = writer_factory.buildHadoop(store)
 
         elif backend == 'file':
-            store = geopysc._store_factory.buildFile(new_uri[7:])
-            reader = geopysc._reader_factory.buildFile(store, geopysc.sc)
-            value_reader = geopysc._value_reader_factory.buildFile(store)
-            writer = geopysc._writer_factory.buildFile(store)
+            store = store_factory.buildFile(new_uri[7:])
+            reader = reader_factory.buildFile(store, geopysc.sc)
+            value_reader = value_reader_factory.buildFile(store)
+            writer = writer_factory.buildFile(store)
 
         elif backend == 's3':
-            store = geopysc._store_factory.buildS3(parsed_uri.netloc, parsed_uri.path[1:])
-            reader = geopysc._reader_factory.buildS3(store, geopysc.sc)
-            value_reader = geopysc._value_reader_factory.buildS3(store)
-            writer = geopysc._writer_factory.buildS3(store)
+            store = store_factory.chached3(parsed_uri.netloc, parsed_uri.path[1:])
+            reader = reader_factory.chached3(store, geopysc.sc)
+            value_reader = value_reader_factory.chached3(store)
+            writer = writer_factory.chached3(store)
 
         elif backend == 'cassandra':
             parameters = parsed_uri.query.split('&')
@@ -54,7 +56,7 @@ def _construct_catalog(geopysc, new_uri, options):
                 split_param = param.split('=', 1)
                 parameter_dict[split_param[0]] = split_param[1]
 
-            store = geopysc._store_factory.buildCassandra(
+            store = store_factory.buildCassandra(
                 parameter_dict['host'],
                 parameter_dict['username'],
                 parameter_dict['password'],
@@ -62,11 +64,11 @@ def _construct_catalog(geopysc, new_uri, options):
                 parameter_dict['table'],
                 options)
 
-            reader = geopysc._reader_factory.buildCassandra(store, geopysc.sc)
-            value_reader = geopysc._value_reader_factory.buildCassandra(store)
-            writer = geopysc._writer_factory.buildCassandra(store,
-                                                           parameter_dict['keyspace'],
-                                                           parameter_dict['table'])
+            reader = reader_factory.buildCassandra(store, geopysc.sc)
+            value_reader = value_reader_factory.buildCassandra(store)
+            writer = writer_factory.buildCassandra(store,
+                                                   parameter_dict['keyspace'],
+                                                   parameter_dict['table'])
 
         elif backend == 'hbase':
 
@@ -79,10 +81,10 @@ def _construct_catalog(geopysc, new_uri, options):
             else:
                 master = ""
 
-            store = geopysc._store_factory.buildHBase(zookeepers, master, port, table)
-            reader = geopysc._reader_factory.buildHBase(store, geopysc.sc)
-            value_reader = geopysc._value_reader_factory.buildHBase(store)
-            writer = geopysc._writer_factory.buildHBase(store, table)
+            store = store_factory.buildHBase(zookeepers, master, port, table)
+            reader = reader_factory.buildHBase(store, geopysc.sc)
+            value_reader = value_reader_factory.buildHBase(store)
+            writer = writer_factory.buildHBase(store, table)
 
         elif backend == 'accumulo':
 
@@ -90,29 +92,29 @@ def _construct_catalog(geopysc, new_uri, options):
             (user, password) = parsed_uri.netloc.split(':')
             split_parameters = parsed_uri.path.split('/')[1:]
 
-            store = geopysc._store_factory.buildAccumulo(split_parameters[0],
-                                                        split_parameters[1],
-                                                        user,
-                                                        password,
-                                                        split_parameters[2])
+            store = store_factory.buildAccumulo(split_parameters[0],
+                                                split_parameters[1],
+                                                user,
+                                                password,
+                                                split_parameters[2])
 
-            reader = geopysc._reader_factory.buildAccumulo(split_parameters[1],
-                                                          store,
-                                                          geopysc.sc)
+            reader = reader_factory.buildAccumulo(split_parameters[1],
+                                                  store,
+                                                  geopysc.sc)
 
-            value_reader = geopysc._value_reader_factory.buildAccumulo(store)
+            value_reader = value_reader_factory.buildAccumulo(store)
 
-            writer = geopysc._writer_factory.buildAccumulo(split_parameters[1],
-                                                          store,
-                                                          split_parameters[2])
+            writer = writer_factory.buildAccumulo(split_parameters[1],
+                                                  store,
+                                                  split_parameters[2])
 
         else:
-            raise Exception("Cannot find Attribute Store for, {}".format(backend))
+            raise ValueError("Cannot find Attribute Store for, {}".format(backend))
 
-        _mapped_builds[new_uri] = _builds(store=store,
-                                          reader=reader,
-                                          value_reader=value_reader,
-                                          writer=writer)
+        _mapped_chached[new_uri] = _chached(store=store,
+                                            reader=reader,
+                                            value_reader=value_reader,
+                                            writer=writer)
 
 def read(geopysc,
          rdd_type,
@@ -203,10 +205,10 @@ def read(geopysc,
 
     _construct_catalog(geopysc, uri, options)
 
-    builds = _mapped_builds[uri]
+    chached = _mapped_chached[uri]
 
     key = geopysc.map_key_input(rdd_type, True)
-    srdd = builds.reader.read(key, layer_name, layer_zoom)
+    srdd = chached.reader.read(key, layer_name, layer_zoom)
 
     return TiledRasterRDD(geopysc, key, srdd)
 
@@ -294,19 +296,19 @@ def read_value(geopysc,
 
     _construct_catalog(geopysc, uri, options)
 
-    builds = _mapped_builds[uri]
+    chached = _mapped_chached[uri]
 
     if not zdt:
         zdt = ""
 
     key = geopysc.map_key_input(rdd_type, True)
 
-    tup = builds.value_reader.readTile(key,
-                                       layer_name,
-                                       layer_zoom,
-                                       col,
-                                       row,
-                                       zdt)
+    tup = chached.value_reader.readTile(key,
+                                        layer_name,
+                                        layer_zoom,
+                                        col,
+                                        row,
+                                        zdt)
 
     ser = geopysc.create_value_serializer(tup._2(), TILE)
 
@@ -421,7 +423,7 @@ def query(geopysc,
 
     _construct_catalog(geopysc, uri, options)
 
-    builds = _mapped_builds[uri]
+    chached = _mapped_chached[uri]
 
     key = geopysc.map_key_input(rdd_type, True)
 
@@ -429,20 +431,20 @@ def query(geopysc,
         time_intervals = []
 
     if isinstance(intersects, Polygon):
-        srdd = builds.reader.query(key,
-                                   layer_name,
-                                   layer_zoom,
-                                   dumps(intersects),
-                                   time_intervals)
+        srdd = chached.reader.query(key,
+                                    layer_name,
+                                    layer_zoom,
+                                    dumps(intersects),
+                                    time_intervals)
 
     elif isinstance(intersects, str):
-        srdd = builds.reader.query(key,
-                                   layer_name,
-                                   layer_zoom,
-                                   intersects,
-                                   time_intervals)
+        srdd = chached.reader.query(key,
+                                    layer_name,
+                                    layer_zoom,
+                                    intersects,
+                                    time_intervals)
     else:
-        raise Exception("Could not query intersection", intersects)
+        raise TypeError("Could not query intersection", intersects)
 
     return TiledRasterRDD(geopysc, key, srdd)
 
@@ -574,12 +576,12 @@ def write(geopysc,
 
     _construct_catalog(geopysc, uri, options)
 
-    builds = _mapped_builds[uri]
+    chached = _mapped_chached[uri]
 
     if not time_unit:
         time_unit = ""
 
-    builds.writer.write(layer_name,
-                        tiled_raster_rdd.srdd,
-                        time_unit,
-                        index_strategy)
+    chached.writer.write(layer_name,
+                         tiled_raster_rdd.srdd,
+                         time_unit,
+                         index_strategy)

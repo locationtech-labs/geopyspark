@@ -26,22 +26,6 @@ class GeoPyContext(object):
         return self._jvm.geopyspark.geotrellis.SchemaProducer
 
     @property
-    def _store_factory(self):
-        return self._jvm.geopyspark.geotrellis.io.AttributeStoreFactory
-
-    @property
-    def _reader_factory(self):
-        return self._jvm.geopyspark.geotrellis.io.LayerReaderFactory
-
-    @property
-    def _value_reader_factory(self):
-        return self._jvm.geopyspark.geotrellis.io.ValueReaderFactory
-
-    @property
-    def _writer_factory(self):
-        return self._jvm.geopyspark.geotrellis.io.LayerWriterFactory
-
-    @property
     def _tile_layer_metadata_collecter(self):
         return self._jvm.geopyspark.geotrellis.spark.TileLayerMetadataCollector
 
