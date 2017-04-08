@@ -1,6 +1,6 @@
 import json
 
-from geopyspark.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, FLOAT, TILE
+from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, FLOAT, TILE
 
 
 class RasterRDD(object):

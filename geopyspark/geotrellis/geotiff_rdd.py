@@ -3,7 +3,7 @@
 There is only one function found within this module at this time, geotiff_rdd.
 """
 
-from geopyspark.rdd import RasterRDD
+from geopyspark.geotrellis.rdd import RasterRDD
 
 def get(geopysc,
         rdd_type,

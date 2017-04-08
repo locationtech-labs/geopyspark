@@ -7,8 +7,8 @@ will be in a multiband format; regardless of how the data was originally formatt
 from collections import namedtuple
 from urllib.parse import urlparse
 
-from geopyspark.rdd import TiledRasterRDD
-from geopyspark.constants import TILE, ZORDER
+from geopyspark.geotrellis.rdd import TiledRasterRDD
+from geopyspark.geotrellis.constants import TILE, ZORDER
 
 from shapely.geometry import Polygon
 from shapely.wkt import dumps
