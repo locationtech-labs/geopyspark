@@ -79,7 +79,7 @@ abstract class RasterRDD[K: AvroRecordCodec: ClassTag] extends TileRDD[K] {
   ): String = {
     val layoutDefinition = Right(LayoutDefinition(extent.toExtent, layout.toTileLayout))
 
-    collectMetadata(layoutDefinition, crs)
+    collectMetadata(layoutDefinition, TileRDD.getCRS(crs))
   }
 
   def collectMetadata(tileSize: String, crs: String): String = {
@@ -89,10 +89,10 @@ abstract class RasterRDD[K: AvroRecordCodec: ClassTag] extends TileRDD[K] {
       else
         Left(FloatingLayoutScheme())
 
-    collectMetadata(layoutScheme, crs)
+    collectMetadata(layoutScheme, TileRDD.getCRS(crs))
   }
 
-  def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: String): String
+  def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: Option[CRS]): String
 
   def cutTiles(layerMetadata: String, resampleMethod: String): TiledRasterRDD[_]
 
@@ -103,8 +103,8 @@ abstract class RasterRDD[K: AvroRecordCodec: ClassTag] extends TileRDD[K] {
 
 class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends RasterRDD[ProjectedExtent] {
 
-  def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: String): String = {
-    (TileRDD.getCRS(crs), layout) match {
+  def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: Option[CRS]): String = {
+    (crs, layout) match {
       case (Some(crs), Right(layoutDefinition)) =>
           rdd.collectMetadata[SpatialKey](crs, layoutDefinition)
       case (None, Right(layoutDefinition)) =>
@@ -138,8 +138,8 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
 
 class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) extends RasterRDD[TemporalProjectedExtent] {
 
-  def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: String): String = {
-    (TileRDD.getCRS(crs), layout) match {
+  def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: Option[CRS]): String = {
+    (crs, layout) match {
       case (Some(crs), Right(layoutDefinition)) =>
           rdd.collectMetadata[SpaceTimeKey](crs, layoutDefinition)
       case (None, Right(layoutDefinition)) =>
