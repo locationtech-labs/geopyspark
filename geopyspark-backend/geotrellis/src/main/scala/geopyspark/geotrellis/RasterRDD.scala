@@ -34,19 +34,20 @@ import java.util.Map
 
 
 object TileRDD {
+  import Constants._
+
   def getResampleMethod(resampleMethod: String): ResampleMethod =
     resampleMethod match {
-      case "NearestNeighbor" => NearestNeighbor
-      case "Bilinear" => Bilinear
-      case "CubicConvolution" => CubicConvolution
-      case "CubicSpline" => CubicSpline
-      case "Lanczos" => Lanczos
-      case "Average" => Average
-      case "Mode" => Mode
-      case "Median" => Median
-      case "Max" => Max
-      case "Min" => Min
-      case _ => throw new Exception(s"$resampleMethod, is not a known sampling method")
+      case NEARESTNEIGHBOR => NearestNeighbor
+      case BILINEAR => Bilinear
+      case CUBICCONVOLUTION => CubicConvolution
+      case CUBICSPLINE => CubicSpline
+      case LANCZOS => Lanczos
+      case AVERAGE => Average
+      case MODE => Mode
+      case MEDIAN => Median
+      case MAX => Max
+      case MIN => Min
     }
 
   def getCRS(crs: String): Option[CRS] = {

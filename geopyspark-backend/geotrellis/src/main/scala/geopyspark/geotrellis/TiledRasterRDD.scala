@@ -30,6 +30,8 @@ import scala.collection.JavaConverters._
 
 
 abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: ClassTag] extends TileRDD[K] {
+  import Constants._
+
   def rdd: RDD[(K, MultibandTile)] with Metadata[TileLayerMetadata[K]]
   def zoomLevel: Option[Int]
 
@@ -74,8 +76,8 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
 
     val layoutScheme =
       scheme match {
-        case "float" => FloatingLayoutScheme(tileSize)
-        case "zoom" => ZoomedLayoutScheme(_crs, tileSize, resolutionThreshold)
+        case FLOAT => FloatingLayoutScheme(tileSize)
+        case ZOOM => ZoomedLayoutScheme(_crs, tileSize, resolutionThreshold)
       }
 
     reproject(Left(layoutScheme), _crs, getReprojectOptions(resampleMethod))
