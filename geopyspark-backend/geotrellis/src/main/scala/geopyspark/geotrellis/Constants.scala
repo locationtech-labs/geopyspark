@@ -4,6 +4,11 @@ object Constants {
   final val SPATIAL = "spatial"
   final val SPACETIME = "spacetime"
 
+  final val PROJECTEDEXTENT = "ProjectedExtent"
+  final val TEMPORALPROJECTEDEXTENT = "TemporalProjectedExtent"
+
+  final val S3 = "s3"
+
   final val FLOAT = "float"
   final val ZOOM = "zoom"
 
