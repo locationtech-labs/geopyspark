@@ -26,14 +26,6 @@ class GeoPyContext(object):
         return self._jvm.geopyspark.geotrellis.SchemaProducer
 
     @property
-    def _hadoop_geotiff_rdd(self):
-        return self._jvm.geopyspark.geotrellis.io.hadoop.HadoopGeoTiffRDDWrapper
-
-    @property
-    def _s3_geotiff_rdd(self):
-        return self._jvm.geopyspark.geotrellis.io.s3.S3GeoTiffRDDWrapper
-
-    @property
     def _store_factory(self):
         return self._jvm.geopyspark.geotrellis.io.AttributeStoreFactory
 

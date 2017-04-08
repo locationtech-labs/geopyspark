@@ -3,14 +3,13 @@
 There is only one function found within this module at this time, geotiff_rdd.
 """
 
-from geopyspark.constants import TILE
 from geopyspark.rdd import RasterRDD
 
-def geotiff_rdd(geopysc,
-                rdd_type,
-                uri,
-                options=None,
-                **kwargs):
+def get(geopysc,
+        rdd_type,
+        uri,
+        options=None,
+        **kwargs):
 
     """Creates a RDD from GeoTiffs that are located on the local file system, HDFS, or S3.
 
@@ -80,36 +79,21 @@ def geotiff_rdd(geopysc,
         RDD
     """
 
+    geotiff_rdd = geopysc._jvm.geopyspark.geotrellis.io.geotiff.GeoTiffRDD
+
     key = geopysc.map_key_input(rdd_type, False)
 
     if kwargs and not options:
         options = kwargs
 
-    if uri.startswith("s3://"):
-        key_and_bucket_uri = uri.split("s3://")[1]
-        (bucket, prefix) = key_and_bucket_uri.split("/", 1)
-
-        if not options:
-            srdd = geopysc._s3_geotiff_rdd.getRDD(key,
-                                                  bucket,
-                                                  prefix,
-                                                  geopysc.sc)
-        else:
-            srdd = geopysc._s3_geotiff_rdd.getRDD(key,
-                                                  bucket,
-                                                  prefix,
-                                                  options,
-                                                  geopysc.sc)
-
+    if options:
+        srdd = geotiff_rdd.get(geopysc.sc,
+                               key,
+                               uri,
+                               options)
     else:
-        if not options:
-            srdd = geopysc._hadoop_geotiff_rdd.getRDD(key,
-                                                      uri,
-                                                      geopysc.sc)
-        else:
-            srdd = geopysc._hadoop_geotiff_rdd.getRDD(key,
-                                                      uri,
-                                                      options,
-                                                      geopysc.sc)
+        srdd = geotiff_rdd.get(geopysc.sc,
+                               key,
+                               uri)
 
     return RasterRDD(geopysc, rdd_type, srdd)
