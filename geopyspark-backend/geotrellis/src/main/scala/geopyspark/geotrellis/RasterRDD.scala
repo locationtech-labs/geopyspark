@@ -93,13 +93,13 @@ abstract class RasterRDD[K: AvroRecordCodec: ClassTag] extends TileRDD[K] {
     collectMetadata(layoutScheme, TileRDD.getCRS(crs))
   }
 
-  def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: Option[CRS]): String
+  protected def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: Option[CRS]): String
 
-  def cutTiles(layerMetadata: String, resampleMethod: String): TiledRasterRDD[_]
+  protected def cutTiles(layerMetadata: String, resampleMethod: String): TiledRasterRDD[_]
 
-  def tileToLayout(tileLayerMetadata: String, resampleMethod: String): TiledRasterRDD[_]
+  protected def tileToLayout(tileLayerMetadata: String, resampleMethod: String): TiledRasterRDD[_]
 
-  def reproject(target_crs: String, resampleMethod: String): RasterRDD[_]
+  protected def reproject(target_crs: String, resampleMethod: String): RasterRDD[_]
 }
 
 class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends RasterRDD[ProjectedExtent] {

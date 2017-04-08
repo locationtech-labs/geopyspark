@@ -75,11 +75,20 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
     reproject(Left(layoutScheme), _crs, getReprojectOptions(resampleMethod))
   }
 
-  def reproject(
+  protected def reproject(
     layout: Either[LayoutScheme, LayoutDefinition],
     crs: CRS,
     options: Reproject.Options
   ): TiledRasterRDD[_]
+
+  protected def pyramid(
+    tileSize: Int,
+    resolutionThreshold: Double,
+    startZoom: Int,
+    endZoom: Int,
+    resampleMethod: String
+  ): java.util.List[_]
+
 }
 
 
