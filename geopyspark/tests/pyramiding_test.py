@@ -1,31 +1,89 @@
 import os
 import unittest
 import rasterio
+import numpy as np
 
 from geopyspark.geotrellis.constants import SPATIAL
-from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-from geopyspark.geotrellis.geotiff_rdd import get
+from geopyspark.geotrellis.rdd import RasterRDD
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
-check_directory()
-
-
 class PyramidingTest(BaseTestClass):
-    dir_path = geotiff_test_path("all-ones.tif")
-    rdd = get(BaseTestClass.geopysc, SPATIAL, dir_path)
 
-    def test_pyramid_building(self):
-        metadata = self.rdd.collect_metadata(crs="EPSG:4326")
+    def test_correct_base(self):
+        arr = np.zeros((1, 256, 256))
+        epsg_code = 3857
+        extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 10.0, 'ymax': 10.0}
 
-        laid_out = self.rdd.tile_to_layout(metadata)
+        tile = {'data': arr, 'no_data_value': False}
+        projected_extent = {'extent': extent, 'epsg': epsg_code}
 
-        result = laid_out.pyramid(start_zoom=1, end_zoom=12)
+        rdd = self.geopysc.pysc.parallelize([(projected_extent, tile)])
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
 
+        tile_layout = {
+            'tileCols': 256,
+            'tileRows': 256,
+            'layoutCols': 4096,
+            'layoutRows': 4096
+        }
+
+        new_extent = {
+            'xmin': -20037508.342789244,
+            'ymin': -20037508.342789244,
+            'xmax': 20037508.342789244,
+            'ymax': 20037508.342789244
+        }
+
+        metadata = raster_rdd.collect_metadata(extent=new_extent, layout=tile_layout)
+        laid_out = raster_rdd.tile_to_layout(metadata)
+
+        result = laid_out.pyramid(start_zoom=12, end_zoom=1)
+
+        self.pyramid_building_check(result)
+
+    def test_wrong_starting_zoom_level(self):
+        arr = np.zeros((1, 256, 256))
+        epsg_code = 3857
+        extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 10.0, 'ymax': 10.0}
+
+        tile = {'data': arr, 'no_data_value': False}
+        projected_extent = {'extent': extent, 'epsg': epsg_code}
+
+        rdd = self.geopysc.pysc.parallelize([(projected_extent, tile)])
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+
+        metadata = raster_rdd.collect_metadata()
+        laid_out = raster_rdd.tile_to_layout(metadata)
+
+        result = laid_out.pyramid(start_zoom=12, end_zoom=1)
+
+        self.pyramid_building_check(result)
+
+    def test_wrong_cols_and_rows(self):
+        arr = np.zeros((1, 250, 250))
+        epsg_code = 3857
+        extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 10.0, 'ymax': 10.0}
+
+        tile = {'data': arr, 'no_data_value': False}
+        projected_extent = {'extent': extent, 'epsg': epsg_code}
+
+        rdd = self.geopysc.pysc.parallelize([(projected_extent, tile)])
+
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+
+        metadata = raster_rdd.collect_metadata()
+        laid_out = raster_rdd.tile_to_layout(metadata)
+
+        result = laid_out.pyramid(start_zoom=12, end_zoom=1)
+
+        self.pyramid_building_check(result)
+
+    def pyramid_building_check(self, result):
         previous_layout_cols = None
         previous_layout_rows = None
 
-        for x in result[1:]:
+        for x in result:
             metadata = x.layer_metadata
             layout_cols = metadata['layoutDefinition']['tileLayout']['layoutCols']
             layout_rows = metadata['layoutDefinition']['tileLayout']['layoutRows']
