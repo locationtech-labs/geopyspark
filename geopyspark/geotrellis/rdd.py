@@ -1,4 +1,5 @@
 import json
+import shapely.wkt
 
 from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              OPERATIONS,
@@ -172,3 +173,9 @@ class TiledRasterRDD(object):
         tup = self.srdd.stitch()
         ser = self.geopysc.create_value_serializer(tup._2(), TILE)
         return ser.loads(tup._1())[0]
+
+    def cost_distance(self, geometries, max_distance):
+        wkts = [shapely.wkt.dumps(g) for g in geometries]
+        srdd = self.srdd.costDistance(self.geopysc.sc, wkts, max_distance)
+
+        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
