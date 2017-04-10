@@ -1,4 +1,4 @@
-FROM quay.io/geodocker/jupyter:3
+FROM quay.io/geodocker/jupyter:4
 
 COPY archives/geotrellis-backend-assembly-0.1.0.jar /blobs/
 COPY archives/gdal-and-friends.tar.gz /blobs/
@@ -7,6 +7,15 @@ COPY archives/geotrellis-backend-assembly-0.1.0.jar /blobs/
 COPY scripts/install-blobs.sh /scripts/
 COPY kernels/local/kernel.json /usr/local/share/jupyter/kernels/pyspark/
 COPY kernels/yarn/kernel.json /usr/local/share/jupyter/kernels/pysparkyarn/
+COPY kernels/geonotebook-local/kernel.json /usr/local/share/jupyter/kernels/geonotebook-local/
+COPY config/geonotebook.ini /home/hadoop/.geonotebook.ini
+COPY config/requirements.txt /tmp/requirements.txt
 
 ENV LD_LIBRARY_PATH /home/hadoop/local/gdal/lib
-RUN /scripts/install-blobs.sh
+RUN /scripts/install-blobs.sh && \
+    pip3 install --user -r /tmp/requirements.txt && \
+    pip3 install --user "https://github.com/OpenGeoscience/ktile/archive/6f134e86f90242c8393fe1912435a5fb99c6256d.zip" && \
+    pip3 install --user "https://github.com/OpenGeoscience/geonotebook/archive/d9a89ded63793a01db377f078423d6c2fd717edf.zip" && \
+    jupyter nbextension enable --py widgetsnbextension --sys-prefix && \
+    jupyter serverextension enable --py geonotebook --sys-prefix && \
+    jupyter nbextension enable --py geonotebook --sys-prefix
