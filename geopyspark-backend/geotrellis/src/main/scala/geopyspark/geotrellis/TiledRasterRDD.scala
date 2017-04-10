@@ -199,6 +199,15 @@ class SpatialTiledRasterRDD(
 
     new SpatialTiledRasterRDD(None, multibandRDD)
   }
+
+  def stitch: (Array[Byte], String) = {
+    val contextRDD = ContextRDD(
+      rdd.map({ case (k, v) => (k, v.band(0)) }),
+      rdd.metadata
+    )
+
+    PythonTranslator.toPython(contextRDD.stitch.tile)
+  }
 }
 
 
