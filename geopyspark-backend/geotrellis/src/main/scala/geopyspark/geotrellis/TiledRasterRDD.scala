@@ -10,13 +10,14 @@ import geotrellis.raster._
 import geotrellis.raster.io._
 import geotrellis.raster.merge._
 import geotrellis.raster.prototype._
-import geotrellis.raster.resample._
+import geotrellis.raster.resample.ResampleMethod
 import geotrellis.spark._
 import geotrellis.spark.pyramid._
 import geotrellis.spark.reproject._
 import geotrellis.spark.io._
 import geotrellis.spark.io.json._
 import geotrellis.spark.io.avro._
+import geotrellis.spark.mapalgebra.focal._
 import geotrellis.spark.tiling._
 
 import spray.json._
@@ -95,6 +96,14 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
     resampleMethod: String
   ): Array[_] // Array[TiledRasterRDD[_]]
 
+  def focal(
+    operation: String,
+    neighborhood: String,
+    param1: Double,
+    param2: Double,
+    param3: Double
+  ): TiledRasterRDD[_]
+
 }
 
 
@@ -165,6 +174,30 @@ class SpatialTiledRasterRDD(
       )
 
     leveledList.map{ x => new SpatialTiledRasterRDD(Some(x._1), x._2) }.toArray
+  }
+
+  def focal(
+    operation: String,
+    neighborhood: String,
+    param1: Double,
+    param2: Double,
+    param3: Double
+  ): TiledRasterRDD[SpatialKey] = {
+    val singleTileLayerRDD: TileLayerRDD[SpatialKey] = TileLayerRDD(
+      rdd.map({ case (k, v) => (k, v.band(0)) }),
+      rdd.metadata
+    )
+
+    val _neighborhood = getNeighborhood(operation, neighborhood, param1, param2, param3)
+    val cellSize = rdd.metadata.layout.cellSize
+    val op: ((Tile, Option[GridBounds]) => Tile) = getOperation(operation, _neighborhood, cellSize, param1)
+
+    val result: TileLayerRDD[SpatialKey] = FocalOperation(singleTileLayerRDD, _neighborhood)(op)
+
+    val multibandRDD: MultibandTileLayerRDD[SpatialKey] =
+      MultibandTileLayerRDD(result.map{ x => (x._1, MultibandTile(x._2)) }, result.metadata)
+
+    new SpatialTiledRasterRDD(None, multibandRDD)
   }
 }
 
@@ -246,4 +279,29 @@ class TemporalTiledRasterRDD(
 
     leveledList.map{ x => new TemporalTiledRasterRDD(Some(x._1), x._2) }.toArray
   }
+
+  def focal(
+    operation: String,
+    neighborhood: String,
+    param1: Double,
+    param2: Double,
+    param3: Double
+  ): TiledRasterRDD[SpaceTimeKey] = {
+    val singleTileLayerRDD: TileLayerRDD[SpaceTimeKey] = TileLayerRDD(
+      rdd.map({ case (k, v) => (k, v.band(0)) }),
+      rdd.metadata
+    )
+
+    val _neighborhood = getNeighborhood(operation, neighborhood, param1, param2, param3)
+    val cellSize = rdd.metadata.layout.cellSize
+    val op: ((Tile, Option[GridBounds]) => Tile) = getOperation(operation, _neighborhood, cellSize, param1)
+
+    val result: TileLayerRDD[SpaceTimeKey] = FocalOperation(singleTileLayerRDD, _neighborhood)(op)
+
+    val multibandRDD: MultibandTileLayerRDD[SpaceTimeKey] =
+      MultibandTileLayerRDD(result.map{ x => (x._1, MultibandTile(x._2)) }, result.metadata)
+
+    new TemporalTiledRasterRDD(None, multibandRDD)
+  }
+}
 }

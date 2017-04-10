@@ -2,6 +2,7 @@ package geopyspark.geotrellis
 
 import geotrellis.proj4._
 import geotrellis.raster._
+import geotrellis.raster.mapalgebra.focal._
 import geotrellis.vector._
 import geotrellis.spark._
 import geotrellis.spark.reproject._
