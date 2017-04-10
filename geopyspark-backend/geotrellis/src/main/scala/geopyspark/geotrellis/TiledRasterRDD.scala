@@ -88,7 +88,7 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
     startZoom: Int,
     endZoom: Int,
     resampleMethod: String
-  ): java.util.List[_]
+  ): Array[_] // Array[TiledRasterRDD[_]]
 
 }
 
@@ -111,7 +111,9 @@ class SpatialTiledRasterRDD(
     startZoom: Int,
     endZoom: Int,
     resampleMethod: String
-  ): java.util.List[SpatialTiledRasterRDD] = {
+  ): Array[TiledRasterRDD[SpatialKey]] = {
+    require(! rdd.metadata.bounds.isEmpty, "Can not pyramid an empty RDD")
+
     val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
     val scheme = ZoomedLayoutScheme(rdd.metadata.crs, rdd.metadata.tileRows)
     val levelZoom = math.log(rdd.metadata.layoutRows.toDouble) / math.log(2)
@@ -127,12 +129,14 @@ class SpatialTiledRasterRDD(
             layoutDefinition.layoutCols,
             layoutDefinition.layoutRows)
 
-        val projectedRDD =
-          rdd.map{ x => (ProjectedExtent(mapKeyTransform(x._1), rdd.metadata.crs), x._2) }
+        val crs = rdd.metadata.crs
+        val projectedRDD = rdd.map{ x => (ProjectedExtent(mapKeyTransform(x._1), crs), x._2) }
+        val retiledLayerMetadata = rdd.metadata.copy(
+          layout = layoutDefinition,
+          bounds = KeyBounds(mapKeyTransform(rdd.metadata.extent))
+        )
 
-        val newMetadata = projectedRDD.collectMetadata[SpatialKey](layoutDefinition)
-
-        MultibandTileLayerRDD(projectedRDD.tileToLayout(newMetadata, method), newMetadata)
+        MultibandTileLayerRDD(projectedRDD.tileToLayout(retiledLayerMetadata, method), retiledLayerMetadata)
       }
 
     val leveledList =
@@ -144,7 +148,7 @@ class SpatialTiledRasterRDD(
         Pyramid.Options(resampleMethod=method)
       )
 
-    leveledList.map{ x => new SpatialTiledRasterRDD(Some(x._1), x._2) }.toList.asJava
+    leveledList.map{ x => new SpatialTiledRasterRDD(Some(x._1), x._2) }.toArray
   }
 }
 
@@ -167,7 +171,9 @@ class TemporalTiledRasterRDD(
     startZoom: Int,
     endZoom: Int,
     resampleMethod: String
-  ): java.util.List[TemporalTiledRasterRDD] = {
+  ): Array[TiledRasterRDD[SpaceTimeKey]] = {
+    require(! rdd.metadata.bounds.isEmpty, "Can not pyramid an empty RDD")
+
     val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
     val scheme = ZoomedLayoutScheme(rdd.metadata.crs, rdd.metadata.tileRows)
     val levelZoom = math.log(rdd.metadata.layoutRows.toDouble) / math.log(2)
@@ -183,12 +189,23 @@ class TemporalTiledRasterRDD(
             layoutDefinition.layoutCols,
             layoutDefinition.layoutRows)
 
-        val temporalRDD =
-          rdd.map{ x => (TemporalProjectedExtent(mapKeyTransform(x._1), rdd.metadata.crs, x._1.instant), x._2) }
+        val crs = rdd.metadata.crs
 
-        val newMetadata = temporalRDD.collectMetadata[SpaceTimeKey](layoutDefinition)
+        val temporalRDD = rdd.map { x =>
+          (TemporalProjectedExtent(mapKeyTransform(x._1), rdd.metadata.crs, x._1.instant), x._2)
+        }
 
-        MultibandTileLayerRDD(temporalRDD.tileToLayout(newMetadata, method), newMetadata)
+        val bounds = rdd.metadata.bounds.get
+        val spatialBounds = KeyBounds(mapKeyTransform(rdd.metadata.extent))
+        val retiledLayerMetadata = rdd.metadata.copy(
+          layout = layoutDefinition,
+          bounds = KeyBounds(
+            minKey = bounds.minKey.setComponent[SpatialKey](spatialBounds.minKey),
+            maxKey = bounds.maxKey.setComponent[SpatialKey](spatialBounds.maxKey)
+          )
+        )
+
+        MultibandTileLayerRDD(temporalRDD.tileToLayout(retiledLayerMetadata, method), retiledLayerMetadata)
       }
 
     val leveledList =
@@ -200,6 +217,6 @@ class TemporalTiledRasterRDD(
         Pyramid.Options(resampleMethod=method)
       )
 
-    leveledList.map{ x => new TemporalTiledRasterRDD(Some(x._1), x._2) }.toList.asJava
+    leveledList.map{ x => new TemporalTiledRasterRDD(Some(x._1), x._2) }.toArray
   }
 }
