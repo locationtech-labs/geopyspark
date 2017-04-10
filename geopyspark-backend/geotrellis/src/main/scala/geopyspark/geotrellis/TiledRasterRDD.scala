@@ -14,6 +14,7 @@ import geotrellis.raster.resample.ResampleMethod
 import geotrellis.spark._
 import geotrellis.spark.pyramid._
 import geotrellis.spark.reproject._
+import geotrellis.spark.costdistance.IterativeCostDistance
 import geotrellis.spark.io._
 import geotrellis.spark.io.json._
 import geotrellis.spark.io.avro._
@@ -23,6 +24,7 @@ import geotrellis.spark.tiling._
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 
+import org.apache.spark._
 import org.apache.spark.rdd._
 import org.apache.spark.api.java.JavaRDD
 
@@ -104,6 +106,21 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
     param3: Double
   ): TiledRasterRDD[_]
 
+  def costDistance(
+    sc: SparkContext,
+    wkts: java.util.ArrayList[String],
+    maxDistance: Double
+  ): TiledRasterRDD[_] = {
+    val geometries = wkts.asScala.map({ wkt => WKT.read(wkt) })
+
+    costDistance(sc, geometries, maxDistance)
+  }
+
+  protected def costDistance(
+    sc: SparkContext,
+    geometries: Seq[Geometry],
+    maxDistance: Double
+  ): TiledRasterRDD[_]
 }
 
 
@@ -207,6 +224,30 @@ class SpatialTiledRasterRDD(
     )
 
     PythonTranslator.toPython(contextRDD.stitch.tile)
+  }
+
+  def costDistance(
+    sc: SparkContext,
+    geometries: Seq[Geometry],
+    maxDistance: Double
+  ): TiledRasterRDD[SpatialKey] = {
+    val singleTileLayer = TileLayerRDD(
+      rdd.map({ case (k, v) => (k, v.band(0)) }),
+      rdd.metadata
+    )
+
+    implicit def convertion(k: SpaceTimeKey): SpatialKey =
+      k.spatialKey
+
+    implicit val _sc = sc
+
+    val result: TileLayerRDD[SpatialKey] =
+      IterativeCostDistance(singleTileLayer, geometries, maxDistance)
+
+    val multibandRDD: MultibandTileLayerRDD[SpatialKey] =
+      MultibandTileLayerRDD(result.map{ x => (x._1, MultibandTile(x._2)) }, result.metadata)
+
+    new SpatialTiledRasterRDD(None, multibandRDD)
   }
 }
 
@@ -312,7 +353,32 @@ class TemporalTiledRasterRDD(
 
     new TemporalTiledRasterRDD(None, multibandRDD)
   }
+
+  def costDistance(
+    sc: SparkContext,
+    geometries: Seq[Geometry],
+    maxDistance: Double
+  ): TiledRasterRDD[SpaceTimeKey] = {
+    val singleTileLayer = TileLayerRDD(
+      rdd.map({ case (k, v) => (k, v.band(0)) }),
+      rdd.metadata
+    )
+
+    implicit def convertion(k: SpaceTimeKey): SpatialKey =
+      k.spatialKey
+
+    implicit val _sc = sc
+
+    val result: TileLayerRDD[SpaceTimeKey] =
+      IterativeCostDistance(singleTileLayer, geometries, maxDistance)
+
+    val multibandRDD: MultibandTileLayerRDD[SpaceTimeKey] =
+      MultibandTileLayerRDD(result.map{ x => (x._1, MultibandTile(x._2)) }, result.metadata)
+
+    new TemporalTiledRasterRDD(None, multibandRDD)
+  }
 }
+
 
 object SpatialTiledRasterRDD {
   def fromAvroEncodedRDD(
