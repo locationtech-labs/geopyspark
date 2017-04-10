@@ -7,15 +7,17 @@ COPY archives/geotrellis-backend-assembly-0.1.0.jar /blobs/
 COPY scripts/install-blobs.sh /scripts/
 COPY kernels/local/kernel.json /usr/local/share/jupyter/kernels/pyspark/
 COPY kernels/yarn/kernel.json /usr/local/share/jupyter/kernels/pysparkyarn/
-COPY kernels/geonotebook-local/kernel.json /usr/local/share/jupyter/kernels/geonotebook-local/
-COPY config/geonotebook.ini /home/hadoop/.geonotebook.ini
 COPY config/requirements.txt /tmp/requirements.txt
 
 ENV LD_LIBRARY_PATH /home/hadoop/local/gdal/lib
+
 RUN /scripts/install-blobs.sh && \
     pip3 install --user -r /tmp/requirements.txt && \
-    pip3 install --user "https://github.com/OpenGeoscience/ktile/archive/6f134e86f90242c8393fe1912435a5fb99c6256d.zip" && \
-    pip3 install --user "https://github.com/OpenGeoscience/geonotebook/archive/d9a89ded63793a01db377f078423d6c2fd717edf.zip" && \
-    jupyter nbextension enable --py widgetsnbextension --sys-prefix && \
-    jupyter serverextension enable --py geonotebook --sys-prefix && \
-    jupyter nbextension enable --py geonotebook --sys-prefix
+    pip3 install --user "https://github.com/OpenGeoscience/ktile/archive/6f134e86f90242c8393fe1912435a5fb99c6256d.zip"
+RUN pip3 install --user "https://github.com/jamesmcclain/geonotebook/archive/feature/geotrellis.zip" && \
+    jupyter nbextension enable --py widgetsnbextension && \
+    jupyter serverextension enable --py geonotebook && \
+    jupyter nbextension enable --py geonotebook
+
+COPY config/geonotebook.ini /home/hadoop/.local/etc/geonotebook.ini
+COPY kernels/geonotebook-local/kernel.json /home/hadoop/.local/share/jupyter/kernels/geonotebook3/kernel.json
