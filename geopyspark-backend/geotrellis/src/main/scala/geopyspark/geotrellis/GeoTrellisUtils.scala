@@ -16,6 +16,8 @@ import java.util.Map
 
 
 object GeoTrellisUtils {
+  import  Constants._
+
   def convertToScalaMap(
     javaMap: java.util.Map[String, Any],
     stringValues: Array[String]
@@ -39,6 +41,42 @@ object GeoTrellisUtils {
     val method = TileRDD.getResampleMethod(resampleMethod)
 
     Options(geotrellis.raster.reproject.Reproject.Options(method=method))
+  }
+
+  def getNeighborhood(
+    operation: String,
+    neighborhood: String,
+    param1: Double,
+    param2: Double,
+    param3: Double
+  ): Neighborhood =
+    neighborhood match {
+      case ANNULUS => Annulus(param1, param2)
+      case NESW => Nesw(param1.toInt)
+      case SQUARE => Square(param1.toInt)
+      case WEDGE => Wedge(param1, param2, param3)
+      case _ if (operation == "Aspect" || operation == "Slope") => Square(1)
+    }
+
+  def getOperation(
+    operation: String,
+    neighborhood: Neighborhood,
+    cellSize: CellSize,
+    param1: Double
+  ): ((Tile, Option[GridBounds]) => Tile) = {
+    val target = TargetCell.All
+
+    operation match {
+      case SUM => { (tile, bounds) => Sum(tile, neighborhood, bounds, target) }
+      case MIN => { (tile, bounds) => Min(tile, neighborhood, bounds, target) }
+      case MAX => { (tile, bounds) => Max(tile, neighborhood, bounds, target) }
+      case MEAN => { (tile, bounds) => Mean(tile, neighborhood, bounds, target) }
+      case MEDIAN => { (tile, bounds) => Median(tile, neighborhood, bounds, target) }
+      case MODE => { (tile, bounds) => Mode(tile, neighborhood, bounds, target) }
+      case STANDARDDEVIATION => { (tile, bounds) => StandardDeviation(tile, neighborhood, bounds, target) }
+      case ASPECT => { (tile, bounds) => Aspect(tile, neighborhood, bounds, cellSize, target) }
+      case SLOPE => { (tile, bounds) => Slope(tile, neighborhood, bounds, cellSize, param1, target) }
+    }
   }
 
   implicit class JavaMapExtensions(m: java.util.Map[String, _]) {
