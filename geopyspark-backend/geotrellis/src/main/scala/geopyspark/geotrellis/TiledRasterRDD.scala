@@ -81,6 +81,11 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
     options: Reproject.Options
   ): TiledRasterRDD[_]
 
+  def tileToLayout(
+    layoutDefinition: LayoutDefinition,
+    resampleMethod: String
+  ): TiledRasterRDD[_]
+
   def isZoomedLayer(tileSize: Int): Boolean =
     (tileSize & (tileSize - 1)) == 0
 
@@ -107,6 +112,30 @@ class SpatialTiledRasterRDD(
     new SpatialTiledRasterRDD(Some(zoom), reprojected)
   }
 
+  def tileToLayout(
+    layoutDefinition: LayoutDefinition,
+    resampleMethod: String
+  ): TiledRasterRDD[SpatialKey] = {
+    val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
+    val mapKeyTransform =
+      MapKeyTransform(
+        layoutDefinition.extent,
+        layoutDefinition.layoutCols,
+        layoutDefinition.layoutRows)
+
+    val crs = rdd.metadata.crs
+    val projectedRDD = rdd.map{ x => (ProjectedExtent(mapKeyTransform(x._1), crs), x._2) }
+    val retiledLayerMetadata = rdd.metadata.copy(
+      layout = layoutDefinition,
+      bounds = KeyBounds(mapKeyTransform(rdd.metadata.extent))
+    )
+
+    val tileLayer =
+      MultibandTileLayerRDD(projectedRDD.tileToLayout(retiledLayerMetadata, method), retiledLayerMetadata)
+
+    new SpatialTiledRasterRDD(None, tileLayer)
+  }
+
   def pyramid(
     startZoom: Int,
     endZoom: Int,
@@ -123,20 +152,7 @@ class SpatialTiledRasterRDD(
         rdd
       else {
         val LayoutLevel(_, layoutDefinition) = scheme.levelForZoom(startZoom)
-        val mapKeyTransform =
-          MapKeyTransform(
-            layoutDefinition.extent,
-            layoutDefinition.layoutCols,
-            layoutDefinition.layoutRows)
-
-        val crs = rdd.metadata.crs
-        val projectedRDD = rdd.map{ x => (ProjectedExtent(mapKeyTransform(x._1), crs), x._2) }
-        val retiledLayerMetadata = rdd.metadata.copy(
-          layout = layoutDefinition,
-          bounds = KeyBounds(mapKeyTransform(rdd.metadata.extent))
-        )
-
-        MultibandTileLayerRDD(projectedRDD.tileToLayout(retiledLayerMetadata, method), retiledLayerMetadata)
+        tileToLayout(layoutDefinition, resampleMethod).rdd
       }
 
     val leveledList =
@@ -167,6 +183,39 @@ class TemporalTiledRasterRDD(
     new TemporalTiledRasterRDD(Some(zoom), reprojected)
   }
 
+  def tileToLayout(
+    layoutDefinition: LayoutDefinition,
+    resampleMethod: String
+  ): TiledRasterRDD[SpaceTimeKey] = {
+    val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
+    val mapKeyTransform =
+      MapKeyTransform(
+        layoutDefinition.extent,
+        layoutDefinition.layoutCols,
+        layoutDefinition.layoutRows)
+
+    val crs = rdd.metadata.crs
+
+    val temporalRDD = rdd.map { x =>
+      (TemporalProjectedExtent(mapKeyTransform(x._1), rdd.metadata.crs, x._1.instant), x._2)
+    }
+
+    val bounds = rdd.metadata.bounds.get
+    val spatialBounds = KeyBounds(mapKeyTransform(rdd.metadata.extent))
+    val retiledLayerMetadata = rdd.metadata.copy(
+      layout = layoutDefinition,
+      bounds = KeyBounds(
+        minKey = bounds.minKey.setComponent[SpatialKey](spatialBounds.minKey),
+        maxKey = bounds.maxKey.setComponent[SpatialKey](spatialBounds.maxKey)
+      )
+    )
+
+    val tileLayer =
+      MultibandTileLayerRDD(temporalRDD.tileToLayout(retiledLayerMetadata, method), retiledLayerMetadata)
+
+    new TemporalTiledRasterRDD(None, tileLayer)
+  }
+
   def pyramid(
     startZoom: Int,
     endZoom: Int,
@@ -183,29 +232,7 @@ class TemporalTiledRasterRDD(
         rdd
       else {
         val LayoutLevel(_, layoutDefinition) = scheme.levelForZoom(startZoom)
-        val mapKeyTransform =
-          MapKeyTransform(
-            layoutDefinition.extent,
-            layoutDefinition.layoutCols,
-            layoutDefinition.layoutRows)
-
-        val crs = rdd.metadata.crs
-
-        val temporalRDD = rdd.map { x =>
-          (TemporalProjectedExtent(mapKeyTransform(x._1), rdd.metadata.crs, x._1.instant), x._2)
-        }
-
-        val bounds = rdd.metadata.bounds.get
-        val spatialBounds = KeyBounds(mapKeyTransform(rdd.metadata.extent))
-        val retiledLayerMetadata = rdd.metadata.copy(
-          layout = layoutDefinition,
-          bounds = KeyBounds(
-            minKey = bounds.minKey.setComponent[SpatialKey](spatialBounds.minKey),
-            maxKey = bounds.maxKey.setComponent[SpatialKey](spatialBounds.maxKey)
-          )
-        )
-
-        MultibandTileLayerRDD(temporalRDD.tileToLayout(retiledLayerMetadata, method), retiledLayerMetadata)
+        tileToLayout(layoutDefinition, resampleMethod).rdd
       }
 
     val leveledList =
