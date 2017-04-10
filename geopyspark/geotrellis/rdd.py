@@ -131,5 +131,17 @@ class TiledRasterRDD(object):
 
         return [TiledRasterRDD(self.geopysc, self.rdd_type, srdd) for srdd in result]
 
-    def focal(self):
-        pass
+    def focal(self, operation, neighborhood, param_1=None, param_2=None, param_3=None):
+        assert(operation in OPERATIONS)
+        assert(neighborhood in NEIGHBORHOODS)
+
+        if param_1 is None:
+            param_1 = 0.0
+        if param_2 is None:
+            param_2 = 0.0
+        if param_3 is None:
+            param_3 = 0.0
+
+        srdd = self.srdd.focal(operation, neighborhood, param_1, param_2, param_3)
+
+        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
