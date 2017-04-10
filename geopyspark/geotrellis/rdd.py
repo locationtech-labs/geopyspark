@@ -112,11 +112,14 @@ class TiledRasterRDD(object):
 
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
-    def tile_to_layout(self, layout):
-        pass
+    def tile_to_layout(self, layout, resample_method=NEARESTNEIGHBOR):
+        assert(resample_method in RESAMPLE_METHODS)
+
+        srdd = self.srdd.tileToLayout(layout, resample_method)
+
+        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
     def pyramid(self, start_zoom, end_zoom, resample_method=NEARESTNEIGHBOR):
-
         assert(resample_method in RESAMPLE_METHODS)
 
         result = self.srdd.pyramid(start_zoom, end_zoom, resample_method)
