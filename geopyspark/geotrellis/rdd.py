@@ -94,6 +94,25 @@ class TiledRasterRDD(object):
     def zoom_level(self):
         zoom = self.srdd.getZoom()
 
+    @classmethod
+    def from_numpy_rdd(cls, geopysc, rdd_type, numpy_rdd, metadata):
+        key = geopysc.map_key_input(rdd_type, True)
+
+        schema = geopysc.create_schema(key)
+        ser = geopysc.create_tuple_serializer(schema, key_type=None, value_type=TILE)
+        reserialized_rdd = numpy_rdd._reserialize(ser)
+
+        if key == "SpatialKey":
+            srdd = \
+                    geopysc._jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.fromAvroEncodedRDD(
+                        reserialized_rdd._jrdd, schema, json.dumps(metadata))
+        else:
+            srdd = \
+                    geopysc._jvm.geopyspark.geotrellis.TemporalTiledRasterRDD.fromAvroEncodedRDD(
+                        reserialized_rdd._jrdd, schema, json.dumps(metadata))
+
+        return cls(geopysc, key, srdd)
+
     def to_numpy_rdd(self):
         result = self.srdd.toAvroRDD()
         ser = self.geopysc.create_tuple_serializer(result._2(), value_type="Tile")

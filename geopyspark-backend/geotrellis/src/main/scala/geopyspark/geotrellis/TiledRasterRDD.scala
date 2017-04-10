@@ -304,4 +304,45 @@ class TemporalTiledRasterRDD(
     new TemporalTiledRasterRDD(None, multibandRDD)
   }
 }
+
+object SpatialTiledRasterRDD {
+  def fromAvroEncodedRDD(
+    javaRDD: JavaRDD[Array[Byte]],
+    schema: String,
+    metadata: String
+  ): SpatialTiledRasterRDD = {
+    val md = metadata.parseJson.convertTo[TileLayerMetadata[SpatialKey]]
+    val tileLayer = MultibandTileLayerRDD(
+      PythonTranslator.fromPython[(SpatialKey, MultibandTile)](javaRDD, Some(schema)),
+      md)
+
+    SpatialTiledRasterRDD(None, tileLayer)
+  }
+
+  def apply(
+    zoomLevel: Option[Int],
+    rdd: RDD[(SpatialKey, MultibandTile)] with Metadata[TileLayerMetadata[SpatialKey]]
+  ): SpatialTiledRasterRDD =
+    new SpatialTiledRasterRDD(zoomLevel, rdd)
+}
+
+object TemporalTiledRasterRDD {
+  def fromAvroEncodedRDD(
+    javaRDD: JavaRDD[Array[Byte]],
+    schema: String,
+    metadata: String
+  ): TemporalTiledRasterRDD = {
+    val md = metadata.parseJson.convertTo[TileLayerMetadata[SpaceTimeKey]]
+    val tileLayer = MultibandTileLayerRDD(
+      PythonTranslator.fromPython[(SpaceTimeKey, MultibandTile)](javaRDD, Some(schema)),
+      md)
+
+    TemporalTiledRasterRDD(None, tileLayer)
+  }
+
+  def apply(
+    zoomLevel: Option[Int],
+    rdd: RDD[(SpaceTimeKey, MultibandTile)] with Metadata[TileLayerMetadata[SpaceTimeKey]]
+  ): TemporalTiledRasterRDD =
+    new TemporalTiledRasterRDD(zoomLevel, rdd)
 }
