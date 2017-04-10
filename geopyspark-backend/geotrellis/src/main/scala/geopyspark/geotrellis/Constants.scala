@@ -22,4 +22,15 @@ object Constants {
   final val MEDIAN = "Median"
   final val MAX = "Max"
   final val MIN = "Min"
+
+  final val MEAN = "Mean"
+  final val SUM = "Sum"
+  final val STANDARDDEVIATION = "StandardDeviation"
+  final val SLOPE = "Slope"
+  final val ASPECT = "Aspect"
+
+  final val ANNULUS = "annulus"
+  final val NESW = "nesw"
+  final val SQUARE = "square"
+  final val WEDGE = "wedge"
 }

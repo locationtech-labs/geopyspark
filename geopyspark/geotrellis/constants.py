@@ -110,6 +110,7 @@ MONTHS = 'months'
 """A time unit used with ZORDER."""
 YEARS = 'years'
 
+
 """Neighborhood type: Annulus."""
 ANNULUS = 'annulus'
 
@@ -125,6 +126,9 @@ WEDGE = 'wedge'
 """Focal operation type: Sum."""
 SUM = 'Sum'
 
+"""Focal operation type: Mean."""
+MEAN = 'Mean'
+
 """Focal operation type: Aspect."""
 ASPECT = 'Aspect'
 
@@ -133,3 +137,24 @@ SLOPE = 'Slope'
 
 """Focal operation type: Standard Deviation."""
 STANDARDDEVIATION = 'StandardDeviation'
+
+OPERATIONS = [
+    SUM,
+    MIN,
+    MAX,
+    MEAN,
+    MEDIAN,
+    MODE,
+    STANDARDDEVIATION,
+    ASPECT,
+    SLOPE
+]
+
+NEIGHBORHOODS = [
+    ANNULUS,
+    NESW,
+    SQUARE,
+    WEDGE,
+    ASPECT,
+    SLOPE
+]
