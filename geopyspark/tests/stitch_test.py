@@ -4,7 +4,7 @@ import rasterio
 import numpy as np
 
 from shapely.geometry import Point
-from geopyspark.geotrellis.tile_layer import stitch
+from geopyspark.geotrellis.rdd import TiledRasterRDD
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.constants import SPATIAL
 
@@ -37,14 +37,13 @@ class StitchTest(BaseTestClass):
                     'extent': extent,
                     'tileLayout': {'tileCols': 5, 'tileRows': 5, 'layoutCols': 2, 'layoutRows': 2}}}
 
+    raster_rdd = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, metadata)
+
     def test_stitch(self):
+        result = self.raster_rdd.stitch()
 
-        result = stitch(geopysc=self.geopysc,
-                        rdd_type=SPATIAL,
-                        keyed_rdd=self.rdd,
-                        metadata=self.metadata)
+        self.assertTrue(result['data'].shape == (1, 10, 10))
 
-        self.assertTrue(result[0]['data'].shape == (1, 10, 10))
 
 if __name__ == "__main__":
     unittest.main()
