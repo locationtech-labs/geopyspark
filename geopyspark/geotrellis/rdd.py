@@ -164,3 +164,11 @@ class TiledRasterRDD(object):
         srdd = self.srdd.focal(operation, neighborhood, param_1, param_2, param_3)
 
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+
+    def stitch(self):
+        assert(self.rdd_type == "SpatialKey",
+               "Only TiledRasterRDDs with a rdd_type of SpatialKey can use stitch()")
+
+        tup = self.srdd.stitch()
+        ser = self.geopysc.create_value_serializer(tup._2(), TILE)
+        return ser.loads(tup._1())[0]
