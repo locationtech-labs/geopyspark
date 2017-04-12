@@ -1,4 +1,4 @@
-""""This module contains functions that create RDDs from files.
+""""This module contains functions that create RasterRDDs from files.
 
 There is only one function found within this module at this time, geotiff_rdd.
 """
@@ -11,7 +11,7 @@ def get(geopysc,
         options=None,
         **kwargs):
 
-    """Creates a RDD from GeoTiffs that are located on the local file system, HDFS, or S3.
+    """Creates a RasterRDD from GeoTiffs that are located on the local file system, HDFS, or S3.
 
     Args:
         geopysc (GeoPyContext): The GeoPyContext being used this session.
@@ -26,23 +26,23 @@ def get(geopysc,
             the style that is used in Scala.
 
             These are the options when using the local file system or HDFS:
-                crs (str, optional): The CRS that the output tiles should be
+                * crs (str, optional): The CRS that the output tiles should be
                     in. The CRS must be in the well-known name format. If None,
                     then the CRS that the tiles were originally in will be used.
-                timeTag (str, optional): The name of the tiff tag that contains
+                * timeTag (str, optional): The name of the tiff tag that contains
                     the time stamp for the tile. If None, then the default value
                     is: 'TIFFTAG_DATETIME'.
-                timeFormat (str, optional): The pattern of the time stamp for
+                * timeFormat (str, optional): The pattern of the time stamp for
                     java.time.format.DateTimeFormatter to parse. If None,
                     then the default value is: 'yyyy:MM:dd HH:mm:ss".
-                maxTileSize (int, optional): The max size of each tile in the
+                * maxTileSize (int, optional): The max size of each tile in the
                     resulting RDD. If the size is smaller than a read in tile,
                     then that tile will be broken into tiles of the specified
                     size. If None, then the whole tile will be read in.
-                numPartitions (int, optional): The number of repartitions Spark
+                * numPartitions (int, optional): The number of repartitions Spark
                     will make when the data is repartitioned. If None, then the
                     data will not be repartitioned.
-                chunkSize (int, optional): How many bytes of the file should be
+                * chunkSize (int, optional): How many bytes of the file should be
                     read in at a time. If None, then files will be read in 65536
                     byte chunks.
 
@@ -57,26 +57,7 @@ def get(geopysc,
             keyword arguements to be ignored in favor of options.
 
     Returns:
-        RDD: A RDD that contains tuples of dictionaries, (K, V).
-            K (dict): The projected extent information of the GeoTiff.
-                Which is the pyhiscal extent and the CRS of the GeoTiff.
-            V (dict): The raster tile information of the GeoTiff.
-                Which is the Tile data itself represented as a numpy array,
-                and the no_data_value of the Tile, if any.
-
-    Examples:
-        Reading a local GeoTiff that does not have a time component with the
-        default options.
-
-        >>> geotiff_rdd(geopysc, SPATIAL, 'file://path/to/my/geotiff.tif')
-        RDD
-
-        Reading a GeoTiff from S3 that does have a time component. An option
-        parameter is also passed in which specifies that each GeoTiff should
-        be cut up into 256x256 tiles.
-
-        >>> geotiff_rdd(geopysc, SPACETIME, 's3://bucket/data/september_images/', maxTileSize=256)
-        RDD
+        :class:`~geopyspark.geotrellis.rdd.RasterRDD`
     """
 
     geotiff_rdd = geopysc._jvm.geopyspark.geotrellis.io.geotiff.GeoTiffRDD
