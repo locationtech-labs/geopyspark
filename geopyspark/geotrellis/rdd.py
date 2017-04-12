@@ -1,3 +1,7 @@
+'''
+This module contains the RasterRDD and the TiledRasterRDD classes. Both of these classes are wrappers
+of their scala counterparts. These will be used in leau of actual PySpark RDDs.
+'''
 import json
 import shapely.wkt
 
@@ -11,7 +15,29 @@ from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                             )
 
 class RasterRDD(object):
-    """Holds an RDD of GeoTrellis rasters"""
+    """A RDD that contains GeoTrellis rasters.
+
+    Represents a RDD that contains (K, V). Where K is either ProjectedExtent or
+    TemporalProjectedExtent depending on the ``rdd_type`` of the RDD, and V being a raster.
+
+    Args:
+        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        rdd_type (str): What the spatial type of the geotiffs are. This is
+            represented by the constants: ``SPATIAL`` and ``SPACETIME``.
+            Note:
+                All of the GeoTiffs must have the same saptial type.
+        srdd (JavaObject): The coresponding scala class. This is what allows RasterRDD to access
+            the various scala methods.
+
+    Attributes:
+        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        rdd_type (str): What the spatial type of the geotiffs are. This is
+            represented by the constants: ``SPATIAL`` and ``SPACETIME``.
+            Note:
+                All of the GeoTiffs must have the same saptial type.
+        srdd (JavaObject): The coresponding scala class. This is what allows RasterRDD to access
+            the various scala methods.
+    """
 
     __slots__ = ['geopysc', 'rdd_type', 'srdd']
 
@@ -22,6 +48,23 @@ class RasterRDD(object):
 
     @classmethod
     def from_numpy_rdd(cls, geopysc, rdd_type, numpy_rdd):
+        """Create a RasterRDD from a numpy RDD.
+
+        Args:
+            geopysc (GeoPyContext): The GeoPyContext being used this session.
+            rdd_type (str): What the spatial type of the geotiffs are. This is
+                represented by the constants: ``SPATIAL`` and ``SPACETIME``.
+                Note:
+                    All of the GeoTiffs must have the same saptial type.
+            numpy_rdd (RDD): A PySpark RDD that contains tuples of either ProjectedExtents or
+                TemporalProjectedExtents and raster that is represented by a numpy array.
+                Note:
+                    Please read how rasters are represented in GeoPySpark [link].
+
+        Returns:
+            RasterRDD
+        """
+
         key = geopysc.map_key_input(rdd_type, False)
 
         schema = geopysc.create_schema(key)
@@ -40,18 +83,37 @@ class RasterRDD(object):
         return cls(geopysc, rdd_type, srdd)
 
     def to_numpy_rdd(self):
+        """Converts a RasterRDD to a numpy RDD.
+
+        Note:
+            Depending on the size of the data stored within the RDD, this can be an exspensive
+            operation and should be used with caution.
+
+        Returns:
+            RDD
+        """
+
         result = self.srdd.toAvroRDD()
         ser = self.geopysc.create_tuple_serializer(result._2(), value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
 
     def collect_metadata(self, extent=None, layout=None, crs=None, tile_size=256):
-        """Iterate over RDD records and generate layer metadata desribing the contained rasters.
+        """Iterate over RDD records and generates layer metadata desribing the contained rasters.
 
-        Keyword arguments:
-        crs -- Ignore CRS from records and use given
-        extent -- Specify layout extent, must also specify layout
-        layout -- Specify tile layout, must also specify layout
-        tile_size -- Pixel dimensions of each tile, if not using layout
+        Args:
+            extent (Extent, optional): Specify layout extent, must also specify layout.
+            layout (TileLayout, optional): Specify tile layout, must also specify extent.
+            crs (str, int, optional): Ignore CRS from records and use given one instead.
+            tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
+
+        Note:
+            `extent` and `layout` must both be defined.
+
+        Returns:
+            TileLayerMetadata
+
+        Raises:
+            ValueError: If either `extent` and `layout` is not defined but the other is.
         """
 
         if not crs:
@@ -67,7 +129,18 @@ class RasterRDD(object):
         return json.loads(json_metadata)
 
     def reproject(self, target_crs, resample_method=NEARESTNEIGHBOR):
-        """Reproject every individual raster to target_crs, does not sample past tile boundary"""
+        """Reproject every individual raster to `target_crs`, does not sample past tile boundary
+
+        Args:
+            target_crs (int, str): The CRS to reproject to. Can either be the EPSG code,
+                well-known name, or a PROJ.4 projection string.
+            resample_method (str, optional): The resample method to use for the reprojection.
+                This is represented by a constant. If none is specified, then `NEARESTNEIGHBOR`
+                is used.
+
+        Returns:
+            RasterRDD
+        """
         assert(resample_method in RESAMPLE_METHODS)
         return RasterRDD(self.geopysc, self.rdd_type,
                          self.srdd.reproject(target_crs, resample_method))
