@@ -147,6 +147,11 @@ class TiledRasterRDD(object):
     def pyramid(self, start_zoom, end_zoom, resample_method=NEARESTNEIGHBOR):
         assert(resample_method in RESAMPLE_METHODS)
 
+        size = self.layer_metadata['layoutDefinition']['tileLayout']['tileRows']
+
+        if (size & (size - 1)) != 0:
+            raise ValueError("Tiles must have a col and row count that is a power of 2")
+
         result = self.srdd.pyramid(start_zoom, end_zoom, resample_method)
 
         return [TiledRasterRDD(self.geopysc, self.rdd_type, srdd) for srdd in result]
