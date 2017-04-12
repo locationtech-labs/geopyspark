@@ -42,24 +42,6 @@ class PyramidingTest(BaseTestClass):
 
         self.pyramid_building_check(result)
 
-    def test_wrong_starting_zoom_level(self):
-        arr = np.zeros((1, 256, 256))
-        epsg_code = 3857
-        extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 10.0, 'ymax': 10.0}
-
-        tile = {'data': arr, 'no_data_value': False}
-        projected_extent = {'extent': extent, 'epsg': epsg_code}
-
-        rdd = self.geopysc.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
-
-        metadata = raster_rdd.collect_metadata()
-        laid_out = raster_rdd.tile_to_layout(metadata)
-
-        result = laid_out.pyramid(start_zoom=12, end_zoom=1)
-
-        self.pyramid_building_check(result)
-
     def test_wrong_cols_and_rows(self):
         arr = np.zeros((1, 250, 250))
         epsg_code = 3857
@@ -72,12 +54,12 @@ class PyramidingTest(BaseTestClass):
 
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
 
-        metadata = raster_rdd.collect_metadata()
+        metadata = raster_rdd.collect_metadata(tile_size=250)
         laid_out = raster_rdd.tile_to_layout(metadata)
 
-        result = laid_out.pyramid(start_zoom=12, end_zoom=1)
-
-        self.pyramid_building_check(result)
+        import pytest
+        with pytest.raises(ValueError):
+            laid_out.pyramid(start_zoom=12, end_zoom=1)
 
     def pyramid_building_check(self, result):
         previous_layout_cols = None
