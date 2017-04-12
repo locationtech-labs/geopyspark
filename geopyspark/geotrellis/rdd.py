@@ -94,7 +94,7 @@ class TiledRasterRDD(object):
 
     @property
     def zoom_level(self):
-        zoom = self.srdd.getZoom()
+        return self.srdd.getZoom()
 
     @classmethod
     def from_numpy_rdd(cls, geopysc, rdd_type, numpy_rdd, metadata):
