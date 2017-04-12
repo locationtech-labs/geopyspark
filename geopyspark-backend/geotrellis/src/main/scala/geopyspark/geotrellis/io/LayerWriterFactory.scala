@@ -68,24 +68,25 @@ abstract class LayerWriterWrapper {
       case _ => throw new Exception
     }
 
-  def write(
+  def writeSpatial(
     layerName: String,
-    tiledRasterRDD: TiledRasterRDD[_],
+    spatialRDD: TiledRasterRDD[SpatialKey],
+    indexStrategy: String
+  ): Unit = {
+    val id = LayerId(layerName, spatialRDD.getZoom)
+    val indexMethod = getSpatialIndexMethod(indexStrategy)
+    layerWriter.write(id, spatialRDD.rdd, indexMethod)
+  }
+
+  def writeTemporal(
+    layerName: String,
+    temporalRDD: TiledRasterRDD[SpaceTimeKey],
     timeString: String,
     indexStrategy: String
-  ): Unit ={
-    val id = LayerId(layerName, tiledRasterRDD.getZoom)
-
-    tiledRasterRDD match {
-      case spatial: SpatialTiledRasterRDD => {
-        val indexMethod = getSpatialIndexMethod(indexStrategy)
-        layerWriter.write(id, spatial.rdd, indexMethod)
-      }
-      case temporal: TemporalTiledRasterRDD => {
-        val indexMethod = getTemporalIndexMethod(timeString, indexStrategy)
-        layerWriter.write(id, temporal.rdd, indexMethod)
-      }
-    }
+  ): Unit = {
+    val id = LayerId(layerName, temporalRDD.getZoom)
+    val indexMethod = getTemporalIndexMethod(timeString, indexStrategy)
+    layerWriter.write(id, temporalRDD.rdd, indexMethod)
   }
 }
 

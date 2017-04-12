@@ -576,12 +576,17 @@ def write(geopysc,
 
     _construct_catalog(geopysc, uri, options)
 
-    chached = _mapped_chached[uri]
+    cached = _mapped_cached[uri]
 
     if not time_unit:
         time_unit = ""
 
-    chached.writer.write(layer_name,
-                         tiled_raster_rdd.srdd,
-                         time_unit,
-                         index_strategy)
+    if tiled_raster_rdd.rdd_type == SPATIAL:
+        cached.writer.writeSpatial(layer_name,
+                                   tiled_raster_rdd.srdd,
+                                   index_strategy)
+    else:
+        cached.writer.writeTemporal(layer_name,
+                                    tiled_raster_rdd.srdd,
+                                    time_unit,
+                                    index_strategy)
