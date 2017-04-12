@@ -70,16 +70,16 @@ class RasterRDD(object):
         return RasterRDD(self.geopysc, self.rdd_type,
                          self.srdd.reproject(target_crs, resample_method))
 
-    def cut_tiles(self, layerMetadata, resample_method=NEARESTNEIGHBOR, cellType=None):
+    def cut_tiles(self, layer_metadata, resample_method=NEARESTNEIGHBOR):
         """Cut tiles to layout. May result in duplicate keys"""
         assert(resample_method in RESAMPLE_METHODS)
-        srdd = self.srdd.cutTiles(json.dumps(layerMetadata), resample_method)
+        srdd = self.srdd.cutTiles(json.dumps(layer_metadata), resample_method)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
-    def tile_to_layout(self, layerMetadata, resample_method=NEARESTNEIGHBOR):
+    def tile_to_layout(self, layer_metadata, resample_method=NEARESTNEIGHBOR):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys"""
         assert(resample_method in RESAMPLE_METHODS)
-        srdd = self.srdd.tileToLayout(json.dumps(layerMetadata), resample_method)
+        srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
 
