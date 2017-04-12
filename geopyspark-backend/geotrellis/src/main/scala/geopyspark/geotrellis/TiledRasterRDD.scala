@@ -136,7 +136,7 @@ class SpatialTiledRasterRDD(
     options: Reproject.Options
   ): TiledRasterRDD[SpatialKey] = {
     val (zoom, reprojected) = TileRDDReproject(rdd, crs, layout, options)
-    new SpatialTiledRasterRDD(Some(zoom), reprojected)
+    SpatialTiledRasterRDD(Some(zoom), reprojected)
   }
 
   def tileToLayout(
@@ -160,7 +160,7 @@ class SpatialTiledRasterRDD(
     val tileLayer =
       MultibandTileLayerRDD(projectedRDD.tileToLayout(retiledLayerMetadata, method), retiledLayerMetadata)
 
-    new SpatialTiledRasterRDD(None, tileLayer)
+    SpatialTiledRasterRDD(None, tileLayer)
   }
 
   def pyramid(
@@ -215,7 +215,7 @@ class SpatialTiledRasterRDD(
     val multibandRDD: MultibandTileLayerRDD[SpatialKey] =
       MultibandTileLayerRDD(result.map{ x => (x._1, MultibandTile(x._2)) }, result.metadata)
 
-    new SpatialTiledRasterRDD(None, multibandRDD)
+    SpatialTiledRasterRDD(None, multibandRDD)
   }
 
   def stitch: (Array[Byte], String) = {
@@ -248,7 +248,7 @@ class SpatialTiledRasterRDD(
     val multibandRDD: MultibandTileLayerRDD[SpatialKey] =
       MultibandTileLayerRDD(result.map{ x => (x._1, MultibandTile(x._2)) }, result.metadata)
 
-    new SpatialTiledRasterRDD(None, multibandRDD)
+    SpatialTiledRasterRDD(None, multibandRDD)
   }
 }
 
@@ -264,7 +264,7 @@ class TemporalTiledRasterRDD(
     options: Reproject.Options
   ): TiledRasterRDD[SpaceTimeKey] = {
     val (zoom, reprojected) = TileRDDReproject(rdd, crs, layout, options)
-    new TemporalTiledRasterRDD(Some(zoom), reprojected)
+    TemporalTiledRasterRDD(Some(zoom), reprojected)
   }
 
   def tileToLayout(
@@ -297,7 +297,7 @@ class TemporalTiledRasterRDD(
     val tileLayer =
       MultibandTileLayerRDD(temporalRDD.tileToLayout(retiledLayerMetadata, method), retiledLayerMetadata)
 
-    new TemporalTiledRasterRDD(None, tileLayer)
+    TemporalTiledRasterRDD(None, tileLayer)
   }
 
   def pyramid(
@@ -352,7 +352,7 @@ class TemporalTiledRasterRDD(
     val multibandRDD: MultibandTileLayerRDD[SpaceTimeKey] =
       MultibandTileLayerRDD(result.map{ x => (x._1, MultibandTile(x._2)) }, result.metadata)
 
-    new TemporalTiledRasterRDD(None, multibandRDD)
+    TemporalTiledRasterRDD(None, multibandRDD)
   }
 
   def costDistance(
@@ -376,7 +376,7 @@ class TemporalTiledRasterRDD(
     val multibandRDD: MultibandTileLayerRDD[SpaceTimeKey] =
       MultibandTileLayerRDD(result.map{ x => (x._1, MultibandTile(x._2)) }, result.metadata)
 
-    new TemporalTiledRasterRDD(None, multibandRDD)
+    TemporalTiledRasterRDD(None, multibandRDD)
   }
 }
 
