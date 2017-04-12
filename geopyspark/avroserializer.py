@@ -1,3 +1,4 @@
+"""The class which serializes/deserializes values in a RDD to/from python."""
 import io
 import avro
 import avro.io
@@ -6,6 +7,19 @@ from pyspark.serializers import Serializer, FramedSerializer
 
 
 class AvroSerializer(FramedSerializer):
+    """The serializer used by RDDs to encode/decode values to/from python.
+
+    Args:
+        schema (str): The AvroSchema of the RDD.
+        decoding_method (func, optional): The decocding function for the values within the RDD.
+        encoding_method (func, optional): The encocding function for the values within the RDD.
+
+    Attributes:
+        schema (str): The AvroSchema of the RDD.
+        decoding_method (func, optional): The decocding function for the values within the RDD.
+        encoding_method (func, optional): The encocding function for the values within the RDD.
+    """
+
     def __init__(self,
                  schema,
                  decoding_method=None,
@@ -27,24 +41,29 @@ class AvroSerializer(FramedSerializer):
 
     @property
     def schema(self):
+        """The parsed AvroSchema."""
         return avro.schema.Parse(self.schema_string)
 
     @property
     def schema_name(self):
+        """The name of the schema."""
         return self.schema().name
 
     @property
     def schema_dict(self):
+        """The schema values in a dict."""
         import json
 
         return json.loads(self.schema_string)
 
     @property
     def reader(self):
+        """The reader function used to read values in the RDD."""
         return avro.io.DatumReader(self.schema)
 
     @property
     def datum_writer(self):
+        """The write function used to serialize values in the RDD."""
         return avro.io.DatumWriter(self.schema)
 
     def _dumps(self, obj):
@@ -60,21 +79,35 @@ class AvroSerializer(FramedSerializer):
 
         return bytes_writer.getvalue()
 
-    """
-    Serialize an object into a byte array.
-    When batching is used, this will be called with an array of objects.
-    """
     def dumps(self, obj):
+        """Serialize an object into a byte array.
+
+        Note:
+            When batching is used, this will be called with an array of objects.
+
+        Args:
+            obj: The object to serialized into a byte array.
+
+        Returns:
+            The byte array representation of the `obj`.
+        """
+
         if isinstance(obj, list):
             for x in obj:
                 return self._dumps(x)
         else:
             return self._dumps(obj)
 
-    """
-    Deserializes a byte array into a collection of python objects.
-    """
     def loads(self, obj):
+        """Deserializes a byte array into a collection of python objects.
+
+        Args:
+            obj: The byte array representation of an object to be deserialized into the object.
+
+        Returns:
+            A list of deserialized objects.
+        """
+
         buf = io.BytesIO(obj)
 
         decoder = avro.io.BinaryDecoder(buf)
@@ -84,3 +117,5 @@ class AvroSerializer(FramedSerializer):
             return [self.decoding_method(schema_dict)]
         else:
             return [schema_dict]
+
+
