@@ -172,26 +172,17 @@ class SpatialTiledRasterRDD(
 
     val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
     val scheme = ZoomedLayoutScheme(rdd.metadata.crs, rdd.metadata.tileRows)
-    val levelZoom = math.log(rdd.metadata.layoutRows.toDouble) / math.log(2)
-
-    val pyramidBase: MultibandTileLayerRDD[SpatialKey] =
-      if (isZoomedLayer(rdd.metadata.tileRows) && startZoom == levelZoom)
-        rdd
-      else {
-        val LayoutLevel(_, layoutDefinition) = scheme.levelForZoom(startZoom)
-        tileToLayout(layoutDefinition, resampleMethod).rdd
-      }
 
     val leveledList =
       Pyramid.levelStream(
-        pyramidBase,
+        rdd,
         scheme,
         startZoom,
         endZoom,
         Pyramid.Options(resampleMethod=method)
       )
 
-    leveledList.map{ x => new SpatialTiledRasterRDD(Some(x._1), x._2) }.toArray
+    leveledList.map{ x => SpatialTiledRasterRDD(Some(x._1), x._2) }.toArray
   }
 
   def focal(
@@ -309,26 +300,17 @@ class TemporalTiledRasterRDD(
 
     val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
     val scheme = ZoomedLayoutScheme(rdd.metadata.crs, rdd.metadata.tileRows)
-    val levelZoom = math.log(rdd.metadata.layoutRows.toDouble) / math.log(2)
-
-    val pyramidBase: MultibandTileLayerRDD[SpaceTimeKey] =
-      if (isZoomedLayer(rdd.metadata.tileRows) && startZoom == levelZoom)
-        rdd
-      else {
-        val LayoutLevel(_, layoutDefinition) = scheme.levelForZoom(startZoom)
-        tileToLayout(layoutDefinition, resampleMethod).rdd
-      }
 
     val leveledList =
       Pyramid.levelStream(
-        pyramidBase,
+        rdd,
         scheme,
         startZoom,
         endZoom,
         Pyramid.Options(resampleMethod=method)
       )
 
-    leveledList.map{ x => new TemporalTiledRasterRDD(Some(x._1), x._2) }.toArray
+    leveledList.map{ x => TemporalTiledRasterRDD(Some(x._1), x._2) }.toArray
   }
 
   def focal(
