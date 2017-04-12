@@ -5,11 +5,7 @@ import geopyspark.geotrellis.GeoTrellisUtils._
 import geotrellis.util._
 import geotrellis.proj4._
 import geotrellis.vector._
-import geotrellis.vector.io._
 import geotrellis.raster._
-import geotrellis.raster.io._
-import geotrellis.raster.merge._
-import geotrellis.raster.prototype._
 import geotrellis.raster.resample._
 import geotrellis.spark._
 import geotrellis.spark.io._
@@ -27,8 +23,6 @@ import org.apache.spark.api.java.JavaRDD
 import scala.reflect._
 import scala.util._
 import scala.collection.JavaConverters._
-
-import collection.JavaConversions._
 
 import java.util.Map
 

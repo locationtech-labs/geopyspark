@@ -5,12 +5,8 @@ import geopyspark.geotrellis.GeoTrellisUtils._
 import geotrellis.util._
 import geotrellis.proj4._
 import geotrellis.vector._
-import geotrellis.vector.io._
 import geotrellis.vector.io.wkt.WKT
 import geotrellis.raster._
-import geotrellis.raster.io._
-import geotrellis.raster.merge._
-import geotrellis.raster.prototype._
 import geotrellis.raster.resample.ResampleMethod
 import geotrellis.spark._
 import geotrellis.spark.pyramid._
