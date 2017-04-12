@@ -21,54 +21,6 @@ class GeoPyContext(object):
 
         self.avroregistry = AvroRegistry()
 
-    @property
-    def _schema_producer(self):
-        return self._jvm.geopyspark.geotrellis.SchemaProducer
-
-    @property
-    def _tile_layer_metadata_collecter(self):
-        return self._jvm.geopyspark.geotrellis.spark.TileLayerMetadataCollector
-
-    @property
-    def _tile_layer_methods(self):
-        return self._jvm.geopyspark.geotrellis.spark.tiling.TilerMethodsWrapper
-
-    @property
-    def _tile_layer_merge(self):
-        return self._jvm.geopyspark.geotrellis.spark.merge.MergeMethodsWrapper
-
-    @property
-    def _pyramid_builder(self):
-        return self._jvm.geopyspark.geotrellis.spark.pyramid.PyramidWrapper
-
-    @property
-    def _rdd_reprojector(self):
-        return self._jvm.geopyspark.geotrellis.spark.reproject.ReprojectWrapper
-
-    @property
-    def rdd_focal(self):
-        return self._jvm.geopyspark.geotrellis.spark.focal.FocalWrapper
-
-    @property
-    def rdd_stitch(self):
-        return self._jvm.geopyspark.geotrellis.spark.stitch.StitchWrapper
-
-    @property
-    def rdd_costdistance(self):
-        return self._jvm.geopyspark.geotrellis.spark.costdistance.CostDistanceWrapper
-
-    @property
-    def rdd_mask(self):
-        return self._jvm.geopyspark.geotrellis.spark.mask.MaskWrapper
-
-    @property
-    def _projected_raster_rdd(self):
-        return self._jvm.geopyspark.geotrellis.ProjectedRasterRDD
-
-    @property
-    def _temporal_raster_rdd(self):
-        return self._jvm.geopyspark.geotrellis.TemporalRasterRDD
-
     @staticmethod
     def map_key_input(key_type, is_boundable):
         if is_boundable:
@@ -87,7 +39,7 @@ class GeoPyContext(object):
                 raise Exception("Could not find key type that matches", key_type)
 
     def create_schema(self, key_type):
-        return self._schema_producer.getSchema(key_type)
+        return self._jvm.geopyspark.geotrellis.SchemaProducer.getSchema(key_type)
 
     def create_tuple_serializer(self, schema, key_type=None, value_type=None):
         decoder = \

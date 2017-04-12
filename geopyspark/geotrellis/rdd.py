@@ -26,10 +26,14 @@ class RasterRDD(object):
         ser = geopysc.create_tuple_serializer(schema, key_type=None, value_type=TILE)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
-        if key == "ProjectedExtent":
-            srdd = geopysc._projected_raster_rdd.fromAvroEncodedRDD(reserialized_rdd._jrdd, schema)
+        if rdd_type == SPATIAL:
+            srdd = \
+                    geopysc._jvm.geopyspark.geotrellis.ProjectedRasterRDD.fromAvroEncodedRDD(
+                        reserialized_rdd._jrdd, schema)
         else:
-            srdd = geopysc._temporal_raster_rdd.fromAvroEncodedRDD(reserialized_rdd._jrdd, schema)
+            srdd = \
+                    geopysc._jvm.geopyspark.geotrellis.TemporalRasterRDD.fromAvroEncodedRDD(
+                        reserialized_rdd._jrdd, schema)
 
         return cls(geopysc, rdd_type, srdd)
 
@@ -104,7 +108,7 @@ class TiledRasterRDD(object):
         ser = geopysc.create_tuple_serializer(schema, key_type=None, value_type=TILE)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
-        if key == SPATIAL:
+        if rdd_type == SPATIAL:
             srdd = \
                     geopysc._jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.fromAvroEncodedRDD(
                         reserialized_rdd._jrdd, schema, json.dumps(metadata))
