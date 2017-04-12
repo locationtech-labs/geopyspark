@@ -1,9 +1,12 @@
+"""Contains the various encoding/decoding methods to bring values to/from python from scala."""
 import array
 from functools import partial
 import numpy as np
 
 
 class AvroRegistry(object):
+    """Holds the encoding/decoding methods needed to bring scala RDDs to/from python."""
+
     # DECODERS
 
     @staticmethod
@@ -20,6 +23,15 @@ class AvroRegistry(object):
 
     @classmethod
     def tile_decoder(cls, schema_dict):
+        """Decodes a TILE into python.
+
+        Args:
+            schema_dict (dict): The dict representation of the AvroSchema.
+
+        Returns:
+            Tile (dict)
+        """
+
         if 'bands' not in schema_dict:
             arr = [cls._tile_decoder(schema_dict)]
             no_data = schema_dict.get('noDataValue')
@@ -34,6 +46,17 @@ class AvroRegistry(object):
 
     @staticmethod
     def tuple_decoder(schema_dict, key_decoder=None, value_decoder=None):
+        """Decodes a tuple into python.
+
+        Args:
+            schema_dict (dict): The dict representation of the AvroSchema.
+            key_decoder (func, optional): The decoding function of the key.
+            value_decoder (func, optional): The decoding function fo the value.
+
+        Returns:
+            tuple
+        """
+
         schema_1 = schema_dict['_1']
         schema_2 = schema_dict['_2']
 
@@ -55,6 +78,16 @@ class AvroRegistry(object):
 
     @classmethod
     def create_partial_tuple_decoder(cls, key_type=None, value_type=None):
+        """Creates a partial, tuple decoder function.
+
+        Args:
+            key_type (str, optional): The type of the key in the tuple.
+            value_type (str, optional): The type of the value in the tuple.
+
+        Returns:
+            A partial tuple_decoder function that requires a `schema_dict` to execute.
+        """
+
         if key_type:
             key_decoder = cls._get_decoder(key_type)
         else:
@@ -101,6 +134,14 @@ class AvroRegistry(object):
 
     @classmethod
     def tile_encoder(cls, obj):
+        """Encodes a TILE to send to scala..
+
+        Args:
+            obj (dict): The dict representation of `TILE`.
+
+        Returns:
+            avro_schema_dict (dict)
+        """
         if obj['data'].ndim == 2:
             obj['data'] = np.expand_dims(obj['data'], 0)
 
@@ -115,6 +156,16 @@ class AvroRegistry(object):
 
     @staticmethod
     def tuple_encoder(obj, key_encoder=None, value_encoder=None):
+        """Encodes a tuple to send to scala..
+
+        Args:
+            obj (tuple): The tuple to be encoded.
+            key_encoder (func, optional): The encoding function of the key.
+            value_encoder (func, optional): The encoding function fo the value.
+
+        Returns:
+            avro_schema_dict (dict)
+        """
         (value_1, value_2) = obj
 
         if key_encoder and value_encoder:
@@ -134,6 +185,15 @@ class AvroRegistry(object):
 
     @classmethod
     def create_partial_tuple_encoder(cls, key_type=None, value_type=None):
+        """Creates a partial, tuple encoder function.
+
+        Args:
+            key_type (str, optional): The type of the key in the tuple.
+            value_type (str, optional): The type of the value in the tuple.
+
+        Returns:
+            A partial tuple_encoder function that requires a `obj` to execute.
+        """
         if key_type:
             key_encoder = cls._get_encoder(key_type)
         else:
