@@ -1,3 +1,4 @@
+"""Contains functions needed to setup the environment so that GeoPySpark can run."""
 import glob
 import sys
 
@@ -11,6 +12,12 @@ JAR_FILE = 'geotrellis-backend-assembly-' + VERSION + '.jar'
 
 
 def add_pyspark_path():
+    """Adds SPARK_HOME to environment variables.
+
+    Raises:
+        KeyError if SPARK_HOME could not be found.
+    """
+
     try:
         pyspark_home = os.environ["SPARK_HOME"]
         sys.path.append(path.join(pyspark_home, 'python'))
@@ -19,6 +26,12 @@ def add_pyspark_path():
         raise KeyError("Could not find SPARK_HOME")
 
 def setup_environment():
+    """Sets up various environment variables that are needed to run GeoPySpark.
+
+    Note:
+        Specifying your own values for these environment variables will overwrite these.
+    """
+
     add_pyspark_path()
 
     current_location = path.dirname(path.realpath(__file__))
