@@ -86,9 +86,6 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
     resampleMethod: String
   ): TiledRasterRDD[_]
 
-  def isZoomedLayer(tileSize: Int): Boolean =
-    (tileSize & (tileSize - 1)) == 0
-
   def pyramid(
     startZoom: Int,
     endZoom: Int,
@@ -366,9 +363,7 @@ object SpatialTiledRasterRDD {
     metadata: String
   ): SpatialTiledRasterRDD = {
     val md = metadata.parseJson.convertTo[TileLayerMetadata[SpatialKey]]
-    val tileLayer = MultibandTileLayerRDD(
-      PythonTranslator.fromPython[(SpatialKey, MultibandTile)](javaRDD, Some(schema)),
-      md)
+    val tileLayer = MultibandTileLayerRDD(PythonTranslator.fromPython[(SpatialKey, MultibandTile)](javaRDD, Some(schema)), md)
 
     SpatialTiledRasterRDD(None, tileLayer)
   }
@@ -387,9 +382,7 @@ object TemporalTiledRasterRDD {
     metadata: String
   ): TemporalTiledRasterRDD = {
     val md = metadata.parseJson.convertTo[TileLayerMetadata[SpaceTimeKey]]
-    val tileLayer = MultibandTileLayerRDD(
-      PythonTranslator.fromPython[(SpaceTimeKey, MultibandTile)](javaRDD, Some(schema)),
-      md)
+    val tileLayer = MultibandTileLayerRDD(PythonTranslator.fromPython[(SpaceTimeKey, MultibandTile)](javaRDD, Some(schema)), md)
 
     TemporalTiledRasterRDD(None, tileLayer)
   }
