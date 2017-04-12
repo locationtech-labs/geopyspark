@@ -53,8 +53,8 @@ class GeoPyContext(object):
         return AutoBatchedSerializer(AvroSerializer(schema, decoder, encoder))
 
     def create_value_serializer(self, schema, value_type):
-        decoder = self.avroregistry.get_decoder(value_type)
-        encoder = self.avroregistry.get_encoder(value_type)
+        decoder = self.avroregistry._get_decoder(value_type)
+        encoder = self.avroregistry._get_encoder(value_type)
 
         return AvroSerializer(schema, decoder, encoder)
 

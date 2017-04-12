@@ -47,7 +47,7 @@ class AvroRegistry(object):
             return (schema_1, schema_2)
 
     @classmethod
-    def get_decoder(cls, name):
+    def _get_decoder(cls, name):
         if name == "Tile":
             return cls.tile_decoder
         else:
@@ -56,12 +56,12 @@ class AvroRegistry(object):
     @classmethod
     def create_partial_tuple_decoder(cls, key_type=None, value_type=None):
         if key_type:
-            key_decoder = cls.get_decoder(key_type)
+            key_decoder = cls._get_decoder(key_type)
         else:
             key_decoder = None
 
         if value_type:
-            value_decoder = cls.get_decoder(value_type)
+            value_decoder = cls._get_decoder(value_type)
         else:
             value_decoder = None
 
@@ -135,12 +135,12 @@ class AvroRegistry(object):
     @classmethod
     def create_partial_tuple_encoder(cls, key_type=None, value_type=None):
         if key_type:
-            key_encoder = cls.get_encoder(key_type)
+            key_encoder = cls._get_encoder(key_type)
         else:
             key_encoder = None
 
         if value_type:
-            value_encoder = cls.get_encoder(value_type)
+            value_encoder = cls._get_encoder(value_type)
         else:
             value_encoder = None
 
@@ -149,7 +149,7 @@ class AvroRegistry(object):
                        value_encoder=value_encoder)
 
     @classmethod
-    def get_encoder(cls, name):
+    def _get_encoder(cls, name):
         if name == "Tile":
             return cls.tile_encoder
         else:
