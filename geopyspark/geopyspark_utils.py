@@ -38,7 +38,8 @@ def setup_environment():
 
     local_prefixes = [
         path.abspath(path.join(current_location, 'jars/')),
-        path.abspath(path.join(os.getcwd(), 'jars/'))
+        path.abspath(path.join(os.getcwd(), 'jars/')),
+        path.abspath(path.join(os.getcwd(), '../geopyspark/jars/'))
     ]
 
     possible_jars = [path.join(prefix, '*.jar') for prefix in local_prefixes]
