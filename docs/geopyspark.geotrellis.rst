@@ -1,9 +1,6 @@
 geopyspark.geotrellis package
 =============================
 
-GeoTrellis APIs
----------------
-
 .. automodule:: geopyspark.geotrellis
    :members:
    :undoc-members:
@@ -11,6 +8,7 @@ GeoTrellis APIs
 
 geopyspark.geotrellis.catalog module
 -------------------------------------
+
 
 .. automodule:: geopyspark.geotrellis.catalog
    :members:
