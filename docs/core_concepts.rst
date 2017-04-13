@@ -14,6 +14,8 @@ python's more traditional naming convention for some values. This is because
 scala uses this style of naming, and when it recieves data from python it
 expects the value names to be in camel case.
 
+.. _raster:
+
 Raster
 ------
 
@@ -29,6 +31,8 @@ The fields used to represent rasters:
 
 **Note**: All rasters in GeoPySpark are represented as having multiple bands,
 even if the origin raster just contained one.
+
+.. _tile_layout:
 
 TileLayout
 ----------
@@ -48,6 +52,8 @@ The fields used to reprsent ``TileLayout``:
 Example::
 
    tile_layout = {'layoutCols': 1, 'layoutRows': 1, 'tileCols': 256, 'tileRows': 256}
+
+.. _extent:
 
 Extent
 ------
@@ -163,6 +169,8 @@ Example::
   max_key = {'col' 100', 'row': 100}
 
   bounds = {'minKey': min_key, 'max_key': max_key}
+
+.. _metadata:
 
 TileLayerMetadata
 -----------------
