@@ -10,9 +10,9 @@ Welcome to GeoPySpark's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   core_concepts
    geopyspark
    geopyspark.geotrellis
-
 
 Indices and tables
 ==================
