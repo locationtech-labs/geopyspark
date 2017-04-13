@@ -2,6 +2,51 @@
 
 Because GeoPySpark represents all raster data as 3D numpy arrays, data that is read/written out
 will be in a multiband format; regardless of how the data was originally formatted.
+
+This module can read, write, and query from a variety of backends.
+These are the ones that are currently supported:
+
+ - **Local Filesystem**
+ - **HDFS**
+ - **S3**
+ - **Cassandra**
+ - **HBase**
+ - **Accumulo**
+
+Example uris for each backend:
+ - Local Filesystem: file://my_folder/my_catalog/
+ - HDFS: hdfs://my_folder/my_catalog/
+ - S3: s3://my_bucket/my_catalog/
+ - Cassandra: cassandra:name?username=user&password=pass&host=host1&keyspace=key&table=table
+ - HBase: hbase://zoo1, zoo2: port/table
+ - Accumulo: accumulo://username:password/zoo1, zoo2/instance/table
+
+Note:
+    Neither ``HBase`` or ``Accumulo`` support URI strings to query data. Therefore, URIs for both
+    backends have been constructed for use in GeoPySpark.
+
+The URI for ``HBase`` follows this pattern:
+ - hbase://zoo1, zoo2, ..., zooN: port/table
+
+The URI for ``Accumulo`` follows this pattern:
+ - accumulo://username:password/zoo1, zoo2/instance/table
+
+Some backends require various options to be set in the ``options`` parameter
+of each function. These are backends and the additonal options to set for
+each.
+
+Fields that can be set for ``Cassandra``:
+ - **replicationStrategy** (str, optional): If not specified, then
+   'SimpleStrategy' will be used.
+ - **replicationFactor** (int, optional): If not specified, then 1 will be used.
+ - **localDc** (str, optional): If not specified, then 'datacenter1' will be used.
+ - **usedHostsPerRemoteDc** (int, optional): If not specified, then 0 will be used.
+ - **allowRemoteDCsForLocalConsistencyLevel** (int, optional): If you'd like this feature,
+     then the value would be 1, Otherwise, the value should be 0. If not specified,
+     then 0 will be used.
+
+Fields that can be set for ``HBase``:
+ - **master** (str, optional): If not specified, then 'null' will be used.
 """
 
 from collections import namedtuple
@@ -137,8 +182,6 @@ def read(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: `SPATIAL` and `SPACETIME`.
-            Note:
-                All of the GeoTiffs must have the same saptial type.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be read from.
@@ -188,8 +231,6 @@ def read_value(geopysc,
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: `SPATIAL` and `SPACETIME`.
-            Note:
-                All of the GeoTiffs must have the same spatial type.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be read from.
@@ -206,7 +247,7 @@ def read_value(geopysc,
             be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
-        Raster
+        :ref:`raster`
     """
 
     if options:
@@ -339,10 +380,9 @@ def write(uri,
     Args:
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
-            represented by the constants: SPATIAL and SPACETIME. Note: All of the
-            GeoTiffs must have the same saptial type.
+            represented by the constants: `SPATIAL` and `SPACETIME`.
         uri (str): The Uniform Resource Identifier used to point towards the desired location for
-        the tile layer to written to. The shape of this string varies depending on backend.
+            the tile layer to written to. The shape of this string varies depending on backend.
         layer_name (str): The name of the new, tile layer.
         layer_zoom (int): The zoom level the layer should be saved at.
         tiled_raster_rdd (TiledRasterRDD): The TiledRasterRDD to be saved.

@@ -1,3 +1,5 @@
+"""Constants that are used by geopyspark.geotrellis classes, methods, and functions."""
+
 """
 Indicates that the RDD contains (K, V) pairs, where the K has a spatial attribute,
 but no time value. Both ProjectedExtent and SpatialKey are examples of this
