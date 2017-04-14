@@ -7,6 +7,11 @@ The data is open for anyone to read, so feel free to run this example yourself.
 The Code
 ========
 
+Here's the code to run the ingest. One of the biggest benefits of using
+GeoPySpark is how much simplier it is to run an ingest than if you were
+using GeoTrellis. Whereas GeoTrellis needs various configuration files run an
+ingest, GeoPySpark can perform the same task in just a single script.
+
 .. code-block:: python
 
    from geopyspark.geopycontext import GeoPyContext
@@ -16,7 +21,7 @@ The Code
 
    geopysc = GeoPyContext(appName="python-S3-ingest", master="local[*]")
 
-   # Read the GeoTiff from off of S3
+   # Read the GeoTiff from S3
    rdd = get(geopysc, SPATIAL, "s3://geopyspark-test/example-files/cropped.tif")
 
    metadata = rdd.collect_metadata()
@@ -24,14 +29,14 @@ The Code
    # tile the rdd to the layout defined in the metadata
    laid_out = rdd.tile_to_layout(metadata)
 
-   # reproject the tiled rasters using the ZoomedLayoutScheme
+   # reproject the tiled rasters using a ZoomedLayoutScheme
    reprojected = laid_out.reproject("EPSG:3857", scheme=ZOOM)
 
-   # pyramid the TiledRasterRDD to create 12 new TiledRasterRDD
+   # pyramid the TiledRasterRDD to create 12 new TiledRasterRDDs
    # one for each zoom level
    pyramided = reprojected.pyramid(start_zoom=12, end_zoom=1)
 
-   # Save each TiledRasterRDD locally
+   # Save each TiledRasterRDDs locally
    for tiled in pyramided:
        write("file:///tmp/geopyspark-catalog", "geopyspark-ingest", tiled)
 
@@ -39,9 +44,9 @@ The Code
 Running the Code
 -----------------
 
-Running the code is very simple, and you have two different ways of doing it.
+Running the code is simple, and you have two different ways of doing it.
 
-The first is to copy and paste the code in a console like iPython and the
+The first is to copy and paste the code into a console like, iPython, and then
 running it.
 
 The second is to place this code in a python file and then saving it. To run it
@@ -85,7 +90,7 @@ Reading in the Data
 
    geopysc = GeoPyContext(appName="python-S3-ingest", master="local[*]")
 
-   # Read the GeoTiff from off of S3
+   # Read the GeoTiff from S3
    rdd = get(geopysc, SPATIAL, "s3://geopyspark-test/example-files/cropped.tif")
 
 Before doing anything when using GeoPySpark, it's best to create a
@@ -108,11 +113,11 @@ Collecting the Metadata
    metadata = rdd.collect_metadata()
 
 Before we can begin formatting the data to our desired layout, we must first
-collect the :ref:`metadata` of the enitre RDD.  The metadata itself will
-contain the :ref:`tile_layout` that the data will be transformed to. There
-are various ways to collect the metadata depending on how you want the layout
-to look (see :meth:`~geopyspark.geotrellis.rdd.RasterRDD.collect_metadata`),
-but for this example we will just go with the default.
+collect the :ref:`metadata` of the enitre RDD. The metadata itself will contain
+the :ref:`tile_layout` that the data will be formatted to. There are various
+ways to collect the metadata depending on how you want the layout to look
+(see :meth:`~geopyspark.geotrellis.rdd.RasterRDD.collect_metadata`), but for
+this example, we will just go with the default parameters.
 
 
 Tiling the Data
@@ -123,23 +128,23 @@ Tiling the Data
    # tile the rdd to the layout defined in the metadata
    laid_out = rdd.tile_to_layout(metadata)
 
-   # reproject the tiled rasters using the ZoomedLayoutScheme
+   # reproject the tiled rasters using a ZoomedLayoutScheme
    reprojected = laid_out.reproject("EPSG:3857", scheme=ZOOM)
 
 With the metadata collected, it is now time to format the data within the
 RDD to our desired layout. The aptly named, :meth:`~geopyspark.geotrellis.rdd.RasterRDD.tile_to_layout`,
-method will cut and arrange all of the data within the RDD to the layout within
-the metadata; giving us a new class instance of :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`.
+method will cut and arrange the rasters in the RDD to the layout within the
+metadata; giving us a new class instance of :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`.
 
 Having this new class will allow us to perform the final steps of our ingest.
 While the tiles are now in the correct layout, their CRS is not what we want.
-It would be great if we could make a tile server from our ingested
-data, but to do that we'll have to change the projection.
+It would be great if we could make a tile server from our ingested data, but to
+do that we'll have to change the projection.
 :meth:`~geopysaprk.geotrellis.rdd.TiledRasterRDD.reproject` will be able to
 help with this. This is also where ``ZOOM`` comes into play since it's at this
 point where we need to format our data to have a ``ZoomedLayoutScheme``. Thus,
-we select Web Mercator as our new CRS and we now have a new instance of
-``TiledRasterRDD`` that is in the correct projection and layout.
+we select Web Mercator as our new CRS and we now have a new ``TiledRasterRDD``
+that is in the correct projection and layout.
 
 
 Pyramiding the Data
@@ -153,7 +158,7 @@ Pyramiding the Data
 
 Now it's time to pyramid! Using our reprojected data, we can create 12 new
 instances of ``TiledRasterRDD``. Each instance represents the data within the
-RDD at a specific zoom level. **Note**: the ``start_zoom`` is always the larger
+RDD at a specific zoom level. **Note**: The ``start_zoom`` is always the larger
 number when pyramiding.
 
 
