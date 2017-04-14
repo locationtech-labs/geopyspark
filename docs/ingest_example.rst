@@ -8,7 +8,6 @@ The Code
 ========
 
 .. code-block:: python
-   :name: ingest_block
    :linenos:
 
    from geopyspark.geopycontext import GeoPyContext
