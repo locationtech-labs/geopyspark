@@ -113,31 +113,31 @@ MONTHS = 'months'
 YEARS = 'years'
 
 
-"""Neighborhood type: Annulus."""
+"""Neighborhood type."""
 ANNULUS = 'annulus'
 
-"""Neighborhood type: Nesw."""
+"""Neighborhood type."""
 NESW = 'nesw'
 
-"""Neighborhood type: Square."""
+"""Neighborhood type."""
 SQUARE = 'square'
 
-"""Neighborhood type: Wedge."""
+"""Neighborhood type."""
 WEDGE = 'wedge'
 
-"""Focal operation type: Sum."""
+"""Focal operation type."""
 SUM = 'Sum'
 
-"""Focal operation type: Mean."""
+"""Focal operation type."""
 MEAN = 'Mean'
 
-"""Focal operation type: Aspect."""
+"""Focal operation type"""
 ASPECT = 'Aspect'
 
-"""Focal operation type: Slope."""
+"""Focal operation type."""
 SLOPE = 'Slope'
 
-"""Focal operation type: Standard Deviation."""
+"""Focal operation type."""
 STANDARDDEVIATION = 'StandardDeviation'
 
 OPERATIONS = [
