@@ -8,7 +8,6 @@ The Code
 ========
 
 .. code-block:: python
-   :linenos:
 
    from geopyspark.geopycontext import GeoPyContext
    from geopyspark.geotrellis.constants import SPATIAL, ZOOM
