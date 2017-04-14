@@ -91,7 +91,7 @@ Example::
    projected_extent = {'extent': extent, 'epsg': epsg}
 
    // using proj4
-   proj4 =
+   proj4 = "+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs "
    projected_extent = {'extent': extent, 'proj4': proj4}
 
 
