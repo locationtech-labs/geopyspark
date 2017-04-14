@@ -448,8 +448,7 @@ def query(geopysc,
 
     return TiledRasterRDD(geopysc, rdd_type, srdd)
 
-def write(geopysc,
-          uri,
+def write(uri,
           layer_name,
           tiled_raster_rdd,
           index_strategy=ZORDER,
@@ -574,7 +573,7 @@ def write(geopysc,
     else:
         options = {}
 
-    _construct_catalog(geopysc, uri, options)
+    _construct_catalog(tiled_raster_rdd.geopysc, uri, options)
 
     cached = _mapped_cached[uri]
 
