@@ -11,6 +11,7 @@ Welcome to GeoPySpark's documentation!
    :caption: Contents:
 
    core_concepts
+   ingest_example
    geopyspark
    geopyspark.geotrellis
 
