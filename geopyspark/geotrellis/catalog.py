@@ -378,9 +378,6 @@ def write(uri,
     """Writes a tile layer to a specified destination.
 
     Args:
-        geopysc (GeoPyContext): The GeoPyContext being used this session.
-        rdd_type (str): What the spatial type of the geotiffs are. This is
-            represented by the constants: `SPATIAL` and `SPACETIME`.
         uri (str): The Uniform Resource Identifier used to point towards the desired location for
             the tile layer to written to. The shape of this string varies depending on backend.
         layer_name (str): The name of the new, tile layer.
