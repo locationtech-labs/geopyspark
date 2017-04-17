@@ -121,7 +121,7 @@ class TiledRasterRDD(object):
 
     def to_numpy_rdd(self):
         result = self.srdd.toAvroRDD()
-        ser = self.geopysc.create_tuple_serializer(result._2(), value_type="Tile")
+        ser = self.geopysc.create_tuple_serializer(result._2(), value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
 
     def reproject(self, target_crs, extent=None, layout=None, scheme=FLOAT, tile_size=256,
