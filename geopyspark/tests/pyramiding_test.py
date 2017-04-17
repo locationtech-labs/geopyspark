@@ -2,6 +2,7 @@ import os
 import unittest
 import rasterio
 import numpy as np
+import pytest
 
 from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.geotrellis.rdd import RasterRDD
@@ -10,22 +11,27 @@ from geopyspark.tests.base_test_class import BaseTestClass
 
 class PyramidingTest(BaseTestClass):
 
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        BaseTestClass.geopysc.pysc._gateway.close()
+
     def test_correct_base(self):
-        arr = np.zeros((1, 256, 256))
+        arr = np.zeros((1, 16, 16))
         epsg_code = 3857
         extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 10.0, 'ymax': 10.0}
 
         tile = {'data': arr, 'no_data_value': False}
         projected_extent = {'extent': extent, 'epsg': epsg_code}
 
-        rdd = self.geopysc.pysc.parallelize([(projected_extent, tile)])
+        rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
 
         tile_layout = {
-            'tileCols': 256,
-            'tileRows': 256,
-            'layoutCols': 4096,
-            'layoutRows': 4096
+            'tileCols': 16,
+            'tileRows': 16,
+            'layoutCols': 32,
+            'layoutRows': 32
         }
 
         new_extent = {
@@ -38,7 +44,7 @@ class PyramidingTest(BaseTestClass):
         metadata = raster_rdd.collect_metadata(extent=new_extent, layout=tile_layout)
         laid_out = raster_rdd.tile_to_layout(metadata)
 
-        result = laid_out.pyramid(start_zoom=12, end_zoom=1)
+        result = laid_out.pyramid(start_zoom=5, end_zoom=1)
 
         self.pyramid_building_check(result)
 
@@ -50,14 +56,13 @@ class PyramidingTest(BaseTestClass):
         tile = {'data': arr, 'no_data_value': False}
         projected_extent = {'extent': extent, 'epsg': epsg_code}
 
-        rdd = self.geopysc.pysc.parallelize([(projected_extent, tile)])
+        rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
 
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
 
         metadata = raster_rdd.collect_metadata(tile_size=250)
         laid_out = raster_rdd.tile_to_layout(metadata)
 
-        import pytest
         with pytest.raises(ValueError):
             laid_out.pyramid(start_zoom=12, end_zoom=1)
 

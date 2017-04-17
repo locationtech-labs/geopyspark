@@ -1,6 +1,7 @@
 import unittest
 from os import walk, path
 import rasterio
+import pytest
 
 from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
@@ -43,13 +44,16 @@ class GeoTiffIOTest(object):
 
 class Multiband(GeoTiffIOTest, BaseTestClass):
     dir_path = geotiff_test_path("one-month-tiles-multiband/")
-    gps = BaseTestClass.geopysc
-    result = get(gps, SPATIAL, dir_path)
+    result = get(BaseTestClass.geopysc, SPATIAL, dir_path)
+
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        BaseTestClass.geopysc.pysc._gateway.close()
 
     def test_to_numpy_rdd(self, option=None):
         pyrdd = self.result.to_numpy_rdd()
-        recs = pyrdd.collect()
-        (key,tile) = recs[0]
+        (key, tile) = pyrdd.first()
         self.assertTrue('extent' in key.keys())
         self.assertEqual(tile['data'].shape, (2, 512, 512))
 

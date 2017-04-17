@@ -1,55 +1,34 @@
 import os
 import unittest
 import rasterio
+import pytest
 
-from geopyspark.geotrellis.rdd import RasterRDD
 from geopyspark.geotrellis.constants import SPATIAL
-from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-from geopyspark.geotrellis.geotiff_rdd import get
+from geopyspark.geotrellis.rdd import RasterRDD
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
-check_directory()
-
-
 class TileLayerMetadataTest(BaseTestClass):
-    dir_path = geotiff_test_path("all-ones.tif")
+    extent = BaseTestClass.extent
+    layout = BaseTestClass.layout
+    rdd = BaseTestClass.rdd
+    projected_extent = BaseTestClass.projected_extent
+    cols = BaseTestClass.cols
 
-    rdd = get(BaseTestClass.geopysc, SPATIAL, dir_path)
-    value = rdd.to_numpy_rdd().collect()[0]
-
-    projected_extent = value[0]
-    extent = projected_extent['extent']
-
-    (_, rows, cols) = value[1]['data'].shape
-
-    layout = {
-        "layoutCols": 1,
-        "layoutRows": 1,
-        "tileCols": cols,
-        "tileRows": rows
-    }
-
-    actual = [[extent, layout], extent]
-
-    def check_results(self, actual, expected):
-        if isinstance(actual, list) and isinstance(expected, list):
-            for x,y in zip(actual, expected):
-                self.check_results(x, y)
-        elif isinstance(actual, dict) and isinstance(expected, dict):
-            self.assertDictEqual(actual, expected)
-        else:
-            self.assertEqual(actual, expected)
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        BaseTestClass.geopysc.pysc._gateway.close()
 
     def test_collection_avro_rdd(self):
         result = self.rdd.collect_metadata(self.extent, self.layout)
 
-        expected = [[result['layoutDefinition']['extent'],
-                     result['layoutDefinition']['tileLayout']],
-                    result['extent']]
+        self.assertDictEqual(result['extent'], self.extent)
+        self.assertDictEqual(result['layoutDefinition']['extent'], self.extent)
+        self.assertDictEqual(result['layoutDefinition']['tileLayout'], self.layout)
 
-        self.check_results(self.actual, expected)
-
+    @pytest.mark.skipif('TRAVIS' in os.environ,
+                        reason="Test causes memory errors on Travis")
     def test_collection_python_rdd(self):
         data = rasterio.open(self.dir_path)
         tile_dict = {'data': data.read(), 'no_data_value': data.nodata}
@@ -59,20 +38,16 @@ class TileLayerMetadataTest(BaseTestClass):
 
         result = raster_rdd.collect_metadata(extent=self.extent, layout=self.layout)
 
-        expected = [[result['layoutDefinition']['extent'],
-                     result['layoutDefinition']['tileLayout']],
-                    result['extent']]
-
-        self.check_results(self.actual, expected)
+        self.assertDictEqual(result['extent'], self.extent)
+        self.assertDictEqual(result['layoutDefinition']['extent'], self.extent)
+        self.assertDictEqual(result['layoutDefinition']['tileLayout'], self.layout)
 
     def test_collection_floating(self):
         result = self.rdd.collect_metadata(tile_size=self.cols)
 
-        expected = [[result['layoutDefinition']['extent'],
-                     result['layoutDefinition']['tileLayout']],
-                    result['extent']]
-
-        self.check_results(self.actual, expected)
+        self.assertDictEqual(result['extent'], self.extent)
+        self.assertDictEqual(result['layoutDefinition']['extent'], self.extent)
+        self.assertDictEqual(result['layoutDefinition']['tileLayout'], self.layout)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,6 @@
 import unittest
+import os
+import pytest
 
 from shapely.geometry import box
 
@@ -24,6 +26,11 @@ class CatalogTest(BaseTestClass):
     uri = "file://{}".format(dir_path)
     layer_name = "catalog-test"
 
+    @pytest.fixture(scope='class', autouse=True)
+    def tearDown(self):
+        yield
+        BaseTestClass.geopysc.pysc._gateway.close()
+
     def test_read(self):
         for x in range(11, 0, -1):
             actual_layer = read(BaseTestClass.geopysc, SPATIAL, self.uri, self.layer_name, x)
@@ -46,8 +53,7 @@ class CatalogTest(BaseTestClass):
         intersection = box(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520)
         queried = query(BaseTestClass.geopysc, SPATIAL, self.uri, self.layer_name, 11, intersection)
 
-        self.assertEqual(queried.to_numpy_rdd().count(), 4)
-
+        self.assertDictEqual(queried.to_numpy_rdd().first()[0], {'col': 1450, 'row': 996})
 
 if __name__ == "__main__":
     unittest.main()
