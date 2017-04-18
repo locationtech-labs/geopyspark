@@ -1,3 +1,5 @@
+.. _ingest_example:
+
 Ingesting Data Using GeoPySpark
 ********************************
 

@@ -12,6 +12,7 @@ Welcome to GeoPySpark's documentation!
 
    core_concepts
    ingest_example
+   tile_server_example
    geopyspark
    geopyspark.geotrellis
 
