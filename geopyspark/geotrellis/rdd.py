@@ -13,6 +13,8 @@ from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
 class RasterRDD(object):
     """Holds an RDD of GeoTrellis rasters"""
 
+    __slots__ = ['geopysc', 'rdd_type', 'srdd']
+
     def __init__(self, geopysc, rdd_type, srdd):
         self.geopysc = geopysc
         self.rdd_type = rdd_type
@@ -85,6 +87,8 @@ class RasterRDD(object):
 
 class TiledRasterRDD(object):
     """Holds an RDD of GeoTrellis tile layer"""
+
+    __slots__ = ['geopysc', 'rdd_type', 'srdd']
 
     def __init__(self, geopysc, rdd_type, srdd):
         self.geopysc = geopysc
