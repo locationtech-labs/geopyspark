@@ -15,6 +15,23 @@ from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              SPATIAL
                                             )
 
+def _reclassify(srdd, value_map, data_type):
+    new_dict = {}
+
+    for key, value in value_map.items():
+        if not isinstance(key, data_type):
+            val = value_map[key]
+            for k in key:
+                new_dict[k] = val
+        else:
+            new_dict[key] = value
+
+    if data_type is int:
+        return srdd.reclassify(new_dict)
+    else:
+        return srdd.reclassifyDouble(new_dict)
+
+
 class RasterRDD(object):
     """A RDD that contains GeoTrellis rasters.
 
@@ -172,6 +189,10 @@ class RasterRDD(object):
         assert(resample_method in RESAMPLE_METHODS)
         srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+
+    def reclassify(self, value_map, data_type):
+        srdd = _reclassify(self.srdd, value_map, data_type)
+        return RasterRDD(self.geopysc, self.rdd_type, srdd)
 
 
 class TiledRasterRDD(object):
@@ -411,4 +432,8 @@ class TiledRasterRDD(object):
         wkts = [shapely.wkt.dumps(g) for g in geometries]
         srdd = self.srdd.costDistance(self.geopysc.sc, wkts, max_distance)
 
+        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+
+    def reclassify(self, value_map, data_type):
+        srdd = _reclassify(self.srdd, value_map, data_type)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
