@@ -6,6 +6,8 @@ performing operations.
 import json
 import shapely.wkt
 
+from shapely.geometry import Polygon
+from shapely.wkt import dumps
 from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              OPERATIONS,
                                              NEIGHBORHOODS,
@@ -90,6 +92,28 @@ class RasterRDD(object):
             srdd = \
                     geopysc._jvm.geopyspark.geotrellis.TemporalRasterRDD.fromAvroEncodedRDD(
                         reserialized_rdd._jrdd, schema)
+
+        return cls(geopysc, rdd_type, srdd)
+
+    @classmethod
+    def rasterize(cls, geopysc, rdd_type, geometry, extent, crs, cols, rows,
+                  fill_value, instant=None):
+
+        if isinstance(geometry, str):
+            pass
+        elif isinstance(geometry, Polygon):
+            geometry = dumps(geometry)
+        else:
+            raise TypeError(geometry, "Needs to be either a Polygon or a string")
+
+        if instant and rdd_type != SPATIAL:
+            srdd = geopysc._jvm.geopyspark.geotrellis.TemporalRasterRDD.rasterize(
+                geopysc.sc, geometry, extent, crs, instant, cols, rows, fill_value)
+        elif not instant and rdd_type == SPATIAL:
+            srdd = geopysc._jvm.geopyspark.geotrellis.ProjectedRasterRDD.rasterize(
+                geopysc.sc, geometry, extent, crs, cols, rows, fill_value)
+        else:
+            raise TypeError("Abiguous inputs. Given ", instant, " but rdd_type is SPATIAL")
 
         return cls(geopysc, rdd_type, srdd)
 
