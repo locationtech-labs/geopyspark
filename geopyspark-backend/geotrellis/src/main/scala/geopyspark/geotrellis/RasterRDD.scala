@@ -5,7 +5,9 @@ import geopyspark.geotrellis.GeoTrellisUtils._
 import geotrellis.util._
 import geotrellis.proj4._
 import geotrellis.vector._
+import geotrellis.vector.io.wkt.WKT
 import geotrellis.raster._
+import geotrellis.raster.rasterize._
 import geotrellis.raster.resample._
 import geotrellis.raster.render._
 import geotrellis.spark._
@@ -241,6 +243,23 @@ object ProjectedRasterRDD {
 
   def apply(rdd: RDD[(ProjectedExtent, MultibandTile)]): ProjectedRasterRDD =
     new ProjectedRasterRDD(rdd)
+
+  def rasterize(
+    sc: SparkContext,
+    geometryString: String,
+    extent: java.util.Map[String, Double],
+    crs: String,
+    cols: Int,
+    rows: Int,
+    fillValue: Int
+  ): RasterRDD[ProjectedExtent] = {
+    val rasterExtent = RasterExtent(extent.toExtent, cols, rows)
+    val tile = Rasterizer.rasterizeWithValue(WKT.read(geometryString), rasterExtent, fillValue)
+
+    val projectedExtent = ProjectedExtent(rasterExtent.extent, TileRDD.getCRS(crs).get)
+
+    ProjectedRasterRDD(sc.parallelize(Array((projectedExtent, MultibandTile(tile)))))
+  }
 }
 
 object TemporalRasterRDD {
@@ -249,4 +268,23 @@ object TemporalRasterRDD {
 
   def apply(rdd: RDD[(TemporalProjectedExtent, MultibandTile)]): TemporalRasterRDD =
     new TemporalRasterRDD(rdd)
+
+  def rasterize(
+    sc: SparkContext,
+    geometryString: String,
+    extent: java.util.Map[String, Double],
+    crs: String,
+    instant: Int,
+    cols: Int,
+    rows: Int,
+    fillValue: Int
+  ): RasterRDD[TemporalProjectedExtent] = {
+    val rasterExtent = RasterExtent(extent.toExtent, cols, rows)
+    val tile = Rasterizer.rasterizeWithValue(WKT.read(geometryString), rasterExtent, fillValue)
+
+    val temporalExtent =
+      TemporalProjectedExtent(rasterExtent.extent, TileRDD.getCRS(crs).get, instant.toInt)
+
+    TemporalRasterRDD(sc.parallelize(Array((temporalExtent, MultibandTile(tile)))))
+  }
 }
