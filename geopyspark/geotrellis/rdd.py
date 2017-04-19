@@ -98,6 +98,36 @@ class RasterRDD(object):
     @classmethod
     def rasterize(cls, geopysc, rdd_type, geometry, extent, crs, cols, rows,
                   fill_value, instant=None):
+        """Creates a RasterRDD from a shapely geomety.
+
+        Args:
+            geopysc (GeoPyContext): The GeoPyContext being used this session.
+            rdd_type (str): What the spatial type of the geotiffs are. This is
+                represented by the constants: `SPATIAL` and `SPACETIME`.
+            geometry (str, Polygon): The value to be turned into a raster. Can either be a
+                string or a ``Polygon``. If the value is a string, it must be the WKT string,
+                geometry format.
+            extent (:ref:`extent`): The ``extent`` of the new raster.
+            crs (str): The CRS the new raster should be in.
+            cols (int): The number of cols the new raster should have.
+            rows (int): The number of rows the new raster should have.
+            fill_value (int): The value to fill the raster with.
+
+                Note:
+                    Only the area the raster intersects with the ``extent`` will have this value.
+                    Any other area will be filled with GeoTrellis' NoData value for ``int`` which
+                    is represented in GeoPySpark as the constant, ``NODATAINT``.
+            instant(int, optional): Optional if the data has no time component (ie is ``SPATIAL``).
+                Otherwise, it is requires and represents the time stamp of the data.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.RasterRDD`
+
+        Raises:
+            TypeError: If ``geometry`` is not a ``str`` or a ``Polygon``; or if there was a
+                mistach in inputs. Mainly, setting the ``rdd_type`` as ``SPATIAL`` but also setting
+                ``instant``.
+        """
 
         if isinstance(geometry, str):
             pass
