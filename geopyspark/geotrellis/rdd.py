@@ -191,6 +191,20 @@ class RasterRDD(object):
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
     def reclassify(self, value_map, data_type):
+        """Changes the cell values of each raster to a new value.
+
+        Args:
+            value_map (dict): A ``dict`` that contains the value(s) to be changed and what they
+                should become. The ``key`` is the value that is to be reclassified. It can either
+                be a single value, or a collection of values (ie. a ``tuple``, ``range``, etc).
+                The ``value`` of the ``dict`` is then what the ``key`` should be turned into.
+            data_type (type): The type of the values within the rasters. Can either be ``int`` or
+                ``float``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.RasterRDD`
+        """
+
         srdd = _reclassify(self.srdd, value_map, data_type)
         return RasterRDD(self.geopysc, self.rdd_type, srdd)
 
@@ -435,5 +449,19 @@ class TiledRasterRDD(object):
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
     def reclassify(self, value_map, data_type):
+        """Changes the cell values of each raster to a new value.
+
+        Args:
+            value_map (dict): A ``dict`` that contains the value(s) to be changed and what they
+                should become. The ``key`` is the value that is to be reclassified. It can either
+                be a single value or a collection of values (ie. a ``tuple``, ``range``, etc).
+                The ``value``, of the ``dict`` is then what the ``key`` should be turned into.
+            data_type (type): The type of the values within the rasters. Can either be ``int`` or
+                ``float``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+        """
+
         srdd = _reclassify(self.srdd, value_map, data_type)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
