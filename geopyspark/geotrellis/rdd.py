@@ -201,6 +201,13 @@ class RasterRDD(object):
             data_type (type): The type of the values within the rasters. Can either be ``int`` or
                 ``float``.
 
+        NOTE:
+            Simbolizing a NoData value differs depending on if the ``data_type`` is an ``int`` or a
+            ``float``. For an ``int``, the constant ``NODATAINT`` can be used which represents the
+            NoData value for ``int`` in GeoTrellis. If ``float``, then ``math.nan`` is used to
+            represent NoData. **math.nan is only available in python 3.5 and later, so that must be
+            the python version being used in order to do a reclassify on NoData, float data**.
+
         Returns:
             :class:`~geopyspark.geotrellis.rdd.RasterRDD`
         """
@@ -458,6 +465,13 @@ class TiledRasterRDD(object):
                 The ``value``, of the ``dict`` is then what the ``key`` should be turned into.
             data_type (type): The type of the values within the rasters. Can either be ``int`` or
                 ``float``.
+
+        NOTE:
+            Simbolizing a NoData value differs depending on if the ``data_type`` is an ``int`` or a
+            ``float``. For an ``int``, the constant ``NODATAINT`` can be used which represents the
+            NoData value for ``int`` in GeoTrellis. If ``float``, then ``math.nan`` is used to
+            represent NoData. **math.nan is only available in python 3.5 and later, so that must be
+            the python version being used in order to do a reclassify on NoData, float data**.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`

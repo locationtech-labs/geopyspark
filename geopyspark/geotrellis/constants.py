@@ -161,4 +161,5 @@ NEIGHBORHOODS = [
     SLOPE
 ]
 
+"""The NoData value for ints in GeoTrellis."""
 NODATAINT = -2147483648
