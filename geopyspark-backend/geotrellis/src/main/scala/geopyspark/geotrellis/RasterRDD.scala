@@ -7,6 +7,7 @@ import geotrellis.proj4._
 import geotrellis.vector._
 import geotrellis.raster._
 import geotrellis.raster.resample._
+import geotrellis.raster.render._
 import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.json._
@@ -56,6 +57,32 @@ abstract class TileRDD[K: ClassTag] {
   def rdd: RDD[(K, MultibandTile)]
   def keyClass: Class[_] = classTag[K].runtimeClass
   def keyClassName: String = keyClass.getName
+
+  def reclassify(
+    intMap: java.util.Map[Int, Int]
+  ): TileRDD[_] = {
+    val scalaMap = intMap.asScala.toMap
+
+    reclassify(scalaMap.keySet, BreakMap(scalaMap))
+  }
+
+  def reclassifyDouble(
+    doubleMap: java.util.Map[Double, Double]
+  ): TileRDD[_] = {
+    val scalaMap = doubleMap.asScala.toMap
+
+    reclassifyDouble(scalaMap.keySet, BreakMap(scalaMap))
+  }
+
+  protected def reclassify(
+    keySet: Set[Int],
+    breakMap: BreakMap[Int, Int]
+  ): TileRDD[_]
+
+  protected def reclassifyDouble(
+    keySet: Set[Double],
+    breakMap: BreakMap[Double, Double]
+  ): TileRDD[_]
 }
 
 /**
@@ -129,7 +156,49 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
     new ProjectedRasterRDD(rdd.reproject(crs, resample))
   }
 
+  def reclassify(
+    keySet: Set[Int],
+    breakMap: BreakMap[Int, Int]
+  ): RasterRDD[ProjectedExtent] = {
+    val reclassifiedRDD = {
+      rdd.map {
+        case (k: ProjectedExtent, m: MultibandTile) =>
+        val count = m.bandCount
+        val tiles = Array.ofDim[Tile](count)
+
+        for (x <- 0 until count) {
+          val band = m.band(x)
+          tiles(x) = band.map(i => if (keySet.contains(i)) breakMap.apply(i) else i)
+        }
+
+        (k, MultibandTile(tiles))
+      }
+    }
+
+    ProjectedRasterRDD(reclassifiedRDD)
+  }
+
+  def reclassifyDouble(
+    keySet: Set[Double],
+    breakMap: BreakMap[Double, Double]
+  ): RasterRDD[ProjectedExtent] = {
+    val reclassifiedRDD =
+      rdd.map { case(k: ProjectedExtent, multibandTile: MultibandTile) =>
+        val count = multibandTile.bandCount
+        val tiles = Array.ofDim[Tile](count)
+
+        for (x <- 0 until count) {
+          val band = multibandTile.band(x)
+          tiles(x) = band.mapDouble(i => if (keySet.contains(i)) breakMap.apply(i) else i)
+        }
+
+        (k, MultibandTile(tiles))
+      }
+
+    ProjectedRasterRDD(reclassifiedRDD)
+  }
 }
+
 
 class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) extends RasterRDD[TemporalProjectedExtent] {
 
@@ -163,6 +232,46 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
     val crs = TileRDD.getCRS(targetCRS).get
     val resample = TileRDD.getResampleMethod(resampleMethod)
     new TemporalRasterRDD(rdd.reproject(crs, resample))
+  }
+
+  def reclassify(
+    keySet: Set[Int],
+    breakMap: BreakMap[Int, Int]
+  ): RasterRDD[TemporalProjectedExtent] = {
+    val reclassifiedRDD =
+      rdd.map { case(k: TemporalProjectedExtent, multibandTile: MultibandTile) =>
+        val count = multibandTile.bandCount
+        val tiles = Array.ofDim[Tile](count)
+
+        for (x <- 0 until count) {
+          val band = multibandTile.band(x)
+          tiles(x) = band.map(i => if (keySet.contains(i)) breakMap.apply(i) else i)
+        }
+
+        (k, MultibandTile(tiles))
+      }
+
+    TemporalRasterRDD(reclassifiedRDD)
+  }
+
+  def reclassifyDouble(
+    keySet: Set[Double],
+    breakMap: BreakMap[Double, Double]
+  ): RasterRDD[TemporalProjectedExtent] = {
+    val reclassifiedRDD =
+      rdd.map { case(k: TemporalProjectedExtent, multibandTile: MultibandTile) =>
+        val count = multibandTile.bandCount
+        val tiles = Array.ofDim[Tile](count)
+
+        for (x <- 0 until count) {
+          val band = multibandTile.band(x)
+          tiles(x) = band.mapDouble(i => if (keySet.contains(i)) breakMap.apply(i) else i)
+        }
+
+        (k, MultibandTile(tiles))
+      }
+
+    TemporalRasterRDD(reclassifiedRDD)
   }
 }
 
