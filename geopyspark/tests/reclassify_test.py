@@ -1,9 +1,10 @@
+import sys
 import numpy as np
 import pytest
 import unittest
 
 from geopyspark.geotrellis.rdd import RasterRDD
-from geopyspark.geotrellis.constants import SPATIAL
+from geopyspark.geotrellis.constants import SPATIAL, NODATAINT
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -93,6 +94,40 @@ class ReclassifyTest(BaseTestClass):
                              [[20, 20, 20, 20]]], dtype=int)
 
         self.assertTrue((result == expected).all())
+
+    def test_no_data_ints(self):
+        arr = np.zeros((1, 16, 16))
+        tile = {'data': arr, 'no_data_value': NODATAINT}
+
+        rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+
+        value_map = {0: NODATAINT}
+
+        result = raster_rdd.reclassify(value_map, int).to_numpy_rdd().first()[1]['data']
+
+        self.assertTrue((result == NODATAINT).all())
+
+    @pytest.mark.skipif(sys.version_info[:3][1] < 5,
+                        reason="math.nan was not introduced unitl 3.5")
+    def test_no_data_floats(self):
+        import math
+
+        arr = np.array([[[0.0, 0.0, 0.0, 0.0],
+                         [0.0, 0.0, 0.0, 0.0],
+                         [0.0, 0.0, 0.0, 0.0],
+                         [0.0, 0.0, 0.0, 0.0]]], dtype=float)
+        tile = {'data': arr, 'no_data_value': math.nan}
+
+        rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+
+        value_map = {0.0: math.nan}
+
+        result = raster_rdd.reclassify(value_map, float).to_numpy_rdd().first()[1]['data']
+
+        for x in list(result.flatten()):
+            self.assertTrue(math.isnan(x))
 
 
 if __name__ == "__main__":
