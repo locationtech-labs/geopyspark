@@ -1,0 +1,3 @@
+itsdangerous==0.24
+Flask==0.12.1
+Flask-Cors==3.0.2

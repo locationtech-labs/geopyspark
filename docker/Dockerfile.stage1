@@ -1,5 +1,6 @@
 FROM quay.io/geodocker/jupyter:4
 
+# Install GDAL, GeoPySpark, &c.
 COPY archives/geotrellis-backend-assembly-0.1.0.jar /blobs/
 COPY archives/gdal-and-friends.tar.gz /blobs/
 COPY archives/geopyspark-and-friends.tar.gz /blobs/
@@ -8,16 +9,24 @@ COPY scripts/install-blobs.sh /scripts/
 COPY kernels/local/kernel.json /usr/local/share/jupyter/kernels/pyspark/
 COPY kernels/yarn/kernel.json /usr/local/share/jupyter/kernels/pysparkyarn/
 COPY config/requirements.txt /tmp/requirements.txt
-
 ENV LD_LIBRARY_PATH /home/hadoop/local/gdal/lib
+RUN /scripts/install-blobs.sh
 
-RUN /scripts/install-blobs.sh && \
-    pip3 install --user -r /tmp/requirements.txt && \
+# Install GeoNotebook
+RUN pip3 install --user -r /tmp/requirements.txt && \
     pip3 install --user "https://github.com/OpenGeoscience/ktile/archive/6f134e86f90242c8393fe1912435a5fb99c6256d.zip"
 RUN pip3 install --user "https://github.com/jamesmcclain/geonotebook/archive/feature/geotrellis.zip" && \
     jupyter nbextension enable --py widgetsnbextension && \
     jupyter serverextension enable --py geonotebook && \
     jupyter nbextension enable --py geonotebook
-
 COPY config/geonotebook.ini /home/hadoop/.local/etc/geonotebook.ini
 COPY kernels/geonotebook-local/kernel.json /home/hadoop/.local/share/jupyter/kernels/geonotebook3/kernel.json
+
+# Install tile server
+COPY config/flask-requirements.txt /tmp/flask-requirements.txt
+COPY server/server.py /tmp
+COPY server/local.sh /tmp
+COPY notebooks/Zork.ipynb /home/hadoop
+RUN pip3 install --user -r /tmp/flask-requirements.txt
+
+CMD ["/tmp/local.sh"]
