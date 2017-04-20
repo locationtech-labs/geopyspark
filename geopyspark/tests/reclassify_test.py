@@ -1,4 +1,5 @@
 import sys
+import math
 import numpy as np
 import pytest
 import unittest
@@ -108,21 +109,17 @@ class ReclassifyTest(BaseTestClass):
 
         self.assertTrue((result == NODATAINT).all())
 
-    @pytest.mark.skipif(sys.version_info[:3][1] < 5,
-                        reason="math.nan was not introduced unitl 3.5")
     def test_no_data_floats(self):
-        import math
-
         arr = np.array([[[0.0, 0.0, 0.0, 0.0],
                          [0.0, 0.0, 0.0, 0.0],
                          [0.0, 0.0, 0.0, 0.0],
                          [0.0, 0.0, 0.0, 0.0]]], dtype=float)
-        tile = {'data': arr, 'no_data_value': math.nan}
+        tile = {'data': arr, 'no_data_value': float('nan')}
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
 
-        value_map = {0.0: math.nan}
+        value_map = {0.0: float('nan')}
 
         result = raster_rdd.reclassify(value_map, float).to_numpy_rdd().first()[1]['data']
 
