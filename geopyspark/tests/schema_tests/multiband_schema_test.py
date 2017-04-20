@@ -7,13 +7,9 @@ from pyspark.serializers import AutoBatchedSerializer
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.avroregistry import AvroRegistry
 from geopyspark.tests.base_test_class import BaseTestClass
-from py4j.java_gateway import java_import
 
 
 class MultibandSchemaTest(BaseTestClass):
-    path = "geopyspark.geotrellis.tests.schemas.ArrayMultibandTileWrapper"
-    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
-
     arr = np.array(bytearray([0, 0, 1, 1])).reshape(2, 2)
     no_data = -128
     arr_dict = {'data': arr, 'no_data_value': no_data}
@@ -24,7 +20,7 @@ class MultibandSchemaTest(BaseTestClass):
     multiband_dict = {'data': multiband_tile, 'no_data_value': no_data}
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    mw = BaseTestClass.geopysc.pysc._gateway.jvm.ArrayMultibandTileWrapper
+    mw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.ArrayMultibandTileWrapper
 
     tup = mw.testOut(sc)
     java_rdd = tup._1()

@@ -8,7 +8,6 @@ from pyspark.serializers import AutoBatchedSerializer
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.avroregistry import AvroRegistry
 from geopyspark.tests.base_test_class import BaseTestClass
-from py4j.java_gateway import java_import
 
 
 def decoder(x):
@@ -23,9 +22,6 @@ def encoder(xs):
 
 
 class KeyValueRecordSchemaTest(unittest.TestCase):
-    path = "geopyspark.geotrellis.tests.schemas.KeyValueRecordWrapper"
-    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
-
     extents = [
         {'xmin': 0, 'ymin': 0, 'xmax': 1, 'ymax': 1},
         {'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4},
@@ -44,7 +40,7 @@ class KeyValueRecordSchemaTest(unittest.TestCase):
         (arrs[2], extents[2])
     ]
 
-    ew = BaseTestClass.geopysc._jvm.KeyValueRecordWrapper
+    ew = BaseTestClass.geopysc._jvm.geopyspark.geotrellis.tests.schemas.KeyValueRecordWrapper
 
     tup = ew.testOut(BaseTestClass.geopysc.sc)
     java_rdd = tup._1()

@@ -6,13 +6,9 @@ from pyspark.serializers import AutoBatchedSerializer
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.avroregistry import AvroRegistry
 from geopyspark.tests.base_test_class import BaseTestClass
-from py4j.java_gateway import java_import
 
 
 class ShortTileSchemaTest(BaseTestClass):
-    path = "geopyspark.geotrellis.tests.schemas.ShortArrayTileWrapper"
-    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
-
     tiles = [
         {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -32768},
         {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': -32768},
@@ -20,7 +16,7 @@ class ShortTileSchemaTest(BaseTestClass):
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    tw = BaseTestClass.geopysc.pysc._gateway.jvm.ShortArrayTileWrapper
+    tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.ShortArrayTileWrapper
 
     tup = tw.testOut(sc)
     java_rdd = tup._1()
@@ -48,9 +44,6 @@ class ShortTileSchemaTest(BaseTestClass):
 
 
 class UShortTileSchemaTest(BaseTestClass):
-    path = "geopyspark.geotrellis.tests.schemas.UShortArrayTileWrapper"
-    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
-
     tiles = [
         {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': 0},
         {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': 0},
@@ -58,7 +51,7 @@ class UShortTileSchemaTest(BaseTestClass):
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    tw = BaseTestClass.geopysc.pysc._gateway.jvm.UShortArrayTileWrapper
+    tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.UShortArrayTileWrapper
 
     tup = tw.testOut(sc)
     java_rdd = tup._1()
@@ -86,9 +79,6 @@ class UShortTileSchemaTest(BaseTestClass):
 
 
 class ByteTileSchemaTest(BaseTestClass):
-    path = "geopyspark.geotrellis.tests.schemas.ByteArrayTileWrapper"
-    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
-
     tiles = [
         {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -128},
         {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': -128},
@@ -96,7 +86,7 @@ class ByteTileSchemaTest(BaseTestClass):
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    tw = BaseTestClass.geopysc.pysc._gateway.jvm.ByteArrayTileWrapper
+    tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.ByteArrayTileWrapper
 
     tup = tw.testOut(sc)
     java_rdd = tup._1()
@@ -124,9 +114,6 @@ class ByteTileSchemaTest(BaseTestClass):
 
 
 class UByteTileSchemaTest(BaseTestClass):
-    path = "geopyspark.geotrellis.tests.schemas.UByteArrayTileWrapper"
-    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
-
     tiles = [
         {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': 0},
         {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': 0},
@@ -134,7 +121,7 @@ class UByteTileSchemaTest(BaseTestClass):
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    tw = BaseTestClass.geopysc.pysc._gateway.jvm.UByteArrayTileWrapper
+    tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.UByteArrayTileWrapper
 
     tup = tw.testOut(sc)
     java_rdd = tup._1()
@@ -162,9 +149,6 @@ class UByteTileSchemaTest(BaseTestClass):
 
 
 class IntTileSchemaTest(BaseTestClass):
-    path = "geopyspark.geotrellis.tests.schemas.IntArrayTileWrapper"
-    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
-
     tiles = [
         {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -2147483648},
         {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': -2147483648},
@@ -172,7 +156,7 @@ class IntTileSchemaTest(BaseTestClass):
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    tw = BaseTestClass.geopysc.pysc._gateway.jvm.IntArrayTileWrapper
+    tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.IntArrayTileWrapper
 
     tup = tw.testOut(sc)
     java_rdd = tup._1()
@@ -200,9 +184,6 @@ class IntTileSchemaTest(BaseTestClass):
 
 
 class DoubleTileSchemaTest(BaseTestClass):
-    path = "geopyspark.geotrellis.tests.schemas.DoubleArrayTileWrapper"
-    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
-
     tiles = [
         {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': True},
         {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': True},
@@ -210,7 +191,7 @@ class DoubleTileSchemaTest(BaseTestClass):
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    tw = BaseTestClass.geopysc.pysc._gateway.jvm.DoubleArrayTileWrapper
+    tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.DoubleArrayTileWrapper
 
     tup = tw.testOut(sc)
     java_rdd = tup._1()
@@ -238,9 +219,6 @@ class DoubleTileSchemaTest(BaseTestClass):
 
 
 class FloatTileSchemaTest(BaseTestClass):
-    path = "geopyspark.geotrellis.tests.schemas.FloatArrayTileWrapper"
-    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
-
     tiles = [
         {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': True},
         {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': True},
@@ -248,7 +226,7 @@ class FloatTileSchemaTest(BaseTestClass):
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    tw = BaseTestClass.geopysc.pysc._gateway.jvm.FloatArrayTileWrapper
+    tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.FloatArrayTileWrapper
 
     tup = tw.testOut(sc)
     java_rdd = tup._1()

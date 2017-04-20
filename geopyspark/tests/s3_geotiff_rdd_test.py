@@ -7,7 +7,6 @@ from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.geotiff_rdd import get
 from geopyspark.tests.base_test_class import BaseTestClass
-from py4j.java_gateway import java_import
 
 
 check_directory()
@@ -45,10 +44,7 @@ class S3GeoTiffIOTest(object):
 
 
 class Multiband(S3GeoTiffIOTest, BaseTestClass):
-    java_import(BaseTestClass.geopysc._jvm,
-    "geopyspark.geotrellis.testkit.MockS3ClientWrapper")
-
-    mock_wrapper = BaseTestClass.geopysc._jvm.MockS3ClientWrapper
+    mock_wrapper = BaseTestClass.geopysc._jvm.geopyspark.geotrellis.testkit.MockS3ClientWrapper
     client = mock_wrapper.mockClient()
 
     key = "one-month-tiles-multiband/result.tif"

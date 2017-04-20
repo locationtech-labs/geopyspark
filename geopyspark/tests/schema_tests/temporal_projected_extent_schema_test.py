@@ -5,20 +5,16 @@ from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.tests.base_test_class import BaseTestClass
-from py4j.java_gateway import java_import
 
 
 class TemporalProjectedExtentSchemaTest(BaseTestClass):
-    path = "geopyspark.geotrellis.tests.schemas.TemporalProjectedExtentWrapper"
-    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
-
     expected_tpextents = [
         {'epsg': 2004, 'extent': {'xmax': 1.0, 'xmin': 0.0, 'ymax': 1.0, 'ymin': 0.0}, 'instant': 0, 'proj4': None},
         {'epsg': 2004, 'extent': {'xmax': 3.0, 'xmin': 1.0, 'ymax': 4.0, 'ymin': 2.0}, 'instant': 1, 'proj4': None},
         {'epsg': 2004, 'extent': {'xmax': 7.0, 'xmin': 5.0, 'ymax': 8.0, 'ymin': 6.0}, 'instant': 2, 'proj4': None}]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    ew = BaseTestClass.geopysc.pysc._gateway.jvm.TemporalProjectedExtentWrapper
+    ew = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.TemporalProjectedExtentWrapper
 
     tup = ew.testOut(sc)
     java_rdd = tup._1()

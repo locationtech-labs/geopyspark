@@ -3,19 +3,15 @@ import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
-from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
 class SpatialKeySchemaTest(BaseTestClass):
-    path = "geopyspark.geotrellis.tests.schemas.SpatialKeyWrapper"
-    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
-
     expected_keys = {'col': 7, 'row': 3}
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    ew = BaseTestClass.geopysc.pysc._gateway.jvm.SpatialKeyWrapper
+    ew = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.SpatialKeyWrapper
 
     tup = ew.testOut(sc)
     java_rdd = tup._1()
@@ -43,9 +39,6 @@ class SpatialKeySchemaTest(BaseTestClass):
 
 
 class SpaceTimeKeySchemaTest(BaseTestClass):
-    path = "geopyspark.geotrellis.tests.schemas.SpaceTimeKeyWrapper"
-    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
-
     expected_keys = [
         {'col': 7, 'row': 3, 'instant': 5},
         {'col': 9, 'row': 4, 'instant': 10},
@@ -53,7 +46,7 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    ew = BaseTestClass.geopysc.pysc._gateway.jvm.SpaceTimeKeyWrapper
+    ew = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.SpaceTimeKeyWrapper
 
     tup = ew.testOut(sc)
     java_rdd = tup._1()

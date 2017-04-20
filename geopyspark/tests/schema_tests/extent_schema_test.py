@@ -3,16 +3,12 @@ import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
-from py4j.java_gateway import java_import
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
 class ExtentSchemaTest(BaseTestClass):
-    path = "geopyspark.geotrellis.tests.schemas.ExtentWrapper"
-    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
-
-    ew = BaseTestClass.geopysc._jvm.ExtentWrapper
+    ew = BaseTestClass.geopysc._jvm.geopyspark.geotrellis.tests.schemas.ExtentWrapper
 
     tup = ew.testOut(BaseTestClass.geopysc.sc)
     java_rdd = tup._1()
