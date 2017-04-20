@@ -6,7 +6,7 @@ import pytest
 
 from shapely.geometry import Polygon
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis.rdd import RasterRDD
+from geopyspark.geotrellis.rdd import TiledRasterRDD
 from geopyspark.geotrellis.constants import SPATIAL
 
 
@@ -21,14 +21,14 @@ class RasterizeTest(BaseTestClass):
     def test_whole_area(self):
         polygon = Polygon([(0, 11), (11, 11), (11, 0), (0, 0)])
 
-        raster_rdd = RasterRDD.rasterize(BaseTestClass.geopysc,
-                                         SPATIAL,
-                                         polygon,
-                                         self.extent,
-                                         "EPSG:3857",
-                                         11,
-                                         11,
-                                         1)
+        raster_rdd = TiledRasterRDD.rasterize(BaseTestClass.geopysc,
+                                              SPATIAL,
+                                              polygon,
+                                              self.extent,
+                                              "EPSG:3857",
+                                              11,
+                                              11,
+                                              1)
 
         data = raster_rdd.to_numpy_rdd().first()[1]['data']
 

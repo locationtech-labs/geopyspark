@@ -7,6 +7,7 @@ import geotrellis.proj4._
 import geotrellis.vector._
 import geotrellis.vector.io.wkt.WKT
 import geotrellis.raster._
+import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
 import geotrellis.raster.resample.ResampleMethod
 import geotrellis.spark._
@@ -466,6 +467,29 @@ object SpatialTiledRasterRDD {
     rdd: RDD[(SpatialKey, MultibandTile)] with Metadata[TileLayerMetadata[SpatialKey]]
   ): SpatialTiledRasterRDD =
     new SpatialTiledRasterRDD(zoomLevel, rdd)
+
+  def rasterize(
+    sc: SparkContext,
+    geometryString: String,
+    extent: java.util.Map[String, Double],
+    crs: String,
+    cols: Int,
+    rows: Int,
+    fillValue: Int
+  ): TiledRasterRDD[SpatialKey] = {
+    val rasterExtent = RasterExtent(extent.toExtent, cols, rows)
+    val projectedExtent = ProjectedExtent(rasterExtent.extent, TileRDD.getCRS(crs).get)
+
+    val tile = Rasterizer.rasterizeWithValue(WKT.read(geometryString), rasterExtent, fillValue)
+    val rdd = sc.parallelize(Array((projectedExtent, MultibandTile(tile))))
+
+    val tileLayout = TileLayout(1, 1, cols, rows)
+    val layoutDefinition = LayoutDefinition(rasterExtent.extent, tileLayout)
+
+    val metadata = rdd.collectMetadata[SpatialKey](layoutDefinition)
+
+    SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata), metadata))
+  }
 }
 
 object TemporalTiledRasterRDD {
@@ -485,4 +509,28 @@ object TemporalTiledRasterRDD {
     rdd: RDD[(SpaceTimeKey, MultibandTile)] with Metadata[TileLayerMetadata[SpaceTimeKey]]
   ): TemporalTiledRasterRDD =
     new TemporalTiledRasterRDD(zoomLevel, rdd)
+
+  def rasterize(
+    sc: SparkContext,
+    geometryString: String,
+    extent: java.util.Map[String, Double],
+    crs: String,
+    instant: Int,
+    cols: Int,
+    rows: Int,
+    fillValue: Int
+  ): TiledRasterRDD[SpaceTimeKey] = {
+    val rasterExtent = RasterExtent(extent.toExtent, cols, rows)
+    val temporalExtent =
+      TemporalProjectedExtent(rasterExtent.extent, TileRDD.getCRS(crs).get, instant.toInt)
+
+    val tile = Rasterizer.rasterizeWithValue(WKT.read(geometryString), rasterExtent, fillValue)
+    val rdd = sc.parallelize(Array((temporalExtent, MultibandTile(tile))))
+    val tileLayout = TileLayout(1, 1, cols, rows)
+    val layoutDefinition = LayoutDefinition(rasterExtent.extent, tileLayout)
+
+    val metadata = rdd.collectMetadata[SpaceTimeKey](layoutDefinition)
+
+    TemporalTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata), metadata))
+  }
 }
