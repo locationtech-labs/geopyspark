@@ -1,5 +1,7 @@
 GeoPySpark
 ==========
+.. image:: https://travis-ci.org/locationtech-labs/geopyspark.svg?branch=master
+   :target: https://travis-ci.org/locationtech-labs/geopyspark
 
 ``geopyspark`` provides Python bindings for working with geospatial data on `PySpark <http://spark.apache.org/docs/latest/api/python/pyspark.html>`_
 It will provide interfaces into GeoTrellis and GeoMesa LocationTech frameworks.
