@@ -8,10 +8,7 @@ from geopyspark.geotrellis.catalog import read, read_value, query
 from geopyspark.geotrellis.constants import SPATIAL, ZOOM
 from geopyspark.geotrellis.geotiff_rdd import get
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-
-
-check_directory()
+from geopyspark.tests.python_test_utils import geotiff_test_path
 
 
 class CatalogTest(BaseTestClass):
