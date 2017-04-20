@@ -1,8 +1,8 @@
 from setuptools import setup
 import sys
 
-if not sys.version_info[0] >= 3:
-    sys.exit("GeoPySpark Does Not Support Python Versions Before 3.0")
+if sys.version_info < (3, 3):
+    sys.exit("GeoPySpark Does Not Support Python Versions Before 3.3")
 
 setup(
     name='geopyspark',
