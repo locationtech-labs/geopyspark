@@ -237,7 +237,6 @@ class SpatialTiledRasterRDD(
   }
 
   def reclassify(
-    keySet: Set[Int],
     breakMap: BreakMap[Int, Int]
   ): TiledRasterRDD[SpatialKey] = {
     val reclassifiedRDD =
@@ -247,7 +246,7 @@ class SpatialTiledRasterRDD(
 
         for (x <- 0 until count) {
           val band = multibandTile.band(x)
-          tiles(x) = band.map(i => if (keySet.contains(i)) breakMap.apply(i) else i)
+          tiles(x) = band.map(i => breakMap.apply(i))
         }
 
         (k, MultibandTile(tiles))
@@ -257,7 +256,6 @@ class SpatialTiledRasterRDD(
   }
 
   def reclassifyDouble(
-    keySet: Set[Double],
     breakMap: BreakMap[Double, Double]
   ): TiledRasterRDD[SpatialKey] = {
     val reclassifiedRDD =
@@ -267,7 +265,7 @@ class SpatialTiledRasterRDD(
 
         for (x <- 0 until count) {
           val band = multibandTile.band(x)
-          tiles(x) = band.mapDouble(i => if (keySet.contains(i)) breakMap.apply(i) else i)
+          tiles(x) = band.mapDouble(i => breakMap.apply(i))
         }
 
         (k, MultibandTile(tiles))
@@ -396,7 +394,6 @@ class TemporalTiledRasterRDD(
   }
 
   def reclassify(
-    keySet: Set[Int],
     breakMap: BreakMap[Int, Int]
   ): TiledRasterRDD[SpaceTimeKey] = {
     val reclassifiedRDD =
@@ -406,7 +403,7 @@ class TemporalTiledRasterRDD(
 
         for (x <- 0 until count) {
           val band = multibandTile.band(x)
-          tiles(x) = band.map(i => if (keySet.contains(i)) breakMap.apply(i) else i)
+          tiles(x) = band.map(i => breakMap.apply(i))
         }
 
         (k, MultibandTile(tiles))
@@ -416,7 +413,6 @@ class TemporalTiledRasterRDD(
   }
 
   def reclassifyDouble(
-    keySet: Set[Double],
     breakMap: BreakMap[Double, Double]
   ): TiledRasterRDD[SpaceTimeKey] = {
     val reclassifiedRDD =
@@ -426,7 +422,7 @@ class TemporalTiledRasterRDD(
 
         for (x <- 0 until count) {
           val band = multibandTile.band(x)
-          tiles(x) = band.mapDouble(i => if (keySet.contains(i)) breakMap.apply(i) else i)
+          tiles(x) = band.mapDouble(i => breakMap.apply(i))
         }
 
         (k, MultibandTile(tiles))

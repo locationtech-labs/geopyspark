@@ -62,28 +62,36 @@ abstract class TileRDD[K: ClassTag] {
   def keyClassName: String = keyClass.getName
 
   def reclassify(
-    intMap: java.util.Map[Int, Int]
+    intMap: java.util.Map[Int, Int],
+    boundaryType: String
   ): TileRDD[_] = {
     val scalaMap = intMap.asScala.toMap
 
-    reclassify(scalaMap.keySet, BreakMap(scalaMap))
+    val boundary = getBoundary(boundaryType)
+    val mapStrategy = new MapStrategy(boundary, NODATA, NODATA, false)
+    val breakMap = new BreakMap(scalaMap, mapStrategy, { i: Int => isNoData(i) })
+
+    reclassify(breakMap)
   }
 
   def reclassifyDouble(
-    doubleMap: java.util.Map[Double, Double]
+    doubleMap: java.util.Map[Double, Double],
+    boundaryType: String
   ): TileRDD[_] = {
     val scalaMap = doubleMap.asScala.toMap
 
-    reclassifyDouble(scalaMap.keySet, BreakMap(scalaMap))
+    val boundary = getBoundary(boundaryType)
+    val mapStrategy = new MapStrategy(boundary, doubleNODATA, doubleNODATA, false)
+    val breakMap = new BreakMap(scalaMap, mapStrategy, { d: Double => isNoData(d) })
+
+    reclassifyDouble(breakMap)
   }
 
   protected def reclassify(
-    keySet: Set[Int],
     breakMap: BreakMap[Int, Int]
   ): TileRDD[_]
 
   protected def reclassifyDouble(
-    keySet: Set[Double],
     breakMap: BreakMap[Double, Double]
   ): TileRDD[_]
 }
@@ -160,7 +168,6 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
   }
 
   def reclassify(
-    keySet: Set[Int],
     breakMap: BreakMap[Int, Int]
   ): RasterRDD[ProjectedExtent] = {
     val reclassifiedRDD = {
@@ -171,7 +178,7 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
 
         for (x <- 0 until count) {
           val band = m.band(x)
-          tiles(x) = band.map(i => if (keySet.contains(i)) breakMap.apply(i) else i)
+          tiles(x) = band.map(i => breakMap.apply(i))
         }
 
         (k, MultibandTile(tiles))
@@ -182,7 +189,6 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
   }
 
   def reclassifyDouble(
-    keySet: Set[Double],
     breakMap: BreakMap[Double, Double]
   ): RasterRDD[ProjectedExtent] = {
     val reclassifiedRDD =
@@ -192,7 +198,7 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
 
         for (x <- 0 until count) {
           val band = multibandTile.band(x)
-          tiles(x) = band.mapDouble(i => if (keySet.contains(i)) breakMap.apply(i) else i)
+          tiles(x) = band.mapDouble(i => breakMap.apply(i))
         }
 
         (k, MultibandTile(tiles))
@@ -238,7 +244,6 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
   }
 
   def reclassify(
-    keySet: Set[Int],
     breakMap: BreakMap[Int, Int]
   ): RasterRDD[TemporalProjectedExtent] = {
     val reclassifiedRDD =
@@ -248,7 +253,7 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
 
         for (x <- 0 until count) {
           val band = multibandTile.band(x)
-          tiles(x) = band.map(i => if (keySet.contains(i)) breakMap.apply(i) else i)
+          tiles(x) = band.map(i => breakMap.apply(i))
         }
 
         (k, MultibandTile(tiles))
@@ -258,7 +263,6 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
   }
 
   def reclassifyDouble(
-    keySet: Set[Double],
     breakMap: BreakMap[Double, Double]
   ): RasterRDD[TemporalProjectedExtent] = {
     val reclassifiedRDD =
@@ -268,7 +272,7 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
 
         for (x <- 0 until count) {
           val band = multibandTile.band(x)
-          tiles(x) = band.mapDouble(i => if (keySet.contains(i)) breakMap.apply(i) else i)
+          tiles(x) = band.mapDouble(i => breakMap.apply(i))
         }
 
         (k, MultibandTile(tiles))
