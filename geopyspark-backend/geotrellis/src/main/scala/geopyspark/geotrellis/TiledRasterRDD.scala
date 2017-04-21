@@ -236,43 +236,11 @@ class SpatialTiledRasterRDD(
     SpatialTiledRasterRDD(None, multibandRDD)
   }
 
-  def reclassify(
-    breakMap: BreakMap[Int, Int]
-  ): TiledRasterRDD[SpatialKey] = {
-    val reclassifiedRDD =
-      rdd.map { case(k: SpatialKey, multibandTile: MultibandTile) =>
-        val count = multibandTile.bandCount
-        val tiles = Array.ofDim[Tile](count)
-
-        for (x <- 0 until count) {
-          val band = multibandTile.band(x)
-          tiles(x) = band.map(i => breakMap.apply(i))
-        }
-
-        (k, MultibandTile(tiles))
-      }
-
+  def reclassify(reclassifiedRDD: RDD[(SpatialKey, MultibandTile)]): TiledRasterRDD[SpatialKey] =
     SpatialTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(reclassifiedRDD, rdd.metadata))
-  }
 
-  def reclassifyDouble(
-    breakMap: BreakMap[Double, Double]
-  ): TiledRasterRDD[SpatialKey] = {
-    val reclassifiedRDD =
-      rdd.map { case(k: SpatialKey, multibandTile: MultibandTile) =>
-        val count = multibandTile.bandCount
-        val tiles = Array.ofDim[Tile](count)
-
-        for (x <- 0 until count) {
-          val band = multibandTile.band(x)
-          tiles(x) = band.mapDouble(i => breakMap.apply(i))
-        }
-
-        (k, MultibandTile(tiles))
-      }
-
+  def reclassifyDouble(reclassifiedRDD: RDD[(SpatialKey, MultibandTile)]): TiledRasterRDD[SpatialKey] =
     SpatialTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(reclassifiedRDD, rdd.metadata))
-  }
 }
 
 
@@ -393,43 +361,11 @@ class TemporalTiledRasterRDD(
     TemporalTiledRasterRDD(None, multibandRDD)
   }
 
-  def reclassify(
-    breakMap: BreakMap[Int, Int]
-  ): TiledRasterRDD[SpaceTimeKey] = {
-    val reclassifiedRDD =
-      rdd.map { case(k: SpaceTimeKey, multibandTile: MultibandTile) =>
-        val count = multibandTile.bandCount
-        val tiles = Array.ofDim[Tile](count)
-
-        for (x <- 0 until count) {
-          val band = multibandTile.band(x)
-          tiles(x) = band.map(i => breakMap.apply(i))
-        }
-
-        (k, MultibandTile(tiles))
-      }
-
+  def reclassify(reclassifiedRDD: RDD[(SpaceTimeKey, MultibandTile)]): TiledRasterRDD[SpaceTimeKey] =
     TemporalTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(reclassifiedRDD, rdd.metadata))
-  }
 
-  def reclassifyDouble(
-    breakMap: BreakMap[Double, Double]
-  ): TiledRasterRDD[SpaceTimeKey] = {
-    val reclassifiedRDD =
-      rdd.map { case(k: SpaceTimeKey, multibandTile: MultibandTile) =>
-        val count = multibandTile.bandCount
-        val tiles = Array.ofDim[Tile](count)
-
-        for (x <- 0 until count) {
-          val band = multibandTile.band(x)
-          tiles(x) = band.mapDouble(i => breakMap.apply(i))
-        }
-
-        (k, MultibandTile(tiles))
-      }
-
+  def reclassifyDouble(reclassifiedRDD: RDD[(SpaceTimeKey, MultibandTile)]): TiledRasterRDD[SpaceTimeKey] =
     TemporalTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(reclassifiedRDD, rdd.metadata))
-  }
 }
 
 
