@@ -164,8 +164,17 @@ NEIGHBORHOODS = [
 """The NoData value for ints in GeoTrellis."""
 NODATAINT = -2147483648
 
+"""A classification strategy."""
 GREATERTHAN = "GreaterThan"
+
+"""A classification strategy."""
 GREATERTHANOREQUALTO = "GreaterThanOrEqualTo"
+
+"""A classification strategy."""
 LESSTHAN = "LessThan"
+
+"""A classification strategy."""
 LESSTHANOREQUALTO = "LessThanOrEqualTo"
+
+"""A classification strategy."""
 EXACT = "Exact"
