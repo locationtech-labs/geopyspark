@@ -192,15 +192,15 @@ class RasterRDD(object):
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
     def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO):
-        """Changes the cell values of each raster to a new value.
+        """Changes the cell values of a raster based on how the data is broken up.
 
         Args:
-            value_map (dict): A ``dict`` that contains the value(s) to be changed and what they
-                should become. The ``key`` is the value that is to be reclassified. It can either
-                be a single value, or a collection of values (ie. a ``tuple``, ``range``, etc).
-                The ``value`` of the ``dict`` is then what the ``key`` should be turned into.
+            value_map (dict): A ``dict`` whose keys represent values where a break should occur and
+                its values are the new value the cells within the break should become.
             data_type (type): The type of the values within the rasters. Can either be ``int`` or
                 ``float``.
+            boundary_strategy (str, optional): How the cells should be classified along the breaks.
+                If unspecified, then ``LESSTHANOREQUALTO`` will be used.
 
         NOTE:
             Simbolizing a NoData value differs depending on if the ``data_type`` is an ``int`` or a
@@ -456,15 +456,15 @@ class TiledRasterRDD(object):
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
     def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO):
-        """Changes the cell values of each raster to a new value.
+        """Changes the cell values of a raster based on how the data is broken up.
 
         Args:
-            value_map (dict): A ``dict`` that contains the value(s) to be changed and what they
-                should become. The ``key`` is the value that is to be reclassified. It can either
-                be a single value or a collection of values (ie. a ``tuple``, ``range``, etc).
-                The ``value``, of the ``dict`` is then what the ``key`` should be turned into.
+            value_map (dict): A ``dict`` whose keys represent values where a break should occur and
+                its values are the new value the cells within the break should become.
             data_type (type): The type of the values within the rasters. Can either be ``int`` or
                 ``float``.
+            boundary_strategy (str, optional): How the cells should be classified along the breaks.
+                If unspecified, then ``LESSTHANOREQUALTO`` will be used.
 
         NOTE:
             Simbolizing a NoData value differs depending on if the ``data_type`` is an ``int`` or a
