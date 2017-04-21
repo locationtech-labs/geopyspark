@@ -33,4 +33,10 @@ object Constants {
   final val NESW = "nesw"
   final val SQUARE = "square"
   final val WEDGE = "wedge"
+
+  final val GREATERTHAN = "GreaterThan"
+  final val GREATERTHANOREQUALTO = "GreaterThanOrEqualTo"
+  final val LESSTHAN = "LessThan"
+  final val LESSTHANOREQUALTO = "LessThanOrEqualTo"
+  final val EXACT = "Exact"
 }

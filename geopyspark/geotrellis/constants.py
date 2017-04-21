@@ -163,3 +163,9 @@ NEIGHBORHOODS = [
 
 """The NoData value for ints in GeoTrellis."""
 NODATAINT = -2147483648
+
+GREATERTHAN = "GreaterThan"
+GREATERTHANOREQUALTO = "GreaterThanOrEqualTo"
+LESSTHAN = "LessThan"
+LESSTHANOREQUALTO = "LessThanOrEqualTo"
+EXACT = "Exact"

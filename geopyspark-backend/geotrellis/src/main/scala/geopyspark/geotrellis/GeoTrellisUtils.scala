@@ -3,6 +3,7 @@ package geopyspark.geotrellis
 import geotrellis.proj4._
 import geotrellis.raster._
 import geotrellis.raster.mapalgebra.focal._
+import geotrellis.raster.render._
 import geotrellis.vector._
 import geotrellis.spark._
 import geotrellis.spark.reproject._
@@ -78,6 +79,15 @@ object GeoTrellisUtils {
       case SLOPE => { (tile, bounds) => Slope(tile, neighborhood, bounds, cellSize, param1, target) }
     }
   }
+
+  def getBoundary(boundaryType: String): ClassBoundaryType =
+    boundaryType match {
+      case GREATERTHAN => GreaterThan
+      case GREATERTHANOREQUALTO => GreaterThanOrEqualTo
+      case LESSTHAN => LessThan
+      case LESSTHANOREQUALTO => LessThanOrEqualTo
+      case EXACT => Exact
+    }
 
   implicit class JavaMapExtensions(m: java.util.Map[String, _]) {
     def toExtent: Extent = {
