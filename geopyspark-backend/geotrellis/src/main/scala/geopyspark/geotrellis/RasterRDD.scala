@@ -17,6 +17,9 @@ import geotrellis.spark.tiling._
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 
+import spire.syntax.order._
+import spire.std.any._
+
 import org.apache.spark._
 import org.apache.spark.rdd._
 import org.apache.spark.api.java.JavaRDD
