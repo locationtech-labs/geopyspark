@@ -7,9 +7,13 @@ area information of the layer.
 """
 import json
 import shapely.wkt
+import copy
+import numpy as np
+import shapely.wkt
 
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.geotrellis.constants import NEARESTNEIGHBOR, TILE, SPATIAL
+from rasterio import transform, features
 
 
 def _convert_to_java_rdd(geopysc, rdd_type, raster_rdd):
@@ -689,6 +693,82 @@ def tile_to_layout(geopysc,
     ser = geopysc.create_tuple_serializer(result._2(), value_type=TILE)
 
     return geopysc.create_python_rdd(result._1(), ser)
+
+def geotrellis_mask(geopysc,
+                    rdd_type,
+                    keyed_rdd,
+                    metadata,
+                    geometries):
+
+    mask_wrapper = geopysc.rdd_mask
+    key_type = geopysc.map_key_input(rdd_type, True)
+
+    (java_rdd, schema1) = _convert_to_java_rdd(geopysc, key_type, keyed_rdd)
+
+    wkts = [shapely.wkt.dumps(g) for g in geometries]
+
+    result = mask_wrapper.mask(key_type,
+                               java_rdd,
+                               schema1,
+                               json.dumps(metadata),
+                               wkts)
+
+    rdd = result._1()
+    schema2 = result._2()
+    ser = geopysc.create_tuple_serializer(schema2, value_type=TILE)
+    returned_rdd = geopysc.create_python_rdd(rdd, ser)
+
+    return returned_rdd
+
+def python_mask(rdd,
+                metadata,
+                geometries):
+
+    def key_to_affine_transform(key):
+        extent = metadata['layoutDefinition']['extent']
+        xmin = extent['xmin']
+        xmax = extent['xmax']
+        ymin = extent['ymin']
+        ymax = extent['ymax']
+        layout = metadata['layoutDefinition']['tileLayout']
+
+        layout_cols = layout['layoutCols']
+        tile_cols = layout['tileCols']
+        tile_width = (xmax - xmin) / layout_cols
+
+        layout_rows = layout['layoutRows']
+        tile_rows = layout['tileRows']
+        tile_height = (ymax - ymin) / layout_rows
+
+        west = (key['col'] * tile_width) + xmin
+        north = (key['row'] * tile_height) + ymin
+
+        affine = transform.from_bounds(
+            west=west,
+            south=(north + tile_height),
+            east=(west + tile_width),
+            north=north,
+            width=tile_cols,
+            height=tile_rows)
+        return affine
+
+    def mask(kv):
+        key = kv[0]
+        tile = copy.deepcopy(kv[1])
+
+        affine = key_to_affine_transform(key)
+        fill_value=tile['no_data_value']
+        geom_mask = features.geometry_mask(
+            geometries,
+            out_shape=tile['data'][0].shape,
+            transform=affine,
+            all_touched=True)
+        masked = np.ma.array(data=tile['data'][0], mask=geom_mask)
+        tile['data'] = np.array([masked.filled(fill_value=fill_value)])
+
+        return (key, tile)
+
+    return rdd.map(mask)
 
 def merge_tiles(geopysc,
                 rdd_type,
