@@ -12,10 +12,11 @@ from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              NEARESTNEIGHBOR,
                                              FLOAT,
                                              TILE,
-                                             SPATIAL
+                                             SPATIAL,
+                                             LESSTHANOREQUALTO
                                             )
 
-def _reclassify(srdd, value_map, data_type):
+def _reclassify(srdd, value_map, data_type, boundary_strategy):
     new_dict = {}
 
     for key, value in value_map.items():
@@ -27,9 +28,9 @@ def _reclassify(srdd, value_map, data_type):
             new_dict[key] = value
 
     if data_type is int:
-        return srdd.reclassify(new_dict)
+        return srdd.reclassify(new_dict, boundary_strategy)
     else:
-        return srdd.reclassifyDouble(new_dict)
+        return srdd.reclassifyDouble(new_dict, boundary_strategy)
 
 
 class RasterRDD(object):
@@ -190,7 +191,7 @@ class RasterRDD(object):
         srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
-    def reclassify(self, value_map, data_type):
+    def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO):
         """Changes the cell values of each raster to a new value.
 
         Args:
@@ -211,7 +212,7 @@ class RasterRDD(object):
             :class:`~geopyspark.geotrellis.rdd.RasterRDD`
         """
 
-        srdd = _reclassify(self.srdd, value_map, data_type)
+        srdd = _reclassify(self.srdd, value_map, data_type, boundary_strategy)
         return RasterRDD(self.geopysc, self.rdd_type, srdd)
 
 
@@ -454,7 +455,7 @@ class TiledRasterRDD(object):
 
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
-    def reclassify(self, value_map, data_type):
+    def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO):
         """Changes the cell values of each raster to a new value.
 
         Args:
@@ -475,5 +476,5 @@ class TiledRasterRDD(object):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
         """
 
-        srdd = _reclassify(self.srdd, value_map, data_type)
+        srdd = _reclassify(self.srdd, value_map, data_type, boundary_strategy)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
