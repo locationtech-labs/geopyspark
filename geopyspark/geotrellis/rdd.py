@@ -489,6 +489,8 @@ class TiledRasterRDD(object):
         else:
             raise TypeError("Local operation cannot be performed with", value)
 
+        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+
     def __add__(self, value):
         return self._process_operation(value, self.srdd.localAdd)
 
