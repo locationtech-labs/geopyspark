@@ -478,3 +478,37 @@ class TiledRasterRDD(object):
 
         srdd = _reclassify(self.srdd, value_map, data_type, boundary_strategy)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+
+    def _process_operation(self, value, operation):
+        if isinstance(value, int) or isinstance(value, float):
+            srdd = operation(value)
+        elif isinstance(value, TiledRasterRDD):
+            if self.rdd_type != value.rdd_type:
+                raise ValueError("Both TiledRasterRDDs need to have the same rdd_type")
+            srdd = operation(value.srdd)
+        else:
+            raise TypeError("Local operation cannot be performed with", value)
+
+    def __add__(self, value):
+        return self._process_operation(value, self.srdd.localAdd)
+
+    def __radd__(self, value):
+        return self._process_operation(value, self.srdd.localAdd)
+
+    def __sub__(self, value):
+        return self._process_operation(value, self.srdd.localSubtract)
+
+    def __rsub__(self, value):
+        return self._process_operation(value, self.srdd.reverseLocalSubtract)
+
+    def __mul__(self, value):
+        return self._process_operation(value, self.srdd.localMultiply)
+
+    def __rmul__(self, value):
+        return self._process_operation(value, self.srdd.localMultiply)
+
+    def __truediv__(self, value):
+        return self._process_operation(value, self.srdd.localDivide)
+
+    def __rtruediv__(self, value):
+        return self._process_operation(value, self.srdd.reverseLocalDivide)
