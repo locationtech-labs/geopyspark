@@ -118,13 +118,13 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
   ): TiledRasterRDD[_]
 
   def localAdd(i: Int): TiledRasterRDD[_] =
-    localAdd(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y + i })) })
+    withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y + i })) })
 
   def localAdd(d: Double): TiledRasterRDD[_] =
-    localAdd(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y + d })) })
+    withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y + d })) })
 
   def localAdd(other: TiledRasterRDD[K]): TiledRasterRDD[_] =
-    localAdd(rdd.combineValues(other.rdd) {
+    withRDD(rdd.combineValues(other.rdd) {
         case (x: MultibandTile, y: MultibandTile) => {
           val tiles: Vector[Tile] =
             x.bands.zip(y.bands).map(tup => tup._1 + tup._2)
@@ -133,19 +133,19 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
       })
 
   def localSubtract(i: Int): TiledRasterRDD[_] =
-    localSubtract(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y - i })) })
+    withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y - i })) })
 
   def reverseLocalSubtract(i: Int): TiledRasterRDD[_] =
-    localSubtract(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y.-:(i) })) })
+    withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y.-:(i) })) })
 
   def localSubtract(d: Double): TiledRasterRDD[_] =
-    localSubtract(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y - d })) })
+    withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y - d })) })
 
   def reverseLocalSubtract(d: Double): TiledRasterRDD[_] =
-    localSubtract(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y.-:(d) })) })
+    withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y.-:(d) })) })
 
   def localSubtract(other: TiledRasterRDD[K]): TiledRasterRDD[_] =
-    localSubtract(rdd.combineValues(other.rdd) {
+    withRDD(rdd.combineValues(other.rdd) {
         case (x: MultibandTile, y: MultibandTile) => {
           val tiles: Vector[Tile] =
             x.bands.zip(y.bands).map(tup => tup._1 - tup._2)
@@ -154,13 +154,13 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
       })
 
   def localMultiply(i: Int): TiledRasterRDD[_] =
-    localMultiply(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y * i })) })
+    withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y * i })) })
 
   def localMultiply(d: Double): TiledRasterRDD[_] =
-    localMultiply(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y * d })) })
+    withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y * d })) })
 
   def localMultiply(other: TiledRasterRDD[K]): TiledRasterRDD[_] =
-    localMultiply(rdd.combineValues(other.rdd) {
+    withRDD(rdd.combineValues(other.rdd) {
         case (x: MultibandTile, y: MultibandTile) => {
           val tiles: Vector[Tile] =
             x.bands.zip(y.bands).map(tup => tup._1 * tup._2)
@@ -169,19 +169,19 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
       })
 
   def localDivide(i: Int): TiledRasterRDD[_] =
-    localDivide(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y / i })) })
+    withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y / i })) })
 
   def localDivide(d: Double): TiledRasterRDD[_] =
-    localDivide(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y / d })) })
+    withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y / d })) })
 
   def reverseLocalDivide(i: Int): TiledRasterRDD[_] =
-    localDivide(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y./:(i) })) })
+    withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y./:(i) })) })
 
   def reverseLocalDivide(d: Double): TiledRasterRDD[_] =
-    localDivide(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y./:(d) })) })
+    withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y./:(d) })) })
 
   def localDivide(other: TiledRasterRDD[K]): TiledRasterRDD[_] =
-    localDivide(rdd.combineValues(other.rdd) {
+    withRDD(rdd.combineValues(other.rdd) {
         case (x: MultibandTile, y: MultibandTile) => {
           val tiles: Vector[Tile] =
             x.bands.zip(y.bands).map(tup => tup._1 / tup._2)
@@ -189,10 +189,7 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
         }
       })
 
-  protected def localAdd(result: RDD[(K, MultibandTile)]): TiledRasterRDD[_]
-  protected def localSubtract(result: RDD[(K, MultibandTile)]): TiledRasterRDD[_]
-  protected def localMultiply(result: RDD[(K, MultibandTile)]): TiledRasterRDD[_]
-  protected def localDivide(result: RDD[(K, MultibandTile)]): TiledRasterRDD[_]
+  protected def withRDD(result: RDD[(K, MultibandTile)]): TiledRasterRDD[_]
 }
 
 
@@ -319,16 +316,7 @@ class SpatialTiledRasterRDD(
   def reclassifyDouble(reclassifiedRDD: RDD[(SpatialKey, MultibandTile)]): TiledRasterRDD[SpatialKey] =
     SpatialTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(reclassifiedRDD, rdd.metadata))
 
-  def localAdd(result: RDD[(SpatialKey, MultibandTile)]): TiledRasterRDD[SpatialKey] =
-    SpatialTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(result, rdd.metadata))
-
-  def localSubtract(result: RDD[(SpatialKey, MultibandTile)]): TiledRasterRDD[SpatialKey] =
-    SpatialTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(result, rdd.metadata))
-
-  def localMultiply(result: RDD[(SpatialKey, MultibandTile)]): TiledRasterRDD[SpatialKey] =
-    SpatialTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(result, rdd.metadata))
-
-  def localDivide(result: RDD[(SpatialKey, MultibandTile)]): TiledRasterRDD[SpatialKey] =
+  def withRDD(result: RDD[(SpatialKey, MultibandTile)]): TiledRasterRDD[SpatialKey] =
     SpatialTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(result, rdd.metadata))
 }
 
@@ -456,16 +444,7 @@ class TemporalTiledRasterRDD(
   def reclassifyDouble(reclassifiedRDD: RDD[(SpaceTimeKey, MultibandTile)]): TiledRasterRDD[SpaceTimeKey] =
     TemporalTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(reclassifiedRDD, rdd.metadata))
 
-  def localAdd(result: RDD[(SpaceTimeKey, MultibandTile)]): TiledRasterRDD[SpaceTimeKey] =
-    TemporalTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(result, rdd.metadata))
-
-  def localSubtract(result: RDD[(SpaceTimeKey, MultibandTile)]): TiledRasterRDD[SpaceTimeKey] =
-    TemporalTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(result, rdd.metadata))
-
-  def localMultiply(result: RDD[(SpaceTimeKey, MultibandTile)]): TiledRasterRDD[SpaceTimeKey] =
-    TemporalTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(result, rdd.metadata))
-
-  def localDivide(result: RDD[(SpaceTimeKey, MultibandTile)]): TiledRasterRDD[SpaceTimeKey] =
+  def withRDD(result: RDD[(SpaceTimeKey, MultibandTile)]): TiledRasterRDD[SpaceTimeKey] =
     TemporalTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(result, rdd.metadata))
 }
 
