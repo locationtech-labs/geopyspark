@@ -66,6 +66,8 @@ correction.
       app.run()
 
 
+.. _running_code:
+
 Running the Code
 -----------------
 
