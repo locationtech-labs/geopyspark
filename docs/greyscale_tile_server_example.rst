@@ -2,7 +2,7 @@ Creating a Tile Server From Ingested Data
 ******************************************
 
 Now that we have ingested data, we can use it using a tile server.
-We will be using the catalog that was created in :ref:`ingest_example`.
+We will be using the catalog that was created in :ref:`greyscale_ingest_example`.
 
 **Note**: GeoPySpark can create a tile server from a catalog that was created
 via GeoTrellis!
@@ -57,7 +57,7 @@ correction.
 
   if __name__ == "__main__":
       uri = "file:///tmp/python-catalog/"
-      layer_name = "python-benchmark"
+      layer_name = "python-ingest"
 
       geopycontext = GeoPyContext(appName="server-example", master="local[*]")
 
