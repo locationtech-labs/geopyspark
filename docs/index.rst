@@ -14,6 +14,7 @@ Welcome to GeoPySpark's documentation!
    greyscale_ingest_example
    greyscale_tile_server_example
    sentinel_ingest_example
+   sentinel_tile_server_example
    geopyspark
    geopyspark.geotrellis
 
