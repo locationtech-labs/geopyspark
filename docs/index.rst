@@ -8,19 +8,27 @@ Welcome to GeoPySpark's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Docs:
+
+   geopyspark
+   geopyspark.geotrellis
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Guides:
 
    core_concepts
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Tutorials:
+
    greyscale_ingest_example
    greyscale_tile_server_example
    sentinel_ingest_example
    sentinel_tile_server_example
-   geopyspark
-   geopyspark.geotrellis
 
 Indices and tables
 ==================
 
-* :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
