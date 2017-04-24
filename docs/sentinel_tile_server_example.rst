@@ -4,20 +4,16 @@ Creating a Tile Server From Ingested, Sentinel Data
 Now that we have ingested data, we can use it using a tile server.
 We will be using the catalog that was created in :ref:`sentinel_ingest_example`.
 
-**Note**: It is assumed that the previously mentioned script was ran and
-completed successfully.
-
 **Note**: This guide will focus on converting the raster into a ``PIL`` RGB
 image so that it can be used by the tile server. The tile server process itself
-is discussed in more detail in :ref:`server_break_down`.
+is discussed in more detail in :ref:`Greyscale Tile Server Code Breakdown
+<server_break_down>`.
 
 The Code
 =========
 
-Here is the code itself. We will be using ``flask`` to create a local server
-and ``PIL`` to create our images. Because we are working with a RGB, mulitband
-image, we will need to correct the colors for each tile in order for it to
-displayed correctly.
+Because we are working with a RGB, mulitband image, we will need to correct the
+colors for each tile in order for it to displayed correctly.
 
 .. code:: python
 
@@ -80,56 +76,24 @@ displayed correctly.
 Running the Code
 -----------------
 
-You will want to run this code through the command line. To run it, from the
-file, go to the directory the file is in and run this command
-
-.. code-block:: none
-
-  python3 file.py
-
-Just replace ``file.py`` with whatever name you decided to call the file.
-
-Once it's started, you'll then want to go to a website that allows you to
-display geo-spatial images from a server. For this example, we'll be using
-`geojson.io <http://geojson.io>`_, but feel free to use whatever service you
-want.
-
-.. image:: pictures/geojson.png
-   :align: center
-
-Go to geojson.io, and select the ``Meta`` option from the tool bar, and then
-choose the ``Add map layer`` command.
-
-.. image:: pictures/toolbar.png
-   :align: center
-
-A pop up will appear where it will ask for the template, layer URL. To get this example to work,
-please enter the following: ``http://localhost:5000/{z}/{x}/{y}.png``.
-
-.. image:: pictures/address.png
-   :align: center
-
-A second window will appear asking to name the new layer. Pick whatever you want.
-I tend to use simple names like ``a``, ``b``, ``c``, etc.
+Running the tile server is done the same way as in :ref:`Greyscale Tile Server
+Running the Code <running_code>`. The only difference being the resulting
+image, of course.
 
 .. image:: pictures/sentinel_image.png
    :align: center
 
-Now that everything is setup, it's time to see the image. You'll need to scroll
-over Corsica, and you should see something that matches the above image. If you
-do, then the server works!
+You'll need to scroll over Corsica, and you should see something that matches
+the above image. If you do, then the server works!
 
 
 Breaking Down the Code
 =======================
 
-As with our other examples, let's go through it step-by-step to see what's
-actually going on. Though, for this example, we'll be starting at the bottom
-and working our way up.
-
-**Note**: This next section will go over how to prepare the RGB image to be
+This next section will go over how to prepare the RGB image to be
 served. For a more of a general overview of to setup a tile server please see
-:ref:`server_break_down`.
+:ref:`Greyscale Tile Server Code Breakdown <server_break_down>`.
+
 
 Setup
 ------
@@ -151,7 +115,7 @@ Setup
 
 In additon to setting up ``uri`` and ``layer_name``, we will also read in the
 ``max`` and ``min`` values that we saved earlier. These will be used when we
-normalize the tile that is to be served.
+normalize a tile.
 
 
 Preparing the Tile
@@ -181,11 +145,12 @@ Preparing the Tile
       image = Image.merge('RGB', images)
 
 
-Tiles that contains mulitbands need some work done before they can be served.
+Tiles that contain mulitbands need some work done before they can be served.
 The ``make_image`` method takes each band and normalizes it between a range
 of 0 and 255. We need to do this because ``PIL`` expects the data types of
 arrays to be ``uint8``. This is why we need the ``whole_max`` and the
-``whole_min``. As it is impossilbe to get this information any other way at
+``whole_min`` values; as we needed to know full range of the original values
+before normalization. Information that would be otherwise impossible to get at
 this point.
 
 Once normalized, the band is then converted to a greyscale image. This is done
@@ -193,4 +158,5 @@ for each band in the tile, and once complete, we can then make a RGB ``png``
 file. After this step, the remaining process is no different than if you were
 working with a singleband tile.
 
-Any details that we not dicussed in this document can be found in :ref:`server_break_down`.
+Any details that we not dicussed in this document can be found in
+:ref:`Greyscale Tile Server Code Breakdown <server_break_down>`.
