@@ -485,6 +485,11 @@ class TiledRasterRDD(object):
         elif isinstance(value, TiledRasterRDD):
             if self.rdd_type != value.rdd_type:
                 raise ValueError("Both TiledRasterRDDs need to have the same rdd_type")
+
+            if self.layer_metadata['layoutDefinition']['tileLayout'] != \
+               value.layer_metadata['layoutDefinition']['tileLayout']:
+                raise ValueError("Both TiledRasterRDDs need to have the same layout")
+
             srdd = operation(value.srdd)
         else:
             raise TypeError("Local operation cannot be performed with", value)
