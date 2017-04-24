@@ -2,7 +2,7 @@ from setuptools import setup
 import sys
 
 if sys.version_info < (3, 3):
-    sys.exit("GeoPySpark Does Not Support Python Versions Before 3.3")
+    sys.exit("GeoPySpark does not support Python versions before 3.3")
 
 setup(
     name='geopyspark',
@@ -23,9 +23,11 @@ setup(
     packages=['geopyspark', 'geopyspark.geotrellis', 'geopyspark.tests', 'geopyspark.jars'],
     scripts=[],
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: Apache Software License',
+        'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: GIS',
+        'Topic :: Scientific/Engineering :: Information Analysis',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
