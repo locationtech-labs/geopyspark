@@ -155,7 +155,9 @@ class RasterRDD(object):
             :class:`~geopyspark.geotrellis.rdd.RasterRDD`
         """
 
-        assert(resample_method in RESAMPLE_METHODS)
+        if resample_method not in RESAMPLE_METHODS:
+            raise ValueError(resample_method, " Is not a known resample method.")
+
         return RasterRDD(self.geopysc, self.rdd_type,
                          self.srdd.reproject(target_crs, resample_method))
 
@@ -172,7 +174,9 @@ class RasterRDD(object):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
         """
 
-        assert(resample_method in RESAMPLE_METHODS)
+        if resample_method not in RESAMPLE_METHODS:
+            raise ValueError(resample_method, " Is not a known resample method.")
+
         srdd = self.srdd.cutTiles(json.dumps(layer_metadata), resample_method)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
@@ -189,7 +193,9 @@ class RasterRDD(object):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
         """
 
-        assert(resample_method in RESAMPLE_METHODS)
+        if resample_method not in RESAMPLE_METHODS:
+            raise ValueError(resample_method, " Is not a known resample method.")
+
         srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
@@ -286,7 +292,7 @@ class TiledRasterRDD(object):
                     geopysc._jvm.geopyspark.geotrellis.TemporalTiledRasterRDD.fromAvroEncodedRDD(
                         reserialized_rdd._jrdd, schema, json.dumps(metadata))
 
-        return cls(geopysc, key, srdd)
+        return cls(geopysc, rdd_type, srdd)
 
     @classmethod
     def rasterize(cls, geopysc, rdd_type, geometry, extent, crs, cols, rows,
@@ -383,7 +389,8 @@ class TiledRasterRDD(object):
             TypeError if either `extent` or `layout` is defined bu the other is not.
         """
 
-        assert(resample_method in RESAMPLE_METHODS)
+        if resample_method not in RESAMPLE_METHODS:
+            raise ValueError(resample_method, " Is not a known resample method.")
 
         if extent and layout:
             srdd = self.srdd.reproject(extent, layout, target_crs, resample_method)
@@ -408,7 +415,8 @@ class TiledRasterRDD(object):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
         """
 
-        assert(resample_method in RESAMPLE_METHODS)
+        if resample_method not in RESAMPLE_METHODS:
+            raise ValueError(resample_method, " Is not a known resample method.")
 
         srdd = self.srdd.tileToLayout(layout, resample_method)
 
@@ -430,7 +438,8 @@ class TiledRasterRDD(object):
             Pyramided TiledRasterRDDs (list): A list of TiledRasterRDDs.
         """
 
-        assert(resample_method in RESAMPLE_METHODS)
+        if resample_method not in RESAMPLE_METHODS:
+            raise ValueError(resample_method, " Is not a known resample method.")
 
         size = self.layer_metadata['layoutDefinition']['tileLayout']['tileRows']
 
@@ -459,8 +468,8 @@ class TiledRasterRDD(object):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
         """
 
-        assert(operation in OPERATIONS)
-        assert(neighborhood in NEIGHBORHOODS)
+        if operation not in OPERATIONS:
+            raise ValueError(operation, " Is not a known operation.")
 
         if param_1 is None:
             param_1 = 0.0
@@ -483,8 +492,8 @@ class TiledRasterRDD(object):
             :ref:`raster`
         """
 
-        assert(self.rdd_type == SPATIAL,
-               "Only TiledRasterRDDs with a rdd_type of SpatialKey can use stitch()")
+        if self.rdd_type != SPATIAL:
+            raise ValueError("Only TiledRasterRDDs with a rdd_type of Spatial can use stitch()")
 
         tup = self.srdd.stitch()
         ser = self.geopysc.create_value_serializer(tup._2(), TILE)
