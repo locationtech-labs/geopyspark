@@ -176,9 +176,9 @@ within the catalog, giving the ``zoom level``, ``col``, and ``row`` of the tile
 will allow us to retrieve it.
 
 :meth:`~geopyspark.geotrellis.catalog.read_value` returns a :ref:`raster`, so
-we take out the underlying ``data`` and place it into a new numpy array where
+we take out the underlying ``data`` and place it into a new NumPy array where
 the data type is ``int32``.
 
-Once we have the numpy array, we can turn it into an ``Image`` which we can
+Once we have the NumPy array, we can turn it into an ``Image`` which we can
 then turn into a PNG. We turn this PNG into a ``flask`` ``response``, which
 allows the tiles themselves to viewed on geojson.io.

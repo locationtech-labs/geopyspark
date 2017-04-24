@@ -1,9 +1,9 @@
 .. _greyscale_ingest_example:
 
-Ingesting a Greyscal Image Using GeoPySpark
+Ingesting a Grayscale Image Using GeoPySpark
 ********************************************
 
-This example shows how to ingest a greayscale image from S3 and save the
+This example shows how to ingest a grayscale image from S3 and save the
 results locally. The data is stored on a bucket that is open to everyone to
 read, so feel free to run this example yourself.
 
@@ -11,18 +11,18 @@ The Code
 ========
 
 Here's the code to run the ingest. One of the biggest benefits of using
-GeoPySpark is how much simplier it is to run an ingest than if you were
+GeoPySpark is how much simpler it is to run an ingest than if you were
 using GeoTrellis. Whereas GeoTrellis needs various configuration files run an
 ingest, GeoPySpark can perform the same task in just a single script.
 
-.. code-block:: python
+.. code-block:: Python
 
   from geopyspark.geopycontext import GeoPyContext
   from geopyspark.geotrellis.constants import SPATIAL, ZOOM
   from geopyspark.geotrellis.catalog import write
   from geopyspark.geotrellis.geotiff_rdd import get
 
-  geopysc = GeoPyContext(appName="python-S3-ingest", master="local[*]")
+  geopysc = GeoPyContext(appName="Python-S3-ingest", master="local[*]")
 
   # Read the GeoTiff from S3
   rdd = get(geopysc, SPATIAL, "s3://geopyspark-test/example-files/cropped.tif")
@@ -52,12 +52,12 @@ Running the code is simple, and you have two different ways of doing it.
 The first is to copy and paste the code into a console like, iPython, and then
 running it.
 
-The second is to place this code in a python file and then saving it. To run it
+The second is to place this code in a Python file and then saving it. To run it
 from the file, go to the directory the file is in and run this command
 
 .. code-block:: none
 
-  python3 file.py
+  Python3 file.py
 
 Just replace ``file.py`` with whatever name you decided to call the file.
 
@@ -66,13 +66,13 @@ Just replace ``file.py`` with whatever name you decided to call the file.
 Breaking Down the Code
 =======================
 
-Now that the code has been writen let's go through it step-by-step to see
+Now that the code has been written let's go through it step-by-step to see
 what's actually going on.
 
 The Imports
 -----------
 
-.. code-block:: python
+.. code-block:: Python
 
  from geopyspark.geopycontext import GeoPyContext
  from geopyspark.geotrellis.constants import SPATIAL, ZOOM
@@ -91,9 +91,9 @@ tiled via a ZoomedLayoutScheme before the pyramiding takes place**.
 Reading in the Data
 --------------------
 
-.. code-block:: python
+.. code-block:: Python
 
- geopysc = GeoPyContext(appName="python-S3-ingest", master="local[*]")
+ geopysc = GeoPyContext(appName="Python-S3-ingest", master="local[*]")
 
  # Read the GeoTiff from S3
  rdd = get(geopysc, SPATIAL, "s3://geopyspark-test/example-files/cropped.tif")
@@ -113,12 +113,12 @@ working with our data.
 Collecting the Metadata
 ------------------------
 
-.. code-block:: python
+.. code-block:: Python
 
  metadata = rdd.collect_metadata()
 
 Before we can begin formatting the data to our desired layout, we must first
-collect the :ref:`metadata` of the enitre RDD. The metadata itself will contain
+collect the :ref:`metadata` of the entire RDD. The metadata itself will contain
 the :ref:`tile_layout` that the data will be formatted to. There are various
 ways to collect the metadata depending on how you want the layout to look
 (see :meth:`~geopyspark.geotrellis.rdd.RasterRDD.collect_metadata`), but for
@@ -128,7 +128,7 @@ this example, we will just go with the default parameters.
 Tiling the Data
 ----------------
 
-.. code-block:: python
+.. code-block:: Python
 
  # tile the rdd to the layout defined in the metadata
  laid_out = rdd.tile_to_layout(metadata)
@@ -155,7 +155,7 @@ that is in the correct projection and layout.
 Pyramiding the Data
 --------------------
 
-.. code-block:: python
+.. code-block:: Python
 
  # pyramid the TiledRasterRDD to create 12 new TiledRasterRDD
  # one for each zoom level
@@ -170,11 +170,11 @@ number when pyramiding.
 Saving the Ingest Locally
 --------------------------
 
-.. code-block:: python
+.. code-block:: Python
 
  # Save each TiledRasterRDD locally
  for tiled in pyramided:
-     write("file:///tmp/python-catalog", "python-ingest", tiled)
+     write("file:///tmp/Python-catalog", "Python-ingest", tiled)
 
 All that's left to do now is to save it. Since ``pyramided`` is just a list of
 ``TiledRasterRDD``, we can just loop through it and save each element one at a

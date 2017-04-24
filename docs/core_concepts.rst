@@ -12,8 +12,8 @@ to explain this jargon in addition to describing how GeoTrellis types are
 represented in GeoPySpark.
 
 You may notice as read through this section that camel case is used instead of
-python's more traditional naming convention for some values. This is because
-scala uses this style of naming, and when it recieves data from python it
+Python's more traditional naming convention for some values. This is because
+Scala uses this style of naming, and when it receives data from Python it
 expects the value names to be in camel case.
 
 .. _raster:
@@ -21,18 +21,18 @@ expects the value names to be in camel case.
 Raster
 ------
 
-GeoPySpark differs in how it represents rasters from other geo-spatial python
+GeoPySpark differs in how it represents rasters from other geo-spatial Python
 libraries like rasterio. In GeoPySpark, they are represented as a ``dict``.
 
 The fields used to represent rasters:
- - **no_data_value**: The value that represents no data in raster. This cen be
+ - **no_data_value**: The value that represents no data in raster. This can be
       represented by a variety of types depending on the value type of the
       raster.
- - **data** (nd.array): The raster data itself. It is contained within a numpy
+ - **data** (nd.array): The raster data itself. It is contained within a NumPy
       array.
 
 **Note**: All rasters in GeoPySpark are represented as having multiple bands,
-even if the origin raster just contained one.
+even if the original raster just contained one.
 
 .. _tile_layout:
 
@@ -42,7 +42,7 @@ TileLayout
 Describes the grid in which the rasters within a RDD should be laid out.
 In GeoPySpark, this is represented as a ``dict``.
 
-The fields used to reprsent ``TileLayout``:
+The fields used to represent ``TileLayout``:
  - **layoutCols** (int): The number of columns of rasters that runs
        east to west.
  - **layoutRows** (int): The number of rows of rasters that runs north to south.
@@ -97,7 +97,7 @@ Example::
    projected_extent = {'extent': extent, 'proj4': proj4}
 
 
-**Note**: Either `epsg` or `proj4` must be definied.
+**Note**: Either `epsg` or `proj4` must be defined.
 
 TemporalProjectedExtent
 -----------------------
@@ -119,7 +119,7 @@ Example::
    instance = 1.0
    projected_extent = {'extent': extent, 'epsg': epsg, 'instance': instance}
 
-**Note**: Either `epsg` or `proj4` must be definied.
+**Note**: Either `epsg` or `proj4` must be defined.
 
 SpatialKey
 ----------
@@ -128,7 +128,7 @@ Represents the position of a raster within a grid. This grid is a 2D plane
 where raster positions are represented by a pair of coordinates. In GeoPySpark,
 this is represented as a ``dict``.
 
-The fields used to reprsent ``SpatialKey``:
+The fields used to represent ``SpatialKey``:
  - **col** (int): The column of the grid, the numbers run east to west.
  - **row** (int): The row of the grid, the numbers run north to south.
 
@@ -180,7 +180,7 @@ TileLayerMetadata
 Information on the values within a RDD. This is often needed when performing
 certain actions. In GeoPySpark, this is represented as a ``dict``.
 
-The fieldsd that are used to represent ``TileLayerMetadata``:
+The fields that are used to represent ``TileLayerMetadata``:
  - **cellType** (str): The type of all values in the rasters.
  - **layoutDefinition** (dict)
  - **extent** (Extent): The entire area of the source data.
@@ -191,15 +191,15 @@ The fieldsd that are used to represent ``TileLayerMetadata``:
 How Data is Stored in RDDs
 ==========================
 
-All data that is worked with in GeoPySpark is at somepoint stored within a RDD.
+All data that is worked with in GeoPySpark is at some point stored within a RDD.
 Therefore, it is important to understand how GeoPySpark stores, represents, and
 uses these RDDs throughout the library.
 
-GeoPySpark does not work with PySpark RDDs, but rather, uses python classes
-that are wrappers of classes in scala that contain and work with a scala RDD.
-The exact workings of this relationship between the python and scala classes
+GeoPySpark does not work with PySpark RDDs, but rather, uses Python classes
+that are wrappers of classes in Scala that contain and work with a Scala RDD.
+The exact workings of this relationship between the Python and Scala classes
 will not be discussed in this guide, instead the focus will be on what these
-python classes represent and how they are used within GeoPySpark.
+Python classes represent and how they are used within GeoPySpark.
 
 All RDDs in GeoPySpark contain tuples, which will be referred to in this guide
 as ``(K, V)``. ``V`` will always be a raster, but ``K`` differs depending on
@@ -208,12 +208,12 @@ both the wrapper class and the nature of the data itself.
 Where is the Actual RDD?
 ------------------------
 
-The actual RDD that is being worked on exists in scala. Even if the RDD was
-originally created in python, it will be serialized and sent over to scala
-where it well decoded into scala RDD.
+The actual RDD that is being worked on exists in Scala. Even if the RDD was
+originally created in Python, it will be serialized and sent over to Scala
+where it will be decoded into a Scala RDD.
 
-None of the operations performed on the RDD occur in python, and the only time
-the RDD will be moved to python is if the user decideds to bring it over.
+None of the operations performed on the RDD occur in Python, and the only time
+the RDD will be moved to Python is if the user decides to bring it over.
 
 RasterRDD
 ----------
@@ -221,7 +221,7 @@ RasterRDD
 ``RasterRDD`` is one of the two wrapper classes in GeoPySpark and deals with
 untiled data. What does it mean for data to be untiled? It means that each
 element within the RDD has not been modified in such a way that would make it
-apart of a larger, overall layout. For example, a distributed collection of
+a part of a larger, overall layout. For example, a distributed collection of
 rasters of a contiguous area could be derived from GeoTiffs of different sizes.
 This, in turn, could mean that there's a lack of uniformity when viewing the
 area as a whole. It is this, "raw" data that is stored within ``RasterRDD``.

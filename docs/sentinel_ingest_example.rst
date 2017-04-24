@@ -14,7 +14,7 @@ format for JPEGs that allow for improved quality and compression ratio.
 
 There are few programs that can work with ``jp2``, which can make processing
 large amounts of them difficult. Because of GeoPySpark, though, we can leverage
-the tools available to us in python that can work with ``jp2`` and use them to
+the tools available to us in Python that can work with ``jp2`` and use them to
 format the sentinel data so that it can be ingested.
 
 **Note**: This guide goes over how to use ``jp2`` files with GeoPySpark, the
@@ -22,7 +22,7 @@ actual ingest process itself is discussed in more detail in
 :ref:`Greyscale Ingest Code Breakdown <break_down>`.
 
 
-Geting the Data
+Getting the Data
 ================
 
 Before we can start this tutorial, we will need to get the sentinel images.
@@ -219,12 +219,12 @@ Formatting the Data
   raster_rdd = RasterRDD.from_numpy_rdd(geopysc, SPATIAL, rdd)
 
 
-GeoPySpark is a python binding of GeoTrellis, and because of that, requires the
-data being worked with to be in a certain format. Please see
+GeoPySpark is a Python binding of GeoTrellis, and because of that, requires the
+data to be in a certain format. Please see
 :ref:`core_concepts` to learn what each of these variables represent.
 
-The main take-away from this section of code, however, that if you wish to
-produce either a ``RasterRDD`` or ``TiledRasterRDD`` in python, then the data
+The main take-away from this section of code: if you wish to
+produce either a ``RasterRDD`` or ``TiledRasterRDD`` in Python, then the data
 **must** be in the correct format.
 
 

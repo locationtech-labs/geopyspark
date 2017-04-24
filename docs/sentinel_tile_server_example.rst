@@ -12,7 +12,7 @@ is discussed in more detail in :ref:`Greyscale Tile Server Code Breakdown
 The Code
 =========
 
-Because we are working with a RGB, mulitband image, we will need to correct the
+Because we are working with a RGB, a multiband image, we will need to correct the
 colors for each tile in order for it to displayed correctly.
 
 .. code:: python
@@ -145,7 +145,7 @@ Preparing the Tile
       image = Image.merge('RGB', images)
 
 
-Tiles that contain mulitbands need some work done before they can be served.
+Tiles that contain multibands need some work done before they can be served.
 The ``make_image`` method takes each band and normalizes it between a range
 of 0 and 255. We need to do this because ``PIL`` expects the data types of
 arrays to be ``uint8``. This is why we need the ``whole_max`` and the
@@ -158,5 +158,5 @@ for each band in the tile, and once complete, we can then make a RGB ``png``
 file. After this step, the remaining process is no different than if you were
 working with a singleband tile.
 
-Any details that we not dicussed in this document can be found in
+Any details that we not discussed in this document can be found in
 :ref:`Greyscale Tile Server Code Breakdown <server_break_down>`.
