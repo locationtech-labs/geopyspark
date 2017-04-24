@@ -18,7 +18,8 @@ the tools available to us in python that can work with ``jp2`` and use them to
 format the sentinel data so that it can be ingested.
 
 **Note**: This guide goes over how to use ``jp2`` files with GeoPySpark, the
-actual ingest process itself is discussed in more detail in :ref:`break_down`.
+actual ingest process itself is discussed in more detail in
+:ref:`Greyscale Ingest Code Breakdown <break_down>`.
 
 
 Geting the Data
@@ -139,7 +140,7 @@ Breaking Down the Code
 Let's now see what's going on through the code by going through each step of
 the process. **Note**: As mentioned in the opening, this section will only
 cover the reading in and formatting the data steps. For a guide through each
-ingest step, please see :ref:`break_down`.
+ingest step, please see :ref:`Greyscale Ingest Code Breakdown <break_down>`.
 
 
 The Imports
@@ -231,4 +232,4 @@ Ingesting the Data
 -------------------
 
 All that remains now is to ingest the data. These steps can be followed at
-:ref:`break_down`.
+:ref:`Greyscale Ingest Code Breakdown <break_down>`.
