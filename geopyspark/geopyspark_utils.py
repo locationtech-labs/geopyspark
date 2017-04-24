@@ -16,6 +16,9 @@ def add_pyspark_path():
 
     Raises:
         KeyError if SPARK_HOME could not be found.
+
+    Raises:
+        ValueError if py4j zip file could not be found.
     """
 
     try:
@@ -24,6 +27,14 @@ def add_pyspark_path():
 
     except:
         raise KeyError("Could not find SPARK_HOME")
+
+    try:
+        py4j_zip = glob.glob(path.join(pyspark_home, 'python', 'lib', 'py4j-*-src.zip'))
+        sys.path.append(py4j_zip[0])
+    except:
+        raise ValueError("Could not find the py4j zip in", path.join(pyspark_home, 'python', 'lib'))
+
+
 
 def setup_environment():
     """Sets up various environment variables that are needed to run GeoPySpark.
