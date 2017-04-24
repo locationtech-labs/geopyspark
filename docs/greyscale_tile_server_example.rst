@@ -1,5 +1,5 @@
-Creating a Tile Server From Ingested Data
-******************************************
+Creating a Tile Server From Ingested, Greyscale Data
+*****************************************************
 
 Now that we have ingested data, we can use it using a tile server.
 We will be using the catalog that was created in :ref:`greyscale_ingest_example`.
@@ -81,16 +81,30 @@ display geo-spatial images from a server. For this example, we'll be using
 `geojson.io <http://geojson.io>`_, but feel free to use whatever service you
 want.
 
+.. image:: pictures/geojson.png
+   :align: center
+
 Go to geojson.io, and select the ``Meta`` option from the tool bar, and then
-choose the ``Add map layer`` command. A pop up will appear where it will ask
-for the template, layer URL. To get this example to work, please enter the
-following: ``http://localhost:5000/{z}/{x}/{y}.png``. A second window will
-appear asking to name the new layer. Pick whatever you want. I tend to use
-simple names like ``a``, ``b``, ``c``, etc.
+choose the ``Add map layer`` command.
+
+.. image:: pictures/toolbar.png
+   :align: center
+
+A pop up will appear where it will ask for the template, layer URL. To get this example to work,
+please enter the following: ``http://localhost:5000/{z}/{x}/{y}.png``.
+
+.. image:: pictures/address.png
+   :align: center
+
+A second window will appear asking to name the new layer. Pick whatever you want.
+I tend to use simple names like ``a``, ``b``, ``c``, etc.
+
+.. image:: pictures/greyscale_example.png
+   :align: center
 
 Now that everything is setup, it's time to see the image. You'll need to scroll
-in to Sri Lanka and a black-and-white elevation map should appear. If it does,
-then the tile server is working properly!
+in to Sri Lanka and a black-and-white elevation map should appear. If what
+you're seeing matches the image above, then the tile server works!
 
 
 Breaking Down the Code
