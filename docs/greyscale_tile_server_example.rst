@@ -1,3 +1,5 @@
+.. _greyscale_tile_server:
+
 Creating a Tile Server From Ingested, Greyscale Data
 *****************************************************
 
@@ -106,6 +108,7 @@ Now that everything is setup, it's time to see the image. You'll need to scroll
 in to Sri Lanka and a black-and-white elevation map should appear. If what
 you're seeing matches the image above, then the tile server works!
 
+.. _server_break_down:
 
 Breaking Down the Code
 =======================
