@@ -1,5 +1,7 @@
 package geopyspark.geotrellis.io
 
+import geopyspark.geotrellis._
+
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
@@ -66,33 +68,25 @@ abstract class LayerWriterWrapper {
       case _ => throw new Exception
     }
 
-  def write(
-    keyType: String,
+  def writeSpatial(
     layerName: String,
-    zoom: Int,
-    jrdd: JavaRDD[Array[Byte]],
-    schema: String,
-    returnedMetadata: String,
+    spatialRDD: TiledRasterRDD[SpatialKey],
+    indexStrategy: String
+  ): Unit = {
+    val id = LayerId(layerName, spatialRDD.getZoom)
+    val indexMethod = getSpatialIndexMethod(indexStrategy)
+    layerWriter.write(id, spatialRDD.rdd, indexMethod)
+  }
+
+  def writeTemporal(
+    layerName: String,
+    temporalRDD: TiledRasterRDD[SpaceTimeKey],
     timeString: String,
     indexStrategy: String
-  ): Unit ={
-    val id = LayerId(layerName, zoom)
-    val metadataAST = returnedMetadata.parseJson
-
-    keyType match {
-      case "SpatialKey" => {
-        val indexMethod = getSpatialIndexMethod(indexStrategy)
-        val rawRdd = PythonTranslator.fromPython[(SpatialKey, MultibandTile)](jrdd, Some(schema))
-        val rdd = ContextRDD(rawRdd, metadataAST.convertTo[TileLayerMetadata[SpatialKey]])
-        layerWriter.write(id, rdd, indexMethod)
-      }
-      case "SpaceTimeKey" => {
-        val indexMethod = getTemporalIndexMethod(timeString, indexStrategy)
-        val rawRdd = PythonTranslator.fromPython[(SpaceTimeKey, MultibandTile)](jrdd, Some(schema))
-        val rdd = ContextRDD(rawRdd, metadataAST.convertTo[TileLayerMetadata[SpaceTimeKey]])
-        layerWriter.write(id, rdd, indexMethod)
-      }
-    }
+  ): Unit = {
+    val id = LayerId(layerName, temporalRDD.getZoom)
+    val indexMethod = getTemporalIndexMethod(timeString, indexStrategy)
+    layerWriter.write(id, temporalRDD.rdd, indexMethod)
   }
 }
 

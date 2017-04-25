@@ -1,13 +1,15 @@
+"""Constants that are used by geopyspark.geotrellis classes, methods, and functions."""
+
 """
 Indicates that the RDD contains (K, V) pairs, where the K has a spatial attribute,
-but no time value. Both projected_extent and spatial_key are examples of this
+but no time value. Both ProjectedExtent and SpatialKey are examples of this
 type of K.
 """
 SPATIAL = 'spatial'
 
 """
 Indicates that the RDD contains (K, V) pairs, where the K has a spatial and
-time attribute. Both temporal_projected_extent and spacetime_key are examples
+time attribute. Both TemporalProjectedExtent and SpaceTimeKey are examples
 of this type of K.
 """
 SPACETIME = 'spacetime'
@@ -50,6 +52,25 @@ MAX = 'Max'
 """A resampling method."""
 MIN = 'Min'
 
+RESAMPLE_METHODS = [
+    NEARESTNEIGHBOR,
+    BILINEAR,
+    CUBICCONVOLUTION,
+    LANCZOS,
+    AVERAGE,
+    MODE,
+    MEDIAN,
+    MAX,
+    MIN
+]
+
+
+"""Layout scheme to match resolution of the closest level of TMS pyramid"""
+ZOOM = 'zoom'
+
+"""Layout scheme to match resolution of source rasters"""
+FLOAT = 'float'
+
 
 """A key indexing method. Works for RDDs that contain both SpatialKeys and SpacetimeKeys."""
 ZORDER = 'zorder'
@@ -91,26 +112,69 @@ MONTHS = 'months'
 """A time unit used with ZORDER."""
 YEARS = 'years'
 
-"""Neighborhood type: Annulus."""
+
+"""Neighborhood type."""
 ANNULUS = 'annulus'
 
-"""Neighborhood type: Nesw."""
+"""Neighborhood type."""
 NESW = 'nesw'
 
-"""Neighborhood type: Square."""
+"""Neighborhood type."""
 SQUARE = 'square'
 
-"""Neighborhood type: Wedge."""
+"""Neighborhood type."""
 WEDGE = 'wedge'
 
-"""Focal operation type: Sum."""
+"""Focal operation type."""
 SUM = 'Sum'
 
-"""Focal operation type: Aspect."""
+"""Focal operation type."""
+MEAN = 'Mean'
+
+"""Focal operation type"""
 ASPECT = 'Aspect'
 
-"""Focal operation type: Slope."""
+"""Focal operation type."""
 SLOPE = 'Slope'
 
-"""Focal operation type: Standard Deviation."""
+"""Focal operation type."""
 STANDARDDEVIATION = 'StandardDeviation'
+
+OPERATIONS = [
+    SUM,
+    MIN,
+    MAX,
+    MEAN,
+    MEDIAN,
+    MODE,
+    STANDARDDEVIATION,
+    ASPECT,
+    SLOPE
+]
+
+NEIGHBORHOODS = [
+    ANNULUS,
+    NESW,
+    SQUARE,
+    WEDGE,
+    ASPECT,
+    SLOPE
+]
+
+"""The NoData value for ints in GeoTrellis."""
+NODATAINT = -2147483648
+
+"""A classification strategy."""
+GREATERTHAN = "GreaterThan"
+
+"""A classification strategy."""
+GREATERTHANOREQUALTO = "GreaterThanOrEqualTo"
+
+"""A classification strategy."""
+LESSTHAN = "LessThan"
+
+"""A classification strategy."""
+LESSTHANOREQUALTO = "LessThanOrEqualTo"
+
+"""A classification strategy."""
+EXACT = "Exact"

@@ -9,6 +9,7 @@ branches:
   only:
     - io-refactor
     - master
+    - refactor/performance-refactor
 
 addons:
   apt:
@@ -38,14 +39,10 @@ cache:
   - $HOME/.ivy2
   - $HOME/.cache/pip
 
-notifications:
-  email:
-    recipients:
-      - jbouffard@azavea.com
-
 script:
   - "if [ ! -f archives/spark-2.1.0-bin-hadoop2.7.tgz ]; then pushd archives ; wget http://d3kbcqa49mib13.cloudfront.net/spark-2.1.0-bin-hadoop2.7.tgz; popd; fi"
   - "tar -xvf archives/spark-2.1.0-bin-hadoop2.7.tgz"
   - "export SPARK_HOME=./spark-2.1.0-bin-hadoop2.7/"
   - "export JAVA_HOME=/usr/lib/jvm/java-8-oracle"
-  - pytest
+  - pytest -k "schema" geopyspark/tests/schema_tests/
+  - pytest -k "not schema" geopyspark/tests/*test.py

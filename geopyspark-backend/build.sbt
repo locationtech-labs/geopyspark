@@ -2,7 +2,7 @@ lazy val commonSettings = Seq(
   version := Version.geopyspark,
   scalaVersion := Version.scala,
   crossScalaVersions := Version.crossScala,
-  description := "GeoPySpark Demo",
+  description := "GeoPySpark",
   organization := "org.locationtech.geotrellis",
   licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.html")),
   scalacOptions ++= Seq(
@@ -24,6 +24,7 @@ lazy val commonSettings = Seq(
   addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
 )
 
+scalaVersion := Version.scala
 
 lazy val root = Project("root", file(".")).
   dependsOn(geotrellisProject)
