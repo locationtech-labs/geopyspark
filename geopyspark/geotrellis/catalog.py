@@ -55,7 +55,7 @@ from urllib.parse import urlparse
 from geopyspark.geotrellis.rdd import TiledRasterRDD
 from geopyspark.geotrellis.constants import TILE, ZORDER, SPATIAL
 
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
 from shapely.wkt import dumps
 
 
@@ -349,7 +349,7 @@ def query(geopysc,
     if time_intervals is None:
         time_intervals = []
 
-    if isinstance(intersects, Polygon):
+    if isinstance(intersects, Polygon) or isinstance(intersects, Point):
         srdd = cached.reader.query(key,
                                    layer_name,
                                    layer_zoom,

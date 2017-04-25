@@ -328,12 +328,11 @@ class TiledRasterRDD(object):
                 ``instant``.
         """
 
-        if isinstance(geometry, str):
-            pass
-        elif isinstance(geometry, Polygon):
-            geometry = dumps(geometry)
-        else:
-            raise TypeError(geometry, "Needs to be either a Polygon or a string")
+        if not isinstance(geometry, str):
+            try:
+                geometry = dumps(geometry)
+            except:
+                raise TypeError(geometry, "Needs to be either a Shapely Geometry or a string")
 
         if instant and rdd_type != SPATIAL:
             srdd = geopysc._jvm.geopyspark.geotrellis.TemporalTiledRasterRDD.rasterize(
