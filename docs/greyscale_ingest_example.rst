@@ -15,14 +15,14 @@ GeoPySpark is how much simpler it is to run an ingest than if you were
 using GeoTrellis. Whereas GeoTrellis needs various configuration files run an
 ingest, GeoPySpark can perform the same task in just a single script.
 
-.. code-block:: Python
+.. code-block:: python
 
   from geopyspark.geopycontext import GeoPyContext
   from geopyspark.geotrellis.constants import SPATIAL, ZOOM
   from geopyspark.geotrellis.catalog import write
   from geopyspark.geotrellis.geotiff_rdd import get
 
-  geopysc = GeoPyContext(appName="Python-S3-ingest", master="local[*]")
+  geopysc = GeoPyContext(appName="python-S3-ingest", master="local[*]")
 
   # Read the GeoTiff from S3
   rdd = get(geopysc, SPATIAL, "s3://geopyspark-test/example-files/cropped.tif")
@@ -57,7 +57,7 @@ from the file, go to the directory the file is in and run this command
 
 .. code-block:: none
 
-  Python3 file.py
+  python3 file.py
 
 Just replace ``file.py`` with whatever name you decided to call the file.
 
@@ -72,7 +72,7 @@ what's actually going on.
 The Imports
 -----------
 
-.. code-block:: Python
+.. code-block:: python
 
  from geopyspark.geopycontext import GeoPyContext
  from geopyspark.geotrellis.constants import SPATIAL, ZOOM
@@ -91,9 +91,9 @@ tiled via a ZoomedLayoutScheme before the pyramiding takes place**.
 Reading in the Data
 --------------------
 
-.. code-block:: Python
+.. code-block:: python
 
- geopysc = GeoPyContext(appName="Python-S3-ingest", master="local[*]")
+ geopysc = GeoPyContext(appName="python-S3-ingest", master="local[*]")
 
  # Read the GeoTiff from S3
  rdd = get(geopysc, SPATIAL, "s3://geopyspark-test/example-files/cropped.tif")
@@ -113,7 +113,7 @@ working with our data.
 Collecting the Metadata
 ------------------------
 
-.. code-block:: Python
+.. code-block:: python
 
  metadata = rdd.collect_metadata()
 
@@ -128,7 +128,7 @@ this example, we will just go with the default parameters.
 Tiling the Data
 ----------------
 
-.. code-block:: Python
+.. code-block:: python
 
  # tile the rdd to the layout defined in the metadata
  laid_out = rdd.tile_to_layout(metadata)
@@ -155,7 +155,7 @@ that is in the correct projection and layout.
 Pyramiding the Data
 --------------------
 
-.. code-block:: Python
+.. code-block:: python
 
  # pyramid the TiledRasterRDD to create 12 new TiledRasterRDD
  # one for each zoom level
@@ -170,11 +170,11 @@ number when pyramiding.
 Saving the Ingest Locally
 --------------------------
 
-.. code-block:: Python
+.. code-block:: python
 
  # Save each TiledRasterRDD locally
  for tiled in pyramided:
-     write("file:///tmp/Python-catalog", "Python-ingest", tiled)
+     write("file:///tmp/python-catalog", "python-ingest", tiled)
 
 All that's left to do now is to save it. Since ``pyramided`` is just a list of
 ``TiledRasterRDD``, we can just loop through it and save each element one at a
