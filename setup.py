@@ -12,7 +12,7 @@ setup(
     download_url='http://github.com/locationtech-labs/geopyspark',
     description='Python bindings for GeoTrellis and GeoMesa',
     long_description=open('README.rst').read(),
-    license='LICENSE.txt',
+    license='LICENSE',
     install_requires=[
         'avro-python3>=1.8',
         'numpy>=1.8',
