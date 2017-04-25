@@ -34,6 +34,12 @@ Welcome to GeoPySpark's documentation!
 
   contributing
 
+.. toctree::
+  :maxdepth: 1
+  :caption: Changelog:
+
+  changelog
+
 Indices and tables
 ==================
 
