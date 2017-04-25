@@ -28,6 +28,12 @@ Welcome to GeoPySpark's documentation!
    sentinel_ingest_example
    sentinel_tile_server_example
 
+.. toctree::
+  :maxdepth: 1
+  :caption: Contributing:
+
+  contributing
+
 Indices and tables
 ==================
 
