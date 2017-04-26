@@ -82,7 +82,7 @@ move it to the ``jars`` module, and then runs the ``setup.py`` script.
 Make Targets
 ^^^^^^^^^^^^
 
- - **isntall** - install ``GeoPySpark`` python package locally
+ - **install** - install ``GeoPySpark`` python package locally
  - **wheel** - build python ``GeoPySpark`` wheel for distribution
  - **pyspark** - start pyspark shell with project jars
  - **docker-build** - build docker image for Jupyter with ``GeoPySpark``
