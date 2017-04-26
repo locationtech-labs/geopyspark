@@ -88,10 +88,10 @@ def _construct_catalog(geopysc, new_uri, options):
             writer = writer_factory.buildFile(store)
 
         elif backend == 's3':
-            store = store_factory.cached3(parsed_uri.netloc, parsed_uri.path[1:])
-            reader = reader_factory.cached3(store, geopysc.sc)
-            value_reader = value_reader_factory.cached3(store)
-            writer = writer_factory.cached3(store)
+            store = store_factory.buildS3(parsed_uri.netloc, parsed_uri.path[1:])
+            reader = reader_factory.buildS3(store, geopysc.sc)
+            value_reader = value_reader_factory.buildS3(store)
+            writer = writer_factory.buildS3(store)
 
         elif backend == 'cassandra':
             parameters = parsed_uri.query.split('&')
