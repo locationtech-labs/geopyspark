@@ -24,8 +24,9 @@ import spray.json._
 import spray.json.DefaultJsonProtocol._
 
 import org.apache.spark._
-import org.apache.spark.rdd._
 import org.apache.spark.api.java.JavaRDD
+import org.apache.spark.rdd._
+import org.apache.spark.SparkContext._
 
 import scala.reflect._
 import scala.collection.JavaConverters._
@@ -198,6 +199,14 @@ class SpatialTiledRasterRDD(
   val zoomLevel: Option[Int],
   val rdd: RDD[(SpatialKey, MultibandTile)] with Metadata[TileLayerMetadata[SpatialKey]]
 ) extends TiledRasterRDD[SpatialKey] {
+
+  def lookup(
+    col: Int,
+    row: Int
+  ): (java.util.ArrayList[Array[Byte]], String) = {
+    val tiles = rdd.lookup(SpatialKey(col, row))
+    PythonTranslator.toPython(tiles)
+  }
 
   def reproject(
     layout: Either[LayoutScheme, LayoutDefinition],
