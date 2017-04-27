@@ -25,6 +25,7 @@ setup(
         'geopyspark.tests.schema_tests',
         'geopyspark.jars'
     ],
+    include_package_data=True,
     scripts=[],
     classifiers=[
         'Development Status :: 3 - Alpha',
