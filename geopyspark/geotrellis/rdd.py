@@ -401,6 +401,25 @@ class TiledRasterRDD(object):
 
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
+    def lookup(self, col, row):
+        """Return the value(s) in the image of a particular SpatialKey (given by col and row)
+
+        Args:
+            col: The SpatialKey column
+            row: The SpatialKey row
+
+        Returns: An array of numpy arrays (the tiles)
+        """
+        if self.rdd_type != SPATIAL:
+            raise ValueError("Only TiledRasterRDDs with a rdd_type of Spatial can use lookup()")
+
+        tup = self.srdd.lookup(col, row)
+        array_of_tiles = tup._1()
+        schema = tup._2()
+        ser = self.geopysc.create_value_serializer(schema, TILE)
+
+        return [ser.loads(tile)[0] for tile in array_of_tiles]
+
     def tile_to_layout(self, layout, resample_method=NEARESTNEIGHBOR):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
