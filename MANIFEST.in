@@ -1,0 +1,1 @@
+include geopyspark/jars/*.jar
