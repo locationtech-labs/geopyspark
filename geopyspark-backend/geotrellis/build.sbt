@@ -6,13 +6,13 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.apache.spark"            %% "spark-core"           % "1.2.2" % "provided",
-  "org.locationtech.geotrellis" %% "geotrellis-accumulo"  % Version.geotrellis,
-  "org.locationtech.geotrellis" %% "geotrellis-cassandra" % Version.geotrellis,
-  "org.locationtech.geotrellis" %% "geotrellis-hbase"     % Version.geotrellis,
-  "org.locationtech.geotrellis" %% "geotrellis-s3"        % Version.geotrellis,
-  "org.locationtech.geotrellis" %% "geotrellis-s3-testkit"        % "1.0.0",
-  "org.locationtech.geotrellis" %% "geotrellis-spark"     % Version.geotrellis,
+  "org.apache.spark"            %% "spark-core"            % "2.0.0" % "provided",
+  "org.locationtech.geotrellis" %% "geotrellis-accumulo"   % Version.geotrellis,
+  "org.locationtech.geotrellis" %% "geotrellis-cassandra"  % Version.geotrellis,
+  "org.locationtech.geotrellis" %% "geotrellis-hbase"      % Version.geotrellis,
+  "org.locationtech.geotrellis" %% "geotrellis-s3"         % Version.geotrellis,
+  "org.locationtech.geotrellis" %% "geotrellis-s3-testkit" % "1.0.0",
+  "org.locationtech.geotrellis" %% "geotrellis-spark"      % Version.geotrellis,
   "org.spire-math" %% "spire" % "0.13.0"
 )
 
