@@ -6,6 +6,7 @@ import numpy as np
 
 from shapely.geometry import Polygon
 from geopyspark.tests.base_test_class import BaseTestClass
+from geopyspark.geotrellis.rdd import TiledRasterRDD
 from geopyspark.geotrellis.constants import SPATIAL
 
 
@@ -38,20 +39,16 @@ class MaskTest(BaseTestClass):
                     'tileLayout': layout}}
 
     geometries = [Polygon([(17, 17), (42, 17), (42, 42), (17, 42)])]
+    raster_rdd = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, metadata)
 
-    @pytest.mark.skip('Mask is currently deprecated.')
-    def test_python_mask(self):
-        result = python_mask(self.rdd, self.metadata, self.geometries)
-        n = result.map(lambda kv: np.sum(kv[1]['data'])).reduce(lambda a,b: a + b)
-        self.assertEqual(n, -50)
+    @pytest.fixture(autouse=True)
+    def tearDown(self):
+        yield
+        BaseTestClass.geopysc.pysc._gateway.close()
 
-    @pytest.mark.skip('Mask is currently deprecated.')
+    @pytest.mark.skip('Discrepant behavior on Travis')
     def test_geotrellis_mask(self):
-        result = geotrellis_mask(geopysc=self.geopysc,
-                                 rdd_type=SPATIAL,
-                                 keyed_rdd=self.rdd,
-                                 metadata=self.metadata,
-                                 geometries=self.geometries)
+        result = self.raster_rdd.mask(geometries=self.geometries).to_numpy_rdd()
         n = result.map(lambda kv: np.sum(kv[1]['data'])).reduce(lambda a,b: a + b)
         self.assertEqual(n, 25.0)
 
