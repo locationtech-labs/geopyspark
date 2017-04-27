@@ -148,6 +148,33 @@ class ReclassifyTest(BaseTestClass):
         for x in list(result.flatten()):
             self.assertTrue(math.isnan(x))
 
+    def test_ignore_no_data_ints(self):
+        arr = np.ones((1, 16, 16), int)
+        np.fill_diagonal(arr[0], NODATAINT)
+        tile = {'data': arr, 'no_data_value': NODATAINT}
+
+        rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+
+        value_map = {1: 0}
+
+        result = raster_rdd.reclassify(value_map, int, replace_nodata_with=1).to_numpy_rdd().first()[1]['data']
+
+        self.assertTrue((result == np.identity(16, int)).all())
+
+    def test_ignore_no_data_floats(self):
+        arr = np.ones((1, 4, 4))
+        np.fill_diagonal(arr[0], float('nan'))
+        tile = {'data': arr, 'no_data_value': float('nan')}
+
+        rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+
+        value_map = {1.0: 0.0}
+
+        result = raster_rdd.reclassify(value_map, float, replace_nodata_with=1.0).to_numpy_rdd().first()[1]['data']
+
+        self.assertTrue((result == np.identity(4)).all())
 
 if __name__ == "__main__":
     unittest.main()
