@@ -64,13 +64,18 @@ abstract class TileRDD[K: ClassTag] {
 
   def reclassify(
     intMap: java.util.Map[Int, Int],
-    boundaryType: String
+    boundaryType: String,
+    ignoreNoData: Boolean = false
   ): TileRDD[_] = {
     val scalaMap = intMap.asScala.toMap
 
     val boundary = getBoundary(boundaryType)
     val mapStrategy = new MapStrategy(boundary, NODATA, NODATA, false)
-    val breakMap = new BreakMap(scalaMap, mapStrategy, { i: Int => isNoData(i) })
+    val breakMap = 
+      if (ignoreNoData)
+        new BreakMap(scalaMap, mapStrategy, { i: Int => false })
+      else
+        new BreakMap(scalaMap, mapStrategy, { i: Int => isNoData(i) })
 
     val reclassifiedRDD =
       rdd.map { x =>
@@ -89,13 +94,18 @@ abstract class TileRDD[K: ClassTag] {
 
   def reclassifyDouble(
     doubleMap: java.util.Map[Double, Double],
-    boundaryType: String
+    boundaryType: String,
+    ignoreNoData: Boolean = false
   ): TileRDD[_] = {
     val scalaMap = doubleMap.asScala.toMap
 
     val boundary = getBoundary(boundaryType)
     val mapStrategy = new MapStrategy(boundary, doubleNODATA, doubleNODATA, false)
-    val breakMap = new BreakMap(scalaMap, mapStrategy, { d: Double => isNoData(d) })
+    val breakMap = 
+      if (ignoreNoData)
+        new BreakMap(scalaMap, mapStrategy, { d: Double => false })
+      else
+        new BreakMap(scalaMap, mapStrategy, { d: Double => isNoData(d) })
 
     val reclassifiedRDD =
       rdd.map { x =>

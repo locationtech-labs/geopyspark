@@ -18,7 +18,7 @@ from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              LESSTHANOREQUALTO
                                             )
 
-def _reclassify(srdd, value_map, data_type, boundary_strategy):
+def _reclassify(srdd, value_map, data_type, boundary_strategy, ignore_nodata):
     new_dict = {}
 
     for key, value in value_map.items():
@@ -30,9 +30,9 @@ def _reclassify(srdd, value_map, data_type, boundary_strategy):
             new_dict[key] = value
 
     if data_type is int:
-        return srdd.reclassify(new_dict, boundary_strategy)
+        return srdd.reclassify(new_dict, boundary_strategy, ignore_nodata)
     else:
-        return srdd.reclassifyDouble(new_dict, boundary_strategy)
+        return srdd.reclassifyDouble(new_dict, boundary_strategy, ignore_nodata)
 
 
 class RasterRDD(object):
@@ -199,7 +199,7 @@ class RasterRDD(object):
         srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
-    def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO):
+    def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO, ignore_nodata=False):
         """Changes the cell values of a raster based on how the data is broken up.
 
         Args:
@@ -209,9 +209,13 @@ class RasterRDD(object):
                 ``float``.
             boundary_strategy (str, optional): How the cells should be classified along the breaks.
                 If unspecified, then ``LESSTHANOREQUALTO`` will be used.
+            ignore_nodata (bool, optional): When remapping values, if set to True, nodata values in
+                the cells will be treated literally as their numerical value, rather than nodata.  
+                Should be set to True if nodata values are intended to be replaced during the reclassify.
+                If unspecified, the default value is False.
 
         NOTE:
-            Simbolizing a NoData value differs depending on if the ``data_type`` is an ``int`` or a
+            Symbolizing a NoData value differs depending on if the ``data_type`` is an ``int`` or a
             ``float``. For an ``int``, the constant ``NODATAINT`` can be used which represents the
             NoData value for ``int`` in GeoTrellis. If ``float``, then ``float('nan')`` is used to
             represent NoData.
@@ -220,7 +224,7 @@ class RasterRDD(object):
             :class:`~geopyspark.geotrellis.rdd.RasterRDD`
         """
 
-        srdd = _reclassify(self.srdd, value_map, data_type, boundary_strategy)
+        srdd = _reclassify(self.srdd, value_map, data_type, boundary_strategy, ignore_nodata)
         return RasterRDD(self.geopysc, self.rdd_type, srdd)
 
 
@@ -517,7 +521,7 @@ class TiledRasterRDD(object):
 
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
-    def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO):
+    def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO, ignore_nodata=False):
         """Changes the cell values of a raster based on how the data is broken up.
 
         Args:
@@ -527,18 +531,22 @@ class TiledRasterRDD(object):
                 ``float``.
             boundary_strategy (str, optional): How the cells should be classified along the breaks.
                 If unspecified, then ``LESSTHANOREQUALTO`` will be used.
+            ignore_nodata (bool, optional): When remapping values, if set to True, nodata values in
+                the cells will be treated literally as their numerical value, rather than nodata.  
+                Should be set to True if nodata values are intended to be replaced during the reclassify.
+                If unspecified, the default value is False.
 
         NOTE:
-            Simbolizing a NoData value differs depending on if the ``data_type`` is an ``int`` or a
-            ``float``. For an ``int``, the constant ``NODATAINT`` can be used which represents the
-            NoData value for ``int`` in GeoTrellis. If ``float``, then ``float('nan')`` is used to
+            NoData value symbolizes a different value depending on if ``data_type`` is ``int`` or
+            ``float``. For ``int``, the constant ``NODATAINT`` can be used which represents the
+            NoData value for ``int`` in GeoTrellis. For ``float``, ``float('nan')`` is used to
             represent NoData.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
         """
 
-        srdd = _reclassify(self.srdd, value_map, data_type, boundary_strategy)
+        srdd = _reclassify(self.srdd, value_map, data_type, boundary_strategy, ignore_nodata)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
     def _process_operation(self, value, operation):
