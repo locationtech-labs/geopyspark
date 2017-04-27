@@ -2,23 +2,24 @@ package geopyspark.geotrellis
 
 import geopyspark.geotrellis.GeoTrellisUtils._
 
-import geotrellis.util._
 import geotrellis.proj4._
-import geotrellis.vector._
-import geotrellis.vector.io.wkt.WKT
 import geotrellis.raster._
 import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
 import geotrellis.raster.resample.ResampleMethod
 import geotrellis.spark._
-import geotrellis.spark.pyramid._
-import geotrellis.spark.reproject._
 import geotrellis.spark.costdistance.IterativeCostDistance
 import geotrellis.spark.io._
-import geotrellis.spark.io.json._
 import geotrellis.spark.io.avro._
+import geotrellis.spark.io.json._
 import geotrellis.spark.mapalgebra.focal._
+import geotrellis.spark.mask.Mask
+import geotrellis.spark.pyramid._
+import geotrellis.spark.reproject._
 import geotrellis.spark.tiling._
+import geotrellis.util._
+import geotrellis.vector._
+import geotrellis.vector.io.wkt.WKT
 
 import spray.json._
 import spray.json.DefaultJsonProtocol._
@@ -48,6 +49,19 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
   def toAvroRDD(): (JavaRDD[Array[Byte]], String) = PythonTranslator.toPython(rdd)
 
   def layerMetadata: String = rdd.metadata.toJson.prettyPrint
+
+  def mask(wkts: java.util.ArrayList[String]): TiledRasterRDD[_] = {
+    val geometries: Seq[MultiPolygon] = wkts
+      .asScala.map({ wkt => WKT.read(wkt) })
+      .flatMap({
+        case p: Polygon => Some(MultiPolygon(p))
+        case m: MultiPolygon => Some(m)
+        case _ => None
+      })
+    mask(geometries)
+  }
+
+  protected def mask(geometries: Seq[MultiPolygon]): TiledRasterRDD[_]
 
   def reproject(
     extent: java.util.Map[String, Double],
@@ -287,6 +301,20 @@ class SpatialTiledRasterRDD(
     SpatialTiledRasterRDD(None, multibandRDD)
   }
 
+  def mask(geometries: Seq[MultiPolygon]): TiledRasterRDD[_] = {
+    val options = Mask.Options.DEFAULT
+    val singleBand = ContextRDD(
+      rdd.map({ case (k, v) => (k, v.band(0)) }),
+      rdd.metadata
+    )
+    val result = Mask(singleBand, geometries, options)
+    val multiBand = MultibandTileLayerRDD(
+      result.map({ case (k, v) => (k, MultibandTile(v)) }),
+      result.metadata
+    )
+    SpatialTiledRasterRDD(None, multiBand)
+  }
+
   def stitch: (Array[Byte], String) = {
     val contextRDD = ContextRDD(
       rdd.map({ case (k, v) => (k, v.band(0)) }),
@@ -306,7 +334,7 @@ class SpatialTiledRasterRDD(
       rdd.metadata
     )
 
-    implicit def convertion(k: SpaceTimeKey): SpatialKey =
+    implicit def conversion(k: SpaceTimeKey): SpatialKey =
       k.spatialKey
 
     implicit val _sc = sc
@@ -335,6 +363,20 @@ class TemporalTiledRasterRDD(
   val zoomLevel: Option[Int],
   val rdd: RDD[(SpaceTimeKey, MultibandTile)] with Metadata[TileLayerMetadata[SpaceTimeKey]]
 ) extends TiledRasterRDD[SpaceTimeKey] {
+
+  def mask(geometries: Seq[MultiPolygon]): TiledRasterRDD[_] = {
+    val options = Mask.Options.DEFAULT
+    val singleBand = ContextRDD(
+      rdd.map({ case (k, v) => (k, v.band(0)) }),
+      rdd.metadata
+    )
+    val result = Mask(singleBand, geometries, options)
+    val multiBand = MultibandTileLayerRDD(
+      result.map({ case (k, v) => (k, MultibandTile(v)) }),
+      result.metadata
+    )
+    TemporalTiledRasterRDD(None, multiBand)
+  }
 
   def reproject(
     layout: Either[LayoutScheme, LayoutDefinition],
