@@ -26,7 +26,9 @@ setup(
         'geopyspark.tests.schema_tests',
         'geopyspark.jars',
     ],
-    include_package_data=True,
+    entry_points={
+        "console_scripts": ['geopyspark = geopyspark.configuration:main']
+    },
     scripts=[],
     classifiers=[
         'Development Status :: 3 - Alpha',
