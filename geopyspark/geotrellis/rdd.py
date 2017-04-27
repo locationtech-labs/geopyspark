@@ -215,9 +215,9 @@ class RasterRDD(object):
                 If unspecified, the default value is False.
 
         NOTE:
-            Symbolizing a NoData value differs depending on if the ``data_type`` is an ``int`` or a
-            ``float``. For an ``int``, the constant ``NODATAINT`` can be used which represents the
-            NoData value for ``int`` in GeoTrellis. If ``float``, then ``float('nan')`` is used to
+            NoData symbolizes a different value depending on if ``data_type`` is ``int`` or
+            ``float``. For ``int``, the constant ``NODATAINT`` can be used which represents the
+            NoData value for ``int`` in GeoTrellis. For ``float``, ``float('nan')`` is used to
             represent NoData.
 
         Returns:
@@ -537,7 +537,7 @@ class TiledRasterRDD(object):
                 If unspecified, the default value is False.
 
         NOTE:
-            NoData value symbolizes a different value depending on if ``data_type`` is ``int`` or
+            NoData symbolizes a different value depending on if ``data_type`` is ``int`` or
             ``float``. For ``int``, the constant ``NODATAINT`` can be used which represents the
             NoData value for ``int`` in GeoTrellis. For ``float``, ``float('nan')`` is used to
             represent NoData.
