@@ -46,7 +46,6 @@ class MaskTest(BaseTestClass):
         yield
         BaseTestClass.geopysc.pysc._gateway.close()
 
-    @pytest.mark.skip('Discrepant behavior on Travis')
     def test_geotrellis_mask(self):
         result = self.raster_rdd.mask(geometries=self.geometries).to_numpy_rdd()
         n = result.map(lambda kv: np.sum(kv[1]['data'])).reduce(lambda a,b: a + b)
