@@ -148,6 +148,8 @@ class ReclassifyTest(BaseTestClass):
         for x in list(result.flatten()):
             self.assertTrue(math.isnan(x))
 
+    @pytest.mark.skipif('TRAVIS' in os.environ,
+                         reason="Encoding using methods in Main causes issues on Travis")
     def test_ignore_no_data_ints(self):
         arr = np.ones((1, 16, 16), int)
         np.fill_diagonal(arr[0], NODATAINT)
@@ -162,6 +164,8 @@ class ReclassifyTest(BaseTestClass):
 
         self.assertTrue((result == np.identity(16, int)).all())
 
+    @pytest.mark.skipif('TRAVIS' in os.environ,
+                         reason="Encoding using methods in Main causes issues on Travis")
     def test_ignore_no_data_floats(self):
         arr = np.ones((1, 4, 4))
         np.fill_diagonal(arr[0], float('nan'))
