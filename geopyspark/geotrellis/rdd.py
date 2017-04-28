@@ -551,7 +551,7 @@ class TiledRasterRDD(object):
             represent NoData.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.RasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
         """
 
         srdd = _reclassify(self.srdd, value_map, data_type, boundary_strategy, replace_nodata_with)
