@@ -556,7 +556,7 @@ class TiledRasterRDD(object):
 
         srdd = _reclassify(self.srdd, value_map, data_type, boundary_strategy, replace_nodata_with)
 
-        return RasterRDD(self.geopysc, self.rdd_type, srdd)
+        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
     def _process_operation(self, value, operation):
         if isinstance(value, int) or isinstance(value, float):
