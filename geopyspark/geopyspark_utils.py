@@ -6,9 +6,7 @@ import os
 from os import path
 from pkg_resources import resource_filename
 
-
-VERSION = '0.1.0'
-JAR_FILE = 'geotrellis-backend-assembly-' + VERSION + '.jar'
+from geopyspark.geopyspark_constants import JAR
 
 
 def check_environment():
@@ -70,7 +68,7 @@ def setup_environment():
             local_prefixes.append(relative_path)
 
     possible_jars = [path.join(prefix, '*.jar') for prefix in local_prefixes]
-    jar = path.abspath(resource_filename('geopyspark.jars', JAR_FILE))
+    jar = path.abspath(resource_filename('geopyspark.jars', JAR))
     jar_dir = os.path.dirname(jar)
     if jar_dir not in local_prefixes:
         possible_jars.append(jar)

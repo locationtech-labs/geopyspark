@@ -3,13 +3,12 @@ import os
 from os import path
 import argparse
 
+from geopyspark.geopyspark_constants import JAR, CWD
 
-VERSION = '0.1.0'
-JAR = 'geotrellis-backend-assembly-' + VERSION + '.jar'
+
 JAR_URL = 'https://github.com/locationtech-labs/geopyspark/releases/download/v0.1.0-RC1/' + JAR
-CWD = path.abspath(path.dirname(__file__))
-DEFAULT_JAR_PATH = path.join(CWD, '../jars/')
-CONF = path.join(CWD, 'geopyspark.conf')
+DEFAULT_JAR_PATH = path.join(CWD, 'jars')
+CONF = path.join(CWD, 'command', 'geopyspark.conf')
 
 
 parser = argparse.ArgumentParser(description='Arg Parser for GeoPySpark')
