@@ -64,8 +64,8 @@ class LookupTest(BaseTestClass):
         self.assertEqual(n, 24 + 3*25)
 
     def test_lookup_5(self):
-        result = self.raster_rdd.lookup(13, 33)
-        self.assertEqual(len(result), 0)
+        with pytest.raises(IndexError):
+            result = self.raster_rdd.lookup(13, 33)
 
 if __name__ == "__main__":
     unittest.main()
