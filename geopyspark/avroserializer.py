@@ -1,8 +1,12 @@
 """The class which serializes/deserializes values in a RDD to/from python."""
 import io
 from fastavro import schemaless_writer, schemaless_reader
+from geopyspark.geopyspark_utils import check_environment
+check_environment()
 
 from pyspark.serializers import Serializer, FramedSerializer
+
+
 
 
 class AvroSerializer(FramedSerializer):
