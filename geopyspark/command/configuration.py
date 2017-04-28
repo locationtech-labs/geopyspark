@@ -12,18 +12,14 @@ CONF = path.join(CWD, 'command', 'geopyspark.conf')
 
 
 parser = argparse.ArgumentParser(description='Arg Parser for GeoPySpark')
-subparser = parser.add_subparsers()
+parser.add_argument('--install-jar',
+                    '-i',
+                    nargs='?',
+                    dest="jar_path",
+                    default=False)
 
-set_parser = subparser.add_parser('set', help='Sets the value of the arg')
-set_parser.add_argument('--install-jar',
-                        '-i',
-                        nargs='?',
-                        dest="jar_path",
-                        default=False)
-
-read_parser = subparser.add_parser('read', help='Reads the set value of the arg')
-read_parser.add_argument('--jar-path', '-jp', action="store_true", dest='path')
-read_parser.add_argument('--absolute-jar-path', '-ajp', action="store_true", dest='abs_path')
+parser.add_argument('--jar-path', '-jp', action="store_true", dest='path')
+parser.add_argument('--absolute-jar-path', '-ajp', action="store_true", dest='abs_path')
 
 
 def write_jar_path(jar_path):
@@ -45,28 +41,23 @@ def get_jar_path():
     else:
         raise Exception("The jar path has never been set.")
 
-def _parse_set(args):
-    if args.jar_path:
-        download_jar(args.jar_path)
-    else:
-        download_jar(DEFAULT_JAR_PATH)
-
-def _parse_read(args):
-    if args.path:
-        jar_path = get_jar_path()
-        rel_path = path.join(path.relpath(os.getcwd(), jar_path), JAR)
-        print(rel_path)
-
-    if args.abs_path:
-        print(get_jar_path())
-
 def parse_args():
     result = parser.parse_args()
+    remaining = sys.argv[1:]
 
-    if 'set' in sys.argv[1:]:
-        _parse_set(result)
+    if '--install-jar' in remaining or '-i' in remaining:
+        if result.jar_path:
+            download_jar(result.jar_path)
+        else:
+            download_jar(DEFAULT_JAR_PATH)
+
+    elif '--jar-path' in remaining or '-jp' in remaining:
+        jar_path = get_jar_path()
+        rel_path = path.join(path.relpath(jar_path, os.getcwd()))
+        print(rel_path)
+
     else:
-        _parse_read(result)
+        print(get_jar_path())
 
 def main():
     parse_args()
