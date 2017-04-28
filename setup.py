@@ -22,12 +22,13 @@ setup(
     packages=[
         'geopyspark',
         'geopyspark.geotrellis',
+        'geopyspark.command',
         'geopyspark.tests',
         'geopyspark.tests.schema_tests',
         'geopyspark.jars',
     ],
     entry_points={
-        "console_scripts": ['geopyspark = geopyspark.configuration:main']
+        "console_scripts": ['geopyspark = geopyspark.command.configuration:main']
     },
     scripts=[],
     classifiers=[
