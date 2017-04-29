@@ -1,3 +1,7 @@
+"""The installation script for GeoPySpark.
+Downloads the backend jar to the designated location and keeps a reference of where it was saved
+to.
+"""
 import sys
 import os
 from os import path
