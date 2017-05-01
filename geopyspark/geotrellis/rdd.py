@@ -539,6 +539,23 @@ class TiledRasterRDD(object):
         ser = self.geopysc.create_value_serializer(tup._2(), TILE)
         return ser.loads(tup._1())[0]
 
+    def mask(self, geometries):
+        """Performs cost distance of a TileLayer.
+
+        Args:
+            geometries (list): A list of shapely geometries to use as masks.
+
+                Note:
+                    All geometries must be in the same CRS as the TileLayer.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+        """
+        wkts = [shapely.wkt.dumps(g) for g in geometries]
+        srdd = self.srdd.mask(wkts)
+
+        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+
     def cost_distance(self, geometries, max_distance):
         """Performs cost distance of a TileLayer.
 
