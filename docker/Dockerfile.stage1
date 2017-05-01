@@ -1,10 +1,9 @@
 FROM quay.io/geodocker/jupyter:4
 
 # Install GDAL, GeoPySpark, &c.
-COPY archives/geotrellis-backend-assembly-0.1.0.jar /blobs/
-COPY archives/gdal-and-friends.tar.gz /blobs/
-COPY archives/geopyspark-and-friends.tar.gz /blobs/
-COPY archives/geotrellis-backend-assembly-0.1.0.jar /blobs/
+COPY blobs/gdal-and-friends.tar.gz /blobs/
+COPY blobs/geopyspark-and-friends.tar.gz /blobs/
+COPY blobs/geotrellis-backend-assembly-0.1.0.jar /blobs/
 COPY scripts/install-blobs.sh /scripts/
 COPY kernels/local/kernel.json /usr/local/share/jupyter/kernels/pyspark/
 COPY kernels/yarn/kernel.json /usr/local/share/jupyter/kernels/pysparkyarn/
@@ -12,10 +11,15 @@ COPY config/requirements.txt /tmp/requirements.txt
 ENV LD_LIBRARY_PATH /home/hadoop/local/gdal/lib
 RUN /scripts/install-blobs.sh
 
-# Install GeoNotebook, &c.
+# Install GeoNotebook dependencies
 RUN pip3 install --user -r /tmp/requirements.txt && \
     pip3 install --user "https://github.com/OpenGeoscience/ktile/archive/6f134e86f90242c8393fe1912435a5fb99c6256d.zip"
-RUN pip3 install --user "https://github.com/jamesmcclain/geonotebook/archive/feature/geotrellis.zip" && \
+
+# Patch and install GeoNotebook
+COPY blobs/geonotebook.tar /tmp
+COPY config/patch.diff /tmp
+RUN (pushd /tmp ; tar axvf geonotebook.tar ; popd) && \
+    (pushd /tmp/geonotebook ; patch -p1 < /tmp/patch.diff ; pip3 install --user . ; popd) && \
     jupyter nbextension enable --py widgetsnbextension && \
     jupyter serverextension enable --py geonotebook && \
     jupyter nbextension enable --py geonotebook

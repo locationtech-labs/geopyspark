@@ -32,6 +32,15 @@ archives/openjpeg-v2.1.2.tar.gz:
 archives/gdal-2.1.3.tar.gz:
 	(cd archives; curl -L "http://download.osgeo.org/gdal/2.1.3/gdal-2.1.3.tar.gz" -o gdal-2.1.3.tar.gz)
 
+archives/dcfcd81ac3e928fc35fe83a5a937561ccee3aa19.zip:
+	(cd archives; curl -L -O "https://github.com/OpenGeoscience/geonotebook/archive/dcfcd81ac3e928fc35fe83a5a937561ccee3aa19.zip")
+
+archives/geonotebook.tar: archives/dcfcd81ac3e928fc35fe83a5a937561ccee3aa19.zip
+	(cd archives; unzip dcfcd81ac3e928fc35fe83a5a937561ccee3aa19.zip; mv geonotebook-dcfcd81ac3e928fc35fe83a5a937561ccee3aa19 geonotebook ; tar cvf geonotebook.tar geonotebook/ ; rm -rf geonotebook/)
+
+blobs/%: archives/%
+	cp -f $< $@
+
 stage0: Dockerfile.stage0
 	(docker images | grep 'jamesmcclain/jupyter-geopyspark \+stage0') || (docker pull $(STAGE0)) || (build -t $(STAGE0) -f Dockerfile.stage0 .)
 
@@ -48,7 +57,7 @@ $(PYTHON-BLOB): $(WHL) scripts/gather-libs.sh archives/gdal-and-friends.tar.gz
           -v $(shell pwd)/scripts:/scripts:ro \
           $(STAGE0) /scripts/gather-libs.sh $(shell id -u) $(shell id -g)
 
-stage1: Dockerfile.stage1 $(JAR) archives/gdal-and-friends.tar.gz archives/geopyspark-and-friends.tar.gz
+stage1: Dockerfile.stage1 $(JAR) blobs/geonotebook.tar blobs/geotrellis-backend-assembly-0.1.0.jar blobs/gdal-and-friends.tar.gz blobs/geopyspark-and-friends.tar.gz
 	docker build -t $(STAGE1) -f Dockerfile.stage1 .
 
 clean:

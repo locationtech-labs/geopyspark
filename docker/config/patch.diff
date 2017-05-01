@@ -1,0 +1,333 @@
+diff --git a/config/geonotebook.ini b/config/geonotebook.ini
+index 6ff4b8d..eca95ba 100644
+--- a/config/geonotebook.ini
++++ b/config/geonotebook.ini
+@@ -2,6 +2,10 @@
+ vis_server = ktile
+ log_level = WARNING
+ 
++[geotrellis]
++url = http://127.0.0.1:8033/geotrellis
++catalog = file:///tmp/geonotebook
++
+ [geoserver]
+ username = admin
+ password = geoserver
+diff --git a/geonotebook/config.py b/geonotebook/config.py
+index d2c2b9e..19edcbc 100644
+--- a/geonotebook/config.py
++++ b/geonotebook/config.py
+@@ -13,6 +13,7 @@ def get_config(path=None):
+         "/etc/geonotebook.ini",
+         "/usr/etc/geonotebook.ini",
+         "/usr/local/etc/geonotebook.ini",
++        "~/.local/etc/geonotebook.ini",
+         os.path.join(sys.prefix, "etc/geonotebook.ini"),
+         "~/.geonotebook.ini",
+         os.path.join(os.getcwd(), ".geonotebook.ini"),
+diff --git a/geonotebook/kernel.py b/geonotebook/kernel.py
+index 1e742d5..1a657fa 100644
+--- a/geonotebook/kernel.py
++++ b/geonotebook/kernel.py
+@@ -308,6 +308,7 @@ class Geonotebook(object):
+         self.y = None
+         self.z = None
+         self.layers = GeonotebookLayerCollection([])
++        self.stuff = {}
+ 
+         self._kernel = kernel
+ 
+@@ -391,8 +392,22 @@ class Geonotebook(object):
+         if layer_type != 'annotation':
+             kwargs['zIndex'] = len(self.layers)
+ 
++        try:
++            from geopyspark.geotrellis.rdd import RasterRDD, TiledRasterRDD
++
++            def isRDD(data):
++                return (isinstance(data, RasterRDD) or isinstance(data, TiledRasterRDD))
++        except:
++            def isRDD(data):
++                return False
++
+         # HACK:  figure out a way to do this without so many conditionals
+-        if isinstance(data, RasterData):
++        if isRDD(data):
++            name = str(data)
++            layer = SimpleLayer(
++                name, self._remote, data=data, vis_url=vis_url, **kwargs
++            )
++        elif isinstance(data, RasterData):
+             # TODO verify layer exists in geoserver?
+             name = data.name if name is None else name
+ 
+@@ -423,6 +438,7 @@ class Geonotebook(object):
+                 )
+ 
+         def _add_layer(layer_name):
++            self.stuff[layer_name] = data
+             self.layers.append(layer)
+ 
+         return self._remote.add_layer(layer.name, layer.vis_url,
+@@ -439,6 +455,8 @@ class Geonotebook(object):
+             layer_name = layer_name.name
+ 
+         def _remove_layer(layer_name):
++            if layer_name in self.stuff:
++                del self.stuff[layer_name]
+             self.layers.remove(layer_name)
+ 
+         cb = self._remote.remove_layer(layer_name).then(
+diff --git a/geonotebook/layers.py b/geonotebook/layers.py
+index 0e73741..cdef3ee 100644
+--- a/geonotebook/layers.py
++++ b/geonotebook/layers.py
+@@ -230,9 +230,13 @@ class SimpleLayer(DataLayer):
+             name, remote, data=data, vis_url=vis_url, **kwargs
+         )
+ 
++        self.max_zoom = kwargs.get("max_zoom", 12)
++
+         if vis_url is None:
+             self.vis_url = self.config.vis_server.ingest(
+-                self.data, name=self.name, **self.vis_options.serialize())
++                self.data, name=self.name, \
++                max_zoom=self.max_zoom, \
++                **self.vis_options.serialize())
+         else:
+             self.vis_url = vis_url
+ 
+diff --git a/geonotebook/vis/__init__.py b/geonotebook/vis/__init__.py
+index 0ce34fc..1483a02 100644
+--- a/geonotebook/vis/__init__.py
++++ b/geonotebook/vis/__init__.py
+@@ -1,4 +1,5 @@
+ from .geoserver import Geoserver
+ from .ktile import Ktile
++from .geotrellis import GeoTrellis
+ 
+-__all__ = ('Geoserver', 'Ktile')
++__all__ = ('Geoserver', 'Ktile', 'GeoTrellis')
+diff --git a/geonotebook/vis/geotrellis/__init__.py b/geonotebook/vis/geotrellis/__init__.py
+new file mode 100644
+index 0000000..3e3a150
+--- /dev/null
++++ b/geonotebook/vis/geotrellis/__init__.py
+@@ -0,0 +1,3 @@
++from .geotrellis import GeoTrellis
++
++__all__ = ('GeoTrellis')
+diff --git a/geonotebook/vis/geotrellis/geotrellis.py b/geonotebook/vis/geotrellis/geotrellis.py
+new file mode 100644
+index 0000000..d082ccb
+--- /dev/null
++++ b/geonotebook/vis/geotrellis/geotrellis.py
+@@ -0,0 +1,49 @@
++import threading
++import time
++
++from .server import moop
++
++
++# jupyterhub --no-ssl --Spawner.notebook_dir=/home/hadoop
++
++class GeoTrellis(object):
++
++    def __init__(self, config, url):
++        self.base_url = 'http://localhost:8033' # XXX tiler thread should report port
++        self.pyramids = {}
++
++    def start_kernel(self, kernel):
++        pass
++
++    def shutdown_kernel(self, kernel):
++        pass
++
++    def initialize_webapp(self, config, webapp):
++        pass
++
++    def get_params(self, name, data, **kwargs):
++        return {}
++
++    def ingest(self, data, max_zoom, name=None, **kwargs):
++        from geopyspark.geotrellis.rdd import RasterRDD, TiledRasterRDD
++        from geopyspark.geotrellis.constants import ZOOM
++
++        if isinstance(data, RasterRDD):
++            rdd = data
++            metadata = rdd.collect_metadata()
++            laid_out = rdd.tile_to_layout(metadata)
++            reprojected = laid_out.reproject("EPSG:3857", scheme=ZOOM)
++        elif isinstance(data, TiledRasterRDD):
++            laid_out = data
++            reprojected = laid_out.reproject("EPSG:3857", scheme=ZOOM)
++
++        layer_name = format(hash(name) + hash(str(kwargs)), 'x').replace("-", "Z")
++        rdds = {}
++        for layer_rdd in reprojected.pyramid(reprojected.zoom_level, 0):
++            rdds[layer_rdd.zoom_level] = layer_rdd
++        self.pyramids.update({layer_name: rdds})
++
++        t = threading.Thread(target=moop, args=(self.pyramids,))
++        t.start()
++
++        return self.base_url + "/" + layer_name
+diff --git a/geonotebook/vis/geotrellis/server.py b/geonotebook/vis/geotrellis/server.py
+new file mode 100644
+index 0000000..dd3881d
+--- /dev/null
++++ b/geonotebook/vis/geotrellis/server.py
+@@ -0,0 +1,78 @@
++import io
++import numpy as np
++import rasterio
++import time
++
++from PIL import Image
++
++
++def make_image(arr):
++    return Image.fromarray(arr.astype('uint8')).convert('L')
++
++def clamp(x):
++    if (x < 0.0):
++        x = 0
++    elif (x >= 1.0):
++        x = 255
++    else:
++        x = (int)(x * 255)
++    return x
++
++def alpha(x):
++    if ((x <= 0.0) or (x > 1.0)):
++        return 0
++    else:
++        return 255
++
++clamp = np.vectorize(clamp)
++alpha = np.vectorize(alpha)
++
++def moop(pyramids):
++    from flask import Flask, make_response, abort
++    from flask_cors import cross_origin
++    from PIL import Image
++
++    app = Flask(__name__)
++    app.reader = None
++
++    @app.route('/time')
++    def ping():
++        return time.strftime("%H:%M:%S")
++
++    @app.route("/<layer_name>/<int:x>/<int:y>/<int:zoom>.png")
++    @cross_origin()
++    def tile(layer_name, x, y, zoom):
++
++        # fetch data
++        try:
++            pyramid = pyramids[layer_name]
++            rdd = pyramid[zoom]
++            tile = rdd.lookup(col=x, row=y)
++            arr = tile[0]['data']
++        except:
++            abort(404)
++        bands = arr.shape[0]
++        if bands >= 3:
++            bands = 3
++        else:
++            bands = 1
++        arrs = [np.array(arr[i, :, :]).reshape(256, 256) for i in range(bands)]
++
++        # create tile
++        if bands == 3:
++            images = [make_image(clamp(arr)) for arr in arrs]
++            images.append(make_image(alpha(arrs[0])))
++            image = Image.merge('RGBA', images)
++        else:
++            gray = make_image(clamp(arrs[0]))
++            alfa = make_image(alpha(arrs[0]))
++            image = Image.merge('RGBA', list(gray, gray, gray, alfa))
++
++        # return tile
++        bio = io.BytesIO()
++        image.save(bio, 'PNG')
++        response = make_response(bio.getvalue())
++        response.headers['Content-Type'] = 'image/png'
++        return response
++
++    app.run(host='0.0.0.0', port=8033)
+diff --git a/setup.py b/setup.py
+index 58d60fa..51f2329 100644
+--- a/setup.py
++++ b/setup.py
+@@ -19,21 +19,21 @@ from setuptools.command.sdist import sdist
+ 
+ PY3 = (sys.version_info[0] >= 3)
+ 
+-if PY3:
+-    try:
+-        import mapnik # noqa
+-    except ImportError:
+-        print("""
+-
+-Python bindings for Mapnik (https://github.com/mapnik/python-mapnik) are
+-required to run GeoNotebook. Unfortunately there are no pip install-able
+-versions of the bindings for Python 3. The Mapnik bindings will compile
+-under Python 3 but they must be compiled and installed from source.
+-Please follow the instructions on the mapnik/python-mapnik repository,
+-ensuring you can import mapnik before continuing to install GeoNotebook
+-using Python 3.
+-        """)
+-        sys.exit(1)
++# if PY3:
++#     try:
++#         import mapnik # noqa
++#     except ImportError:
++#         print("""
++
++# Python bindings for Mapnik (https://github.com/mapnik/python-mapnik) are
++# required to run GeoNotebook. Unfortunately there are no pip install-able
++# versions of the bindings for Python 3. The Mapnik bindings will compile
++# under Python 3 but they must be compiled and installed from source.
++# Please follow the instructions on the mapnik/python-mapnik repository,
++# ensuring you can import mapnik before continuing to install GeoNotebook
++# using Python 3.
++#         """)
++#         sys.exit(1)
+ 
+ 
+ def post_install(func, **kwargs):
+@@ -75,8 +75,12 @@ def install_kernel(cmd):
+         json.dump(kernel_dict, fh, indent=1)
+ 
+     ksm = KernelSpecManager()
+-    ksm.install_kernel_spec(
+-        path, kernel_name=kernel_name, user=False, prefix=sys.prefix)
++    try:
++        ksm.install_kernel_spec(
++            path, kernel_name=kernel_name, user=False, prefix=sys.prefix)
++    except:
++        ksm.install_kernel_spec(
++            path, kernel_name=kernel_name, user=True)
+ 
+     shutil.rmtree(path)
+ 
+@@ -273,7 +277,7 @@ setup(
+         "jupyter_client",
+         "notebook",
+         "fiona",
+-        "mapnik",
++        # "mapnik",
+         "shapely"
+     ],
+     cmdclass={
+@@ -311,7 +315,8 @@ setup(
+         ],
+         'geonotebook.vis.server': [
+             "geoserver = geonotebook.vis.geoserver:Geoserver",
+-            "ktile = geonotebook.vis.ktile:Ktile"
++            "ktile = geonotebook.vis.ktile:Ktile",
++            "geotrellis = geonotebook.vis.geotrellis:GeoTrellis"
+         ],
+     }
+ )
