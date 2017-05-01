@@ -81,37 +81,6 @@ object GeoTiffRDD {
     }
   }
 
-  def get(
-    sc: SparkContext,
-    keyType: String,
-    path: String
-  ): RasterRDD[_] = {
-    val uri = new URI(path)
-
-    uri.getScheme match {
-      case S3 =>
-        getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.default)
-      case _ =>
-        getHadoopGeoTiffRDD(sc, keyType, new Path(path), HadoopGeoTiffRDDOptions.default)
-    }
-  }
-
-  def get(
-    sc: SparkContext,
-    keyType: String,
-    path: String,
-    options: java.util.Map[String, Any]
-  ): RasterRDD[_] = {
-    val uri = new URI(path)
-
-    uri.getScheme match {
-      case S3 =>
-        getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.setValues(options))
-      case _ =>
-        getHadoopGeoTiffRDD(sc, keyType, new Path(uri), HadoopGeoTiffRDDOptions.setValues(options))
-    }
-  }
-
   def get_many(
     sc: SparkContext,
     keyType: String,
