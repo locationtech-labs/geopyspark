@@ -1,14 +1,13 @@
 diff --git a/config/geonotebook.ini b/config/geonotebook.ini
-index 6ff4b8d..eca95ba 100644
+index 6ff4b8d..c88173f 100644
 --- a/config/geonotebook.ini
 +++ b/config/geonotebook.ini
-@@ -2,6 +2,10 @@
+@@ -2,6 +2,9 @@
  vis_server = ktile
  log_level = WARNING
  
 +[geotrellis]
-+url = http://127.0.0.1:8033/geotrellis
-+catalog = file:///tmp/geonotebook
++url = http://127.0.0.1:8000/user/jack/geotrellis
 +
  [geoserver]
  username = admin
@@ -26,34 +25,26 @@ index d2c2b9e..19edcbc 100644
          "~/.geonotebook.ini",
          os.path.join(os.getcwd(), ".geonotebook.ini"),
 diff --git a/geonotebook/kernel.py b/geonotebook/kernel.py
-index 1e742d5..1a657fa 100644
+index 1e742d5..4bb6869 100644
 --- a/geonotebook/kernel.py
 +++ b/geonotebook/kernel.py
-@@ -308,6 +308,7 @@ class Geonotebook(object):
-         self.y = None
-         self.z = None
-         self.layers = GeonotebookLayerCollection([])
-+        self.stuff = {}
+@@ -19,7 +19,7 @@ from .layers import (AnnotationLayer,
+                      VectorLayer)
  
-         self._kernel = kernel
+ from .utils import get_kernel_id
+-from .wrappers import RasterData, RasterDataCollection, VectorData
++from .wrappers import RddRasterData, RasterData, RasterDataCollection, VectorData
  
-@@ -391,8 +392,22 @@ class Geonotebook(object):
-         if layer_type != 'annotation':
+ 
+ class Remote(object):
+@@ -392,7 +392,13 @@ class Geonotebook(object):
              kwargs['zIndex'] = len(self.layers)
  
-+        try:
-+            from geopyspark.geotrellis.rdd import RasterRDD, TiledRasterRDD
-+
-+            def isRDD(data):
-+                return (isinstance(data, RasterRDD) or isinstance(data, TiledRasterRDD))
-+        except:
-+            def isRDD(data):
-+                return False
-+
          # HACK:  figure out a way to do this without so many conditionals
 -        if isinstance(data, RasterData):
-+        if isRDD(data):
-+            name = str(data)
++        if isinstance(data, RddRasterData):
++            name = data.name
++
 +            layer = SimpleLayer(
 +                name, self._remote, data=data, vis_url=vis_url, **kwargs
 +            )
@@ -61,38 +52,30 @@ index 1e742d5..1a657fa 100644
              # TODO verify layer exists in geoserver?
              name = data.name if name is None else name
  
-@@ -423,6 +438,7 @@ class Geonotebook(object):
-                 )
- 
-         def _add_layer(layer_name):
-+            self.stuff[layer_name] = data
-             self.layers.append(layer)
- 
-         return self._remote.add_layer(layer.name, layer.vis_url,
-@@ -439,6 +455,8 @@ class Geonotebook(object):
+@@ -438,8 +444,11 @@ class Geonotebook(object):
+         if hasattr(layer_name, 'name'):
              layer_name = layer_name.name
  
-         def _remove_layer(layer_name):
-+            if layer_name in self.stuff:
-+                del self.stuff[layer_name]
-             self.layers.remove(layer_name)
+-        def _remove_layer(layer_name):
+-            self.layers.remove(layer_name)
++        def _remove_layer(_layer_name):
++            vis_server = Config().vis_server
++            if "disgorge" in dir(vis_server):
++                vis_server.disgorge(layer_name)
++            self.layers.remove(_layer_name)
  
          cb = self._remote.remove_layer(layer_name).then(
+             _remove_layer, self.rpc_error).catch(self.callback_error)
 diff --git a/geonotebook/layers.py b/geonotebook/layers.py
-index 0e73741..cdef3ee 100644
+index 0e73741..52ee74c 100644
 --- a/geonotebook/layers.py
 +++ b/geonotebook/layers.py
-@@ -230,9 +230,13 @@ class SimpleLayer(DataLayer):
-             name, remote, data=data, vis_url=vis_url, **kwargs
-         )
+@@ -232,7 +232,8 @@ class SimpleLayer(DataLayer):
  
-+        self.max_zoom = kwargs.get("max_zoom", 12)
-+
          if vis_url is None:
              self.vis_url = self.config.vis_server.ingest(
 -                self.data, name=self.name, **self.vis_options.serialize())
 +                self.data, name=self.name, \
-+                max_zoom=self.max_zoom, \
 +                **self.vis_options.serialize())
          else:
              self.vis_url = vis_url
@@ -119,23 +102,50 @@ index 0000000..3e3a150
 +__all__ = ('GeoTrellis')
 diff --git a/geonotebook/vis/geotrellis/geotrellis.py b/geonotebook/vis/geotrellis/geotrellis.py
 new file mode 100644
-index 0000000..d082ccb
+index 0000000..2c7fceb
 --- /dev/null
 +++ b/geonotebook/vis/geotrellis/geotrellis.py
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,89 @@
++import requests
 +import threading
 +import time
 +
++from notebook.base.handlers import IPythonHandler
 +from .server import moop
 +
 +
 +# jupyterhub --no-ssl --Spawner.notebook_dir=/home/hadoop
 +
++class GeoTrellisHandler(IPythonHandler):
++
++    def initialize(self):
++        pass
++
++    def get(self, port, layer_name, x, y, zoom, **kwargs):
++        url = "http://localhost:%s/tile/%s/%s/%s/%s.png" % (port, layer_name, x, y, zoom)
++        try:
++            response = requests.get(url)
++            if response.status_code == requests.codes.ok:
++                png = response.content
++                self.set_header('Content-Type', 'image/png')
++                self.write(png)
++                self.finish()
++            else:
++                self.set_header('Content-Type', 'text/html')
++                self.set_status(404)
++                self.finish()
++        except:
++            self.set_header('Content-Type', 'text/png')
++            self.set_status(404)
++            self.finish()
++
 +class GeoTrellis(object):
 +
 +    def __init__(self, config, url):
-+        self.base_url = 'http://localhost:8033' # XXX tiler thread should report port
++        self.base_url = url
 +        self.pyramids = {}
++        self.server_active = False
++        self.port = 8033 # XXX
 +
 +    def start_kernel(self, kernel):
 +        pass
@@ -144,43 +154,57 @@ index 0000000..d082ccb
 +        pass
 +
 +    def initialize_webapp(self, config, webapp):
-+        pass
++        pattern = r'/user/[^/]+/geotrellis/([0-9]+)/([^/]+)/([0-9]+)/([0-9]+)/([0-9]+)\.png.*'
++        webapp.add_handlers(r'.*', [(pattern, GeoTrellisHandler)])
 +
 +    def get_params(self, name, data, **kwargs):
 +        return {}
 +
-+    def ingest(self, data, max_zoom, name=None, **kwargs):
++    def disgorge(self, name):
++        url = "http://localhost:%s/remove/%s" % (self.port, name)
++        response = requests.get(url)
++        status_code = response.status_code
++        print(status_code)
++        return status_code
++
++    def ingest(self, data, name, **kwargs):
 +        from geopyspark.geotrellis.rdd import RasterRDD, TiledRasterRDD
 +        from geopyspark.geotrellis.constants import ZOOM
 +
-+        if isinstance(data, RasterRDD):
-+            rdd = data
++        rdd = data.rdd
++        if isinstance(rdd, RasterRDD):
 +            metadata = rdd.collect_metadata()
 +            laid_out = rdd.tile_to_layout(metadata)
 +            reprojected = laid_out.reproject("EPSG:3857", scheme=ZOOM)
-+        elif isinstance(data, TiledRasterRDD):
-+            laid_out = data
++        elif isinstance(rdd, TiledRasterRDD):
++            laid_out = rdd
 +            reprojected = laid_out.reproject("EPSG:3857", scheme=ZOOM)
++        else:
++            raise Exception
 +
-+        layer_name = format(hash(name) + hash(str(kwargs)), 'x').replace("-", "Z")
 +        rdds = {}
 +        for layer_rdd in reprojected.pyramid(reprojected.zoom_level, 0):
 +            rdds[layer_rdd.zoom_level] = layer_rdd
-+        self.pyramids.update({layer_name: rdds})
++        # self.pyramids.update({name: rdds})
++        self.pyramids[name] = rdds
 +
-+        t = threading.Thread(target=moop, args=(self.pyramids,))
-+        t.start()
++        if self.server_active == False:
++            t = threading.Thread(target=moop, args=(self.pyramids,))
++            t.start()
++            self.server_active = True
 +
-+        return self.base_url + "/" + layer_name
++        self.base_url = "http://localhost:8000/user/hadoop/geotrellis" # XXX
++        return self.base_url + "/" + str(self.port) + "/" + name
 diff --git a/geonotebook/vis/geotrellis/server.py b/geonotebook/vis/geotrellis/server.py
 new file mode 100644
-index 0000000..dd3881d
+index 0000000..e121d55
 --- /dev/null
 +++ b/geonotebook/vis/geotrellis/server.py
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,97 @@
 +import io
 +import numpy as np
 +import rasterio
++import threading
 +import time
 +
 +from PIL import Image
@@ -206,11 +230,10 @@ index 0000000..dd3881d
 +
 +clamp = np.vectorize(clamp)
 +alpha = np.vectorize(alpha)
++lock = threading.Lock()
 +
 +def moop(pyramids):
 +    from flask import Flask, make_response, abort
-+    from flask_cors import cross_origin
-+    from PIL import Image
 +
 +    app = Flask(__name__)
 +    app.reader = None
@@ -219,18 +242,36 @@ index 0000000..dd3881d
 +    def ping():
 +        return time.strftime("%H:%M:%S")
 +
-+    @app.route("/<layer_name>/<int:x>/<int:y>/<int:zoom>.png")
-+    @cross_origin()
++    @app.route("/exists/<layer_name>")
++    def exists(layer_name):
++        return str(layer_name in pyramids)
++
++    @app.route("/remove/<layer_name>")
++    def remove(layer_name):
++        if layer_name in pyramids:
++            del pyramids[layer_name]
++            return 'yes'
++        else:
++            return 'no'
++
++    @app.route("/tile/<layer_name>/<int:x>/<int:y>/<int:zoom>.png")
 +    def tile(layer_name, x, y, zoom):
 +
 +        # fetch data
 +        try:
++            lock.acquire()
 +            pyramid = pyramids[layer_name]
 +            rdd = pyramid[zoom]
 +            tile = rdd.lookup(col=x, row=y)
 +            arr = tile[0]['data']
 +        except:
++            arr = None
++        finally:
++            lock.release()
++
++        if arr == None:
 +            abort(404)
++
 +        bands = arr.shape[0]
 +        if bands >= 3:
 +            bands = 3
@@ -255,7 +296,51 @@ index 0000000..dd3881d
 +        response.headers['Content-Type'] = 'image/png'
 +        return response
 +
-+    app.run(host='0.0.0.0', port=8033)
++    port = 8033
++    app.run(host='0.0.0.0', port=port)
+diff --git a/geonotebook/wrappers/__init__.py b/geonotebook/wrappers/__init__.py
+index f95e8af..6a0e86b 100644
+--- a/geonotebook/wrappers/__init__.py
++++ b/geonotebook/wrappers/__init__.py
+@@ -1,5 +1,5 @@
+-from .raster import RasterData, RasterDataCollection
++from .raster import RddRasterData, RasterData, RasterDataCollection
+ from .vector import VectorData
+ 
+ 
+-__all__ = ('RasterData', 'RasterDataCollection', 'VectorData')
++__all__ = ('RddRasterData', 'RasterData', 'RasterDataCollection', 'VectorData')
+diff --git a/geonotebook/wrappers/raster.py b/geonotebook/wrappers/raster.py
+index b2a83d3..c7232b4 100644
+--- a/geonotebook/wrappers/raster.py
++++ b/geonotebook/wrappers/raster.py
+@@ -9,6 +9,26 @@ import pkg_resources as pr
+ from shapely.geometry import Polygon
+ 
+ 
++class RddRasterData(object):
++
++    def __init__(self, rdd, name=None, remapper=None):
++        from geopyspark.geotrellis.rdd import RasterRDD, TiledRasterRDD
++
++        if not (isinstance(rdd, RasterRDD) or isinstance(rdd, TiledRasterRDD)):
++            raise Exception
++
++        self.rdd = rdd
++
++        if not remapper:
++            self.remapper = lambda x: x
++        else:
++            self.remapper = remapper
++
++        if not name:
++            self.name = str(abs(hash(rdd) + hash(remapper)))
++        else:
++            self.name = name
++
+ class RasterData(collections.Sequence):
+     _default_schema = 'file'
+ 
 diff --git a/setup.py b/setup.py
 index 58d60fa..51f2329 100644
 --- a/setup.py
