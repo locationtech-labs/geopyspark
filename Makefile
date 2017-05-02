@@ -31,7 +31,7 @@ docker/archives/${WHEELNAME}: ${WHEEL}
 	cp -f ${WHEEL} docker/archives/${WHEELNAME}
 
 docker-build: docker/archives/${ASSEMBLYNAME} docker/archives/${WHEELNAME}
-	(cd docker && make stage1)
+	(cd docker && make)
 
 clean:
 	rm -f ${WHEEL} ${DIST-ASSEMBLY}
