@@ -70,7 +70,15 @@ def setup_environment():
     os.environ['JARS'] = jar_string
     os.environ["PYSPARK_PYTHON"] = "python3"
     os.environ["PYSPARK_DRIVER_PYTHON"] = "python3"
-    os.environ["PYSPARK_SUBMIT_ARGS"] = "--jars {} \
+    if 'TRAVIS' in os.environ:
+        os.environ["PYSPARK_SUBMIT_ARGS"] = "--jars {} \
+            --conf spark.ui.enabled=false \
+            --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
+            --driver-memory 2G \
+            --executor-memory 2G \
+            pyspark-shell".format(jar_string)
+    else:
+        os.environ["PYSPARK_SUBMIT_ARGS"] = "--jars {} \
             --conf spark.ui.enabled=false \
             --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
             --driver-memory 8G \
