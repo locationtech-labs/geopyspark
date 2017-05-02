@@ -137,6 +137,28 @@ To run the container, type:
 
    docker run -it --rm -p 8000:8000 quay.io/geodocker/jupyter-geopyspark:3
 
+GeoPySpark Script
+-----------------
+
+When GeoPySpark is installed, it comes with a script which can be accessed
+from anywhere on you computer. These are the commands that can be ran via the
+script:
+
+.. code:: console
+
+   geopyspark -i, --install-jar [download/path] //downloads the jar file
+   geopyspark -jp, --jar-path //returns the relative path of the jar file
+   geopyspark -apj, --absolute-jar-path //returns the absolute path of the jar file
+
+The first command is only needed when installing GeoPySpark through ``pip``;
+and it **must** be ran before using GeoPySpark. If no path is selected, then
+the jar will be installed wherever GeoPySpark was installed.
+
+The second and third commands are for getting the location of the jar file.
+These can be used regardless of installation method. However, if installed
+through ``pip``, then the jar must be downloaded first or these commands
+will not work.
+
 Uninstalling
 ------------
 
