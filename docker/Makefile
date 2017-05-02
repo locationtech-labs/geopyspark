@@ -55,6 +55,6 @@ clean:
 	rm -f $(WHL) $(JAR)
 
 cleaner: clean
-	rm -f $(GDAL-BLOB) $(PYTHON-BLOB)
+	rm -f $(GDAL-BLOB) $(PYTHON-BLOB) blobs/*
 
 cleanest: cleaner
