@@ -63,8 +63,11 @@ def parse_args():
         rel_path = path.join(path.relpath(jar_path, os.getcwd()))
         print(rel_path)
 
-    else:
+    elif '--absolute-jar-path' in remaining or '-ajp' in remaining:
         print(get_jar_path())
+
+    else:
+        parser.print_help()
 
 def main():
     parse_args()
