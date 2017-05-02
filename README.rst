@@ -69,7 +69,7 @@ To install via ``pip`` open the terminal and run the following:
 .. code:: console
 
    pip install geopyspark
-   geopyspark --install-jar [path/to/install/jar]
+   geopyspark install-jar -p [path/to/install/jar]
 
 Where the first command installs the python code from PyPi and the second
 downloads the backend, jar file. If no path is given when downloading the jar,
@@ -78,7 +78,7 @@ then it will be downloaded to wherever GeoPySpark was installed at.
 What's With That Weird Pip Install?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-"What's with that weird pip install?", you maybe asking yourself. The reason
+"What's with that weird pip install?", you may be asking yourself. The reason
 for its unusualness is due to how GeoPySpark functions. Because this library
 is a python binding for a Scala project, we need to be able to access the
 Scala backend. To do this, we plug into PySpark which acts as a bridge between
@@ -146,9 +146,9 @@ script:
 
 .. code:: console
 
-   geopyspark -i, --install-jar [download/path] //downloads the jar file
-   geopyspark -jp, --jar-path //returns the relative path of the jar file
-   geopyspark -apj, --absolute-jar-path //returns the absolute path of the jar file
+   geopyspark install-jar -p, --path [download/path] //downloads the jar file
+   geopyspark jar-path //returns the relative path of the jar file
+   geopyspark jar-path -a, --absolute //returns the absolute path of the jar file
 
 The first command is only needed when installing GeoPySpark through ``pip``;
 and it **must** be ran before using GeoPySpark. If no path is selected, then
