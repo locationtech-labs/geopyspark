@@ -73,24 +73,26 @@ def get(geopysc,
         options = kwargs
 
     if options:
-        if type(uri) == list:
-            srdd = geotiff_rdd.get_many(geopysc.sc,
-                                        key,
-                                        uri,
-                                        options)
+        if isinstance(uri, list):
+            srdd = geotiff_rdd.get(geopysc.sc,
+                                   key,
+                                   uri,
+                                   options)
         else:
-            srdd = geotiff_rdd.get_many(geopysc.sc,
-                                        key,
-                                        [uri],
-                                        options)
+            srdd = geotiff_rdd.get(geopysc.sc,
+                                   key,
+                                   [uri],
+                                   options)
     else:
-        if type(uri) == list:
-            srdd = geotiff_rdd.get_many(geopysc.sc,
-                                        key,
-                                        uri)
+        if isinstance(uri, list):
+            srdd = geotiff_rdd.get(geopysc.sc,
+                                   key,
+                                   uri,
+                                   {})
         else:
-            srdd = geotiff_rdd.get_many(geopysc.sc,
-                                        key,
-                                        [uri])
+            srdd = geotiff_rdd.get(geopysc.sc,
+                                   key,
+                                   [uri],
+                                   {})
 
     return RasterRDD(geopysc, rdd_type, srdd)

@@ -81,33 +81,7 @@ object GeoTiffRDD {
     }
   }
 
-  def get_many(
-    sc: SparkContext,
-    keyType: String,
-    paths: java.util.List[String]
-  ): RasterRDD[_] = {
-    val uris = paths.map{ path => new URI(path) }
-
-    uris
-      .map { uri => 
-        uri.getScheme match {
-          case S3 =>
-            getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.default)
-          case _ =>
-            getHadoopGeoTiffRDD(sc, keyType, new Path(uri), HadoopGeoTiffRDDOptions.default)
-        }
-      }
-      .reduce{ (r1, r2) => 
-        keyType match {
-          case PROJECTEDEXTENT =>
-            ProjectedRasterRDD(r1.asInstanceOf[ProjectedRasterRDD].rdd.union(r2.asInstanceOf[ProjectedRasterRDD].rdd))
-          case TEMPORALPROJECTEDEXTENT =>
-            TemporalRasterRDD(r1.asInstanceOf[TemporalRasterRDD].rdd.union(r2.asInstanceOf[TemporalRasterRDD].rdd))
-        }
-      }
-  }
-
-  def get_many(
+  def get(
     sc: SparkContext,
     keyType: String,
     paths: java.util.List[String],
@@ -119,9 +93,15 @@ object GeoTiffRDD {
       .map { uri => 
         uri.getScheme match {
           case S3 =>
-            getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.setValues(options))
+            if (options isEmpty)
+              getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.default)              
+            else
+              getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.setValues(options))
           case _ =>
-            getHadoopGeoTiffRDD(sc, keyType, new Path(uri), HadoopGeoTiffRDDOptions.setValues(options))
+            if (options isEmpty)
+              getHadoopGeoTiffRDD(sc, keyType, new Path(uri), HadoopGeoTiffRDDOptions.default)
+            else
+              getHadoopGeoTiffRDD(sc, keyType, new Path(uri), HadoopGeoTiffRDDOptions.setValues(options))
         }
       }
       .reduce{ (r1, r2) => 
