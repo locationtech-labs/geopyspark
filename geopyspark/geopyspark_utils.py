@@ -65,8 +65,7 @@ def setup_environment():
 
     if path.isfile(configuration):
         with open(path.join(configuration)) as conf:
-            possible_jars.append(path.relpath(current_location, conf.read()))
-            possible_jars.append(path.relpath(cwd, conf.read()))
+            possible_jars.append(path.relpath(conf.read(), cwd))
 
     jar = path.abspath(resource_filename('geopyspark.jars', JAR))
     jar_dir = os.path.dirname(jar)
