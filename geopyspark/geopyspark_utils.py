@@ -53,21 +53,21 @@ def setup_environment():
     add_pyspark_path()
 
     current_location = path.dirname(path.realpath(__file__))
+    cwd = os.getcwd()
 
     local_prefixes = [
         path.abspath(path.join(current_location, 'jars/')),
-        path.abspath(path.join(os.getcwd(), 'jars/')),
-        path.abspath(path.join(os.getcwd(), '../geopyspark/jars/')),
+        path.abspath(path.join(cwd, 'jars/')),
+        path.abspath(path.join(cwd, '../geopyspark/jars/'))
     ]
-
+    possible_jars = [path.join(prefix, '*.jar') for prefix in local_prefixes]
     configuration = path.join(current_location, 'command', 'geopyspark.conf')
 
     if path.isfile(configuration):
         with open(path.join(configuration)) as conf:
-            relative_path = path.relpath(current_location, conf.read())
-            local_prefixes.append(relative_path)
+            possible_jars.append(path.relpath(current_location, conf.read()))
+            possible_jars.append(path.relpath(cwd, conf.read()))
 
-    possible_jars = [path.join(prefix, '*.jar') for prefix in local_prefixes]
     jar = path.abspath(resource_filename('geopyspark.jars', JAR))
     jar_dir = os.path.dirname(jar)
     if jar_dir not in local_prefixes:

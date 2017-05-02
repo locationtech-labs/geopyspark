@@ -39,7 +39,10 @@ def download_jar(jar_path):
     subprocess.call(['curl', '-L', JAR_URL, '-o', jar_location])
 
 def get_jar_path():
-    if os.path.isfile(CONF):
+    default_jar_location = path.join(DEFAULT_JAR_PATH, JAR)
+    if path.isfile(default_jar_location):
+        return default_jar_location
+    elif path.isfile(CONF):
         with open(CONF, 'r') as f:
             return f.read()
     else:

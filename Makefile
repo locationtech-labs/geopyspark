@@ -1,5 +1,6 @@
 export PYTHON := python3
 export PYSPARK_PYTHON := ipython
+export ASSEMBLED="assembled"
 
 JAR-PATH := geopyspark/jars
 ASSEMBLYNAME := geotrellis-backend-assembly-0.1.0.jar

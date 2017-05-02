@@ -1,10 +1,11 @@
 from setuptools import setup
 import sys
+import os
 
 if sys.version_info < (3, 3):
     sys.exit("GeoPySpark does not support Python versions before 3.3")
 
-setup(
+setup_args = dict(
     name='geopyspark',
     version='0.1.0',
     author='Jacob Bouffard, James McClain',
@@ -42,3 +43,10 @@ setup(
         'Programming Language :: Python :: 3.5',
     ]
 )
+
+if 'ASSEMBLED' in os.environ.keys():
+    setup_args['include_package_data'] = True
+
+
+if __name__ == "__main__":
+    setup(**setup_args)
