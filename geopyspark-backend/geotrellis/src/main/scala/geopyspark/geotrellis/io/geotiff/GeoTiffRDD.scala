@@ -3,18 +3,20 @@ package geopyspark.geotrellis.io.geotiff
 import geopyspark.geotrellis._
 
 import geotrellis.proj4._
+import geotrellis.spark.io.avro._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.s3._
 import geotrellis.spark.io.s3.testkit._
 
 import scala.collection.JavaConverters._
+import scala.collection.JavaConversions._
 
 import java.net.URI
 import java.util.Map
+import scala.reflect._
 
 import org.apache.spark._
 import org.apache.hadoop.fs.Path
-
 
 object GeoTiffRDD {
   import Constants._
@@ -82,32 +84,34 @@ object GeoTiffRDD {
   def get(
     sc: SparkContext,
     keyType: String,
-    path: String
-  ): RasterRDD[_] = {
-    val uri = new URI(path)
-
-    uri.getScheme match {
-      case S3 =>
-        getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.default)
-      case _ =>
-        getHadoopGeoTiffRDD(sc, keyType, new Path(path), HadoopGeoTiffRDDOptions.default)
-    }
-  }
-
-  def get(
-    sc: SparkContext,
-    keyType: String,
-    path: String,
+    paths: java.util.List[String],
     options: java.util.Map[String, Any]
   ): RasterRDD[_] = {
-    val uri = new URI(path)
+    val uris = paths.map{ path => new URI(path) }
 
-    uri.getScheme match {
-      case S3 =>
-        getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.setValues(options))
-      case _ =>
-        getHadoopGeoTiffRDD(sc, keyType, new Path(path), HadoopGeoTiffRDDOptions.setValues(options))
-    }
+    uris
+      .map { uri => 
+        uri.getScheme match {
+          case S3 =>
+            if (options isEmpty)
+              getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.default)              
+            else
+              getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.setValues(options))
+          case _ =>
+            if (options isEmpty)
+              getHadoopGeoTiffRDD(sc, keyType, new Path(uri), HadoopGeoTiffRDDOptions.default)
+            else
+              getHadoopGeoTiffRDD(sc, keyType, new Path(uri), HadoopGeoTiffRDDOptions.setValues(options))
+        }
+      }
+      .reduce{ (r1, r2) => 
+        keyType match {
+          case PROJECTEDEXTENT =>
+            ProjectedRasterRDD(r1.asInstanceOf[ProjectedRasterRDD].rdd.union(r2.asInstanceOf[ProjectedRasterRDD].rdd))
+          case TEMPORALPROJECTEDEXTENT =>
+            TemporalRasterRDD(r1.asInstanceOf[TemporalRasterRDD].rdd.union(r2.asInstanceOf[TemporalRasterRDD].rdd))
+        }
+      }
   }
 
   private def getHadoopGeoTiffRDD(

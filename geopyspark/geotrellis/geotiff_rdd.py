@@ -4,6 +4,7 @@ There is only one function found within this module at this time, geotiff_rdd.
 """
 
 from geopyspark.geotrellis.rdd import RasterRDD
+from functools import reduce
 
 def get(geopysc,
         rdd_type,
@@ -72,13 +73,26 @@ def get(geopysc,
         options = kwargs
 
     if options:
-        srdd = geotiff_rdd.get(geopysc.sc,
-                               key,
-                               uri,
-                               options)
+        if isinstance(uri, list):
+            srdd = geotiff_rdd.get(geopysc.sc,
+                                   key,
+                                   uri,
+                                   options)
+        else:
+            srdd = geotiff_rdd.get(geopysc.sc,
+                                   key,
+                                   [uri],
+                                   options)
     else:
-        srdd = geotiff_rdd.get(geopysc.sc,
-                               key,
-                               uri)
+        if isinstance(uri, list):
+            srdd = geotiff_rdd.get(geopysc.sc,
+                                   key,
+                                   uri,
+                                   {})
+        else:
+            srdd = geotiff_rdd.get(geopysc.sc,
+                                   key,
+                                   [uri],
+                                   {})
 
     return RasterRDD(geopysc, rdd_type, srdd)
