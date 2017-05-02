@@ -34,10 +34,13 @@ docker-build: docker/archives/${ASSEMBLYNAME} docker/archives/${WHEELNAME}
 	(cd docker && make stage1)
 
 clean:
-	(cd geopyspark-backend && ./sbt "project geotrellis-backend" clean)
 	rm -f ${WHEEL} ${DIST-ASSEMBLY}
+	(cd geopyspark-backend && ./sbt "project geotrellis-backend" clean)
+	(cd docker && make clean)
 
 cleaner: clean
 	rm -f `find ./build ./geopyspark | grep "\.pyc"`
+	(cd docker && make cleaner)
 
 cleanest: cleaner
+	(cd docker && make cleanest)
