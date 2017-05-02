@@ -69,6 +69,27 @@ To install via ``pip`` open the terminal and run the following:
 .. code:: console
 
    pip install geopyspark
+   geopyspark --install-jar [path/to/install/jar]
+
+Where the first command installs the python code from PyPi and the second
+downloads the backend, jar file. If no path is given when downloading the jar,
+then it will be downloaded to wherever GeoPySpark was installed at.
+
+What's With That Weird Pip Install?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+"What's with that weird pip install?", you maybe asking yourself. The reason
+for its unusualness is due to how GeoPySpark functions. Because this library
+is a python binding for a Scala project, we need to be able to access the
+Scala backend. To do this, we plug into PySpark which acts as a bridge between
+Python and Scala. However, in order to achieve this the Scala code needs to be
+assembled into a jar file. This poses a problem due to its size (117.7 MB at
+v0.1.0-RC!). To get around the size constraints of PyPi, we thus utilized this
+method of distribution where the jar must be downloaded in a serperate command
+when using ``pip install``.
+
+Note:
+  Installing from source does not require the seperate download of the jar.
 
 If you would rather install from source, you can do so by running the following
 in the terminal:
@@ -81,6 +102,10 @@ in the terminal:
 
 This will assemble the backend-end ``jar`` that contains the Scala code,
 move it to the ``jars`` module, and then runs the ``setup.py`` script.
+
+Note:
+  If you have somehow altered the global behavior of ``sbt`` this install may
+  not work correctly.
 
 Make Targets
 ^^^^^^^^^^^^
