@@ -56,9 +56,9 @@ def setup_environment():
     cwd = os.getcwd()
 
     local_prefixes = [
-        path.abspath(path.join(current_location, 'jars/')),
-        path.abspath(path.join(cwd, 'jars/')),
-        path.abspath(path.join(cwd, '../geopyspark/jars/'))
+        path.abspath(path.join(current_location, 'jars')),
+        path.abspath(path.join(cwd, 'jars')),
+        path.abspath(path.join(cwd, '../geopyspark/jars'))
     ]
     possible_jars = [path.join(prefix, '*.jar') for prefix in local_prefixes]
     configuration = path.join(current_location, 'command', 'geopyspark.conf')
@@ -79,7 +79,7 @@ def setup_environment():
     if len(jars) == 0:
         raise IOError("Failed to find any jars. Looked at these paths {}".format(possible_jars))
 
-    jar_string = ','.join(jars)
+    jar_string = str(jars[0])
 
     os.environ['JARS'] = jar_string
     os.environ["PYSPARK_PYTHON"] = "python3"
