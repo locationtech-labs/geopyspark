@@ -15,16 +15,16 @@ DEFAULT_JAR_PATH = path.join(CWD, 'jars')
 CONF = path.join(CWD, 'command', 'geopyspark.conf')
 
 
-parser = argparse.ArgumentParser(description='Arg Parser for GeoPySpark')
-parser.add_argument('--install-jar',
-                    '-i',
-                    nargs='?',
-                    dest="jar_path",
-                    default=False)
+parser = argparse.ArgumentParser(description='GeoPySpark Command Line Utility')
+parser.set_defaults(func=lambda c, x: parser.print_help())
+subparser = parser.add_subparsers(help='Commands')
 
-parser.add_argument('--jar-path', '-jp', action="store_true", dest='path')
-parser.add_argument('--absolute-jar-path', '-ajp', action="store_true", dest='abs_path')
+installer_parser = subparser.add_parser('install-jar', help='Installs the jar to a given path')
+installer_parser.add_argument('--path', '-p', metavar='INSTALL_PATH')
 
+path_parser = subparser.add_parser('jar-path', help='Path to downloaded jar')
+path_parser.add_argument('--absolute', '-a', action='store_true',
+                         help='Prints the absolute path of the jar')
 
 def write_jar_path(jar_path):
     with open(CONF, 'w') as f:
@@ -52,20 +52,18 @@ def parse_args():
     result = parser.parse_args()
     remaining = sys.argv[1:]
 
-    if '--install-jar' in remaining or '-i' in remaining:
-        if result.jar_path:
-            download_jar(result.jar_path)
+    if 'install-jar' in remaining:
+        if result.path:
+            download_jar(result.path)
         else:
             download_jar(DEFAULT_JAR_PATH)
-
-    elif '--jar-path' in remaining or '-jp' in remaining:
-        jar_path = get_jar_path()
-        rel_path = path.join(path.relpath(jar_path, os.getcwd()))
-        print(rel_path)
-
-    elif '--absolute-jar-path' in remaining or '-ajp' in remaining:
-        print(get_jar_path())
-
+    elif 'jar-path' in remaining:
+        if result.absolute:
+            print(get_jar_path())
+        else:
+            jar_path = get_jar_path()
+            rel_path = path.join(path.relpath(jar_path, os.getcwd()))
+            print(rel_path)
     else:
         parser.print_help()
 
