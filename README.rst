@@ -137,6 +137,17 @@ To run the container, type:
 
    docker run -it --rm -p 8000:8000 quay.io/geodocker/jupyter-geopyspark:3
 
+Uninstalling
+------------
+
+To uninstall GeoPySpark, run the following in the terminal:
+
+.. code:: console
+
+   pip uninstall geopyspark
+   rm .local/bin/geopyspark
+
+
 Contributing
 ------------
 
