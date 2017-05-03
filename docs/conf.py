@@ -18,11 +18,20 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+from os import path
 import sys
-from geopyspark.geopyspark_utils import setup_environment
+import subprocess
 
-setup_environment()
-sys.path.insert(0, os.path.abspath('../geopyspark/'))
+if 'SPARK_HOME' not in os.environ.keys():
+    spark_url = 'http://d3kbcqa49mib13.cloudfront.net/spark-2.1.0-bin-hadoop2.7.tgz'
+    subprocess.call(['curl', '-L', spark_url, '-O'])
+    subprocess.call(['tar', '-xvf', 'spark-2.1.0-bin-hadoop2.7.tgz'])
+    os.environ['SPARK_HOME'] = './spark-2.1.0-bin-hadoop2.7/'
+
+jar = 'geotrellis-backend-assembly-0.1.0.jar'
+url = 'https://github.com/locationtech-labs/geopyspark/releases/download/v0.1.0RC1/'
+subprocess.call(['curl', '-L', url+jar, '-o', '../geopyspark/jars/' + jar])
+sys.path.insert(0, path.abspath('../'))
 
 
 # -- General configuration ------------------------------------------------
@@ -88,7 +97,10 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+
+import sphinx_rtd_theme
+html_theme = 'sphinx_rtd_theme'
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -99,7 +111,7 @@ html_theme = 'alabaster'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']
 
 
 # -- Options for HTMLHelp output ------------------------------------------
@@ -157,6 +169,3 @@ texinfo_documents = [
      author, 'GeoPySpark', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-
