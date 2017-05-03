@@ -75,6 +75,13 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         md = tiles.collect_metadata()
         self.assertTrue('+proj=merc' in md['crs'])
 
+    def test_to_tiled_raster(self):
+        md = self.result.collect_metadata()
+        tiled = self.result.tile_to_layout(md)
+        converted = self.result.to_tiled_raster_rdd()
+
+        self.assertDictEqual(tiled.layer_metadata, converted.layer_metadata)
+
 
 if __name__ == "__main__":
     unittest.main()
