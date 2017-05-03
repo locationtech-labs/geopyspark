@@ -502,10 +502,10 @@ class TiledRasterRDD(object):
         Args:
             operation (str): The focal operation such as SUM, ASPECT, SLOPE, etc.
             neighborhood (str): The type of neighborhood to use such as ANNULUS, SQUARE, etc.
-            param_1 (int, optional): If using SLOPE, then this is the zFactor, else it is the first
-                argument of the `neighborhood`.
-            param_2 (int, optional): The second argument of the `neighborhood`.
-            param_3 (int, optional): The third argument of the `neighborhood`.
+            param_1 (int, float, optional): If using ``SLOPE``, then this is the zFactor, else it
+                is the first argument of the ``neighborhood``.
+            param_2 (int, float, optional): The second argument of the `neighborhood`.
+            param_3 (int, float, optional): The third argument of the `neighborhood`.
 
         Note:
             Any `param` that is not set will default to 0.0.
@@ -524,7 +524,8 @@ class TiledRasterRDD(object):
         if param_3 is None:
             param_3 = 0.0
 
-        srdd = self.srdd.focal(operation, neighborhood, param_1, param_2, param_3)
+        srdd = self.srdd.focal(operation, neighborhood, float(param_1), float(param_2),
+                               float(param_3))
 
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
@@ -570,14 +571,15 @@ class TiledRasterRDD(object):
 
                 Note:
                     All geometries must be in the same CRS as the TileLayer.
-            max_distance (int): The maximum ocst that a path may reach before operation.
+            max_distance (int, float): The maximum ocst that a path may reach before operation.
+                This value can be an ``int`` or ``float``.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
         """
 
         wkts = [shapely.wkt.dumps(g) for g in geometries]
-        srdd = self.srdd.costDistance(self.geopysc.sc, wkts, max_distance)
+        srdd = self.srdd.costDistance(self.geopysc.sc, wkts, float(max_distance))
 
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 

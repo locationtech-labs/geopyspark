@@ -54,6 +54,17 @@ class CostDistanceTest(BaseTestClass):
         point_distance = tile['data'][0][1][3]
         self.assertEqual(point_distance, 0.0)
 
+    def test_costdistance_finite_int(self):
+        def zero_one(kv):
+            k = kv[0]
+            return (k['col'] == 0 and k['row'] == 1)
+
+        result = self.raster_rdd.cost_distance(geometries=[Point(13, 13)], max_distance=144000)
+
+        tile = result.to_numpy_rdd().filter(zero_one).first()[1]
+        point_distance = tile['data'][0][1][3]
+        self.assertEqual(point_distance, 0.0)
+
     def test_costdistance_infinite(self):
         def zero_one(kv):
             k = kv[0]
