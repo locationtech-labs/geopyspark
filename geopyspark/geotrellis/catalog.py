@@ -287,6 +287,7 @@ def query(geopysc,
           layer_zoom,
           intersects,
           time_intervals=None,
+          proj_query=None,
           options=None,
           **kwargs):
 
@@ -349,19 +350,27 @@ def query(geopysc,
     if time_intervals is None:
         time_intervals = []
 
+    if proj_query is None:
+        proj_query = ""
+    if isinstance(proj_query, int):
+        proj_query = "EPSG:" + str(proj_query)
+
+
     if isinstance(intersects, Polygon) or isinstance(intersects, Point):
         srdd = cached.reader.query(key,
                                    layer_name,
                                    layer_zoom,
                                    dumps(intersects),
-                                   time_intervals)
+                                   time_intervals,
+                                   proj_query)
 
     elif isinstance(intersects, str):
         srdd = cached.reader.query(key,
                                    layer_name,
                                    layer_zoom,
                                    intersects,
-                                   time_intervals)
+                                   time_intervals,
+                                   proj_query)
     else:
         raise TypeError("Could not query intersection", intersects)
 
