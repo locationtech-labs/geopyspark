@@ -120,6 +120,32 @@ class RasterRDD(object):
         ser = self.geopysc.create_tuple_serializer(result._2(), value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
 
+    def to_tiled_raster_rdd(self, extent=None, layout=None, crs=None, tile_size=256,
+                            resample_method=NEARESTNEIGHBOR):
+        """Converts this ``RasterRDD`` to a ``TiledRasterRDD``.
+
+        This method combines :meth:`~geopyspark.geotrellis.rdd.RasterRDD.collect_metadata` and
+        :meth:`~geopyspark.geotrellis.rdd.RasterRDD.tile_to_layout` into one step.
+
+        Args:
+            extent (:ref:`extent`, optional): Specify layout extent, must also specify layout.
+            layout (:ref:`tile_layout`, optional): Specify tile layout, must also specify extent.
+            crs (str, int, optional): Ignore CRS from records and use given one instead.
+            tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
+            resample_method (str, optional): The resample method to use for the reprojection.
+                This is represented by a constant. If none is specified, then ``NEARESTNEIGHBOR``
+                is used.
+
+        Note:
+            ``extent`` and ``layout`` must both be defined if they are to be used.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+        """
+
+        return self.tile_to_layout(self.collect_metadata(extent, layout, crs, tile_size),
+                                   resample_method)
+
     def collect_metadata(self, extent=None, layout=None, crs=None, tile_size=256):
         """Iterate over RDD records and generates layer metadata desribing the contained rasters.
 
