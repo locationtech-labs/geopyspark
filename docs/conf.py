@@ -18,9 +18,14 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+from os import path
 import sys
+import subprocess
 
-sys.path.insert(0, os.path.abspath('../geopyspark/'))
+jar = 'geotrellis-backend-assembly-0.1.0.jar'
+url = 'https://github.com/locationtech-labs/geopyspark/releases/download/v0.1.0RC1/'
+subprocess.call(['curl', '-L', url+jar, '-o', '../geopyspark/jars/' + jar])
+sys.path.insert(0, path.abspath('../'))
 
 
 # -- General configuration ------------------------------------------------
