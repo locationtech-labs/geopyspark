@@ -120,8 +120,8 @@ class RasterRDD(object):
         ser = self.geopysc.create_tuple_serializer(result._2(), value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
 
-    def to_tiled_raster_rdd(self, extent=None, layout=None, crs=None, tile_size=256,
-                            resample_method=NEARESTNEIGHBOR):
+    def to_tiled_rdd(self, extent=None, layout=None, crs=None, tile_size=256,
+                     resample_method=NEARESTNEIGHBOR):
         """Converts this ``RasterRDD`` to a ``TiledRasterRDD``.
 
         This method combines :meth:`~geopyspark.geotrellis.rdd.RasterRDD.collect_metadata` and

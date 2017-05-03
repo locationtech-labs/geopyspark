@@ -78,7 +78,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
     def test_to_tiled_raster(self):
         md = self.result.collect_metadata()
         tiled = self.result.tile_to_layout(md)
-        converted = self.result.to_tiled_raster_rdd()
+        converted = self.result.to_tiled_rdd()
 
         self.assertDictEqual(tiled.layer_metadata, converted.layer_metadata)
 
