@@ -51,7 +51,9 @@ The fields used to represent ``TileLayout``:
  - **tileRows** (int): The number of rows of pixels in each raster that runs
        north to south.
 
-Example::
+Example:
+
+.. code:: python
 
    tile_layout = {'layoutCols': 1, 'layoutRows': 1, 'tileCols': 256, 'tileRows': 256}
 
@@ -69,9 +71,14 @@ The fields used to represent ``Extent``:
  - **xmax** (double): The maximum x coordinate.
  - **ymax** (double): The maximum y coordinate.
 
-Example::
+Example:
+
+.. code:: python
 
    extent = {'xmin': 0.0, 'ymin': 1.0, 'xmax': 2.0, 'ymax': 3.0}
+
+
+.. _projected_extent:
 
 ProjectedExtent
 ---------------
@@ -84,20 +91,24 @@ The fields used to represent ``ProjectedExtent``:
  - **epsg** (int, optional): The EPSG code of the CRS.
  - **proj4** (str, optional): The Proj.4 string representation of the CRS.
 
-Example::
+Example:
+
+.. code:: python
 
    extent = {'xmin': 0.0, 'ymin': 1.0, 'xmax': 2.0, 'ymax': 3.0}
 
-   // using epsg
+   # using epsg
    epsg_code = 3857
    projected_extent = {'extent': extent, 'epsg': epsg}
 
-   // using proj4
+   # using proj4
    proj4 = "+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs "
    projected_extent = {'extent': extent, 'proj4': proj4}
 
 
 **Note**: Either `epsg` or `proj4` must be defined.
+
+.. _temporal_extent:
 
 TemporalProjectedExtent
 -----------------------
@@ -111,7 +122,9 @@ The fields used to represent ``TemporalProjectedExtent``.
  - **proj4** (str, optional): The Proj.4 string representation of the CRS.
  - **instance** (int): The time stamp of the raster.
 
-Example::
+Example:
+
+.. code:: python
 
    extent = {'xmin': 0.0, 'ymin': 1.0, 'xmax': 2.0, 'ymax': 3.0}
 
@@ -120,6 +133,8 @@ Example::
    projected_extent = {'extent': extent, 'epsg': epsg, 'instance': instance}
 
 **Note**: Either `epsg` or `proj4` must be defined.
+
+.. _spatial-key:
 
 SpatialKey
 ----------
@@ -132,9 +147,13 @@ The fields used to represent ``SpatialKey``:
  - **col** (int): The column of the grid, the numbers run east to west.
  - **row** (int): The row of the grid, the numbers run north to south.
 
-Example::
+Example:
+
+.. code:: python
 
    spatial_key = {'col': 0, 'row': 0}
+
+.. _space-time-key:
 
 SpaceTimeKey
 ------------
@@ -148,7 +167,9 @@ The fields used to reprsent ``SpaceTimeKey``:
  - **row** (int): The row of the grid, the numbers run north to south.
  - **instance** (int): The time stamp of the raster.
 
-Example::
+Example:
+
+.. code:: python
 
    spatial_key = {'col': 0, 'row': 0, 'instant': 0.0}
 
@@ -165,7 +186,9 @@ The fields used to represent ``Bounds``:
  - **maxKey** (SpatialKey, SpaceTimeKey): The largest SpatialKey or
        SpaceTimeKey.
 
-Example::
+Example:
+
+.. code:: python
 
   min_key = {'col': 0, 'row': 0}
   max_key = {'col' 100', 'row': 100}
@@ -215,6 +238,8 @@ where it will be decoded into a Scala RDD.
 None of the operations performed on the RDD occur in Python, and the only time
 the RDD will be moved to Python is if the user decides to bring it over.
 
+.. _raster_rdd:
+
 RasterRDD
 ----------
 
@@ -234,6 +259,8 @@ As mentioned in the previous section, both wrapper classes hold data in tuples.
 With the ``K`` of each tuple being different between the two. In the case of
 ``RasterRDD``, ``K`` is either ``ProjectedExtent``
 or ``TemporalProjectedExtent``.
+
+.. _tiled-raster-rdd:
 
 TiledRasterRDD
 --------------
