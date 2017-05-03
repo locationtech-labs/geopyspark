@@ -43,10 +43,13 @@ def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_wi
 
 
 class RasterRDD(object):
-    """A RDD that contains GeoTrellis rasters.
+    """A wrapper of a RDD that contains GeoTrellis rasters.
 
-    Represents a RDD that contains (K, V). Where K is either ProjectedExtent or
-    TemporalProjectedExtent depending on the `rdd_type` of the RDD, and V being a raster.
+    Represents a RDD that contains (K, V). Where K is either :ref:`projected_extent` or
+    :ref:`temporal_extent` depending on the ``rdd_type`` of the RDD, and V being a raster.
+
+    The data held within the RDD has not yet been tiled. Meaning the data has yet to be
+    modified to fit a certain layout. See :ref:`raster_rdd` for more information.
 
     Args:
         geopysc (GeoPyContext): The GeoPyContext being used this session.
@@ -237,10 +240,13 @@ class RasterRDD(object):
 
 
 class TiledRasterRDD(object):
-    """Holds a RDD of GeoTrellis rasters.
+    """Wraps a RDD of tiled, GeoTrellis rasters.
 
-    Represents a RDD that contains (K, V). Where K is either SpatialKey or SpaceTimeKey depending
-    on the `rdd_type` of the RDD, and V being a raster.
+    Represents a RDD that contains (K, V). Where K is either :ref:`spatial-key` or
+    :ref:`space-time-key` depending on the ``rdd_type`` of the RDD, and V being a raster.
+
+    The data held within the RDD is tiled. This means that the rasters have been modified to fit
+    a larger layout. For more information, see :ref:`tiled-raster-rdd`.
 
     Args:
         geopysc (GeoPyContext): The GeoPyContext being used this session.
