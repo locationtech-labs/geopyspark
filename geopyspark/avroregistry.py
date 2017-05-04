@@ -73,6 +73,8 @@ class AvroRegistry(object):
     def _get_decoder(cls, name):
         if name == "Tile":
             return cls.tile_decoder
+        elif name == 'Projected':
+            pass
         else:
             raise Exception("Could not find value type that matches", name)
 
@@ -154,6 +156,15 @@ class AvroRegistry(object):
 
         return {'bands': tile_datums}
 
+    @classmethod
+    def projected_extent_encoder(cls, obj):
+        if obj.get('epsg'):
+            obj['proj4'] = 'null'
+        else:
+            obj['epsg'] = 'null'
+
+        return obj
+
     @staticmethod
     def tuple_encoder(obj, key_encoder=None, value_encoder=None):
         """Encodes a tuple to send to scala..
@@ -212,5 +223,7 @@ class AvroRegistry(object):
     def _get_encoder(cls, name):
         if name == "Tile":
             return cls.tile_encoder
+        elif name == "Projected":
+            return cls.projected_extent_encoder
         else:
             raise Exception("Could not find value type that matches", name)
