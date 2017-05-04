@@ -264,6 +264,15 @@ class RasterRDD(object):
 
         return RasterRDD(self.geopysc, self.rdd_type, srdd)
 
+    def get_min_max(self):
+        """Returns the maximum and minimum values of all of the rasters in the RDD.
+
+        Returns:
+            (float, float)
+        """
+        min_max = self.srdd.getMinMax()
+        return (min_max._1(), min_max._2())
+
 
 class TiledRasterRDD(object):
     """Wraps a RDD of tiled, GeoTrellis rasters.
@@ -637,6 +646,15 @@ class TiledRasterRDD(object):
         srdd = _reclassify(self.srdd, value_map, data_type, boundary_strategy, replace_nodata_with)
 
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+
+    def get_min_max(self):
+        """Returns the maximum and minimum values of all of the rasters in the RDD.
+
+        Returns:
+            (float, float)
+        """
+        min_max = self.srdd.getMinMax()
+        return (min_max._1(), min_max._2())
 
     def _process_operation(self, value, operation):
         if isinstance(value, int) or isinstance(value, float):
