@@ -4,3 +4,4 @@ avro-python3>=1.8
 shapely>=1.6b3
 rasterio>=1.0a7
 setuptools
+fastavro>=0.13.0
