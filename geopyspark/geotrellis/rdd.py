@@ -91,7 +91,7 @@ class RasterRDD(object):
         key = geopysc.map_key_input(rdd_type, False)
 
         schema = geopysc.create_schema(key)
-        ser = geopysc.create_tuple_serializer(schema, key_type=None, value_type=TILE)
+        ser = geopysc.create_tuple_serializer(schema, key_type="Projected", value_type=TILE)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
         if rdd_type == SPATIAL:
@@ -117,7 +117,7 @@ class RasterRDD(object):
         """
 
         result = self.srdd.toAvroRDD()
-        ser = self.geopysc.create_tuple_serializer(result._2(), value_type=TILE)
+        ser = self.geopysc.create_tuple_serializer(result._2(), key_type="Projected", value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
 
     def to_tiled_layer(self, extent=None, layout=None, crs=None, tile_size=256,
@@ -324,7 +324,7 @@ class TiledRasterRDD(object):
         key = geopysc.map_key_input(rdd_type, True)
 
         schema = geopysc.create_schema(key)
-        ser = geopysc.create_tuple_serializer(schema, key_type=None, value_type=TILE)
+        ser = geopysc.create_tuple_serializer(schema, key_type="Projected", value_type=TILE)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
         if rdd_type == SPATIAL:
@@ -400,7 +400,7 @@ class TiledRasterRDD(object):
             RDD
         """
         result = self.srdd.toAvroRDD()
-        ser = self.geopysc.create_tuple_serializer(result._2(), value_type=TILE)
+        ser = self.geopysc.create_tuple_serializer(result._2(), key_type="Projected", value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
 
     def reproject(self, target_crs, extent=None, layout=None, scheme=FLOAT, tile_size=256,
