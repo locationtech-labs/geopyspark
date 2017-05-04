@@ -151,6 +151,22 @@ class RasterRDD(object):
         return self.tile_to_layout(self.collect_metadata(extent, layout, crs, tile_size),
                                    resample_method)
 
+    def to_int(self):
+        """Converts the underlying, raster values to ``int``s.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.RasterRDD`
+        """
+        return RasterRDD(self.geopysc, self.rdd_type, self.srdd.toInt())
+
+    def to_float(self):
+        """Converts the underlying, raster values to ``float``s.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.RasterRDD`
+        """
+        return RasterRDD(self.geopysc, self.rdd_type, self.srdd.toDouble())
+
     def collect_metadata(self, extent=None, layout=None, crs=None, tile_size=256):
         """Iterate over RDD records and generates layer metadata desribing the contained rasters.
 
@@ -426,6 +442,22 @@ class TiledRasterRDD(object):
         result = self.srdd.toAvroRDD()
         ser = self.geopysc.create_tuple_serializer(result._2(), key_type="Projected", value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
+
+    def to_int(self):
+        """Converts the underlying, raster values to ``int``s.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+        """
+        return RasterRDD(self.geopysc, self.rdd_type, self.srdd.toInt())
+
+    def to_float(self):
+        """Converts the underlying, raster values to ``float``s.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+        """
+        return RasterRDD(self.geopysc, self.rdd_type, self.srdd.toDouble())
 
     def reproject(self, target_crs, extent=None, layout=None, scheme=FLOAT, tile_size=256,
                   resolution_threshold=0.1, resample_method=NEARESTNEIGHBOR):
