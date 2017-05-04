@@ -130,7 +130,7 @@ class RasterRDD(object):
         Args:
             extent (:ref:`extent`, optional): Specify layout extent, must also specify layout.
             layout (:ref:`tile_layout`, optional): Specify tile layout, must also specify extent.
-            crs (str, int, optional): Ignore CRS from records and use given one instead.
+            crs (str or int, optional): Ignore CRS from records and use given one instead.
             tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
             resample_method (str, optional): The resample method to use for the reprojection.
                 This is represented by a constant. If none is specified, then ``NEARESTNEIGHBOR``
@@ -152,7 +152,7 @@ class RasterRDD(object):
         Args:
             extent (:ref:`extent`, optional): Specify layout extent, must also specify layout.
             layout (:ref:`tile_layout`, optional): Specify tile layout, must also specify extent.
-            crs (str, int, optional): Ignore CRS from records and use given one instead.
+            crs (str or int, optional): Ignore CRS from records and use given one instead.
             tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
 
         Note:
@@ -184,7 +184,7 @@ class RasterRDD(object):
         """Reproject every individual raster to `target_crs`, does not sample past tile boundary
 
         Args:
-            target_crs (int, str): The CRS to reproject to. Can either be the EPSG code,
+            target_crs (str or int): The CRS to reproject to. Can either be the EPSG code,
                 well-known name, or a PROJ.4 projection string.
             resample_method (str, optional): The resample method to use for the reprojection.
                 This is represented by a constant. If none is specified, then `NEARESTNEIGHBOR`
@@ -357,7 +357,7 @@ class TiledRasterRDD(object):
                 string or a ``Polygon``. If the value is a string, it must be the WKT string,
                 geometry format.
             extent (:ref:`extent`): The ``extent`` of the new raster.
-            crs (str): The CRS the new raster should be in.
+            crs (str or int): The CRS the new raster should be in.
             cols (int): The number of cols the new raster should have.
             rows (int): The number of rows the new raster should have.
             fill_value (int): The value to fill the raster with.
@@ -417,7 +417,7 @@ class TiledRasterRDD(object):
         """Reproject RDD as tiled raster layer, samples surrounding tiles.
 
         Args:
-            target_crs (int, str): The CRS to reproject to. Can either be the EPSG code,
+            target_crs (str or int): The CRS to reproject to. Can either be the EPSG code,
                 well-known name, or a PROJ.4 projection string.
                 extent (:ref:`extent`, optional): Specify layout extent, must also specify layout.
             layout (:ref:`tile_layout`, optional): Specify tile layout, must also specify extent.
