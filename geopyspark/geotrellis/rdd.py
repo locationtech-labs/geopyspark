@@ -168,6 +168,9 @@ class RasterRDD(object):
         if not crs:
             crs = ""
 
+        if isinstance(crs, int):
+            crs = str(crs)
+
         if extent and layout:
             json_metadata = self.srdd.collectMetadata(extent, layout, crs)
         elif not extent and not layout:
@@ -193,6 +196,9 @@ class RasterRDD(object):
 
         if resample_method not in RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
+
+        if isinstance(target_crs, int):
+            target_crs = str(target_crs)
 
         return RasterRDD(self.geopysc, self.rdd_type,
                          self.srdd.reproject(target_crs, resample_method))
@@ -378,6 +384,9 @@ class TiledRasterRDD(object):
             except:
                 raise TypeError(geometry, "Needs to be either a Shapely Geometry or a string")
 
+        if isinstance(crs, int):
+            crs = str(crs)
+
         if instant and rdd_type != SPATIAL:
             srdd = geopysc._jvm.geopyspark.geotrellis.TemporalTiledRasterRDD.rasterize(
                 geopysc.sc, geometry, extent, crs, instant, cols, rows, fill_value)
@@ -434,6 +443,9 @@ class TiledRasterRDD(object):
 
         if resample_method not in RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
+
+        if isinstance(target_crs, int):
+            target_crs = str(target_crs)
 
         if extent and layout:
             srdd = self.srdd.reproject(extent, layout, target_crs, resample_method)
