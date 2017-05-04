@@ -235,7 +235,8 @@ class RasterRDD(object):
         srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
-    def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO, replace_nodata_with=None):
+    def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO,
+                   replace_nodata_with=None):
         """Changes the cell values of a raster based on how the data is broken up.
 
         Args:
@@ -245,9 +246,9 @@ class RasterRDD(object):
                 ``float``.
             boundary_strategy (str, optional): How the cells should be classified along the breaks.
                 If unspecified, then ``LESSTHANOREQUALTO`` will be used.
-            replace_nodata_with (data_type, optional): When remapping values, nodata values must be 
-                treated separately.  If nodata values are intended to be replaced during the 
-                reclassify, this variable should be set to the intended value.  If unspecified, 
+            replace_nodata_with (data_type, optional): When remapping values, nodata values must be
+                treated separately.  If nodata values are intended to be replaced during the
+                reclassify, this variable should be set to the intended value.  If unspecified,
                 nodata values will be preserved.
 
         NOTE:
@@ -609,7 +610,8 @@ class TiledRasterRDD(object):
 
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
-    def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO, replace_nodata_with=None):
+    def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO,
+                   replace_nodata_with=None):
         """Changes the cell values of a raster based on how the data is broken up.
 
         Args:
@@ -619,9 +621,9 @@ class TiledRasterRDD(object):
                 ``float``.
             boundary_strategy (str, optional): How the cells should be classified along the breaks.
                 If unspecified, then ``LESSTHANOREQUALTO`` will be used.
-            replace_nodata_with (data_type, optional): When remapping values, nodata values must be 
-                treated separately.  If nodata values are intended to be replaced during the 
-                reclassify, this variable should be set to the intended value.  If unspecified, 
+            replace_nodata_with (data_type, optional): When remapping values, nodata values must be
+                treated separately.  If nodata values are intended to be replaced during the
+                reclassify, this variable should be set to the intended value.  If unspecified,
                 nodata values will be preserved.
 
         NOTE:
