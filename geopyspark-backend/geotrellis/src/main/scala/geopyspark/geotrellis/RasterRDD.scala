@@ -114,6 +114,15 @@ abstract class TileRDD[K: ClassTag] {
     reclassifyDouble(reclassifiedRDD)
   }
 
+  def getMinMax: (Double, Double) = {
+    val minMaxs: Array[(Double, Double)] = rdd.histogram.map{ x => x.minMaxValues.get }
+
+    minMaxs.foldLeft(minMaxs(0)) {
+      (acc, elem) =>
+        (math.min(acc._1, elem._1), math.max(acc._2, elem._2))
+    }
+  }
+
   protected def reclassify(reclassifiedRDD: RDD[(K, MultibandTile)]): TileRDD[_]
   protected def reclassifyDouble(reclassifiedRDD: RDD[(K, MultibandTile)]): TileRDD[_]
 }
