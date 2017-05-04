@@ -1,5 +1,6 @@
 """The class which serializes/deserializes values in a RDD to/from python."""
 import io
+from fastavro import schemaless_writer, schemaless_reader
 import avro
 import avro.io
 
@@ -69,13 +70,11 @@ class AvroSerializer(FramedSerializer):
     def _dumps(self, obj):
         bytes_writer = io.BytesIO()
 
-        encoder = avro.io.BinaryEncoder(bytes_writer)
-
         if self.encoding_method:
             datum = self.encoding_method(obj)
-            self.datum_writer.write(datum, encoder)
+            schemaless_writer(bytes_writer, self.schema_dict, datum)
         else:
-            self.datum_writer.write(obj, encoder)
+            schemaless_writer(bytes_writer, self.schema_dict, datum)
 
         return bytes_writer.getvalue()
 
@@ -109,13 +108,9 @@ class AvroSerializer(FramedSerializer):
         """
 
         buf = io.BytesIO(obj)
-
-        decoder = avro.io.BinaryDecoder(buf)
-        schema_dict = self.reader.read(decoder)
+        schema_dict = schemaless_reader(buf, self.schema_dict)
 
         if self.decoding_method:
             return [self.decoding_method(schema_dict)]
         else:
             return [schema_dict]
-
-
