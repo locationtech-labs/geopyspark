@@ -26,10 +26,9 @@ libraries like rasterio. In GeoPySpark, they are represented as a ``dict``.
 
 The fields used to represent rasters:
  - **no_data_value**: The value that represents no data in raster. This can be
-      represented by a variety of types depending on the value type of the
-      raster.
+   represented by a variety of types depending on the value type of the raster.
  - **data** (nd.array): The raster data itself. It is contained within a NumPy
-      array.
+   array.
 
 **Note**: All rasters in GeoPySpark are represented as having multiple bands,
 even if the original raster just contained one.
@@ -43,13 +42,13 @@ Describes the grid in which the rasters within a RDD should be laid out.
 In GeoPySpark, this is represented as a ``dict``.
 
 The fields used to represent ``TileLayout``:
- - **layoutCols** (int): The number of columns of rasters that runs
-       east to west.
+ - **layoutCols** (int): The number of columns of rasters that runs east to
+   west.
  - **layoutRows** (int): The number of rows of rasters that runs north to south.
  - **tileCols** (int): The number of columns of pixels in each raster that runs
-       east to west.
+   east to west.
  - **tileRows** (int): The number of rows of pixels in each raster that runs
-       north to south.
+   north to south.
 
 Example:
 
@@ -106,7 +105,7 @@ Example:
    projected_extent = {'extent': extent, 'proj4': proj4}
 
 
-**Note**: Either `epsg` or `proj4` must be defined.
+**Note**: Either ``epsg`` or ``proj4`` must be defined.
 
 .. _temporal_extent:
 
@@ -132,7 +131,7 @@ Example:
    instance = 1.0
    projected_extent = {'extent': extent, 'epsg': epsg, 'instance': instance}
 
-**Note**: Either `epsg` or `proj4` must be defined.
+**Note**: Either ``epsg`` or ``proj4`` must be defined.
 
 .. _spatial-key:
 
@@ -181,10 +180,10 @@ either ``SpatialKey`` s or ``SpaceTimeKey`` s depending on the type of data.
 In GeoPySpark, this is represented as a ``dict``.
 
 The fields used to represent ``Bounds``:
- - **minKey** (SpatialKey, SpaceTimeKey): The smallest SpatialKey or
-       SpaceTimeKey.
- - **maxKey** (SpatialKey, SpaceTimeKey): The largest SpatialKey or
-       SpaceTimeKey.
+ - **minKey** (SpatialKey or SpaceTimeKey): The smallest SpatialKey or
+   SpaceTimeKey.
+ - **maxKey** (SpatialKey or SpaceTimeKey): The largest SpatialKey or
+   SpaceTimeKey.
 
 Example:
 
