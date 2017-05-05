@@ -6,6 +6,7 @@ import pytest
 from geopyspark.geotrellis.rdd import TiledRasterRDD
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.constants import SPATIAL, SUM, MIN, SQUARE, ANNULUS
+from geopyspark.geotrellis.neighborhoods import Square, Annulus
 
 
 class FocalTest(BaseTestClass):
@@ -57,8 +58,22 @@ class FocalTest(BaseTestClass):
 
         self.assertTrue(result.to_numpy_rdd().first()[1]['data'][0][1][0] >= 6)
 
+    def test_focal_sum_square(self):
+        square = Square(extent=1.0)
+        result = self.raster_rdd.focal(
+            operation=SUM,
+            neighborhood=square)
+
+        self.assertTrue(result.to_numpy_rdd().first()[1]['data'][0][1][0] >= 6)
+
     def test_focal_min(self):
         result = self.raster_rdd.focal(operation=MIN, neighborhood=ANNULUS, param_1=2.0, param_2=1.0)
+
+        self.assertEqual(result.to_numpy_rdd().first()[1]['data'][0][0][0], -1)
+
+    def test_focal_min_annulus(self):
+        annulus = Annulus(inner_radius=2.0, outer_radius=1.0)
+        result = self.raster_rdd.focal(operation=MIN, neighborhood=annulus)
 
         self.assertEqual(result.to_numpy_rdd().first()[1]['data'][0][0][0], -1)
 
