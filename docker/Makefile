@@ -5,7 +5,7 @@ WHL := archives/geopyspark-0.1.0-py3-none-any.whl
 JAR := archives/geotrellis-backend-assembly-0.1.0.jar
 GDAL-BLOB := archives/gdal-and-friends.tar.gz
 PYTHON-BLOB := archives/geopyspark-and-friends.tar.gz
-VERSION := 1
+VERSION := 2
 STAGE0 := jamesmcclain/jupyter-geopyspark:stage0
 STAGE1 := quay.io/geodocker/jupyter-geopyspark:$(VERSION)
 
