@@ -125,6 +125,9 @@ SQUARE = 'square'
 """Neighborhood type."""
 WEDGE = 'wedge'
 
+"""Neighborhood type."""
+CIRCLE = "circle"
+
 """Focal operation type."""
 SUM = 'Sum'
 
@@ -157,8 +160,7 @@ NEIGHBORHOODS = [
     NESW,
     SQUARE,
     WEDGE,
-    ASPECT,
-    SLOPE
+    CIRCLE
 ]
 
 """The NoData value for ints in GeoTrellis."""

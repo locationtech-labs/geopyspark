@@ -56,7 +56,7 @@ object GeoTrellisUtils {
       case NESW => Nesw(param1.toInt)
       case SQUARE => Square(param1.toInt)
       case WEDGE => Wedge(param1, param2, param3)
-      case _ if (operation == "Aspect" || operation == "Slope") => Square(1)
+      case CIRCLE => Circle(param1)
     }
 
   def getOperation(
