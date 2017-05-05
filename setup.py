@@ -14,6 +14,7 @@ setup(
     long_description=open('README.rst').read(),
     license='LICENSE',
     install_requires=[
+        'fastavro>=0.13.0',
         'numpy>=1.8',
         'shapely>=1.6b3'
     ],
@@ -23,7 +24,6 @@ setup(
         'geopyspark.tests',
         'geopyspark.tests.schema_tests',
         'geopyspark.jars',
-        'geopyspark.lib'
     ],
     include_package_data=True,
     scripts=[],

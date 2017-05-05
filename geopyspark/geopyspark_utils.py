@@ -10,9 +10,6 @@ from pkg_resources import resource_filename
 VERSION = '0.1.0'
 JAR_FILE = 'geotrellis-backend-assembly-' + VERSION + '.jar'
 
-FASTAVRO_VERSION = '0.13.0'
-FASTAVRO = 'fastavro-' + FASTAVRO_VERSION + '.zip'
-
 
 def add_pyspark_path():
     """Adds SPARK_HOME to environment variables.
@@ -38,7 +35,6 @@ def add_pyspark_path():
         raise ValueError("Could not find the py4j zip in", path.join(pyspark_home, 'python', 'lib'))
 
 
-
 def setup_environment():
     """Sets up various environment variables that are needed to run GeoPySpark.
 
@@ -50,15 +46,11 @@ def setup_environment():
 
     current_location = path.dirname(path.realpath(__file__))
 
-    avro_path = path.join(current_location, 'lib', 'FASTAVRO')
-    sys.path.insert(0, avro_path)
-
     local_prefixes = [
         path.abspath(path.join(current_location, 'jars/')),
         path.abspath(path.join(os.getcwd(), 'jars/')),
         path.abspath(path.join(os.getcwd(), '../geopyspark/jars/'))
     ]
-
     possible_jars = [path.join(prefix, '*.jar') for prefix in local_prefixes]
     jar = path.abspath(resource_filename('geopyspark.jars', JAR_FILE))
     jar_dir = os.path.dirname(jar)
