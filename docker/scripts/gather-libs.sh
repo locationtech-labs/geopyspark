@@ -16,7 +16,7 @@ tar axvf /archives/gdal-and-friends.tar.gz
 cd $HOME/
 chown -R root:root $HOME/.cache/pip
 pip3 install --user appdirs==1.4.3
-pip3 install --user avro-python3==1.8.1
+pip3 install --user fastavro==0.13.0
 pip3 install --user numpy==1.12.1
 pip3 install --user pyparsing==2.2.0
 pip3 install --user six==1.10.0

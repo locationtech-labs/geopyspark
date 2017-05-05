@@ -35,7 +35,6 @@ def add_pyspark_path():
         raise ValueError("Could not find the py4j zip in", path.join(pyspark_home, 'python', 'lib'))
 
 
-
 def setup_environment():
     """Sets up various environment variables that are needed to run GeoPySpark.
 
@@ -52,7 +51,6 @@ def setup_environment():
         path.abspath(path.join(os.getcwd(), 'jars/')),
         path.abspath(path.join(os.getcwd(), '../geopyspark/jars/'))
     ]
-
     possible_jars = [path.join(prefix, '*.jar') for prefix in local_prefixes]
     jar = path.abspath(resource_filename('geopyspark.jars', JAR_FILE))
     jar_dir = os.path.dirname(jar)

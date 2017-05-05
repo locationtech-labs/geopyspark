@@ -1,7 +1,6 @@
 """The class which serializes/deserializes values in a RDD to/from python."""
 import io
-import avro
-import avro.io
+from fastavro import schemaless_writer, schemaless_reader
 
 from pyspark.serializers import Serializer, FramedSerializer
 
@@ -40,42 +39,20 @@ class AvroSerializer(FramedSerializer):
             self.encoding_method = None
 
     @property
-    def schema(self):
-        """The parsed AvroSchema."""
-        return avro.schema.Parse(self.schema_string)
-
-    @property
-    def schema_name(self):
-        """The name of the schema."""
-        return self.schema().name
-
-    @property
     def schema_dict(self):
         """The schema values in a dict."""
         import json
 
         return json.loads(self.schema_string)
 
-    @property
-    def reader(self):
-        """The reader function used to read values in the RDD."""
-        return avro.io.DatumReader(self.schema)
-
-    @property
-    def datum_writer(self):
-        """The write function used to serialize values in the RDD."""
-        return avro.io.DatumWriter(self.schema)
-
     def _dumps(self, obj):
         bytes_writer = io.BytesIO()
 
-        encoder = avro.io.BinaryEncoder(bytes_writer)
-
         if self.encoding_method:
             datum = self.encoding_method(obj)
-            self.datum_writer.write(datum, encoder)
+            schemaless_writer(bytes_writer, self.schema_dict, datum)
         else:
-            self.datum_writer.write(obj, encoder)
+            schemaless_writer(bytes_writer, self.schema_dict, datum)
 
         return bytes_writer.getvalue()
 
@@ -109,13 +86,9 @@ class AvroSerializer(FramedSerializer):
         """
 
         buf = io.BytesIO(obj)
-
-        decoder = avro.io.BinaryDecoder(buf)
-        schema_dict = self.reader.read(decoder)
+        schema_dict = schemaless_reader(buf, self.schema_dict)
 
         if self.decoding_method:
             return [self.decoding_method(schema_dict)]
         else:
             return [schema_dict]
-
-
