@@ -28,6 +28,13 @@ geopyspark.geotrellis.geotiff_rdd module
    :members:
    :inherited-members:
 
+geopyspark.geotrellis.neighborhoods module
+--------------------------------------------
+
+.. automodule:: geopyspark.geotrellis.neighborhoods
+   :members:
+   :inherited-members:
+
 geopyspark.geotrellis.rdd module
 ---------------------------------
 
