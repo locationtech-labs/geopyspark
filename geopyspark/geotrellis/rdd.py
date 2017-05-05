@@ -10,6 +10,9 @@ from shapely.geometry import Polygon
 from shapely.wkt import dumps
 from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              OPERATIONS,
+                                             SLOPE,
+                                             ASPECT,
+                                             SQUARE,
                                              NEIGHBORHOODS,
                                              NEARESTNEIGHBOR,
                                              FLOAT,
@@ -18,6 +21,8 @@ from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              LESSTHANOREQUALTO,
                                              NODATAINT
                                             )
+from geopyspark.geotrellis.neighborhoods import Neighborhood
+
 
 def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_with):
     new_dict = {}
@@ -543,36 +548,59 @@ class TiledRasterRDD(object):
 
         return [TiledRasterRDD(self.geopysc, self.rdd_type, srdd) for srdd in result]
 
-    def focal(self, operation, neighborhood, param_1=None, param_2=None, param_3=None):
+    def focal(self, operation, neighborhood=None, param_1=None, param_2=None, param_3=None):
         """Performs the given focal operation on the layers contained in the RDD.
 
         Args:
             operation (str): The focal operation such as SUM, ASPECT, SLOPE, etc.
-            neighborhood (str): The type of neighborhood to use such as ANNULUS, SQUARE, etc.
-            param_1 (int, float, optional): If using ``SLOPE``, then this is the zFactor, else it
-                is the first argument of the ``neighborhood``.
-            param_2 (int, float, optional): The second argument of the `neighborhood`.
-            param_3 (int, float, optional): The third argument of the `neighborhood`.
+            neighborhood (str or :class:`~geopyspark.geotrellis.neighborhoods.Neighborhood`, optional):
+                The type of neighborhood to use in the focal operation. This can be represented by
+                either an instance of ``Neighborhood``, or by a constant such as ANNULUS, SQUARE,
+                etc. Defaults to ``None``.
+            param_1 (int or float, optional): If using ``SLOPE``, then this is the zFactor, else it
+                is the first argument of ``neighborhood``.
+            param_2 (int or float, optional): The second argument of the `neighborhood`.
+            param_3 (int or float, optional): The third argument of the `neighborhood`.
 
         Note:
+            ``param``s only need to be set if ``neighborhood`` is not an instance of
+            ``Neighborhood`` or if ``neighborhood`` is ``None``.
+
             Any `param` that is not set will default to 0.0.
+
+            If ``neighborhood`` is ``None`` then ``operation`` **must** be either ``SLOPE`` or
+            ``ASPECT``.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
         """
 
         if operation not in OPERATIONS:
-            raise ValueError(operation, " Is not a known operation.")
+            raise ValueError(operation, "Is not a known operation.")
 
-        if param_1 is None:
-            param_1 = 0.0
-        if param_2 is None:
-            param_2 = 0.0
-        if param_3 is None:
-            param_3 = 0.0
+        if isinstance(neighborhood, Neighborhood):
+            srdd = self.srdd.focal(operation, neighborhood.name, neighborhood.param_1,
+                                   neighborhood.param_2, neighborhood.param_3)
 
-        srdd = self.srdd.focal(operation, neighborhood, float(param_1), float(param_2),
-                               float(param_3))
+        elif isinstance(neighborhood, str):
+            if neighborhood not in NEIGHBORHOODS:
+                raise ValueError(neighborhood, "is not a known neighborhood.")
+
+            if param_1 is None:
+                param_1 = 0.0
+            if param_2 is None:
+                param_2 = 0.0
+            if param_3 is None:
+                param_3 = 0.0
+
+            srdd = self.srdd.focal(operation, neighborhood, float(param_1), float(param_2),
+                                   float(param_3))
+
+        elif not neighborhood and operation == SLOPE or operation == ASPECT:
+            srdd = self.srdd.focal(operation, SQUARE, 1.0, 0.0, 0.0)
+
+        else:
+            raise ValueError("neighborhood must be set or the operation must be SLOPE or ASPECT")
 
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
