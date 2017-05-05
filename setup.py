@@ -14,7 +14,6 @@ setup(
     long_description=open('README.rst').read(),
     license='LICENSE',
     install_requires=[
-        'avro-python3>=1.8',
         'numpy>=1.8',
         'shapely>=1.6b3'
     ],
@@ -23,7 +22,8 @@ setup(
         'geopyspark.geotrellis',
         'geopyspark.tests',
         'geopyspark.tests.schema_tests',
-        'geopyspark.jars'
+        'geopyspark.jars',
+        'geopyspark.lib'
     ],
     include_package_data=True,
     scripts=[],

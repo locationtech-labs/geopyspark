@@ -1,1 +1,2 @@
 include geopyspark/jars/*.jar
+include geopyspark/lib/*.zip
