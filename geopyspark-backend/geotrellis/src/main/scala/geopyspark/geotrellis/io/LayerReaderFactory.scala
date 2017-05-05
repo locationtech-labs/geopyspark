@@ -5,6 +5,7 @@ import geopyspark.geotrellis._
 import geotrellis.vector._
 import geotrellis.vector.io.wkt.WKT
 import geotrellis.raster._
+import geotrellis.proj4._
 import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.accumulo._
@@ -43,7 +44,8 @@ abstract class LayerReaderWrapper {
     layerName: String,
     zoom: Int,
     queryGeometryString: String,
-    queryIntervalStrings: ArrayList[String]
+    queryIntervalStrings: ArrayList[String],
+    projQuery: String
   ): TiledRasterRDD[_]
 }
 
@@ -133,21 +135,29 @@ abstract class FilteringLayerReaderWrapper()
     layerName: String,
     zoom: Int,
     queryGeometryString: String,
-    queryIntervalStrings: ArrayList[String]
+    queryIntervalStrings: ArrayList[String],
+    projQuery: String
   ): TiledRasterRDD[_] = {
     val id = LayerId(layerName, zoom)
     val valueClass = getValueClass(id)
+    val queryCRS = TileRDD.getCRS(projQuery)
+    val spatialQuery = getSpatialQuery(queryGeometryString)
 
     (keyType, valueClass) match {
       case ("SpatialKey", "geotrellis.raster.Tile") => {
-        val spatialQuery = getSpatialQuery(queryGeometryString)
-
         val layer = layerReader.query[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](id)
-        val query = spatialQuery match {
-          case Some(point: Point) => layer.where(Contains(point))
-          case Some(polygon: Polygon) => layer.where(Intersects(polygon))
-          case Some(multi: MultiPolygon) => layer.where(Intersects(multi))
-          case None => layer
+        val layerCRS = layer.result.metadata.crs
+        val query = (queryCRS, spatialQuery) match {
+          case (Some(crs), Some(point: Point)) => layer.where(Contains(point.reproject(layerCRS, crs)))
+          case (None, Some(point: Point)) => layer.where(Contains(point))
+
+          case (Some(crs), Some(polygon: Polygon)) => layer.where(Intersects(polygon.reproject(layerCRS, crs)))
+          case (None, Some(polygon: Polygon)) => layer.where(Intersects(polygon))
+
+          case (Some(crs), Some(multi: MultiPolygon)) => layer.where(Intersects(multi.reproject(layerCRS, crs)))
+          case (None, Some(multi: MultiPolygon)) => layer.where(Intersects(multi))
+
+          case (_, None) => layer
           case _ => throw new Exception("Unsupported Geometry")
         }
 
@@ -157,27 +167,34 @@ abstract class FilteringLayerReaderWrapper()
       }
 
       case ("SpatialKey", "geotrellis.raster.MultibandTile") => {
-        val spatialQuery = getSpatialQuery(queryGeometryString)
-
         val layer = layerReader.query[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](id)
-        val query = spatialQuery match {
-          case Some(polygon: Polygon) => layer.where(Intersects(polygon))
-          case Some(multi: MultiPolygon) => layer.where(Intersects(multi))
-          case None => layer
+        val layerCRS = layer.result.metadata.crs
+        val query = (queryCRS, spatialQuery) match {
+          case (Some(crs), Some(polygon: Polygon)) => layer.where(Intersects(polygon.reproject(layerCRS, crs)))
+          case (None, Some(polygon: Polygon)) => layer.where(Intersects(polygon))
+
+          case (Some(crs), Some(multi: MultiPolygon)) => layer.where(Intersects(multi.reproject(layerCRS, crs)))
+          case (None, Some(multi: MultiPolygon)) => layer.where(Intersects(multi))
+
+          case (_, None) => layer
           case _ => throw new Exception("Unsupported Geometry")
         }
         new SpatialTiledRasterRDD(Some(zoom), query.result)
       }
 
       case ("SpaceTimeKey", "geotrellis.raster.Tile") => {
-        val spatialQuery = getSpatialQuery(queryGeometryString)
         val temporalQuery = getTemporalQuery(queryIntervalStrings)
 
         val layer = layerReader.query[SpaceTimeKey, Tile, TileLayerMetadata[SpaceTimeKey]](id)
-        val query1 = spatialQuery match {
-          case Some(polygon: Polygon) => layer.where(Intersects(polygon))
-          case Some(multi: MultiPolygon) => layer.where(Intersects(multi))
-          case None => layer
+        val layerCRS = layer.result.metadata.crs
+        val query1 = (queryCRS, spatialQuery) match {
+          case (Some(crs), Some(polygon: Polygon)) => layer.where(Intersects(polygon.reproject(layerCRS, crs)))
+          case (None, Some(polygon: Polygon)) => layer.where(Intersects(polygon))
+
+          case (Some(crs), Some(multi: MultiPolygon)) => layer.where(Intersects(multi.reproject(layerCRS, crs)))
+          case (None, Some(multi: MultiPolygon)) => layer.where(Intersects(multi))
+
+          case (_, None) => layer
           case _ => throw new Exception("Unsupported Geometry")
         }
         val query2 = temporalQuery match {
@@ -190,14 +207,18 @@ abstract class FilteringLayerReaderWrapper()
       }
 
       case ("SpaceTimeKey", "geotrellis.raster.MultibandTile") => {
-        val spatialQuery = getSpatialQuery(queryGeometryString)
         val temporalQuery = getTemporalQuery(queryIntervalStrings)
 
         val layer = layerReader.query[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id)
-        val query1 = spatialQuery match {
-          case Some(polygon: Polygon) => layer.where(Intersects(polygon))
-          case Some(multi: MultiPolygon) => layer.where(Intersects(multi))
-          case None => layer
+        val layerCRS = layer.result.metadata.crs
+        val query1 = (queryCRS, spatialQuery) match {
+          case (Some(crs), Some(polygon: Polygon)) => layer.where(Intersects(polygon.reproject(layerCRS, crs)))
+          case (None, Some(polygon: Polygon)) => layer.where(Intersects(polygon))
+
+          case (Some(crs), Some(multi: MultiPolygon)) => layer.where(Intersects(multi.reproject(layerCRS, crs)))
+          case (None, Some(multi: MultiPolygon)) => layer.where(Intersects(multi))
+
+          case (_, None) => layer
           case _ => throw new Exception("Unsupported Geometry")
         }
         val query2 = temporalQuery match {
