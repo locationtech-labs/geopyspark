@@ -1,8 +1,6 @@
 """The class which serializes/deserializes values in a RDD to/from python."""
 import io
 from fastavro import schemaless_writer, schemaless_reader
-import avro
-import avro.io
 
 from pyspark.serializers import Serializer, FramedSerializer
 
@@ -41,31 +39,11 @@ class AvroSerializer(FramedSerializer):
             self.encoding_method = None
 
     @property
-    def schema(self):
-        """The parsed AvroSchema."""
-        return avro.schema.Parse(self.schema_string)
-
-    @property
-    def schema_name(self):
-        """The name of the schema."""
-        return self.schema().name
-
-    @property
     def schema_dict(self):
         """The schema values in a dict."""
         import json
 
         return json.loads(self.schema_string)
-
-    @property
-    def reader(self):
-        """The reader function used to read values in the RDD."""
-        return avro.io.DatumReader(self.schema)
-
-    @property
-    def datum_writer(self):
-        """The write function used to serialize values in the RDD."""
-        return avro.io.DatumWriter(self.schema)
 
     def _dumps(self, obj):
         bytes_writer = io.BytesIO()
