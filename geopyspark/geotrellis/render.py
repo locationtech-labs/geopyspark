@@ -2,11 +2,10 @@ from PIL import Image
 
 
 class PngRDD(object):
-    def __init__(self, geopysc, rdd_type, srdd, color_map):
+    def __init__(self, geopysc, rdd_type, tiledrdd, rampname):
         self.geopysc = geopysc
         self.rdd_type = rdd_type
-        self.srdd = srdd.map(color_map)
-        self.color_map = color_map
+        self.srdd = self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asSingleband(tiledrdd.srdd, rampname)
 
     def lookup(self, col, row):
         """Return the value(s) in the image of a particular SpatialKey (given by col and row)

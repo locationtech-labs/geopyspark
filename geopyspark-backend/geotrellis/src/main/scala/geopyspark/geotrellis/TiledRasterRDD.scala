@@ -36,6 +36,8 @@ import scala.collection.JavaConverters._
 abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: ClassTag] extends TileRDD[K] {
   import Constants._
 
+  type keyType = K
+
   def rdd: RDD[(K, MultibandTile)] with Metadata[TileLayerMetadata[K]]
   def zoomLevel: Option[Int]
 
@@ -584,4 +586,5 @@ object TemporalTiledRasterRDD {
 
     TemporalTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata), metadata))
   }
+
 }
