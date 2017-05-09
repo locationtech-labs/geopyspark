@@ -107,6 +107,15 @@ Note:
   If you have somehow altered the global behavior of ``sbt`` this install may
   not work correctly.
 
+A third option is to install GeoPySpark in a virtual environment. To do this,
+enter the environment and run the following:
+
+.. code:: console
+
+   git clone https://github.com/locationtech-labs/geopyspark.git
+   cd geopyspark
+   make virtual-install
+
 Make Targets
 ^^^^^^^^^^^^
 
