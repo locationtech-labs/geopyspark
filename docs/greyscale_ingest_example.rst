@@ -41,7 +41,7 @@ ingest, GeoPySpark can perform the same task in just a single script.
 
   # Save each TiledRasterRDDs locally
   for tiled in pyramided:
-      write("file:///tmp/geopyspark-catalog", "geopyspark-ingest", tiled)
+      write("file:///tmp/python-catalog", "python-ingest", tiled)
 
 
 Running the Code
