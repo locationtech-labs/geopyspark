@@ -4,7 +4,7 @@ Creating a Tile Server From Ingested, Sentinel Data
 Now that we have ingested data, we can use it using a tile server.
 We will be using the catalog that was created in :ref:`sentinel_ingest_example`.
 
-**Note**: This guide will focus on converting the raster into a ``PIL`` RGB
+**Note**: This guide will focus on converting the raster into a ``Pillow``, RGB
 image so that it can be used by the tile server. The tile server process itself
 is discussed in more detail in :ref:`Greyscale Tile Server Code Breakdown
 <server_break_down>`.
@@ -147,11 +147,11 @@ Preparing the Tile
 
 Tiles that contain multibands need some work done before they can be served.
 The ``make_image`` method takes each band and normalizes it between a range
-of 0 and 255. We need to do this because ``PIL`` expects the data types of
+of 0 and 255. We need to do this because ``Pillow`` expects the data types of
 arrays to be ``uint8``. This is why we need the ``whole_max`` and the
-``whole_min`` values; as we needed to know full range of the original values
-before normalization. Information that would be otherwise impossible to get at
-this point.
+``whole_min`` values; as we needed to know the full range of the original
+values before normalization. Information that would be otherwise impossible to
+get at this point.
 
 Once normalized, the band is then converted to a greyscale image. This is done
 for each band in the tile, and once complete, we can then make a RGB ``png``
