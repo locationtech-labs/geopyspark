@@ -1,3 +1,4 @@
+import io
 from PIL import Image
 
 
@@ -5,6 +6,7 @@ class PngRDD(object):
     def __init__(self, geopysc, rdd_type, tiledrdd, rampname):
         self.geopysc = geopysc
         self.rdd_type = rdd_type
+        self.layer_metadata = tiledrdd.layer_metadata
         self.srdd = self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asSingleband(tiledrdd.srdd, rampname)
 
     def lookup(self, col, row):
@@ -27,9 +29,6 @@ class PngRDD(object):
         if row < min_row or row > max_row:
             raise IndexError("row out of bounds")
 
-        arrays = self.srdd.lookup(col, row)
+        result = self.srdd.lookup(col, row)
 
-        if self.color_map.has_alpha():
-            return [Image.fromarray(arr, 'RGBA') for arr in arrays]
-        else:
-            return [Image.fromarray(arr, 'RGB') for arr in arrays]
+        return [Image.open(io.BytesIO(bytes)) for bytes in result]
