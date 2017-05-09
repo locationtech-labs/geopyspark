@@ -13,6 +13,9 @@ rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst 
 install: ${DIST-ASSEMBLY} ${WHEEL}
 	${PYTHON} setup.py install --user --force --prefix=
 
+virtual-install: ${DIST-ASSEMBLY}
+	${PYTHON} setup.py install --force --prefix=${VIRTUAL_ENV}
+
 ${DIST-ASSEMBLY}: ${BUILD-ASSEMBLY}
 	cp -f ${BUILD-ASSEMBLY} ${DIST-ASSEMBLY}
 
