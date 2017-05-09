@@ -204,17 +204,17 @@ index 0000000..9661406
 +        return self.base_url + "/" + str(self.port) + "/" + name
 diff --git a/geonotebook/vis/geotrellis/server.py b/geonotebook/vis/geotrellis/server.py
 new file mode 100644
-index 0000000..dcfbb99
+index 0000000..588b5fc
 --- /dev/null
 +++ b/geonotebook/vis/geotrellis/server.py
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,108 @@
 +import io
 +import numpy as np
 +import rasterio
 +import threading
 +import time
 +
-+from PIL import Image
++from PIL import Image, ImageDraw, ImageFont
 +
 +
 +def make_image(arr):
@@ -269,14 +269,24 @@ index 0000000..dcfbb99
 +        try:
 +            # pyramid = pyramids[layer_name]
 +            # rdd = pyramid[zoom]
-+            img = png.lookup(col=x, row=y, zoom=zoom)
++            img = png.lookup(x, y, zoom)
 +            # arr = tile[0]['data']
 +            # nodata = -32768 #tile[0]['no_data_value']
 +        except:
 +            img = None
 +
 +        if img == None or len(img) == 0:
-+            abort(404)
++            # abort(404)
++            image = Image.new('RGBA', (256,256))
++            draw = ImageDraw.Draw(image)
++            draw.rectangle([0, 0, 255, 255], outline=(255,0,0,255))
++            draw.line([(0,0),(255,255)], fill=(255,0,0,255))
++            draw.line([(0,255),(255,0)], fill=(255,0,0,255))
++            draw.text((136,122), str(13) + ', ' + str(12), fill=(255,0,0,255))
++            del draw
++            bio = io.BytesIO()
++            image.save(bio, 'PNG')
++            img = [bio.getvalue()]
 +
 +        # bands = arr.shape[0]
 +        # if bands >= 3:
@@ -319,7 +329,7 @@ index f95e8af..6a0e86b 100644
 -__all__ = ('RasterData', 'RasterDataCollection', 'VectorData')
 +__all__ = ('RddRasterData', 'RasterData', 'RasterDataCollection', 'VectorData')
 diff --git a/geonotebook/wrappers/raster.py b/geonotebook/wrappers/raster.py
-index b2a83d3..033affc 100644
+index b2a83d3..8f192f2 100644
 --- a/geonotebook/wrappers/raster.py
 +++ b/geonotebook/wrappers/raster.py
 @@ -9,6 +9,24 @@ import pkg_resources as pr
@@ -332,7 +342,7 @@ index b2a83d3..033affc 100644
 +        from geopyspark.geotrellis.rdd import RasterRDD, TiledRasterRDD
 +        from geopyspark.geotrellis.render import PngRDD
 +
-+        if not (isinstance(rdd, RasterRDD) or isinstance(rdd, TiledRasterRDD)) or isinstance(rdd, PngRDD):
++        if not (isinstance(rdd, RasterRDD) or isinstance(rdd, TiledRasterRDD) or isinstance(rdd, PngRDD)):
 +            raise Exception
 +
 +        self.rdd = rdd
