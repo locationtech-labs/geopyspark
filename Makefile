@@ -21,6 +21,8 @@ ${BUILD-ASSEMBLY}: $(call rwildcard, geopyspark-backend/, *.scala)
 ${WHEEL}: ${DIST-ASSEMBLY} $(call rwildcard, geopyspark, *.py) setup.py
 	${PYTHON} setup.py bdist_wheel
 
+wheel: ${WHEEL}
+
 pyspark: ${DIST-ASSEMBLY}
 	pyspark --jars ${DIST-ASSEMBLY}
 
