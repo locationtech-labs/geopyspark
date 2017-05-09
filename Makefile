@@ -14,6 +14,7 @@ install: ${DIST-ASSEMBLY} ${WHEEL}
 	${PYTHON} setup.py install --user --force --prefix=
 
 virtual-install: ${DIST-ASSEMBLY}
+	pip install -r requirements.txt --force --prefix=${VIRTUAL_ENV} && \
 	${PYTHON} setup.py install --force --prefix=${VIRTUAL_ENV}
 
 ${DIST-ASSEMBLY}: ${BUILD-ASSEMBLY}
