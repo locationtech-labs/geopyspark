@@ -23,6 +23,7 @@ from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              NODATAINT,
                                              CELL_TYPES
                                             )
+from geopyspark.geotrellis.data_structures import Metadata
 from geopyspark.geotrellis.neighborhoods import Neighborhood
 
 
@@ -167,7 +168,8 @@ class RasterRDD(RDDWrapper):
         """
 
         result = self.srdd.toAvroRDD()
-        ser = self.geopysc.create_tuple_serializer(result._2(), key_type="Projected", value_type=TILE)
+        ser = self.geopysc.create_tuple_serializer(result._2(), key_type="Projected",
+                                                   value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
 
     def to_tiled_layer(self, extent=None, layout=None, crs=None, tile_size=256,
@@ -234,6 +236,12 @@ class RasterRDD(RDDWrapper):
             TypeError: If either `extent` and `layout` is not defined but the other is.
         """
 
+        if extent and not isinstance(extent, dict):
+            extent = extent._asdict()
+
+        if layout and not isinstance(layout, dict):
+            layout = layout._asdict()
+
         if not crs:
             crs = ""
 
@@ -247,7 +255,7 @@ class RasterRDD(RDDWrapper):
         else:
             raise TypeError("Could not collect metadata with {} and {}".format(extent, layout))
 
-        return json.loads(json_metadata)
+        return Metadata(json.loads(json_metadata))
 
     def reproject(self, target_crs, resample_method=NEARESTNEIGHBOR):
         """Reproject every individual raster to `target_crs`, does not sample past tile boundary
@@ -288,6 +296,9 @@ class RasterRDD(RDDWrapper):
         if resample_method not in RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
 
+        if isinstance(layer_metadata, Metadata):
+            layer_metadata = layer_metadata.metadata_dict
+
         srdd = self.srdd.cutTiles(json.dumps(layer_metadata), resample_method)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
@@ -306,6 +317,9 @@ class RasterRDD(RDDWrapper):
 
         if resample_method not in RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
+
+        if isinstance(layer_metadata, Metadata):
+            layer_metadata = layer_metadata.metadata_dict
 
         srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
@@ -385,7 +399,7 @@ class TiledRasterRDD(RDDWrapper):
     @property
     def layer_metadata(self):
         """Layer metadata associated with this layer."""
-        return json.loads(self.srdd.layerMetadata())
+        return Metadata(json.loads(self.srdd.layerMetadata()))
 
     @property
     def zoom_level(self):
@@ -412,6 +426,9 @@ class TiledRasterRDD(RDDWrapper):
         schema = geopysc.create_schema(key)
         ser = geopysc.create_tuple_serializer(schema, key_type="Projected", value_type=TILE)
         reserialized_rdd = numpy_rdd._reserialize(ser)
+
+        if isinstance(metadata, Metadata):
+            metadata = metadata.metadata_dict
 
         if rdd_type == SPATIAL:
             srdd = \
@@ -463,6 +480,9 @@ class TiledRasterRDD(RDDWrapper):
                 geometry = dumps(geometry)
             except:
                 raise TypeError(geometry, "Needs to be either a Shapely Geometry or a string")
+
+        if not isinstance(extent, dict):
+            extent = extent._asdict()
 
         if isinstance(crs, int):
             crs = str(crs)
@@ -535,6 +555,12 @@ class TiledRasterRDD(RDDWrapper):
         if resample_method not in RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
 
+        if extent and not isinstance(extent, dict):
+            extent = extent._asdict()
+
+        if layout and not isinstance(layout, dict):
+            layout = layout._asdict()
+
         if isinstance(target_crs, int):
             target_crs = str(target_crs)
 
@@ -562,11 +588,11 @@ class TiledRasterRDD(RDDWrapper):
         """
         if self.rdd_type != SPATIAL:
             raise ValueError("Only TiledRasterRDDs with a rdd_type of Spatial can use lookup()")
-        bounds = self.layer_metadata['bounds']
-        min_col = bounds['minKey']['col']
-        min_row = bounds['minKey']['row']
-        max_col = bounds['maxKey']['col']
-        max_row = bounds['maxKey']['row']
+        bounds = self.layer_metadata.bounds
+        min_col = bounds.minKey['col']
+        min_row = bounds.minKey['row']
+        max_col = bounds.maxKey['col']
+        max_row = bounds.maxKey['row']
 
         if col < min_col or col > max_col:
             raise IndexError("column out of bounds")
@@ -596,6 +622,9 @@ class TiledRasterRDD(RDDWrapper):
         if resample_method not in RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
 
+        if not isinstance(layout, dict):
+            layout = layout._asdict()
+
         srdd = self.srdd.tileToLayout(layout, resample_method)
 
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
@@ -619,9 +648,10 @@ class TiledRasterRDD(RDDWrapper):
         if resample_method not in RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
 
-        size = self.layer_metadata['layoutDefinition']['tileLayout']['tileRows']
+        num_cols = self.layer_metadata.tile_layout.tileCols
+        num_rows = self.layer_metadata.tile_layout.tileRows
 
-        if (size & (size - 1)) != 0:
+        if (num_cols & (num_cols - 1)) != 0 or (num_rows & (num_rows - 1)) != 0:
             raise ValueError("Tiles must have a col and row count that is a power of 2")
 
         result = self.srdd.pyramid(start_zoom, end_zoom, resample_method)
@@ -897,8 +927,7 @@ class TiledRasterRDD(RDDWrapper):
             if self.rdd_type != value.rdd_type:
                 raise ValueError("Both TiledRasterRDDs need to have the same rdd_type")
 
-            if self.layer_metadata['layoutDefinition']['tileLayout'] != \
-               value.layer_metadata['layoutDefinition']['tileLayout']:
+            if self.layer_metadata.tile_layout != value.layer_metadata.tile_layout:
                 raise ValueError("Both TiledRasterRDDs need to have the same layout")
 
             srdd = operation(value.srdd)
