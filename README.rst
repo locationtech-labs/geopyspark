@@ -114,7 +114,13 @@ enter the environment and run the following:
 
    git clone https://github.com/locationtech-labs/geopyspark.git
    cd geopyspark
+   export PYTHONPATH=$VIRTUAL_ENV/lib/<your python version>/site-packages
    make virtual-install
+
+Replace ``<your python version`` with whatever Python version
+``virtualenvwrapper`` is set to. Installation in a virtual environment can be
+a bit weird with GeoPySpark. This is why you need to export the
+``PYTHONPATH`` before installing to ensure that it performs correctly.
 
 Make Targets
 ^^^^^^^^^^^^
