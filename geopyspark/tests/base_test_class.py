@@ -4,6 +4,7 @@ import os
 from geopyspark.geopycontext import GeoPyContext
 from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.geotrellis.geotiff_rdd import get
+from geopyspark.geotrellis.data_structures import Extent, TileLayout
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 
 
@@ -24,15 +25,10 @@ class BaseTestClass(unittest.TestCase):
 
     projected_extent = value[0]
 
-    extent = projected_extent['extent']
+    extent = Extent(**projected_extent['extent'])
 
     expected_tile = value[1]['data']
 
     (_, rows, cols) = expected_tile.shape
 
-    layout = {
-        "layoutCols": 1,
-        "layoutRows": 1,
-        "tileCols": cols,
-        "tileRows": rows
-    }
+    layout = TileLayout(1, 1, cols, rows)

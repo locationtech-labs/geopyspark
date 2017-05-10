@@ -33,7 +33,8 @@ class CatalogTest(BaseTestClass):
             actual_layer = read(BaseTestClass.geopysc, SPATIAL, self.uri, self.layer_name, x)
             expected_layer = self.result[11-x]
 
-            self.assertDictEqual(actual_layer.layer_metadata, expected_layer.layer_metadata)
+            self.assertDictEqual(actual_layer.layer_metadata.metadata_dict,
+                                 expected_layer.layer_metadata.metadata_dict)
 
     def test_read_value(self):
         tiled = read_value(BaseTestClass.geopysc,
