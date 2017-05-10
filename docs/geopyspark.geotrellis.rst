@@ -14,6 +14,14 @@ geopyspark.geotrellis.catalog module
    :members:
    :inherited-members:
 
+geopyspark.geotrellis.data_structures module
+---------------------------------------------
+
+
+.. automodule:: geopyspark.geotrellis.data_structures
+   :members:
+   :inherited-members:
+
 geopyspark.geotrellis.constants module
 ---------------------------------------
 
