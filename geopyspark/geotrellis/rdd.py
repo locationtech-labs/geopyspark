@@ -424,7 +424,7 @@ class TiledRasterRDD(RDDWrapper):
         key = geopysc.map_key_input(rdd_type, True)
 
         schema = geopysc.create_schema(key)
-        ser = geopysc.create_tuple_serializer(schema, key_type="Projected", value_type=TILE)
+        ser = geopysc.create_tuple_serializer(schema, key_type=None, value_type=TILE)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
         if isinstance(metadata, Metadata):
@@ -509,7 +509,8 @@ class TiledRasterRDD(RDDWrapper):
             RDD
         """
         result = self.srdd.toAvroRDD()
-        ser = self.geopysc.create_tuple_serializer(result._2(), key_type="Projected", value_type=TILE)
+        ser = self.geopysc.create_tuple_serializer(result._2(), key_type=None,
+                                                   value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
 
     def convert_data_type(self, new_type):
