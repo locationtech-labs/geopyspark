@@ -82,8 +82,8 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         tiled = self.result.tile_to_layout(md)
         converted = self.result.to_tiled_layer()
 
-        self.assertDictEqual(tiled.layer_metadata.metadata_dict,
-                             converted.layer_metadata.metadata_dict)
+        self.assertDictEqual(tiled.layer_metadata.to_dict(),
+                             converted.layer_metadata.to_dict())
 
     def test_to_int(self):
         arr = np.array([[0.4324323432124, 0.0, 0.0],

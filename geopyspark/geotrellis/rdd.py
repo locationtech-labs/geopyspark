@@ -255,7 +255,7 @@ class RasterRDD(RDDWrapper):
         else:
             raise TypeError("Could not collect metadata with {} and {}".format(extent, layout))
 
-        return Metadata(json.loads(json_metadata))
+        return Metadata.from_dict(json.loads(json_metadata))
 
     def reproject(self, target_crs, resample_method=NEARESTNEIGHBOR):
         """Reproject every individual raster to `target_crs`, does not sample past tile boundary
@@ -297,7 +297,7 @@ class RasterRDD(RDDWrapper):
             raise ValueError(resample_method, " Is not a known resample method.")
 
         if isinstance(layer_metadata, Metadata):
-            layer_metadata = layer_metadata.metadata_dict
+            layer_metadata = layer_metadata.to_dict()
 
         srdd = self.srdd.cutTiles(json.dumps(layer_metadata), resample_method)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
@@ -319,7 +319,7 @@ class RasterRDD(RDDWrapper):
             raise ValueError(resample_method, " Is not a known resample method.")
 
         if isinstance(layer_metadata, Metadata):
-            layer_metadata = layer_metadata.metadata_dict
+            layer_metadata = layer_metadata.to_dict()
 
         srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
@@ -399,7 +399,7 @@ class TiledRasterRDD(RDDWrapper):
     @property
     def layer_metadata(self):
         """Layer metadata associated with this layer."""
-        return Metadata(json.loads(self.srdd.layerMetadata()))
+        return Metadata.from_dict(json.loads(self.srdd.layerMetadata()))
 
     @property
     def zoom_level(self):
@@ -428,7 +428,7 @@ class TiledRasterRDD(RDDWrapper):
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
         if isinstance(metadata, Metadata):
-            metadata = metadata.metadata_dict
+            metadata = metadata.to_dict()
 
         if rdd_type == SPATIAL:
             srdd = \
