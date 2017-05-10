@@ -1,6 +1,3 @@
-import io
-from PIL import Image
-
 from geopyspark.geotrellis.constants import NEARESTNEIGHBOR, ZOOM
 
 class PngRDD(object):
