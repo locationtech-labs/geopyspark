@@ -4,7 +4,7 @@ import rasterio
 import pytest
 import numpy as np
 
-from geopyspark.geotrellis.constants import SPATIAL
+from geopyspark.geotrellis.constants import SPATIAL, INT32, BOOLRAW
 from geopyspark.tests.python_test_utils import geotiff_test_path
 from geopyspark.geotrellis.geotiff_rdd import get
 from geopyspark.geotrellis.rdd import RasterRDD
@@ -85,7 +85,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         self.assertDictEqual(tiled.layer_metadata, converted.layer_metadata)
 
     def test_to_int(self):
-        arr = np.array([[0.0, 0.0, 0.0],
+        arr = np.array([[0.4324323432124, 0.0, 0.0],
                         [1.0, 1.0, 1.0]], dtype=float)
 
         epsg_code = 3857
@@ -96,16 +96,16 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
 
-        converted = raster_rdd.to_int()
+        converted = raster_rdd.convert_data_type(INT32)
         arr = converted.to_numpy_rdd().first()[1]['data']
 
         self.assertEqual(arr.dtype, np.int64)
 
-    def test_to_float(self):
-        converted = self.result.to_float()
+    def test_to_boolraw(self):
+        converted = self.result.convert_data_type(BOOLRAW)
         arr = converted.to_numpy_rdd().first()[1]['data']
 
-        self.assertEqual(arr.dtype, np.float64)
+        self.assertEqual(arr.dtype, np.uint8)
 
 
 if __name__ == "__main__":
