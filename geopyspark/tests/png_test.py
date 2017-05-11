@@ -30,7 +30,7 @@ class PngRddTest(BaseTestClass):
 
         laid_out = raster_rdd.to_tiled_layer()
 
-        result = PngRDD(BaseTestClass.geopysc, SPATIAL, laid_out, "hot")
+        result = PngRDD.makePyramid(laid_out, "hot")
 
 
 if __name__ == "__main__":
