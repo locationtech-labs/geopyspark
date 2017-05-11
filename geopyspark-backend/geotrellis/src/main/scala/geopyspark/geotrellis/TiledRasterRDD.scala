@@ -205,6 +205,9 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
         }
       })
 
+  def convertDataType(newType: String): TiledRasterRDD[_] =
+    withRDD(rdd.convert(CellType.fromName(newType)))
+
   protected def withRDD(result: RDD[(K, MultibandTile)]): TiledRasterRDD[_]
 }
 

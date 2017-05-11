@@ -123,17 +123,10 @@ abstract class TileRDD[K: ClassTag] {
     }
   }
 
-  def toInt: TileRDD[_] =
-    toInt(rdd.map { x => (x._1, x._2.convert(IntCellType)) })
-
-  def toDouble: TileRDD[_] =
-    toDouble(rdd.map { x => (x._1, x._2.convert(DoubleCellType)) })
-
   protected def reclassify(reclassifiedRDD: RDD[(K, MultibandTile)]): TileRDD[_]
   protected def reclassifyDouble(reclassifiedRDD: RDD[(K, MultibandTile)]): TileRDD[_]
-  protected def toInt(converted: RDD[(K, MultibandTile)]): TileRDD[_]
-  protected def toDouble(converted: RDD[(K, MultibandTile)]): TileRDD[_]
 }
+
 
 /**
  * RDD of Rasters, untiled and unsorted
@@ -164,13 +157,14 @@ abstract class RasterRDD[K: AvroRecordCodec: ClassTag] extends TileRDD[K] {
     collectMetadata(layoutScheme, TileRDD.getCRS(crs))
   }
 
+  def convertDataType(newType: String): RasterRDD[_] =
+    withRDD(rdd.map { x => (x._1, x._2.convert(CellType.fromName(newType))) })
+
   protected def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: Option[CRS]): String
-
   protected def cutTiles(layerMetadata: String, resampleMethod: String): TiledRasterRDD[_]
-
   protected def tileToLayout(tileLayerMetadata: String, resampleMethod: String): TiledRasterRDD[_]
-
   protected def reproject(target_crs: String, resampleMethod: String): RasterRDD[_]
+  protected def withRDD(result: RDD[(K, MultibandTile)]): RasterRDD[_]
 }
 
 class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends RasterRDD[ProjectedExtent] {
@@ -212,11 +206,8 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
   def reclassifyDouble(reclassifiedRDD: RDD[(ProjectedExtent, MultibandTile)]): RasterRDD[ProjectedExtent] =
     ProjectedRasterRDD(reclassifiedRDD)
 
-  def toInt(converted: RDD[(ProjectedExtent, MultibandTile)]): RasterRDD[ProjectedExtent] =
-    ProjectedRasterRDD(converted)
-
-  def toDouble(converted: RDD[(ProjectedExtent, MultibandTile)]): RasterRDD[ProjectedExtent] =
-    ProjectedRasterRDD(converted)
+  def withRDD(result: RDD[(ProjectedExtent, MultibandTile)]): RasterRDD[ProjectedExtent] =
+    ProjectedRasterRDD(result)
 }
 
 
@@ -260,11 +251,8 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
   def reclassifyDouble(reclassifiedRDD: RDD[(TemporalProjectedExtent, MultibandTile)]): RasterRDD[TemporalProjectedExtent] =
     TemporalRasterRDD(reclassifiedRDD)
 
-  def toInt(converted: RDD[(TemporalProjectedExtent, MultibandTile)]): RasterRDD[TemporalProjectedExtent] =
-    TemporalRasterRDD(converted)
-
-  def toDouble(converted: RDD[(TemporalProjectedExtent, MultibandTile)]): RasterRDD[TemporalProjectedExtent] =
-    TemporalRasterRDD(converted)
+  def withRDD(result: RDD[(TemporalProjectedExtent, MultibandTile)]): RasterRDD[TemporalProjectedExtent] =
+    TemporalRasterRDD(result)
 }
 
 object ProjectedRasterRDD {
