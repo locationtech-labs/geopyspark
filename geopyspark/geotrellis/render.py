@@ -1,7 +1,7 @@
 from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM
 
 class PngRDD(object):
-    def __init__(self, pyramid, ramp_name):
+    def __init__(self, pyramid, ramp_name, debug=False):
         """Convert a pyramid of TiledRasterRDDs into a displayable structure of PNGs
 
         Args:
@@ -22,9 +22,10 @@ class PngRDD(object):
         self.layer_metadata = list(map(lambda lev: lev.layer_metadata, pyramid))
         self.max_zoom = level0.zoom_level
         self.pngpyramid = list(map(lambda layer: self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asSingleband(layer.srdd, ramp_name), pyramid))
+        self.debug = debug
 
     @classmethod
-    def makePyramid(cls, tiledrdd, ramp_name, start_zoom=None, end_zoom=0, resample_method=NEARESTNEIGHBOR):
+    def makePyramid(cls, tiledrdd, ramp_name, start_zoom=None, end_zoom=0, resample_method=NEARESTNEIGHBOR, debug=False):
         """Create a pyramided PngRDD from a TiledRasterRDD
 
         Args:
@@ -58,7 +59,7 @@ class PngRDD(object):
 
         pyramid = reprojected.pyramid(start_zoom, end_zoom, resample_method)
 
-        return cls(pyramid, ramp_name)
+        return cls(pyramid, ramp_name, debug)
 
     def lookup(self, col, row, zoom=None):
         """Return the value(s) in the image of a particular SpatialKey (given by col and row)

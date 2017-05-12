@@ -192,10 +192,10 @@ index 0000000..029493e
 +        return self.base_url + "/" + str(self.port) + "/" + name
 diff --git a/geonotebook/vis/geotrellis/server.py b/geonotebook/vis/geotrellis/server.py
 new file mode 100644
-index 0000000..d374252
+index 0000000..c7f7451
 --- /dev/null
 +++ b/geonotebook/vis/geotrellis/server.py
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,69 @@
 +import io
 +import numpy as np
 +import rasterio
@@ -246,20 +246,19 @@ index 0000000..d374252
 +            img = None
 +
 +        if img == None or len(img) == 0:
-+            # Use for production
-+            # abort(404)
-+
-+            # Use for debugging
-+            image = Image.new('RGBA', (256,256))
-+            draw = ImageDraw.Draw(image)
-+            draw.rectangle([0, 0, 255, 255], outline=(255,0,0,255))
-+            draw.line([(0,0),(255,255)], fill=(255,0,0,255))
-+            draw.line([(0,255),(255,0)], fill=(255,0,0,255))
-+            draw.text((136,122), str(x) + ', ' + str(y) + ', ' + str(zoom), fill=(255,0,0,255))
-+            del draw
-+            bio = io.BytesIO()
-+            image.save(bio, 'PNG')
-+            img = [bio.getvalue()]
++            if png.debug:
++                image = Image.new('RGBA', (256,256))
++                draw = ImageDraw.Draw(image)
++                draw.rectangle([0, 0, 255, 255], outline=(255,0,0,255))
++                draw.line([(0,0),(255,255)], fill=(255,0,0,255))
++                draw.line([(0,255),(255,0)], fill=(255,0,0,255))
++                draw.text((136,122), str(x) + ', ' + str(y) + ', ' + str(zoom), fill=(255,0,0,255))
++                del draw
++                bio = io.BytesIO()
++                image.save(bio, 'PNG')
++                img = [bio.getvalue()]
++            else:
++                abort(404)
 +
 +        response = make_response(img[0])
 +        response.headers['Content-Type'] = 'image/png'
@@ -279,7 +278,7 @@ index f95e8af..6a0e86b 100644
 -__all__ = ('RasterData', 'RasterDataCollection', 'VectorData')
 +__all__ = ('RddRasterData', 'RasterData', 'RasterDataCollection', 'VectorData')
 diff --git a/geonotebook/wrappers/raster.py b/geonotebook/wrappers/raster.py
-index b2a83d3..8f192f2 100644
+index b2a83d3..115dd83 100644
 --- a/geonotebook/wrappers/raster.py
 +++ b/geonotebook/wrappers/raster.py
 @@ -9,6 +9,24 @@ import pkg_resources as pr
@@ -293,7 +292,7 @@ index b2a83d3..8f192f2 100644
 +        from geopyspark.geotrellis.render import PngRDD
 +
 +        if not (isinstance(rdd, RasterRDD) or isinstance(rdd, TiledRasterRDD) or isinstance(rdd, PngRDD)):
-+            raise Exception
++            raise TypeError("Expected a RasterRDD, TiledRasterRDD, or PngRDD")
 +
 +        self.rdd = rdd
 +
