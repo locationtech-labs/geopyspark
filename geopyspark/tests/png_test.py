@@ -32,6 +32,7 @@ class PngRddTest(BaseTestClass):
 
         result = PngRDD.makePyramid(laid_out, "hot")
 
+    ## TODO: add more specific test if/when we can color map directly from TiledRasterRDD
 
 if __name__ == "__main__":
     unittest.main()
