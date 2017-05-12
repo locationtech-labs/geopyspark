@@ -102,10 +102,10 @@ index 0000000..3e3a150
 +__all__ = ('GeoTrellis')
 diff --git a/geonotebook/vis/geotrellis/geotrellis.py b/geonotebook/vis/geotrellis/geotrellis.py
 new file mode 100644
-index 0000000..9661406
+index 0000000..029493e
 --- /dev/null
 +++ b/geonotebook/vis/geotrellis/geotrellis.py
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,84 @@
 +import requests
 +import threading
 +import time
@@ -171,43 +171,31 @@ index 0000000..9661406
 +    def ingest(self, data, name, **kwargs):
 +        from geopyspark.geotrellis.rdd import RasterRDD, TiledRasterRDD
 +        from geopyspark.geotrellis.render import PngRDD
-+        # from geopyspark.geotrellis.constants import ZOOM
 +
 +        rdd = data.rdd
 +        if isinstance(rdd, RasterRDD):
 +            metadata = rdd.collect_metadata()
 +            laid_out = rdd.tile_to_layout(metadata)
-+            # reprojected = laid_out.reproject("EPSG:3857", scheme=ZOOM)
 +            png = PngRDD.makePyramid(laid_out, data.rampname)
 +        elif isinstance(rdd, TiledRasterRDD):
 +            laid_out = rdd
-+            # reprojected = laid_out.reproject("EPSG:3857", scheme=ZOOM)
 +            png = PngRDD.makePyramid(laid_out, data.rampname)
 +        elif isinstance(rdd, PngRDD):
 +            png = rdd
 +        else:
-+            raise Exception
++            raise TypeError("Expected a RasterRDD, TiledRasterRDD, or PngRDD")
 +
-+        # rdds = {}
-+        # for layer_rdd in reprojected.pyramid(reprojected.zoom_level, 0):
-+        #     rdds[layer_rdd.zoom_level] = layer_rdd
-+        # # self.pyramids.update({name: rdds})
-+        # self.pyramids[name] = rdds
-+
-+        # if self.server_active == False:
-+        t = threading.Thread(target=moop, args=(png, # self.pyramids
-+                                                self.port))
++        t = threading.Thread(target=moop, args=(png, self.port))
 +        t.start()
-+        #  self.server_active = True
 +
 +        self.base_url = "http://localhost:8000/user/hadoop/geotrellis" # XXX
 +        return self.base_url + "/" + str(self.port) + "/" + name
 diff --git a/geonotebook/vis/geotrellis/server.py b/geonotebook/vis/geotrellis/server.py
 new file mode 100644
-index 0000000..588b5fc
+index 0000000..d374252
 --- /dev/null
 +++ b/geonotebook/vis/geotrellis/server.py
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,70 @@
 +import io
 +import numpy as np
 +import rasterio
@@ -215,7 +203,6 @@ index 0000000..588b5fc
 +import time
 +
 +from PIL import Image, ImageDraw, ImageFont
-+
 +
 +def make_image(arr):
 +    return Image.fromarray(arr.astype('uint8')).convert('L')
@@ -249,68 +236,31 @@ index 0000000..588b5fc
 +    def ping():
 +        return time.strftime("%H:%M:%S") + "\n"
 +
-+
-+    # @app.route("/exists/<layer_name>")
-+    # def exists(layer_name):
-+    #     return str(layer_name in pyramids) + "\n"
-+
-+    # @app.route("/remove/<layer_name>")
-+    # def remove(layer_name):
-+    #     if layer_name in pyramids:
-+    #         del pyramids[layer_name]
-+    #         return "yes\n"
-+    #     else:
-+    #         return "no\n"
-+
 +    @app.route("/tile/<layer_name>/<int:x>/<int:y>/<int:zoom>.png")
 +    def tile(layer_name, x, y, zoom):
 +
 +        # fetch data
 +        try:
-+            # pyramid = pyramids[layer_name]
-+            # rdd = pyramid[zoom]
 +            img = png.lookup(x, y, zoom)
-+            # arr = tile[0]['data']
-+            # nodata = -32768 #tile[0]['no_data_value']
 +        except:
 +            img = None
 +
 +        if img == None or len(img) == 0:
++            # Use for production
 +            # abort(404)
++
++            # Use for debugging
 +            image = Image.new('RGBA', (256,256))
 +            draw = ImageDraw.Draw(image)
 +            draw.rectangle([0, 0, 255, 255], outline=(255,0,0,255))
 +            draw.line([(0,0),(255,255)], fill=(255,0,0,255))
 +            draw.line([(0,255),(255,0)], fill=(255,0,0,255))
-+            draw.text((136,122), str(13) + ', ' + str(12), fill=(255,0,0,255))
++            draw.text((136,122), str(x) + ', ' + str(y) + ', ' + str(zoom), fill=(255,0,0,255))
 +            del draw
 +            bio = io.BytesIO()
 +            image.save(bio, 'PNG')
 +            img = [bio.getvalue()]
 +
-+        # bands = arr.shape[0]
-+        # if bands >= 3:
-+        #     bands = 3
-+        # else:
-+        #     bands = 1
-+        # arrs = [np.array(arr[i, :, :]).reshape(256, 256) for i in range(bands)]
-+
-+        # # create tile
-+        # if bands == 3:
-+        #     images = [make_image(clamp(remap(arr))) for arr in arrs]
-+        #     alfa = alpha(arrs[0])
-+        #     # alfa[arrs[0] == nodata] = 0
-+        #     images.append(make_image(alfa))
-+        #     image = Image.merge('RGBA', images)
-+        # else:
-+        #     gray = make_image(clamp(remap(arrs[0])))
-+        #     alfa = alpha(arrs[0])
-+        #     # alfa[arrs[0] == nodata] = 0
-+        #     image = Image.merge('RGBA', list(gray, gray, gray, make_image(alfa)))
-+
-+        # return tile
-+        #bio = io.BytesIO(img[0])
-+        #Image.open(bio)
 +        response = make_response(img[0])
 +        response.headers['Content-Type'] = 'image/png'
 +        return response
