@@ -317,7 +317,7 @@ class SpatialTiledRasterRDD(
       result.map({ case (k, v) => (k, MultibandTile(v)) }),
       result.metadata
     )
-    SpatialTiledRasterRDD(None, multiBand)
+    SpatialTiledRasterRDD(zoomLevel, multiBand)
   }
 
   def stitch: (Array[Byte], String) = {
@@ -386,7 +386,7 @@ class TemporalTiledRasterRDD(
       result.map({ case (k, v) => (k, MultibandTile(v)) }),
       result.metadata
     )
-    TemporalTiledRasterRDD(None, multiBand)
+    TemporalTiledRasterRDD(zoomLevel, multiBand)
   }
 
   def reproject(
