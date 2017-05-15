@@ -13,7 +13,7 @@ The Code
 =========
 
 Here is the code itself. We will be using ``flask`` to create a local server
-and ``PIL`` to create our images. For this example, we are working with
+and ``Pillow`` to create our images. For this example, we are working with
 singleband, grayscale images; so we do not need to worry about color
 correction.
 
