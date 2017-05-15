@@ -1,5 +1,6 @@
 """Contains the various encoding/decoding methods to bring values to/from python from scala."""
 import array
+from bitstring import BitArray
 from functools import partial
 import numpy as np
 
@@ -13,11 +14,16 @@ class AvroRegistry(object):
     def _tile_decoder(schema_dict):
         cells = schema_dict['cells']
 
-        if isinstance(cells, bytes):
-            cells = bytearray(cells)
-
         # cols and rows are opposite for GeoTrellis ArrayTiles and Numpy Arrays
-        arr = np.array(cells).reshape(schema_dict['rows'], schema_dict['cols'])
+        cols = schema_dict['rows']
+        rows = schema_dict['cols']
+
+        if isinstance(cells, bytes) and cols * rows == len(cells):
+            cells = bytearray(cells)
+        elif isinstance(cells, bytes) and cols * rows != len(cells):
+            cells = bytearray(BitArray(cells))
+
+        arr = np.array(cells).reshape(cols, rows)
 
         return arr
 

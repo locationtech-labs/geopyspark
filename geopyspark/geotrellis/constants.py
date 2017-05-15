@@ -180,3 +180,100 @@ LESSTHANOREQUALTO = "LessThanOrEqualTo"
 
 """A classification strategy."""
 EXACT = "Exact"
+
+
+"""Representes Bit Cells."""
+BOOLRAW = "boolraw"
+
+"""Representes Byte Cells."""
+INT8RAW = "int8raw"
+
+"""Representes UByte Cells."""
+UINT8RAW = "uint8raw"
+
+"""Representes Short Cells."""
+INT16RAW = "int16raw"
+
+"""Representes UShort Cells."""
+UINT16RAW = "uint16raw"
+
+"""Representes Int Cells."""
+INT32RAW = "int32raw"
+
+"""Representes Float Cells."""
+FLOAT32RAW = "float32raw"
+
+"""Representes Double Cells."""
+FLOAT64RAW = "float64raw"
+
+"""Representes Bit Cells."""
+BOOL = "bool"
+
+"""Representes Byte Cells with constant NoData values."""
+INT8 = "int8"
+
+"""Representes UByte Cells with constant NoData values."""
+UINT8 = "uint8"
+
+"""Representes Short Cells with constant NoData values."""
+INT16 = "int16"
+
+"""Representes UShort Cells with constant NoData values."""
+UINT16 = "uint16"
+
+"""Representes Int Cells with constant NoData values."""
+INT32 = "int32"
+
+"""Representes Float Cells with constant NoData values."""
+FLOAT32 = "float32"
+
+"""Representes Double Cells with constant NoData values."""
+FLOAT64 = "float64"
+
+"""Representes Byte Cells with user defined NoData values."""
+INT8UD = "int8ud"
+
+"""Representes UByte Cells with user defined NoData values."""
+UINT8UD = "uint8ud"
+
+"""Representes Short Cells with user defined NoData values."""
+INT16UD = "int16ud"
+
+"""Representes UShort Cells with user defined NoData values."""
+UINT16UD = "uint16ud"
+
+"""Representes Int Cells with user defined NoData values."""
+INT32UD = "int32ud"
+
+"""Representes Float Cells with user defined NoData values."""
+FLOAT32UD = "float32ud"
+
+"""Representes Double Cells with user defined NoData values."""
+FLOAT64UD = "float64ud"
+
+
+CELL_TYPES = [
+    BOOLRAW,
+    INT8RAW,
+    UINT8RAW,
+    INT16RAW,
+    UINT16RAW,
+    INT32RAW,
+    FLOAT32RAW,
+    FLOAT64RAW,
+    BOOL,
+    INT8,
+    UINT8,
+    INT16,
+    UINT16,
+    INT32,
+    FLOAT32,
+    FLOAT64,
+    INT8UD,
+    UINT8UD,
+    INT16UD,
+    UINT16UD,
+    INT32UD,
+    FLOAT32UD,
+    FLOAT64UD
+]

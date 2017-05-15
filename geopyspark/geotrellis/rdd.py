@@ -19,7 +19,8 @@ from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              TILE,
                                              SPATIAL,
                                              LESSTHANOREQUALTO,
-                                             NODATAINT
+                                             NODATAINT,
+                                             CELL_TYPES
                                             )
 from geopyspark.geotrellis.neighborhoods import Neighborhood
 
@@ -150,6 +151,25 @@ class RasterRDD(object):
 
         return self.tile_to_layout(self.collect_metadata(extent, layout, crs, tile_size),
                                    resample_method)
+
+    def convert_data_type(self, new_type):
+        """Converts the underlying, raster values to a new ``CellType``.
+
+        Args:
+            new_type (str): The string representation of the ``CellType`` to convert to. It is
+                represented by a constant such as ``INT16``, ``FLOAT64UD``, etc.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.RasterRDD`
+
+        Raises:
+            ValueError: When an unsupported cell type is entered.
+        """
+
+        if new_type not in CELL_TYPES:
+            raise ValueError(new_type, "Is not a know Cell Type")
+
+        return RasterRDD(self.geopysc, self.rdd_type, self.srdd.convertDataType(new_type))
 
     def collect_metadata(self, extent=None, layout=None, crs=None, tile_size=256):
         """Iterate over RDD records and generates layer metadata desribing the contained rasters.
@@ -426,6 +446,17 @@ class TiledRasterRDD(object):
         result = self.srdd.toAvroRDD()
         ser = self.geopysc.create_tuple_serializer(result._2(), key_type="Projected", value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
+
+    def convert_data_type(self, new_type):
+        """Converts the underlying, raster values to a new ``CellType``.
+
+        Args:
+            new_type (str): The string representation of the ``CellType`` to convert to. It is
+                represented by a constant such as ``INT16``, ``FLOAT64UD``, etc.
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+        """
+        return RasterRDD(self.geopysc, self.rdd_type, self.srdd.convertDataType(new_type))
 
     def reproject(self, target_crs, extent=None, layout=None, scheme=FLOAT, tile_size=256,
                   resolution_threshold=0.1, resample_method=NEARESTNEIGHBOR):
