@@ -665,6 +665,9 @@ class TiledRasterRDD(object):
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
         """
+
+        if not isinstance(geometries, list):
+            geometries = [geometries]
         wkts = [shapely.wkt.dumps(g) for g in geometries]
         srdd = self.srdd.mask(wkts)
 

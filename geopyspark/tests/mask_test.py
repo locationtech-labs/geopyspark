@@ -38,7 +38,7 @@ class MaskTest(BaseTestClass):
                     'extent': extent,
                     'tileLayout': layout}}
 
-    geometries = [Polygon([(17, 17), (42, 17), (42, 42), (17, 42)])]
+    geometries = Polygon([(17, 17), (42, 17), (42, 42), (17, 42)])
     raster_rdd = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, metadata)
 
     @pytest.fixture(autouse=True)
