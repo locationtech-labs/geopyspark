@@ -72,6 +72,7 @@ def setup_environment():
         os.environ["PYSPARK_SUBMIT_ARGS"] = "--jars {} \
             --conf spark.ui.enabled=false \
             --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
+            --conf spark.kyro.registrator=geotrellis.spark.io.kyro.KryoRegistrator \
             --driver-memory 2G \
             --executor-memory 2G \
             pyspark-shell".format(jar_string)
@@ -79,6 +80,7 @@ def setup_environment():
         os.environ["PYSPARK_SUBMIT_ARGS"] = "--jars {} \
             --conf spark.ui.enabled=false \
             --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
+            --conf spark.kyro.registrator=geotrellis.spark.io.kyro.KryoRegistrator \
             --driver-memory 8G \
             --executor-memory 8G \
             pyspark-shell".format(jar_string)
