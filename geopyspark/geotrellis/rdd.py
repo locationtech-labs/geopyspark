@@ -456,7 +456,7 @@ class TiledRasterRDD(object):
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
         """
-        return RasterRDD(self.geopysc, self.rdd_type, self.srdd.convertDataType(new_type))
+        return TiledRasterRDD(self.geopysc, self.rdd_type, self.srdd.convertDataType(new_type))
 
     def reproject(self, target_crs, extent=None, layout=None, scheme=FLOAT, tile_size=256,
                   resolution_threshold=0.1, resample_method=NEARESTNEIGHBOR):
