@@ -55,7 +55,7 @@ from urllib.parse import urlparse
 from geopyspark.geotrellis.rdd import TiledRasterRDD
 from geopyspark.geotrellis.constants import TILE, ZORDER, SPATIAL
 
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon, MultiPolygon, Point
 from shapely.wkt import dumps
 
 
@@ -355,8 +355,8 @@ def query(geopysc,
     if isinstance(proj_query, int):
         proj_query = "EPSG:" + str(proj_query)
 
-
-    if isinstance(intersects, Polygon) or isinstance(intersects, Point):
+    if isinstance(intersects, Polygon) or isinstance(intersects, MultiPolygon) \
+       or isinstance(intersects, Point):
         srdd = cached.reader.query(key,
                                    layer_name,
                                    layer_zoom,
