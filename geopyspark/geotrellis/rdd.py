@@ -6,6 +6,7 @@ performing operations.
 import json
 import shapely.wkt
 
+from pyspark.storagelevel import StorageLevel
 from shapely.geometry import Polygon
 from shapely.wkt import dumps
 from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
@@ -48,7 +49,41 @@ def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_wi
             return srdd.reclassifyDouble(new_dict, boundary_strategy, replace_nodata_with)
 
 
-class RasterRDD(object):
+class RDDWrapper(object):
+    def __init__(self):
+        self.is_cached = False
+
+    def cache(self):
+        """
+        Persist this RDD with the default storage level (C{MEMORY_ONLY}).
+        """
+        self.persist()
+        return self
+
+    def persist(self, storageLevel=StorageLevel.MEMORY_ONLY):
+        """
+        Set this RDD's storage level to persist its values across operations
+        after the first time it is computed. This can only be used to assign
+        a new storage level if the RDD does not have a storage level set yet.
+        If no storage level is specified defaults to (C{MEMORY_ONLY}).
+        """
+
+        javaStorageLevel = self.geopysc.pysc._getJavaStorageLevel(storageLevel)
+        self.is_cached = True
+        self.srdd.persist(javaStorageLevel)
+        return self
+
+    def unpersist(self):
+        """
+        Mark the RDD as non-persistent, and remove all blocks for it from
+        memory and disk.
+        """
+
+        self.is_cached = False
+        self.srdd.unpersist()
+        return self
+
+class RasterRDD(RDDWrapper):
     """A wrapper of a RDD that contains GeoTrellis rasters.
 
     Represents a RDD that contains (K, V). Where K is either :ref:`projected_extent` or
@@ -75,6 +110,7 @@ class RasterRDD(object):
     __slots__ = ['geopysc', 'rdd_type', 'srdd']
 
     def __init__(self, geopysc, rdd_type, srdd):
+        RDDWrapper.__init__(self)
         self.geopysc = geopysc
         self.rdd_type = rdd_type
         self.srdd = srdd
@@ -306,7 +342,7 @@ class RasterRDD(object):
         return (min_max._1(), min_max._2())
 
 
-class TiledRasterRDD(object):
+class TiledRasterRDD(RDDWrapper):
     """Wraps a RDD of tiled, GeoTrellis rasters.
 
     Represents a RDD that contains (K, V). Where K is either :ref:`spatial-key` or
@@ -333,6 +369,7 @@ class TiledRasterRDD(object):
     __slots__ = ['geopysc', 'rdd_type', 'srdd']
 
     def __init__(self, geopysc, rdd_type, srdd):
+        RDDWrapper.__init__(self)
         self.geopysc = geopysc
         self.rdd_type = rdd_type
         self.srdd = srdd
