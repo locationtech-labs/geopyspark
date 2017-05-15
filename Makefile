@@ -24,7 +24,9 @@ ${WHEEL}: ${DIST-ASSEMBLY} $(call rwildcard, geopyspark, *.py) setup.py
 wheel: ${WHEEL}
 
 pyspark: ${DIST-ASSEMBLY}
-	pyspark --jars ${DIST-ASSEMBLY}
+	pyspark --jars ${DIST-ASSEMBLY} \
+		--conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
+		--conf spark.kyro.registrator=geotrellis.spark.io.kyro.KryoRegistrator
 
 docker/archives/${ASSEMBLYNAME}: ${DIST-ASSEMBLY}
 	cp -f ${DIST-ASSEMBLY} docker/archives/${ASSEMBLYNAME}
