@@ -1,6 +1,8 @@
 """A wrapper for `SparkContext` that provides extra functionality for GeoPySpark."""
 from geopyspark.avroregistry import AvroRegistry
 from geopyspark.avroserializer import AvroSerializer
+from geopyspark.geopyspark_utils import check_environment
+check_environment()
 
 from pyspark import RDD, SparkContext
 from pyspark.serializers import AutoBatchedSerializer

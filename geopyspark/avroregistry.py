@@ -3,6 +3,8 @@ import array
 from bitstring import BitArray
 from functools import partial
 import numpy as np
+from geopyspark.geopyspark_utils import check_environment
+check_environment()
 
 
 class AvroRegistry(object):

@@ -6,9 +6,17 @@ import os
 from os import path
 from pkg_resources import resource_filename
 
+from geopyspark.geopyspark_constants import JAR
 
-VERSION = '0.1.0'
-JAR_FILE = 'geotrellis-backend-assembly-' + VERSION + '.jar'
+
+def check_environment():
+    jars = 'JARS' in os.environ
+    pyspark_args = 'PYSPARK_SUBMIT_ARGS' in os.environ # driver (YARN)
+    yarn = ('SPARK_YARN_MODE' in os.environ) and \
+            (os.environ['SPARK_YARN_MODE'] == 'true') # executor (YARN)
+
+    if not jars and not pyspark_args and not yarn:
+        setup_environment()
 
 
 def add_pyspark_path():
@@ -45,14 +53,21 @@ def setup_environment():
     add_pyspark_path()
 
     current_location = path.dirname(path.realpath(__file__))
+    cwd = os.getcwd()
 
     local_prefixes = [
-        path.abspath(path.join(current_location, 'jars/')),
-        path.abspath(path.join(os.getcwd(), 'jars/')),
-        path.abspath(path.join(os.getcwd(), '../geopyspark/jars/'))
+        path.abspath(path.join(current_location, 'jars')),
+        path.abspath(path.join(cwd, 'jars')),
+        path.abspath(path.join(cwd, '../geopyspark/jars'))
     ]
     possible_jars = [path.join(prefix, '*.jar') for prefix in local_prefixes]
-    jar = path.abspath(resource_filename('geopyspark.jars', JAR_FILE))
+    configuration = path.join(current_location, 'command', 'geopyspark.conf')
+
+    if path.isfile(configuration):
+        with open(path.join(configuration)) as conf:
+            possible_jars.append(path.relpath(conf.read(), cwd))
+
+    jar = path.abspath(resource_filename('geopyspark.jars', JAR))
     jar_dir = os.path.dirname(jar)
     if jar_dir not in local_prefixes:
         possible_jars.append(jar)
@@ -63,7 +78,7 @@ def setup_environment():
     if len(jars) == 0:
         raise IOError("Failed to find any jars. Looked at these paths {}".format(possible_jars))
 
-    jar_string = ','.join(jars)
+    jar_string = str(jars[0])
 
     os.environ['JARS'] = jar_string
     os.environ["PYSPARK_PYTHON"] = "python3"
