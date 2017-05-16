@@ -4,7 +4,11 @@ import pytest
 
 from shapely.geometry import box
 
+<<<<<<< ace3e106adedcd3ab3c7fb216410bf05f4eaa6a0
 from geopyspark.geotrellis.catalog import read, read_value, query, read_layer_metadata
+=======
+from geopyspark.geotrellis.catalog import read, read_value, query, get_layer_ids
+>>>>>>> Added get_layer_ids test.
 from geopyspark.geotrellis.constants import SPATIAL, ZOOM
 from geopyspark.geotrellis.geotiff_rdd import get
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -72,6 +76,12 @@ class CatalogTest(BaseTestClass):
                                                 self.layer_name, 5)
 
         self.assertDictEqual(actual_metadata, expected_metadata)
+
+    def test_layer_ids(self):
+        ids = get_layer_ids(BaseTestClass.geopysc, self.uri)
+
+        self.assertTrue(len(ids) == 11)
+
 
 if __name__ == "__main__":
     unittest.main()
