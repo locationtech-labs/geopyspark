@@ -190,6 +190,7 @@ def read(geopysc,
         options (dict, optional): Additional parameters for reading the layer for specific backends.
             The dictionary is only used for Cassandra and HBase, no other backend requires this
             to be set.
+        numPartitions (int, optional): Sets RDD partition count when reading from catalog.
         **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.
 
@@ -333,6 +334,7 @@ def query(geopysc,
         options (dict, optional): Additional parameters for querying the tile for specific backends.
             The dictioanry is only used for Cassandra and HBase, no other backend requires this
             to be set.
+        numPartitions (int, optional): Sets RDD partition count when reading from catalog.
         **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.
 
