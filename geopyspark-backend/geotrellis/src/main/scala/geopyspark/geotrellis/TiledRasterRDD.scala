@@ -211,6 +211,53 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
     withRDD(rdd.convert(CellType.fromName(newType)))
 
   protected def withRDD(result: RDD[(K, MultibandTile)]): TiledRasterRDD[_]
+
+  def singleTileLayerRDD: TileLayerRDD[K] = TileLayerRDD(
+    rdd.map({ case (k, v) => (k, v.band(0)) }),
+    rdd.metadata
+  )
+
+  def polygonalMin(geom: String): Int =
+    WKT.read(geom) match {
+      case poly: Polygon => singleTileLayerRDD.polygonalMin(poly)
+      case multi: MultiPolygon => singleTileLayerRDD.polygonalMin(multi)
+    }
+
+  def polygonalMinDouble(geom: String): Double =
+    WKT.read(geom) match {
+      case poly: Polygon => singleTileLayerRDD.polygonalMinDouble(poly)
+      case multi: MultiPolygon => singleTileLayerRDD.polygonalMinDouble(multi)
+    }
+
+  def polygonalMax(geom: String): Int =
+    WKT.read(geom) match {
+      case poly: Polygon => singleTileLayerRDD.polygonalMax(poly)
+      case multi: MultiPolygon => singleTileLayerRDD.polygonalMax(multi)
+    }
+
+  def polygonalMaxDouble(geom: String): Double =
+    WKT.read(geom) match {
+      case poly: Polygon => singleTileLayerRDD.polygonalMaxDouble(poly)
+      case multi: MultiPolygon => singleTileLayerRDD.polygonalMaxDouble(multi)
+    }
+
+  def polygonalMean(geom: String): Double =
+    WKT.read(geom) match {
+      case poly: Polygon => singleTileLayerRDD.polygonalMean(poly)
+      case multi: MultiPolygon => singleTileLayerRDD.polygonalMean(multi)
+    }
+
+  def polygonalSum(geom: String): Long =
+    WKT.read(geom) match {
+      case poly: Polygon => singleTileLayerRDD.polygonalSum(poly)
+      case multi: MultiPolygon => singleTileLayerRDD.polygonalSum(multi)
+    }
+
+  def polygonalSumDouble(geom: String): Double =
+    WKT.read(geom) match {
+      case poly: Polygon => singleTileLayerRDD.polygonalSumDouble(poly)
+      case multi: MultiPolygon => singleTileLayerRDD.polygonalSumDouble(multi)
+    }
 }
 
 

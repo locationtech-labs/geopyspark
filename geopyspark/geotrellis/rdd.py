@@ -7,7 +7,7 @@ import json
 import shapely.wkt
 
 from pyspark.storagelevel import StorageLevel
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, MultiPolygon
 from shapely.wkt import dumps
 from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              OPERATIONS,
@@ -776,6 +776,92 @@ class TiledRasterRDD(RDDWrapper):
         """
         min_max = self.srdd.getMinMax()
         return (min_max._1(), min_max._2())
+
+    @staticmethod
+    def _process_polygonal_summary(geometry, operation):
+        if isinstance(geometry, Polygon) or isinstance(geometry, MultiPolygon):
+            geometry = dumps(geometry)
+        if not isinstance(geometry, str):
+            raise ValueError("geometry must be either a Polygon, MultiPolygon, or a String")
+
+        return operation(geometry)
+
+    def polygonal_min(self, geometry, data_type):
+        """Finds the min value that is contained within the given geometry.
+
+        Args:
+            geometry (Polygon or MultiPolygon or str): A Shapely Polygon or MultiPolygon that
+                represents the area where the summary should be computed; or a WKT string
+                representation of the geometry.
+            data_type (type): The type of the values within the rasters. Can either be ``int`` or
+                ``float``.
+
+        Returns:
+            int or float depending on ``data_type``.
+        """
+
+        if data_type is int:
+            return self._process_polygonal_summary(geometry, self.srdd.polygonalMin)
+        elif data_type is float:
+            return self._process_polygonal_summary(geometry, self.srdd.polygonalMinDouble)
+        else:
+            raise TypeError("data_type must be either int or float.")
+
+    def polygonal_max(self, geometry, data_type):
+        """Finds the max value that is contained within the given geometry.
+
+        Args:
+            geometry (Polygon or MultiPolygon or str): A Shapely Polygon or MultiPolygon that
+                represents the area where the summary should be computed; or a WKT string
+                representation of the geometry.
+            data_type (type): The type of the values within the rasters. Can either be ``int`` or
+                ``float``.
+
+        Returns:
+            int or float depending on ``data_type``.
+        """
+
+        if data_type is int:
+            return self._process_polygonal_summary(geometry, self.srdd.polygonalMax)
+        elif data_type is float:
+            return self._process_polygonal_summary(geometry, self.srdd.polygonalMaxDouble)
+        else:
+            raise TypeError("data_type must be either int or float.")
+
+    def polygonal_sum(self, geometry, data_type):
+        """Finds the sum of all of the values that are contained within the given geometry.
+
+        Args:
+            geometry (Polygon or MultiPolygon or str): A Shapely Polygon or MultiPolygon that
+                represents the area where the summary should be computed; or a WKT string
+                representation of the geometry.
+            data_type (type): The type of the values within the rasters. Can either be ``int`` or
+                ``float``.
+
+        Returns:
+            int or float depending on ``data_type``.
+        """
+
+        if data_type is int:
+            return self._process_polygonal_summary(geometry, self.srdd.polygonalSum)
+        elif data_type is float:
+            return self._process_polygonal_summary(geometry, self.srdd.polygonalSumDouble)
+        else:
+            raise TypeError("data_type must be either int or float.")
+
+    def polygonal_mean(self, geometry):
+        """Finds the mean of all of the values that are contained within the given geometry.
+
+        Args:
+            geometry (Polygon or MultiPolygon or str): A Shapely Polygon or MultiPolygon that
+                represents the area where the summary should be computed; or a WKT string
+                representation of the geometry.
+
+        Returns:
+            float
+        """
+
+        return self._process_polygonal_summary(geometry, self.srdd.polygonalMean)
 
     def _process_operation(self, value, operation):
         if isinstance(value, int) or isinstance(value, float):
