@@ -478,6 +478,14 @@ class TiledRasterRDD(RDDWrapper):
 
         return cls(geopysc, rdd_type, srdd)
 
+    @classmethod
+    def euclidean_distance(cls, geopysc, geometry, source_crs, zoom):
+        if isinstance(source_crs, int):
+            source_crs = str(source_crs)
+
+        srdd = geopysc._jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.euclideanDistance(geopysc.sc, dumps(geometry), source_crs, zoom)
+        return cls(geopysc, SPATIAL, srdd)
+
     def to_numpy_rdd(self):
         """Converts a TiledRasterRDD to a numpy RDD.
 

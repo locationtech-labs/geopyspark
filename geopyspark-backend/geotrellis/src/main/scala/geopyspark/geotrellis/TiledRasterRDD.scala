@@ -26,6 +26,7 @@ import spray.json._
 import spray.json.DefaultJsonProtocol._
 import spire.syntax.cfor._
 
+import com.vividsolutions.jts.geom.Coordinate
 import org.apache.spark._
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd._
@@ -623,6 +624,55 @@ object SpatialTiledRasterRDD {
 
     SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata), metadata))
   }
+
+  def euclideanDistance(sc: SparkContext, geomWKT: String, srcCRSStr: String, requestedZoom: Int): TiledRasterRDD[SpatialKey]= {
+    val geom = geotrellis.vector.io.wkt.WKT.read(geomWKT)
+    val srcCRS = TileRDD.getCRS(srcCRSStr).get
+    val LayoutLevel(z, ld) = ZoomedLayoutScheme(WebMercator).levelForZoom(requestedZoom)
+    val maptrans = ld.mapTransform
+    val reprojected = geom.reproject(srcCRS, WebMercator)
+    val GridBounds(cmin, rmin, cmax, rmax) = maptrans(reprojected.envelope)
+
+    val skRDD = sc.parallelize(for (r <- rmin to rmax; c <- cmin to cmax) yield SpatialKey(c, r))
+
+    val inputRDD =
+      if (geom.isInstanceOf[MultiPoint]) {
+        val mp = geom.asInstanceOf[MultiPoint]
+        def createPoints(sk: SpatialKey): (SpatialKey, Array[Coordinate]) = {
+          val ex = maptrans(sk)
+          val coords = mp.points.filter(ex.contains(_)).map(_.jtsGeom.getCoordinate)
+                                                           (sk, coords)
+        }
+        skRDD.map(createPoints)
+      } else {
+
+        def createPoints(sk: SpatialKey): (SpatialKey, Array[Coordinate]) = {
+          val ex = maptrans(sk)
+          val re = RasterExtent(ex, ld.tileCols, ld.tileRows)
+
+          val coords = collection.mutable.ListBuffer.empty[Coordinate]
+
+          def rasterizeToPoints(px: Int, py: Int): Unit = {
+            val (x, y) = re.gridToMap(px, py)
+            coords += new Coordinate(x, y)
+          }
+
+          Rasterizer.foreachCellByGeometry(reprojected, re)(rasterizeToPoints)
+                                                           (sk, coords.toArray)
+        }
+        skRDD.map(createPoints)
+      }
+
+    val mbtileRDD: RDD[(SpatialKey, MultibandTile)] = inputRDD.euclideanDistance(ld).mapValues(MultibandTile(_))
+    val projectedRDD: RDD[(ProjectedExtent, MultibandTile)] = mbtileRDD.map{ x => {
+      val ex = maptrans(x._1)
+      val projEx = ProjectedExtent(ex, WebMercator)
+                                  (projEx, x._2)
+    }}
+
+    SpatialTiledRasterRDD(Some(z), MultibandTileLayerRDD(mbtileRDD, projectedRDD.collectMetadata[SpatialKey](ld)))
+  }
+
 }
 
 object TemporalTiledRasterRDD {
