@@ -169,6 +169,26 @@ def read_metadata(geopysc,
                   layer_zoom,
                   options=None,
                   **kwargs):
+    """Reads the metadata from a saved layer without reading in the whole layer.
+
+    Args:
+        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        rdd_type (str): What the spatial type of the geotiffs are. This is
+            represented by the constants: ``SPATIAL`` and ``SPACETIME``.
+        uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
+            catalog to be read from. The shape of this string varies depending on backend.
+        layer_name (str): The name of the GeoTrellis catalog to be read from.
+        layer_zoom (int): The zoom level of the layer that is to be read.
+        options (dict, optional): Additional parameters for reading the layer for specific backends.
+            The dictionary is only used for Cassandra and HBase, no other backend requires this
+            to be set.
+        numPartitions (int, optional): Sets RDD partition count when reading from catalog.
+        **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
+            be in camel case. If both options and keywords are set, then the options will be used.
+
+    Returns:
+        :ref:`metadata`
+    """
 
     if options:
         options = options
