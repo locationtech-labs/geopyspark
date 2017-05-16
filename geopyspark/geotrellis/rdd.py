@@ -50,6 +50,14 @@ def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_wi
 
 
 class RDDWrapper(object):
+    """
+    Base class for class that wraps a scala RDD instance through py4j reference.
+
+    Attributes:
+        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        srdd (JavaObject): The coresponding scala RDD class.
+    """
+
     def __init__(self):
         self.is_cached = False
 
