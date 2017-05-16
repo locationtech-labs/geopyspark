@@ -167,6 +167,7 @@ def read(geopysc,
          layer_name,
          layer_zoom,
          options=None,
+         numPartitions=None,
          **kwargs):
 
     """Reads a single, zoom layer from a GeoTrellis catalog.
@@ -189,6 +190,7 @@ def read(geopysc,
         options (dict, optional): Additional parameters for reading the layer for specific backends.
             The dictionary is only used for Cassandra and HBase, no other backend requires this
             to be set.
+        numPartitions (int, optional): Sets RDD partition count when reading from catalog.
         **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.
 
@@ -208,7 +210,11 @@ def read(geopysc,
     cached = _mapped_cached[uri]
 
     key = geopysc.map_key_input(rdd_type, True)
-    srdd = cached.reader.read(key, layer_name, layer_zoom)
+
+    if numPartitions is None:
+        numPartitions  = geopysc.pysc.defaultMinPartitions
+
+    srdd = cached.reader.read(key, layer_name, layer_zoom, numPartitions)
 
     return TiledRasterRDD(geopysc, rdd_type, srdd)
 
@@ -289,6 +295,7 @@ def query(geopysc,
           time_intervals=None,
           proj_query=None,
           options=None,
+          numPartitions=None,
           **kwargs):
 
     """Queries a single, zoom layer from a GeoTrellis catalog given spatial and/or time parameters.
@@ -327,6 +334,7 @@ def query(geopysc,
         options (dict, optional): Additional parameters for querying the tile for specific backends.
             The dictioanry is only used for Cassandra and HBase, no other backend requires this
             to be set.
+        numPartitions (int, optional): Sets RDD partition count when reading from catalog.
         **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.
 
@@ -355,6 +363,9 @@ def query(geopysc,
     if isinstance(proj_query, int):
         proj_query = "EPSG:" + str(proj_query)
 
+    if numPartitions is None:
+        numPartitions  = geopysc.pysc.defaultMinPartitions
+
     if isinstance(intersects, Polygon) or isinstance(intersects, MultiPolygon) \
        or isinstance(intersects, Point):
         srdd = cached.reader.query(key,
@@ -362,7 +373,8 @@ def query(geopysc,
                                    layer_zoom,
                                    dumps(intersects),
                                    time_intervals,
-                                   proj_query)
+                                   proj_query,
+                                   numPartitions)
 
     elif isinstance(intersects, str):
         srdd = cached.reader.query(key,
