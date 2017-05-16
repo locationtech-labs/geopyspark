@@ -207,6 +207,23 @@ def read_layer_metadata(geopysc,
 
     return json.loads(metadata)
 
+def get_layer_ids(geopysc,
+                  uri,
+                  options=None,
+                  **kwargs):
+
+    if options:
+        options = options
+    elif kwargs:
+        options = kwargs
+    else:
+        options = {}
+
+    _construct_catalog(geopysc, uri, options)
+    cached = _mapped_cached[uri]
+
+    return cached.reader.layerIds()
+
 def read(geopysc,
          rdd_type,
          uri,
