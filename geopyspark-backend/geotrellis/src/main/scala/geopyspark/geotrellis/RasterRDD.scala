@@ -24,6 +24,7 @@ import spire.std.any._
 import org.apache.spark._
 import org.apache.spark.rdd._
 import org.apache.spark.api.java.JavaRDD
+import org.apache.spark.storage.StorageLevel
 
 import scala.reflect._
 import scala.util._
@@ -86,6 +87,15 @@ abstract class TileRDD[K: ClassTag] {
         (x._1, MultibandTile(tiles))
       }
     reclassify(reclassifiedRDD)
+  }
+
+  def persist(newLevel: StorageLevel): Unit = {
+    // persist call changes the state of the SparkContext rather than RDD object
+    rdd.persist(newLevel)
+  }
+
+  def unpersist(): Unit = {
+    rdd.unpersist()
   }
 
   def reclassifyDouble(
