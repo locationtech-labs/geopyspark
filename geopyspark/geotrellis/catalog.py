@@ -211,6 +211,21 @@ def get_layer_ids(geopysc,
                   uri,
                   options=None,
                   **kwargs):
+    """Returns a list of all of the layer ids in the selected catalog as strings.
+
+    Args:
+        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
+            catalog to be read from. The shape of this string varies depending on backend.
+        options (dict, optional): Additional parameters for reading the layer for specific backends.
+            The dictionary is only used for Cassandra and HBase, no other backend requires this
+            to be set.
+        **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
+            be in camel case. If both options and keywords are set, then the options will be used.
+
+    Returns:
+        ["Layer(name = <name_of_layer>, zoom = <zoom_level}"]
+    """
 
     if options:
         options = options
