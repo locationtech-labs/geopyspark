@@ -49,6 +49,7 @@ Fields that can be set for ``HBase``:
  - **master** (str, optional): If not specified, then 'null' will be used.
 """
 
+import json
 from collections import namedtuple
 from urllib.parse import urlparse
 
@@ -160,6 +161,30 @@ def _construct_catalog(geopysc, new_uri, options):
                                           reader=reader,
                                           value_reader=value_reader,
                                           writer=writer)
+
+def read_metadata(geopysc,
+                  rdd_type,
+                  uri,
+                  layer_name,
+                  layer_zoom,
+                  options=None,
+                  **kwargs):
+
+    if options:
+        options = options
+    elif kwargs:
+        options = kwargs
+    else:
+        options = {}
+
+    _construct_catalog(geopysc, uri, options)
+    cached = _mapped_cached[uri]
+
+    key = geopysc.map_key_input(rdd_type, True)
+
+    metadata = cached.reader.readMetadata(key, layer_name, layer_zoom)
+
+    return json.loads(metadata)
 
 def read(geopysc,
          rdd_type,
