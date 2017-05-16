@@ -787,6 +787,19 @@ class TiledRasterRDD(RDDWrapper):
         return operation(geometry)
 
     def polygonal_min(self, geometry, data_type):
+        """Finds the min value that is contained within the given geometry.
+
+        Args:
+            geometry (Polygon or MultiPolygon or str): A Shapely Polygon or MultiPolygon that
+                represents the area where the summary should be computed; or a WKT string
+                representation of the geometry.
+            data_type (type): The type of the values within the rasters. Can either be ``int`` or
+                ``float``.
+
+        Returns:
+            int or float depending on ``data_type``.
+        """
+
         if data_type is int:
             return self._process_polygonal_summary(geometry, self.srdd.polygonalMin)
         elif data_type is float:
@@ -795,6 +808,19 @@ class TiledRasterRDD(RDDWrapper):
             raise TypeError("data_type must be either int or float.")
 
     def polygonal_max(self, geometry, data_type):
+        """Finds the max value that is contained within the given geometry.
+
+        Args:
+            geometry (Polygon or MultiPolygon or str): A Shapely Polygon or MultiPolygon that
+                represents the area where the summary should be computed; or a WKT string
+                representation of the geometry.
+            data_type (type): The type of the values within the rasters. Can either be ``int`` or
+                ``float``.
+
+        Returns:
+            int or float depending on ``data_type``.
+        """
+
         if data_type is int:
             return self._process_polygonal_summary(geometry, self.srdd.polygonalMax)
         elif data_type is float:
@@ -803,6 +829,19 @@ class TiledRasterRDD(RDDWrapper):
             raise TypeError("data_type must be either int or float.")
 
     def polygonal_sum(self, geometry, data_type):
+        """Finds the sum of all of the values that are contained within the given geometry.
+
+        Args:
+            geometry (Polygon or MultiPolygon or str): A Shapely Polygon or MultiPolygon that
+                represents the area where the summary should be computed; or a WKT string
+                representation of the geometry.
+            data_type (type): The type of the values within the rasters. Can either be ``int`` or
+                ``float``.
+
+        Returns:
+            int or float depending on ``data_type``.
+        """
+
         if data_type is int:
             return self._process_polygonal_summary(geometry, self.srdd.polygonalSum)
         elif data_type is float:
@@ -811,6 +850,17 @@ class TiledRasterRDD(RDDWrapper):
             raise TypeError("data_type must be either int or float.")
 
     def polygonal_mean(self, geometry):
+        """Finds the mean of all of the values that are contained within the given geometry.
+
+        Args:
+            geometry (Polygon or MultiPolygon or str): A Shapely Polygon or MultiPolygon that
+                represents the area where the summary should be computed; or a WKT string
+                representation of the geometry.
+
+        Returns:
+            float
+        """
+
         return self._process_polygonal_summary(geometry, self.srdd.polygonalMean)
 
     def _process_operation(self, value, operation):
