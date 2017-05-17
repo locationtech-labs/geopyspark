@@ -63,6 +63,9 @@ abstract class FilteringLayerReaderWrapper()
   def attributeStore: AttributeStore
   def layerReader: FilteringLayerReader[LayerId]
 
+  def layerIds: Array[java.util.Map[String, Any]] =
+    attributeStore.layerIds.map { x => Map("name" -> x.name, "zoom" -> x.zoom).asJava }.toArray
+
   def getValueClass(id: LayerId): String =
     attributeStore.readHeader[LayerHeader](id).valueClass
 
