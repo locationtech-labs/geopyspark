@@ -332,6 +332,7 @@ class SpatialTiledRasterRDD(
 
     val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
     val scheme = ZoomedLayoutScheme(rdd.metadata.crs, rdd.metadata.tileRows)
+    val part = rdd.partitioner.getOrElse(new HashPartitioner(rdd.partitions.length))
 
     val leveledList =
       Pyramid.levelStream(
@@ -339,7 +340,7 @@ class SpatialTiledRasterRDD(
         scheme,
         startZoom,
         endZoom,
-        Pyramid.Options(resampleMethod=method)
+        Pyramid.Options(resampleMethod=method, partitioner=part)
       )
 
     leveledList.map{ x => SpatialTiledRasterRDD(Some(x._1), x._2) }.toArray
@@ -503,6 +504,7 @@ class TemporalTiledRasterRDD(
 
     val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
     val scheme = ZoomedLayoutScheme(rdd.metadata.crs, rdd.metadata.tileRows)
+    val part = rdd.partitioner.getOrElse(new HashPartitioner(rdd.partitions.length))
 
     val leveledList =
       Pyramid.levelStream(
@@ -510,7 +512,7 @@ class TemporalTiledRasterRDD(
         scheme,
         startZoom,
         endZoom,
-        Pyramid.Options(resampleMethod=method)
+        Pyramid.Options(resampleMethod=method, partitioner=part)
       )
 
     leveledList.map{ x => TemporalTiledRasterRDD(Some(x._1), x._2) }.toArray
