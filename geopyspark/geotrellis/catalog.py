@@ -55,6 +55,7 @@ from urllib.parse import urlparse
 
 from geopyspark.geotrellis.rdd import TiledRasterRDD
 from geopyspark.geotrellis.constants import TILE, ZORDER, SPATIAL
+from geopyspark.geotrellis.data_structures import Metadata
 
 from shapely.geometry import Polygon, MultiPolygon, Point
 from shapely.wkt import dumps
@@ -168,9 +169,9 @@ def _construct_catalog(geopysc, new_uri, options):
 def _in_bounds(geopysc, rdd_type, uri, layer_name, zoom_level, col, row):
     if (layer_name, zoom_level) not in _mapped_bounds:
         layer_metadata = read_layer_metadata(geopysc, rdd_type, uri, layer_name, zoom_level)
-        bounds_dict = layer_metadata['bounds']
-        min_key = bounds_dict['minKey']
-        max_key = bounds_dict['maxKey']
+        bounds_dict = layer_metadata.bounds
+        min_key = bounds_dict.minKey
+        max_key = bounds_dict.maxKey
         bounds = _bounds(min_key['col'], min_key['row'], max_key['col'], max_key['row'])
         _mapped_bounds[(layer_name, zoom_level)] = bounds
     else:
@@ -228,7 +229,7 @@ def read_layer_metadata(geopysc,
     else:
         metadata = cached.store.metadataSpaceTime(layer_name, layer_zoom)
 
-    return json.loads(metadata)
+    return Metadata.from_dict(json.loads(metadata))
 
 def get_layer_ids(geopysc,
                   uri,
