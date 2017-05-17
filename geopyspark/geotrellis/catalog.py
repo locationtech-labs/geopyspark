@@ -200,9 +200,10 @@ def read_metadata(geopysc,
     _construct_catalog(geopysc, uri, options)
     cached = _mapped_cached[uri]
 
-    key = geopysc.map_key_input(rdd_type, True)
-
-    metadata = cached.reader.readMetadata(key, layer_name, layer_zoom)
+    if rdd_type == SPATIAL:
+        metadata = cached.store.metadataSpatial(layer_name, layer_zoom)
+    else:
+        metadata = cached.store.metadataSpaceTime(layer_name, layer_zoom)
 
     return json.loads(metadata)
 
