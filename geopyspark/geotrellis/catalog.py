@@ -165,10 +165,10 @@ def _construct_catalog(geopysc, new_uri, options):
                                           value_reader=value_reader,
                                           writer=writer)
 
-def _check_bounds(geopysc, uri, layer_name, zoom_level, col, row):
+def _in_bounds(geopysc, rdd_type, uri, layer_name, zoom_level, col, row):
     if uri not in _mapped_bounds:
-        layer_metadata = read_layer_metadata(geopysc, uri, layer_name, zoom_level)
-        bounds_dict = layer_metadata['Bounds']
+        layer_metadata = read_layer_metadata(geopysc, rdd_type, uri, layer_name, zoom_level)
+        bounds_dict = layer_metadata['bounds']
         min_key = bounds_dict['minKey']
         max_key = bounds_dict['maxKey']
         bounds = _bounds(min_key['col'], min_key['row'], max_key['col'], max_key['row'])
@@ -328,7 +328,7 @@ def read_value(geopysc,
         :ref:`raster` or ``None``
     """
 
-    if _check_bounds(geopysc, uri, layer_name, layer_zoom, col, row):
+    if not _in_bounds(geopysc, rdd_type, uri, layer_name, layer_zoom, col, row):
         return None
     else:
         if options:
