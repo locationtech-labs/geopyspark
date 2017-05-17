@@ -4,6 +4,7 @@ import geopyspark.geotrellis.GeoTrellisUtils._
 
 import geotrellis.proj4._
 import geotrellis.raster._
+import geotrellis.raster.distance._
 import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
 import geotrellis.raster.resample.ResampleMethod
@@ -18,9 +19,12 @@ import geotrellis.spark.mask.Mask
 import geotrellis.spark.pyramid._
 import geotrellis.spark.reproject._
 import geotrellis.spark.tiling._
+import geotrellis.spark.util._
 import geotrellis.util._
 import geotrellis.vector._
 import geotrellis.vector.io.wkt.WKT
+import geotrellis.vector.triangulation._
+import geotrellis.vector.voronoi._
 
 import spray.json._
 import spray.json.DefaultJsonProtocol._
@@ -633,23 +637,17 @@ object SpatialTiledRasterRDD {
     val reprojected = geom.reproject(srcCRS, WebMercator)
     val GridBounds(cmin, rmin, cmax, rmax) = maptrans(reprojected.envelope)
 
-    val skRDD = sc.parallelize(for (r <- rmin to rmax; c <- cmin to cmax) yield SpatialKey(c, r))
+    val keys = for (r <- rmin to rmax; c <- cmin to cmax) yield SpatialKey(c, r)
 
-    val inputRDD =
+    val pts = 
       if (reprojected.isInstanceOf[MultiPoint]) {
-        val pts = reprojected.asInstanceOf[MultiPoint].points
-        def createPoints(sk: SpatialKey): (SpatialKey, Array[Coordinate]) = {
-          val ex = maptrans(sk)
-          val coords = pts.filter(ex.contains(_)).map(_.jtsGeom.getCoordinate)
-          (sk, coords)
-        }
-        skRDD.map(createPoints)
+        reprojected.asInstanceOf[MultiPoint].points.map(_.jtsGeom.getCoordinate)
       } else {
-        def createPoints(sk: SpatialKey): (SpatialKey, Array[Coordinate]) = {
+        val coords = collection.mutable.ListBuffer.empty[Coordinate]
+
+        def createPoints(sk: SpatialKey) = {
           val ex = maptrans(sk)
           val re = RasterExtent(ex, ld.tileCols, ld.tileRows)
-
-          val coords = collection.mutable.ListBuffer.empty[Coordinate]
 
           def rasterizeToPoints(px: Int, py: Int): Unit = {
             val (x, y) = re.gridToMap(px, py)
@@ -658,12 +656,24 @@ object SpatialTiledRasterRDD {
           }
 
           Rasterizer.foreachCellByGeometry(reprojected, re)(rasterizeToPoints)
-          (sk, coords.toArray)
+                                                           (sk, coords.toArray)
         }
-        skRDD.map(createPoints)
+        keys.foreach(createPoints)
+
+        coords.toArray
       }
 
-    val mbtileRDD: RDD[(SpatialKey, MultibandTile)] = inputRDD.euclideanDistance(ld).mapValues(MultibandTile(_))
+    val dt = KryoWrapper(DelaunayTriangulation(pts))
+    val skRDD = sc.parallelize(keys)
+    val mbtileRDD: RDD[(SpatialKey, MultibandTile)] = skRDD.mapPartitions({ skiter => skiter.map { sk =>
+      val ex = maptrans(sk)
+      val re = RasterExtent(ex, ld.tileCols, ld.tileRows)
+      val tile = DoubleArrayTile.empty(re.cols, re.rows)
+      val vd = new VoronoiDiagram(dt.value, ex)
+      vd.voronoiCellsWithPoints.foreach(EuclideanDistanceTile.rasterizeDistanceCell(re, tile)(_))
+      (sk, MultibandTile(tile))
+    } }, preservesPartitioning=true)
+
     val projectedRDD: RDD[(ProjectedExtent, MultibandTile)] = mbtileRDD.map{ case (sk, mbtile) => {
       val ex = maptrans(sk)
       val projEx = ProjectedExtent(ex, WebMercator)
