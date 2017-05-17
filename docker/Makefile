@@ -64,7 +64,9 @@ stage1: Dockerfile.stage1 $(JAR) blobs/geonotebook.tar blobs/geotrellis-backend-
 run:
 	docker run -it \
 	  --rm \
+	  --name geopyspark \
 	  -p 8000:8000 \
+	  -p 8888:8888 \
 	  -p 8033:8033 \
           -p 4040:4040 \
           -p 4041:4041 \
@@ -75,6 +77,9 @@ run:
 	  -v $(shell pwd)/notebooks:/home/hadoop/notebooks:rw \
 	  -v $(HOME)/.aws:/home/hadoop/.aws:ro \
 	  $(STAGE1)
+
+shell:
+	docker exec -it geopyspark bash
 
 clean:
 	rm -f $(WHL) $(JAR)
