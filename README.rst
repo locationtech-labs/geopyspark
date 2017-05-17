@@ -75,22 +75,6 @@ Where the first command installs the python code from PyPi and the second
 downloads the backend, jar file. If no path is given when downloading the jar,
 then it will be downloaded to wherever GeoPySpark was installed at.
 
-What's With That Weird Pip Install?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-"What's with that weird pip install?", you may be asking yourself. The reason
-for its unusualness is due to how GeoPySpark functions. Because this library
-is a python binding for a Scala project, we need to be able to access the
-Scala backend. To do this, we plug into PySpark which acts as a bridge between
-Python and Scala. However, in order to achieve this the Scala code needs to be
-assembled into a jar file. This poses a problem due to its size (117.7 MB at
-v0.1.0-RC!). To get around the size constraints of PyPi, we thus utilized this
-method of distribution where the jar must be downloaded in a serperate command
-when using ``pip install``.
-
-Note:
-  Installing from source does not require the seperate download of the jar.
-
 If you would rather install from source, you can do so by running the following
 in the terminal:
 
@@ -121,6 +105,22 @@ Replace ``<your python version`` with whatever Python version
 ``virtualenvwrapper`` is set to. Installation in a virtual environment can be
 a bit weird with GeoPySpark. This is why you need to export the
 ``PYTHONPATH`` before installing to ensure that it performs correctly.
+
+What's With That Weird Pip Install?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+"What's with that weird pip install?", you may be asking yourself. The reason
+for its unusualness is due to how GeoPySpark functions. Because this library
+is a python binding for a Scala project, we need to be able to access the
+Scala backend. To do this, we plug into PySpark which acts as a bridge between
+Python and Scala. However, in order to achieve this the Scala code needs to be
+assembled into a jar file. This poses a problem due to its size (117.7 MB at
+v0.1.0-RC!). To get around the size constraints of PyPi, we thus utilized this
+method of distribution where the jar must be downloaded in a serperate command
+when using ``pip install``.
+
+Note:
+  Installing from source does not require the seperate download of the jar.
 
 Make Targets
 ^^^^^^^^^^^^
