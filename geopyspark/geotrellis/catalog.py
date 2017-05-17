@@ -166,15 +166,15 @@ def _construct_catalog(geopysc, new_uri, options):
                                           writer=writer)
 
 def _in_bounds(geopysc, rdd_type, uri, layer_name, zoom_level, col, row):
-    if uri not in _mapped_bounds:
+    if (layer_name, zoom_level) not in _mapped_bounds:
         layer_metadata = read_layer_metadata(geopysc, rdd_type, uri, layer_name, zoom_level)
         bounds_dict = layer_metadata['bounds']
         min_key = bounds_dict['minKey']
         max_key = bounds_dict['maxKey']
         bounds = _bounds(min_key['col'], min_key['row'], max_key['col'], max_key['row'])
-        _mapped_bounds[uri] = bounds
+        _mapped_bounds[(layer_name, zoom_level)] = bounds
     else:
-        bounds = _mapped_bounds[uri]
+        bounds = _mapped_bounds[(layer_name, zoom_level)]
 
     mins = col < bounds.col_min or row < bounds.row_min
     maxs = col > bounds.col_max or row > bounds.row_max
