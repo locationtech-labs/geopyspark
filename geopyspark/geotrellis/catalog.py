@@ -165,9 +165,9 @@ def _construct_catalog(geopysc, new_uri, options):
                                           value_reader=value_reader,
                                           writer=writer)
 
-def _check_bounds(geopysc, uri, layer_name, col, row):
+def _check_bounds(geopysc, uri, layer_name, zoom_level, col, row):
     if uri not in _mapped_bounds:
-        layer_metadata = get_metadata(geopysc, uri, layer_name)
+        layer_metadata = read_layer_metadata(geopysc, uri, layer_name, zoom_level)
         bounds_dict = layer_metadata['Bounds']
         min_key = bounds_dict['minKey']
         max_key = bounds_dict['maxKey']
@@ -325,35 +325,37 @@ def read_value(geopysc,
         :ref:`raster`
     """
 
-    if options:
-        options = options
-    elif kwargs:
-        options = kwargs
+    if _check_bounds(geopysc, uri, layer_name, layer_zoom, col, row):
+        return None
     else:
-        options = {}
+        if options:
+            options = options
+        elif kwargs:
+            options = kwargs
+        else:
+            options = {}
 
-    _construct_catalog(geopysc, uri, options)
+        _construct_catalog(geopysc, uri, options)
+        cached = _mapped_cached[uri]
 
-    cached = _mapped_cached[uri]
+        if not zdt:
+            zdt = ""
 
-    if not zdt:
-        zdt = ""
+        key = geopysc.map_key_input(rdd_type, True)
 
-    key = geopysc.map_key_input(rdd_type, True)
+        tup = cached.value_reader.readTile(key,
+                                           layer_name,
+                                           layer_zoom,
+                                           col,
+                                           row,
+                                           zdt)
 
-    tup = cached.value_reader.readTile(key,
-                                       layer_name,
-                                       layer_zoom,
-                                       col,
-                                       row,
-                                       zdt)
+        ser = geopysc.create_value_serializer(tup._2(), TILE)
 
-    ser = geopysc.create_value_serializer(tup._2(), TILE)
+        if uri not in _mapped_serializers:
+            _mapped_serializers[uri] = ser
 
-    if uri not in _mapped_serializers:
-        _mapped_serializers[uri] = ser
-
-    return ser.loads(tup._1())[0]
+        return ser.loads(tup._1())[0]
 
 def query(geopysc,
           rdd_type,
