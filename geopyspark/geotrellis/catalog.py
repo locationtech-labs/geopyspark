@@ -302,6 +302,9 @@ def read_value(geopysc,
     Unlike other functions in this module, this will not return a TiledRasterRDD, but rather a
     GeoPySpark formatted raster. This is the function to use when creating a tile server.
 
+    Note:
+        When requesting a tile that does not exist, ``None`` will be returned.
+
     Args:
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
@@ -322,7 +325,7 @@ def read_value(geopysc,
             be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
-        :ref:`raster`
+        :ref:`raster` or ``None``
     """
 
     if _check_bounds(geopysc, uri, layer_name, layer_zoom, col, row):
