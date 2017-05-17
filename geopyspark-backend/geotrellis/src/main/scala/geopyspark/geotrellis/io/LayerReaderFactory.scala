@@ -50,12 +50,6 @@ abstract class LayerReaderWrapper {
     projQuery: String,
     numPartitions: Int
   ): TiledRasterRDD[_]
-
-  def readMetadata(
-    keyType: String,
-    layerName: String,
-    zoom: Int
-  ): String
 }
 
 
@@ -74,21 +68,6 @@ abstract class FilteringLayerReaderWrapper()
 
   def tileToMultiband[K](rdd: RDD[(K, Tile)]): RDD[(K, MultibandTile)] =
     rdd.map{ x => (x._1, MultibandTile(x._2)) }
-
-  def readMetadata(
-    keyType: String,
-    layerName: String,
-    zoom: Int
-  ): String = {
-    val id = LayerId(layerName, zoom)
-
-    keyType match {
-      case "SpatialKey" =>
-        attributeStore.readMetadata[TileLayerMetadata[SpatialKey]](id).toJson.compactPrint
-      case "SpaceTimeKey" =>
-        attributeStore.readMetadata[TileLayerMetadata[SpaceTimeKey]](id).toJson.compactPrint
-    }
-  }
 
   def read(
     keyType: String,
