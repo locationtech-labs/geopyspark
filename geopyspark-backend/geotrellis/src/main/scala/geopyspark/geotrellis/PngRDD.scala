@@ -69,11 +69,8 @@ object PngRDD {
   def asSingleband(tiled: SpatialTiledRasterRDD, rampName: String): SpatialPngRDD = {
     val rdd = tiled.rdd
     val histogram = rdd.histogram().head
-    val mapped = rdd.map({ case (key, mbtile) =>
-      val tile = mbtile
-        .band(0)
-        .renderPng(Coloring.makeColorMap(histogram, rampName))
-      key -> tile
+    val mapped = rdd.mapValues({ mbtile =>
+      mbtile.band(0).renderPng(Coloring.makeColorMap(histogram, rampName))
     })
     new SpatialPngRDD(mapped.asInstanceOf[RDD[(tiled.keyType, Png)]])
   }
@@ -81,11 +78,8 @@ object PngRDD {
   def asSingleband(tiled: TemporalTiledRasterRDD, rampName: String): TemporalPngRDD = {
     val rdd = tiled.rdd
     val histogram = rdd.histogram().head
-    val mapped = rdd.map({ case (key, mbtile) =>
-      val tile = mbtile
-        .band(0)
-        .renderPng(Coloring.makeColorMap(histogram, rampName))
-      key -> tile
+    val mapped = rdd.mapValues({ mbtile =>
+      mbtile.band(0).renderPng(Coloring.makeColorMap(histogram, rampName))
     })
     new TemporalPngRDD(mapped.asInstanceOf[RDD[(tiled.keyType, Png)]])
   }
