@@ -46,6 +46,17 @@ class CatalogTest(BaseTestClass):
 
         self.assertEqual(tiled['data'].shape, (1, 256, 256))
 
+    def test_bad_read_value(self):
+        tiled = read_value(BaseTestClass.geopysc,
+                           SPATIAL,
+                           self.uri,
+                           self.layer_name,
+                           11,
+                           1450,
+                           2000)
+
+        self.assertEqual(tiled, None)
+
     def test_query(self):
         intersection = box(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520)
         queried = query(BaseTestClass.geopysc, SPATIAL, self.uri, self.layer_name, 11, intersection)

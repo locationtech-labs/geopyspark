@@ -64,6 +64,9 @@ _mapped_cached = {}
 _mapped_serializers = {}
 _cached = namedtuple('Cached', ('store', 'reader', 'value_reader', 'writer'))
 
+_mapped_bounds = {}
+_bounds = namedtuple('Bounds', ('col_min', 'row_min', 'col_max', 'row_max'))
+
 
 def _construct_catalog(geopysc, new_uri, options):
     if new_uri not in _mapped_cached:
@@ -161,6 +164,26 @@ def _construct_catalog(geopysc, new_uri, options):
                                           reader=reader,
                                           value_reader=value_reader,
                                           writer=writer)
+
+def _in_bounds(geopysc, rdd_type, uri, layer_name, zoom_level, col, row):
+    if uri not in _mapped_bounds:
+        layer_metadata = read_layer_metadata(geopysc, rdd_type, uri, layer_name, zoom_level)
+        bounds_dict = layer_metadata['bounds']
+        min_key = bounds_dict['minKey']
+        max_key = bounds_dict['maxKey']
+        bounds = _bounds(min_key['col'], min_key['row'], max_key['col'], max_key['row'])
+        _mapped_bounds[uri] = bounds
+    else:
+        bounds = _mapped_bounds[uri]
+
+    mins = col < bounds.col_min or row < bounds.row_min
+    maxs = col > bounds.col_max or row > bounds.row_max
+
+    if mins or maxs:
+        return False
+    else:
+        return True
+
 
 def read_layer_metadata(geopysc,
                         rdd_type,
@@ -316,6 +339,9 @@ def read_value(geopysc,
     Unlike other functions in this module, this will not return a TiledRasterRDD, but rather a
     GeoPySpark formatted raster. This is the function to use when creating a tile server.
 
+    Note:
+        When requesting a tile that does not exist, ``None`` will be returned.
+
     Args:
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
@@ -336,38 +362,40 @@ def read_value(geopysc,
             be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
-        :ref:`raster`
+        :ref:`raster` or ``None``
     """
 
-    if options:
-        options = options
-    elif kwargs:
-        options = kwargs
+    if not _in_bounds(geopysc, rdd_type, uri, layer_name, layer_zoom, col, row):
+        return None
     else:
-        options = {}
+        if options:
+            options = options
+        elif kwargs:
+            options = kwargs
+        else:
+            options = {}
 
-    _construct_catalog(geopysc, uri, options)
+        _construct_catalog(geopysc, uri, options)
+        cached = _mapped_cached[uri]
 
-    cached = _mapped_cached[uri]
+        if not zdt:
+            zdt = ""
 
-    if not zdt:
-        zdt = ""
+        key = geopysc.map_key_input(rdd_type, True)
 
-    key = geopysc.map_key_input(rdd_type, True)
+        tup = cached.value_reader.readTile(key,
+                                           layer_name,
+                                           layer_zoom,
+                                           col,
+                                           row,
+                                           zdt)
 
-    tup = cached.value_reader.readTile(key,
-                                       layer_name,
-                                       layer_zoom,
-                                       col,
-                                       row,
-                                       zdt)
+        ser = geopysc.create_value_serializer(tup._2(), TILE)
 
-    ser = geopysc.create_value_serializer(tup._2(), TILE)
+        if uri not in _mapped_serializers:
+            _mapped_serializers[uri] = ser
 
-    if uri not in _mapped_serializers:
-        _mapped_serializers[uri] = ser
-
-    return ser.loads(tup._1())[0]
+        return ser.loads(tup._1())[0]
 
 def query(geopysc,
           rdd_type,
