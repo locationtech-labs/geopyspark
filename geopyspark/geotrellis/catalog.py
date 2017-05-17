@@ -162,13 +162,13 @@ def _construct_catalog(geopysc, new_uri, options):
                                           value_reader=value_reader,
                                           writer=writer)
 
-def read_metadata(geopysc,
-                  rdd_type,
-                  uri,
-                  layer_name,
-                  layer_zoom,
-                  options=None,
-                  **kwargs):
+def read_layer_metadata(geopysc,
+                        rdd_type,
+                        uri,
+                        layer_name,
+                        layer_zoom,
+                        options=None,
+                        **kwargs):
     """Reads the metadata from a saved layer without reading in the whole layer.
 
     Args:
