@@ -211,7 +211,8 @@ def get_layer_ids(geopysc,
                   uri,
                   options=None,
                   **kwargs):
-    """Returns a list of all of the layer ids in the selected catalog as strings.
+    """Returns a list of all of the layer ids in the selected catalog as dicts that contain the
+    name and zoom of a given layer.
 
     Args:
         geopysc (GeoPyContext): The GeoPyContext being used this session.
@@ -224,7 +225,11 @@ def get_layer_ids(geopysc,
             be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
-        ["Layer(name = <name_of_layer>, zoom = <zoom_level}"]
+        [layerIds]
+
+        Where ``layerIds`` is a ``dict`` with the following fields:
+            - **name** (str): The name of the layer
+            - **zoom** (int): The zoom level of the given layer.
     """
 
     if options:
