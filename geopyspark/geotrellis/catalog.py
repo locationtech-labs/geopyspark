@@ -64,6 +64,9 @@ _mapped_cached = {}
 _mapped_serializers = {}
 _cached = namedtuple('Cached', ('store', 'reader', 'value_reader', 'writer'))
 
+_mapped_bounds = {}
+_bounds = namedtuple('Bounds', ('col_min', 'row_min', 'col_max', 'row_max'))
+
 
 def _construct_catalog(geopysc, new_uri, options):
     if new_uri not in _mapped_cached:
@@ -161,6 +164,26 @@ def _construct_catalog(geopysc, new_uri, options):
                                           reader=reader,
                                           value_reader=value_reader,
                                           writer=writer)
+
+def _check_bounds(geopysc, uri, layer_name, col, row):
+    if uri not in _mapped_bounds:
+        layer_metadata = get_metadata(geopysc, uri, layer_name)
+        bounds_dict = layer_metadata['Bounds']
+        min_key = bounds_dict['minKey']
+        max_key = bounds_dict['maxKey']
+        bounds = _bounds(min_key['col'], min_key['row'], max_key['col'], max_key['row'])
+        _mapped_bounds[uri] = bounds
+    else:
+        bounds = _mapped_bounds[uri]
+
+    mins = col < bounds.col_min or row < bounds.row_min
+    maxs = col > bounds.col_max or row > bounds.row_max
+
+    if mins or maxs:
+        return False
+    else:
+        return True
+
 
 def read_layer_metadata(geopysc,
                         rdd_type,
