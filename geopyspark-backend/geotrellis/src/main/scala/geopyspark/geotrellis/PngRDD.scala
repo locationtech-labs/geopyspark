@@ -47,6 +47,20 @@ object Coloring {
 
 }
 
+object ColorRamp {
+  def get(name: String): Array[Int] =
+    Coloring.getNamedRamp(name).colors.toArray
+
+  def get(name: String, numColors: Int): Array[Int] =
+    Coloring.getNamedRamp(name).stops(numColors).colors.toArray
+
+  def getHex(name: String): Array[String] =
+    get(name).map(x => s"#${x.toHexString.toUpperCase}")
+
+  def getHex(name: String, numColors: Int): Array[String] =
+    get(name, numColors).map(x => s"#${x.toHexString.toUpperCase}")
+}
+
 abstract class PngRDD[K: SpatialComponent :ClassTag] {
   def rdd: RDD[(K, Png)]
 }
@@ -55,11 +69,8 @@ object PngRDD {
   def asSingleband(tiled: SpatialTiledRasterRDD, rampName: String): SpatialPngRDD = {
     val rdd = tiled.rdd
     val histogram = rdd.histogram().head
-    val mapped = rdd.map({ case (key, mbtile) =>
-      val tile = mbtile
-        .band(0)
-        .renderPng(Coloring.makeColorMap(histogram, rampName))
-      key -> tile
+    val mapped = rdd.mapValues({ mbtile =>
+      mbtile.band(0).renderPng(Coloring.makeColorMap(histogram, rampName))
     })
     new SpatialPngRDD(mapped.asInstanceOf[RDD[(tiled.keyType, Png)]])
   }
@@ -67,11 +78,8 @@ object PngRDD {
   def asSingleband(tiled: TemporalTiledRasterRDD, rampName: String): TemporalPngRDD = {
     val rdd = tiled.rdd
     val histogram = rdd.histogram().head
-    val mapped = rdd.map({ case (key, mbtile) =>
-      val tile = mbtile
-        .band(0)
-        .renderPng(Coloring.makeColorMap(histogram, rampName))
-      key -> tile
+    val mapped = rdd.mapValues({ mbtile =>
+      mbtile.band(0).renderPng(Coloring.makeColorMap(histogram, rampName))
     })
     new TemporalPngRDD(mapped.asInstanceOf[RDD[(tiled.keyType, Png)]])
   }
@@ -87,4 +95,3 @@ class TemporalPngRDD(val rdd: RDD[(SpaceTimeKey, Png)]) extends PngRDD[SpaceTime
   def lookup(col: Int, row: Int, instant: Long): Array[Array[Byte]] =
     rdd.lookup(SpaceTimeKey(col, row, instant)).map(_.bytes).toArray
 }
-
