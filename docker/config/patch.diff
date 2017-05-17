@@ -572,10 +572,10 @@ index 0000000..a719593
 +        return Image.merge('RGBA', list(gray, gray, gray, alfa))
 diff --git a/geonotebook/vis/geotrellis/server.py b/geonotebook/vis/geotrellis/server.py
 new file mode 100644
-index 0000000..f0b2b3c
+index 0000000..c21fa6a
 --- /dev/null
 +++ b/geonotebook/vis/geotrellis/server.py
-@@ -0,0 +1,159 @@
+@@ -0,0 +1,165 @@
 +import io
 +import logging
 +import numpy as np
@@ -670,6 +670,9 @@ index 0000000..f0b2b3c
 +                                     x,
 +                                     y,
 +                                     "")
++        if not tile:
++            abort(404)
++
 +        decoder = avroregistry._get_decoder(tile_type)
 +        encoder = avroregistry._get_encoder(tile_type)
 +
@@ -696,6 +699,9 @@ index 0000000..f0b2b3c
 +                                          x,
 +                                          y,
 +                                          "")
++            if not value:
++                abort(404)
++
 +            ser = AvroSerializer(value._2(), decoder, encoder)
 +            tile = ser.loads(value._1())[0]['data']
 +            tiles.append(tile)
