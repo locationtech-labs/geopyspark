@@ -4,7 +4,7 @@ import pytest
 
 from shapely.geometry import box
 
-from geopyspark.geotrellis.catalog import read, read_value, query, read_metadata
+from geopyspark.geotrellis.catalog import read, read_value, query, read_layer_metadata
 from geopyspark.geotrellis.constants import SPATIAL, ZOOM
 from geopyspark.geotrellis.geotiff_rdd import get
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -68,7 +68,8 @@ class CatalogTest(BaseTestClass):
         layer = read(BaseTestClass.geopysc, SPATIAL, self.uri, self.layer_name, 5)
         actual_metadata = layer.layer_metadata
 
-        expected_metadata = read_metadata(BaseTestClass.geopysc, SPATIAL, self.uri, self.layer_name, 5)
+        expected_metadata = read_layer_metadata(BaseTestClass.geopysc, SPATIAL, self.uri,
+                                                self.layer_name, 5)
 
         self.assertDictEqual(actual_metadata, expected_metadata)
 
