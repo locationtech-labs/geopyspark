@@ -83,7 +83,7 @@ class CatalogTest(BaseTestClass):
         expected_metadata = read_layer_metadata(BaseTestClass.geopysc, SPATIAL, self.uri,
                                                 self.layer_name, 5)
 
-        self.assertDictEqual(actual_metadata, expected_metadata)
+        self.assertDictEqual(actual_metadata.to_dict(), expected_metadata.to_dict())
 
     def test_layer_ids(self):
         ids = get_layer_ids(BaseTestClass.geopysc, self.uri)
