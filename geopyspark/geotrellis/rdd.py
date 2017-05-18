@@ -480,6 +480,21 @@ class TiledRasterRDD(RDDWrapper):
 
     @classmethod
     def euclidean_distance(cls, geopysc, geometry, source_crs, zoom):
+        """Calculates the Euclidean distance of a Shapely geometry .
+
+        Args:
+            geopysc (GeoPyContext): The GeoPyContext being used this session.
+            geometry (shapely.geometry): The input geometry to compute the Euclidean distance for.
+            source_crs (str or int): The CRS of the input geometry.
+            zoom (int): The zoom level of the output raster.
+
+        Note:
+            This function may run very slowly for polygonal inputs if they cover many cells of
+            the output raster.
+
+        Returns:
+            RDD
+        """
         if isinstance(source_crs, int):
             source_crs = str(source_crs)
 
