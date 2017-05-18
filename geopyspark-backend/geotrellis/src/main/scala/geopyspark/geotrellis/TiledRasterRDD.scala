@@ -10,6 +10,7 @@ import geotrellis.proj4._
 import geotrellis.raster._
 import geotrellis.raster.distance._
 import geotrellis.raster.histogram._
+import geotrellis.raster.io.geotiff._
 import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
 import geotrellis.raster.resample.ResampleMethod
@@ -414,6 +415,27 @@ class SpatialTiledRasterRDD(
     )
 
     PythonTranslator.toPython[Tile, ProtoTile](contextRDD.stitch.tile)
+  }
+
+  def save_stitched(path: String): Unit = {
+    val contextRDD = ContextRDD(
+      rdd.map({ case (k, v) => (k, v.band(0)) }),
+      rdd.metadata
+    )
+    val stitched: Raster[Tile] = contextRDD.stitch()
+    GeoTiff(stitched, contextRDD.metadata.crs).write(path)
+  }
+
+  def save_stitched(path: String, cropBounds: ArrayList[Double]): Unit = {
+    val bounds = cropBounds.asScala.toArray
+    val extent = Extent(bounds(0), bounds(1), bounds(2), bounds(3))
+    val contextRDD = ContextRDD(
+      rdd.map({ case (k, v) => (k, v.band(0)) }),
+      rdd.metadata
+    )
+    val stitched: Raster[Tile] = contextRDD.stitch()
+    val cropped = stitched.crop(extent)
+    GeoTiff(cropped, contextRDD.metadata.crs).write(path)
   }
 
   def costDistance(

@@ -844,6 +844,30 @@ class TiledRasterRDD(CachableRDD):
         ser = ProtoBufSerializer.create_value_serializer(TILE)
         return ser.loads(value)[0]
 
+    def save_stitched(self, path, crop_bounds=None):
+        """Stitch all of the rasters within the RDD into one raster.
+
+        Args:
+            path: The path of the geotiff to save.
+            crop_bounds: Optional bounds with which to crop the raster before saving.
+
+        Note:
+            This can only be used on `SPATIAL` TiledRasterRDDs.
+
+        Returns:
+            None
+        """
+
+        if self.rdd_type != SPATIAL:
+            raise ValueError("Only TiledRasterRDDs with a rdd_type of Spatial can use stitch()")
+
+        if crop_bounds:
+            self.srdd.save_stitched(path, list(crop_bounds))
+        else:
+            self.srdd.save_stitched(path)
+
+        return None
+
     def mask(self, geometries):
         """Masks the ``TiledRasterRDD`` so that only values that intersect the geometries will
         be available.
