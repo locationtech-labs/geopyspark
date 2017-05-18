@@ -265,7 +265,7 @@ def get_layer_ids(geopysc,
     _construct_catalog(geopysc, uri, options)
     cached = _mapped_cached[uri]
 
-    return cached.reader.layerIds()
+    return list(cached.reader.layerIds())
 
 def read(geopysc,
          rdd_type,
