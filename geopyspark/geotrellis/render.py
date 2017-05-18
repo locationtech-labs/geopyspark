@@ -32,6 +32,9 @@ class PngRDD(object):
 
         Returns: A PngRDD object
         """
+
+        __slots__ = ['geopysc', 'rdd_type', 'layer_metadata', 'max_zoom', 'pngpyramid', 'debug']
+
         level0 = pyramid[0]
         self.geopysc = level0.geopysc
         self.rdd_type = level0.rdd_type
