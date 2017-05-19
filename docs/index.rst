@@ -1,8 +1,3 @@
-.. GeoPySpark do cumentation master file, created by
-   sphinx-quickstart on Wed Apr 12 16:16:48 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 What is GeoPySpark?
 --------------------
 
@@ -55,33 +50,33 @@ a need for it.
   :caption: Home
   :hidden:
 
-  changelog
+  changelog <CHANGELOG>
   contributing
 
 .. toctree::
-  :maxdepth: 2
-  :caption: Guides
+  :maxdepth: 3
+  :caption: User Guides
   :glob:
   :hidden:
 
-  core_concepts
+  guides/core_concepts
 
 .. toctree::
-  :maxdepth: 1
+  :maxdepth: 3
   :caption: Tutorials
   :glob:
   :hidden:
 
-  greyscale_ingest_example
-  greyscale_tile_server_example
-  sentinel_ingest_example
-  sentinel_tile_server_example
+  tutorials/greyscale_ingest_example
+  tutorials/greyscale_tile_server_example
+  tutorials/sentinel_ingest_example
+  tutorials/sentinel_tile_server_example
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 4
   :caption: Docs
   :glob:
   :hidden:
 
-  geopyspark
-  geopyspark.geotrellis
+  docs/geopyspark
+  docs/geopyspark.geotrellis

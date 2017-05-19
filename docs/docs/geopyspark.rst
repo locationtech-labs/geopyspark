@@ -1,15 +1,6 @@
 geopyspark package
 ==================
 
-Subpackages
------------
-
-.. toctree::
-  :maxdepth: 1
-
-  geopyspark.geotrellis
-
-
 geopyspark
 ----------
 

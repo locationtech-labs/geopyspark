@@ -1,7 +1,7 @@
 .. _greyscale_ingest_example:
 
-Ingesting a Grayscale Image Using GeoPySpark
-********************************************
+Ingesting a Grayscale Image
+****************************
 
 This example shows how to ingest a grayscale image from S3 and save the
 results locally. The data is stored on a bucket that is open to everyone to

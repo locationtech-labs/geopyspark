@@ -1,7 +1,7 @@
 .. _sentinel_ingest_example:
 
-Ingesting a Sentinel Image Using GeoPySpark
-********************************************
+Ingesting a Sentinel Image
+***************************
 
 Sentinel-2 is an observation mission developed by the European Space Agency to
 monitor the surface of the Earth (`official website
