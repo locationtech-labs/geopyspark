@@ -122,6 +122,64 @@ when using ``pip install``.
 Note:
   Installing from source does not require the seperate download of the jar.
 
+Developing GeoPySpark With GeoNotebook
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`GeoNotebook <https://github.com/OpenGeoscience/geonotebook>`_ is a Jupyter
+notebook extension that specializes in working with GeoSpatial data. GeoPySpark
+can be used on this notebook; which allows for a more interactive experience
+when using the library. There two setups one could have when using these two
+tools: one for users and the other for developers. Both instances have the same
+begining steps and then diverge later. Therefore, let's take a look at what
+needs to be done first.
+
+.. code:: console
+
+   mkdir workspace
+   cd workspace
+   mkvirtualenv workspace
+
+The first thing to do is to create a new directory, ``workspace`` (or whatever
+you want to name it) and then using ``virtualenvwrapper`` to create a new
+``virtualenv`` that will contain both GeoPySpark, GeoNotebook, and their
+dependencies.
+
+Now this is where the installation for a user and developer diverge. To install
+for a user, simply follow the installation instructions for both GeoPySpark and
+GeoNotebook.
+
+For a developer, follow the instructions in the GeoNotebook README on how to
+install for development. To isntall GeoPySpark, clone the latest version from
+Github and then do this command:
+
+.. code:: console
+
+   pip install -e .
+
+This will install GeoPySpark in "editable" mode.
+
+To actaully run the notebooks, go to the folder where they are saved and run
+the command:
+
+.. code:: console
+
+   jupyter notebook
+
+This will open up the jupyter hub and will allow you to work on your notebooks.
+
+One last optional (but very recomended!) step for developers is to place these
+two lines of code at the top of your notebook.
+
+.. code:: console
+
+   %load_ext autoreload
+   $autoreload 2
+
+This will make it so that you don't have to leave the notebook for your changes
+to take affect. Rather, you just have to reimport the module and it will be
+updated.
+
+
 Make Targets
 ^^^^^^^^^^^^
 
