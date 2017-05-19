@@ -180,7 +180,7 @@ class RasterRDD(RDDWrapper):
         :meth:`~geopyspark.geotrellis.rdd.RasterRDD.tile_to_layout` into one step.
 
         Args:
-            extent (:obj:`~geopyspark.geotrellis.data_structures.Extent`, optional): Specify layout
+            extent (:class:`~geopyspark.geotrellis.data_structures.Extent`, optional): Specify layout
                 extent, must also specify layout.
             layout (:obj:`~geopyspark.geotrellis.data_structures.TileLayout`, optional): Specify
                 tile layout, must also specify extent.
@@ -223,7 +223,7 @@ class RasterRDD(RDDWrapper):
         """Iterate over RDD records and generates layer metadata desribing the contained rasters.
 
         Args:
-            extent (:obj:`~geopyspark.geotrellis.data_structures.Extent`, optional): Specify layout
+            extent (:class:`~geopyspark.geotrellis.data_structures.Extent`, optional): Specify layout
                 extent, must also specify layout.
             layout (:obj:`~geopyspark.geotrellis.data_structures.TileLayout`, optional): Specify
                 tile layout, must also specify extent.
@@ -460,7 +460,7 @@ class TiledRasterRDD(RDDWrapper):
             geometry (str, Polygon): The value to be turned into a raster. Can either be a
                 string or a ``Polygon``. If the value is a string, it must be the WKT string,
                 geometry format.
-            extent (:obj:`~geopyspark.geotrellis.data_structures.Extent`): The ``extent`` of the
+            extent (:class:`~geopyspark.geotrellis.data_structures.Extent`): The ``extent`` of the
                 new raster.
             crs (str or int): The CRS the new raster should be in.
             cols (int): The number of cols the new raster should have.
@@ -539,7 +539,7 @@ class TiledRasterRDD(RDDWrapper):
         Args:
             target_crs (str or int): The CRS to reproject to. Can either be the EPSG code,
                 well-known name, or a PROJ.4 projection string.
-            extent (:obj:`~geopyspark.geotrellis.data_structures.Extent`, optional): Specify layout
+            extent (:class:`~geopyspark.geotrellis.data_structures.Extent`, optional): Specify layout
                 extent, must also specify layout.
             layout (:obj:`~geopyspark.geotrellis.data_structures.TileLayout`, optional): Specify
                 tile layout, must also specify extent.

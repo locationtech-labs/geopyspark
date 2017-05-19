@@ -73,7 +73,7 @@ LayoutDefinition = namedtuple("LayoutDefinition", 'extent tileLayout')
 Describes the layout of the rasters within a RDD and how they are projected.
 
 Args:
-    extent (:obj:`~geopyspark.geotrellis.data_structres.Extent`): The ``Extent`` of the layout.
+    extent (:class:`~geopyspark.geotrellis.data_structres.Extent`): The ``Extent`` of the layout.
     tileLayout (:obj:`~geopyspark.geotrellis.data_structres.TileLayout`): The ``TileLayout`` of
         how the rasters within the RDD.
 
@@ -106,7 +106,7 @@ class Metadata(object):
         crs (str or int): The ``CRS`` of the data. Can either be the EPSG code, well-known name, or
             a PROJ.4 projection string.
         cell_type (str): The data type of the cells of the rasters.
-        extent (:obj:`~geopyspark.geotrellis.data_structures.Extent`): The ``extent`` that covers
+        extent (:class:`~geopyspark.geotrellis.data_structures.Extent`): The ``Extent`` that covers
             the all of the rasters.
         layout_definition (:obj:`~geopyspark.geotrellis.data_structures.LaoutDefinition`): The
             ``LayoutDefinition`` of all rasters.
@@ -117,7 +117,7 @@ class Metadata(object):
         crs (str or int): The ``CRS`` of the data. Can either be the EPSG code, well-known name, or
             a PROJ.4 projection string.
         cell_type (str): The data type of the cells of the rasters.
-        extent (:obj:`~geopyspark.geotrellis.data_structures.Extent`): The ``extent`` that covers
+        extent (:class:`~geopyspark.geotrellis.data_structures.Extent`): The ``Extent`` that covers
             the all of the rasters.
         tile_layout (:obj:`~geopyspark.geotrellis.data_structures.TileLayout`): The ``TileLayout``
             that describes how the rasters are orginized.
@@ -138,8 +138,8 @@ class Metadata(object):
         """Creates ``Metadata`` from a dictionary.
 
         Args:
-            metadata_dict (dict): The ``Metadata`` of a ``RasterRDD`` and ``TiledRasterRDD``
-                in ``dict`` form.
+            metadata_dict (dict): The ``Metadata`` of a ``RasterRDD`` or ``TiledRasterRDD``
+                instance that is in ``dict`` form.
 
         Returns:
             :class:`~geopyspark.geotrellis.data_structures.Metadata`
@@ -163,7 +163,7 @@ class Metadata(object):
         """Converts this instance to a ``dict``.
 
         Returns:
-            dict
+            ``dict``
         """
 
         if not hasattr(self, '_metadata_dict'):
