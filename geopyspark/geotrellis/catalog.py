@@ -53,9 +53,9 @@ import json
 from collections import namedtuple
 from urllib.parse import urlparse
 
+from geopyspark.geotrellis import Metadata, Extent
 from geopyspark.geotrellis.rdd import TiledRasterRDD
 from geopyspark.geotrellis.constants import TILE, ZORDER, SPATIAL
-from geopyspark.geotrellis.data_structures import Metadata, Extent
 
 from shapely.geometry import Polygon, MultiPolygon, Point
 from shapely.wkt import dumps
@@ -211,7 +211,7 @@ def read_layer_metadata(geopysc,
             be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
-        :class:`~geopyspark.geotrellis.data_structures.Metadata`
+        :class:`~geopyspark.geotrellis.Metadata`
     """
 
     if options:

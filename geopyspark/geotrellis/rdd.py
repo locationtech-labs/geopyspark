@@ -9,6 +9,7 @@ import shapely.wkt
 from pyspark.storagelevel import StorageLevel
 from shapely.geometry import Polygon, MultiPolygon
 from shapely.wkt import dumps
+from geopyspark.geotrellis import Metadata
 from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              OPERATIONS,
                                              SLOPE,
@@ -23,7 +24,6 @@ from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              NODATAINT,
                                              CELL_TYPES
                                             )
-from geopyspark.geotrellis.data_structures import Metadata
 from geopyspark.geotrellis.neighborhoods import Neighborhood
 
 
@@ -180,10 +180,10 @@ class RasterRDD(RDDWrapper):
         :meth:`~geopyspark.geotrellis.rdd.RasterRDD.tile_to_layout` into one step.
 
         Args:
-            extent (:class:`~geopyspark.geotrellis.data_structures.Extent`, optional): Specify layout
-                extent, must also specify layout.
-            layout (:obj:`~geopyspark.geotrellis.data_structures.TileLayout`, optional): Specify
-                tile layout, must also specify extent.
+            extent (:class:`~geopyspark.geotrellis.Extent`, optional): Specify layout extent,
+                must also specify layout.
+            layout (:obj:`~geopyspark.geotrellis.TileLayout`, optional): Specify tile layout, must
+                also specify ``extent``.
             crs (str or int, optional): Ignore CRS from records and use given one instead.
             tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
             resample_method (str, optional): The resample method to use for the reprojection.
@@ -223,10 +223,10 @@ class RasterRDD(RDDWrapper):
         """Iterate over RDD records and generates layer metadata desribing the contained rasters.
 
         Args:
-            extent (:class:`~geopyspark.geotrellis.data_structures.Extent`, optional): Specify layout
-                extent, must also specify layout.
-            layout (:obj:`~geopyspark.geotrellis.data_structures.TileLayout`, optional): Specify
-                tile layout, must also specify extent.
+            extent (:class:`~geopyspark.geotrellis.Extent`, optional): Specify layout extent, must
+                also specify layout.
+            layout (:obj:`~geopyspark.geotrellis.TileLayout`, optional): Specify tile layout, must
+                also specify extent.
             crs (str or int, optional): Ignore CRS from records and use given one instead.
             tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
 
@@ -234,7 +234,7 @@ class RasterRDD(RDDWrapper):
             ``extent`` and ``layout`` must both be defined if they are to be used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.data_structures.Metadata`
+            :class:`~geopyspark.geotrellis.Metadata`
 
         Raises:
             TypeError: If either ``extent`` and ``layout`` is not defined but the other is.
@@ -288,7 +288,7 @@ class RasterRDD(RDDWrapper):
         """Cut tiles to layout. May result in duplicate keys.
 
         Args:
-            layer_metadata (:class:`~geopyspark.geotrellis.data_structures.Metadata`): The
+            layer_metadata (:class:`~geopyspark.geotrellis.Metadata`): The
                 metadata of the ``RasterRDD`` instance.
             resample_method (str, optional): The resample method to use for the reprojection.
                 This is represented by a constant. If none is specified, then ``NEARESTNEIGHBOR``
@@ -311,7 +311,7 @@ class RasterRDD(RDDWrapper):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layer_metadata (:class:`~geopyspark.geotrellis.data_structures.Metadata`): The metadata
+            layer_metadata (:class:`~geopyspark.geotrellis.Metadata`): The metadata
                 of the ``RasterRDD`` instance.
             resample_method (str, optional): The resample method to use for the reprojection.
                 This is represented by a constant. If none is specified, then `NEARESTNEIGHBOR`
@@ -422,7 +422,7 @@ class TiledRasterRDD(RDDWrapper):
                 represented by the constants: `SPATIAL` and `SPACETIME`.
             numpy_rdd (RDD): A PySpark RDD that contains tuples of either ProjectedExtents or
                 TemporalProjectedExtents and raster that is represented by a numpy array.
-            metadata (:class:`~geopyspark.geotrellis.data_structures.Metadata`): The metadata of
+            metadata (:class:`~geopyspark.geotrellis.Metadata`): The metadata of
                 the ``TiledRasterRDD`` instance.
 
         Returns:
@@ -460,7 +460,7 @@ class TiledRasterRDD(RDDWrapper):
             geometry (str, Polygon): The value to be turned into a raster. Can either be a
                 string or a ``Polygon``. If the value is a string, it must be the WKT string,
                 geometry format.
-            extent (:class:`~geopyspark.geotrellis.data_structures.Extent`): The ``extent`` of the
+            extent (:class:`~geopyspark.geotrellis.Extent`): The ``extent`` of the
                 new raster.
             crs (str or int): The CRS the new raster should be in.
             cols (int): The number of cols the new raster should have.
@@ -539,9 +539,9 @@ class TiledRasterRDD(RDDWrapper):
         Args:
             target_crs (str or int): The CRS to reproject to. Can either be the EPSG code,
                 well-known name, or a PROJ.4 projection string.
-            extent (:class:`~geopyspark.geotrellis.data_structures.Extent`, optional): Specify layout
+            extent (:class:`~geopyspark.geotrellis.Extent`, optional): Specify layout
                 extent, must also specify layout.
-            layout (:obj:`~geopyspark.geotrellis.data_structures.TileLayout`, optional): Specify
+            layout (:obj:`~geopyspark.geotrellis.TileLayout`, optional): Specify
                 tile layout, must also specify extent.
             scheme (str, optional): Which LayoutScheme should be used. Represented by the
                 constants: `FLOAT` and `ZOOM`. If not specified, then `FLOAT` is used.
@@ -621,7 +621,7 @@ class TiledRasterRDD(RDDWrapper):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layout (:obj:`~geopyspark.geotrellis.data_structures.TileLayout`): Specify the
+            layout (:obj:`~geopyspark.geotrellis.TileLayout`): Specify the
                 ``TileLayout`` to cut to.
             resample_method (str, optional): The resample method to use for the reprojection.
                 This is represented by a constant. If none is specified, then ``NEARESTNEIGHBOR``

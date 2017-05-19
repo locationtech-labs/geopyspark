@@ -2,8 +2,8 @@ import os
 import unittest
 import pytest
 
+from geopyspark.geotrellis import LayoutDefinition
 from geopyspark.geotrellis.constants import ZOOM
-from geopyspark.geotrellis.data_structures import LayoutDefinition
 from geopyspark.tests.base_test_class import BaseTestClass
 
 

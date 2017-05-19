@@ -2,9 +2,9 @@ import unittest
 import os
 
 from geopyspark.geopycontext import GeoPyContext
+from geopyspark.geotrellis import Extent, TileLayout
 from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.geotrellis.geotiff_rdd import get
-from geopyspark.geotrellis.data_structures import Extent, TileLayout
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 
 

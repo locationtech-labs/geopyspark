@@ -4,8 +4,8 @@ import rasterio
 import numpy as np
 import pytest
 
+from geopyspark.geotrellis import Extent, TileLayout
 from geopyspark.geotrellis.constants import SPATIAL
-from geopyspark.geotrellis.data_structures import Extent, TileLayout
 from geopyspark.geotrellis.rdd import RasterRDD
 from geopyspark.tests.base_test_class import BaseTestClass
 
