@@ -4,21 +4,56 @@ Because GeoPySpark is a python bindings library of GeoTrellis, certain GeoTrelli
 have been brought over. It is here that they are defined.
 """
 from collections import namedtuple
+from shapely.geometry import box
 
 
-Extent = namedtuple("Extent", 'xmin ymin xmax ymax')
-"""
-The "bounding box" or geographic region of an area on Earth a raster represents.
+class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
+    """
+    The "bounding box" or geographic region of an area on Earth a raster represents.
 
-Args:
-    xmin (float): The minimum x coordinate.
-    ymin (float): The minimum y coordinate.
-    xmax (float): The maximum x coordinate.
-    ymax (float): The maximum y coordinate.
+    Args:
+        xmin (float): The minimum x coordinate.
+        ymin (float): The minimum y coordinate.
+        xmax (float): The maximum x coordinate.
+        ymax (float): The maximum y coordinate.
 
-Returns:
-    :obj:`~geopyspark.geotrellis.data_structures.Extent`
-"""
+    Attributes:
+        xmin (float): The minimum x coordinate.
+        ymin (float): The minimum y coordinate.
+        xmax (float): The maximum x coordinate.
+        ymax (float): The maximum y coordinate.
+    """
+
+    __slots__ = []
+
+    @classmethod
+    def from_polygon(cls, polygon):
+        """Creates a new instance of ``Extent`` from a Shapely ``Polygon``.
+
+        The new ``Extent`` will contain the min and max coordinates of the ``Polygon``;
+        regardless of the ``Polygon``'s shape.
+
+        Args:
+            polygon (Polygon): A Shapely Polygon.
+
+        Returns:
+            :cls:`~geopyspark.geotrellis.data_structures.Extent`
+        """
+
+        return cls(*polygon.bounds)
+
+    @property
+    def to_polygon(self):
+        """Converts this instance to a Shapely ``Polygon``.
+
+        The resulting ``Polygon`` will be in the shape of a box.
+
+        Returns:
+            A Shapely Polygon
+        """
+
+        return box(*self)
+
 
 TileLayout = namedtuple("TileLayout", 'layoutCols layoutRows tileCols tileRows')
 """
