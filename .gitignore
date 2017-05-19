@@ -50,6 +50,9 @@ coverage.xml
 *.mo
 *.pot
 
+# Spark stuff:
+metastore_db
+
 # Django stuff:
 *.log
 local_settings.py
