@@ -12,8 +12,7 @@ libraryDependencies ++= Seq(
   "org.locationtech.geotrellis" %% "geotrellis-hbase"      % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-s3"         % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-s3-testkit" % "1.0.0",
-  "org.locationtech.geotrellis" %% "geotrellis-spark"      % Version.geotrellis,
-  "org.spire-math" %% "spire" % "0.13.0"
+  "org.locationtech.geotrellis" %% "geotrellis-spark"      % Version.geotrellis
 )
 
 assemblyMergeStrategy in assembly := {
