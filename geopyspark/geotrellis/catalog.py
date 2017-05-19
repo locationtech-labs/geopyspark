@@ -55,7 +55,7 @@ from urllib.parse import urlparse
 
 from geopyspark.geotrellis.rdd import TiledRasterRDD
 from geopyspark.geotrellis.constants import TILE, ZORDER, SPATIAL
-from geopyspark.geotrellis.data_structures import Metadata
+from geopyspark.geotrellis.data_structures import Metadata, Extent
 
 from shapely.geometry import Polygon, MultiPolygon, Point
 from shapely.wkt import dumps
@@ -211,7 +211,7 @@ def read_layer_metadata(geopysc,
             be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
-        :ref:`metadata`
+        :class:`~geopyspark.geotrellis.data_structures.Metadata`
     """
 
     if options:
@@ -427,8 +427,9 @@ def query(geopysc,
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be querried.
         layer_zoom (int): The zoom level of the layer that is to be querried.
-        intersects (str, Polygon): The desired spatial area to be returned. Can either be a string
-            or a shapely Polygon. If the value is a string, it must be the WKT string, geometry
+        intersects (str or Polygon or :class:`~geopyspark.geotrellis.data_structures.Extent`): The
+            desired spatial area to be returned. Can either be a string, a shapely Polygon, or an
+            instance of ``Extent``. If the value is a string, it must be the WKT string, geometry
             format.
 
             The types of Polygons supported:
@@ -484,6 +485,15 @@ def query(geopysc,
                                    layer_name,
                                    layer_zoom,
                                    dumps(intersects),
+                                   time_intervals,
+                                   proj_query,
+                                   numPartitions)
+
+    elif isinstance(intersects, Extent):
+        srdd = cached.reader.query(key,
+                                   layer_name,
+                                   layer_zoom,
+                                   dumps(intersects.to_poly),
                                    time_intervals,
                                    proj_query,
                                    numPartitions)
