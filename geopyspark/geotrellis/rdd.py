@@ -9,6 +9,7 @@ import shapely.wkt
 from pyspark.storagelevel import StorageLevel
 from shapely.geometry import Polygon, MultiPolygon
 from shapely.wkt import dumps
+from geopyspark.geotrellis import Metadata
 from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              OPERATIONS,
                                              SLOPE,
@@ -167,7 +168,8 @@ class RasterRDD(RDDWrapper):
         """
 
         result = self.srdd.toAvroRDD()
-        ser = self.geopysc.create_tuple_serializer(result._2(), key_type="Projected", value_type=TILE)
+        ser = self.geopysc.create_tuple_serializer(result._2(), key_type="Projected",
+                                                   value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
 
     def to_tiled_layer(self, extent=None, layout=None, crs=None, tile_size=256,
@@ -178,8 +180,10 @@ class RasterRDD(RDDWrapper):
         :meth:`~geopyspark.geotrellis.rdd.RasterRDD.tile_to_layout` into one step.
 
         Args:
-            extent (:ref:`extent`, optional): Specify layout extent, must also specify layout.
-            layout (:ref:`tile_layout`, optional): Specify tile layout, must also specify extent.
+            extent (:class:`~geopyspark.geotrellis.Extent`, optional): Specify layout extent,
+                must also specify layout.
+            layout (:obj:`~geopyspark.geotrellis.TileLayout`, optional): Specify tile layout, must
+                also specify ``extent``.
             crs (str or int, optional): Ignore CRS from records and use given one instead.
             tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
             resample_method (str, optional): The resample method to use for the reprojection.
@@ -219,20 +223,28 @@ class RasterRDD(RDDWrapper):
         """Iterate over RDD records and generates layer metadata desribing the contained rasters.
 
         Args:
-            extent (:ref:`extent`, optional): Specify layout extent, must also specify layout.
-            layout (:ref:`tile_layout`, optional): Specify tile layout, must also specify extent.
+            extent (:class:`~geopyspark.geotrellis.Extent`, optional): Specify layout extent, must
+                also specify layout.
+            layout (:obj:`~geopyspark.geotrellis.TileLayout`, optional): Specify tile layout, must
+                also specify extent.
             crs (str or int, optional): Ignore CRS from records and use given one instead.
             tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
 
         Note:
-            `extent` and `layout` must both be defined if they are to be used.
+            ``extent`` and ``layout`` must both be defined if they are to be used.
 
         Returns:
-            :ref:`metadata`
+            :class:`~geopyspark.geotrellis.Metadata`
 
         Raises:
-            TypeError: If either `extent` and `layout` is not defined but the other is.
+            TypeError: If either ``extent`` and ``layout`` is not defined but the other is.
         """
+
+        if extent and not isinstance(extent, dict):
+            extent = extent._asdict()
+
+        if layout and not isinstance(layout, dict):
+            layout = layout._asdict()
 
         if not crs:
             crs = ""
@@ -247,7 +259,7 @@ class RasterRDD(RDDWrapper):
         else:
             raise TypeError("Could not collect metadata with {} and {}".format(extent, layout))
 
-        return json.loads(json_metadata)
+        return Metadata.from_dict(json.loads(json_metadata))
 
     def reproject(self, target_crs, resample_method=NEARESTNEIGHBOR):
         """Reproject every individual raster to `target_crs`, does not sample past tile boundary
@@ -276,9 +288,10 @@ class RasterRDD(RDDWrapper):
         """Cut tiles to layout. May result in duplicate keys.
 
         Args:
-            layer_metadata (:ref:`metadata`): The metadata of the ``RasterRDD`` instance.
+            layer_metadata (:class:`~geopyspark.geotrellis.Metadata`): The
+                metadata of the ``RasterRDD`` instance.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by a constant. If none is specified, then `NEARESTNEIGHBOR`
+                This is represented by a constant. If none is specified, then ``NEARESTNEIGHBOR``
                 is used.
 
         Returns:
@@ -287,6 +300,9 @@ class RasterRDD(RDDWrapper):
 
         if resample_method not in RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
+
+        if isinstance(layer_metadata, Metadata):
+            layer_metadata = layer_metadata.to_dict()
 
         srdd = self.srdd.cutTiles(json.dumps(layer_metadata), resample_method)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
@@ -295,7 +311,8 @@ class RasterRDD(RDDWrapper):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layer_metadata (:ref:`metadata`): The metadata of the ``RasterRDD`` instance.
+            layer_metadata (:class:`~geopyspark.geotrellis.Metadata`): The metadata
+                of the ``RasterRDD`` instance.
             resample_method (str, optional): The resample method to use for the reprojection.
                 This is represented by a constant. If none is specified, then `NEARESTNEIGHBOR`
                 is used.
@@ -306,6 +323,9 @@ class RasterRDD(RDDWrapper):
 
         if resample_method not in RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
+
+        if isinstance(layer_metadata, Metadata):
+            layer_metadata = layer_metadata.to_dict()
 
         srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
@@ -385,7 +405,7 @@ class TiledRasterRDD(RDDWrapper):
     @property
     def layer_metadata(self):
         """Layer metadata associated with this layer."""
-        return json.loads(self.srdd.layerMetadata())
+        return Metadata.from_dict(json.loads(self.srdd.layerMetadata()))
 
     @property
     def zoom_level(self):
@@ -402,7 +422,8 @@ class TiledRasterRDD(RDDWrapper):
                 represented by the constants: `SPATIAL` and `SPACETIME`.
             numpy_rdd (RDD): A PySpark RDD that contains tuples of either ProjectedExtents or
                 TemporalProjectedExtents and raster that is represented by a numpy array.
-            metadata (:ref:`metadata`): The metadata of the ``TiledRasterRDD`` instance.
+            metadata (:class:`~geopyspark.geotrellis.Metadata`): The metadata of
+                the ``TiledRasterRDD`` instance.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
@@ -410,8 +431,11 @@ class TiledRasterRDD(RDDWrapper):
         key = geopysc.map_key_input(rdd_type, True)
 
         schema = geopysc.create_schema(key)
-        ser = geopysc.create_tuple_serializer(schema, key_type="Projected", value_type=TILE)
+        ser = geopysc.create_tuple_serializer(schema, key_type=None, value_type=TILE)
         reserialized_rdd = numpy_rdd._reserialize(ser)
+
+        if isinstance(metadata, Metadata):
+            metadata = metadata.to_dict()
 
         if rdd_type == SPATIAL:
             srdd = \
@@ -436,7 +460,8 @@ class TiledRasterRDD(RDDWrapper):
             geometry (str, Polygon): The value to be turned into a raster. Can either be a
                 string or a ``Polygon``. If the value is a string, it must be the WKT string,
                 geometry format.
-            extent (:ref:`extent`): The ``extent`` of the new raster.
+            extent (:class:`~geopyspark.geotrellis.Extent`): The ``extent`` of the
+                new raster.
             crs (str or int): The CRS the new raster should be in.
             cols (int): The number of cols the new raster should have.
             rows (int): The number of rows the new raster should have.
@@ -464,6 +489,9 @@ class TiledRasterRDD(RDDWrapper):
             except:
                 raise TypeError(geometry, "Needs to be either a Shapely Geometry or a string")
 
+        if not isinstance(extent, dict):
+            extent = extent._asdict()
+
         if isinstance(crs, int):
             crs = str(crs)
 
@@ -489,7 +517,8 @@ class TiledRasterRDD(RDDWrapper):
             RDD
         """
         result = self.srdd.toAvroRDD()
-        ser = self.geopysc.create_tuple_serializer(result._2(), key_type="Projected", value_type=TILE)
+        ser = self.geopysc.create_tuple_serializer(result._2(), key_type=None,
+                                                   value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
 
     def convert_data_type(self, new_type):
@@ -510,8 +539,10 @@ class TiledRasterRDD(RDDWrapper):
         Args:
             target_crs (str or int): The CRS to reproject to. Can either be the EPSG code,
                 well-known name, or a PROJ.4 projection string.
-                extent (:ref:`extent`, optional): Specify layout extent, must also specify layout.
-            layout (:ref:`tile_layout`, optional): Specify tile layout, must also specify extent.
+            extent (:class:`~geopyspark.geotrellis.Extent`, optional): Specify layout
+                extent, must also specify layout.
+            layout (:obj:`~geopyspark.geotrellis.TileLayout`, optional): Specify
+                tile layout, must also specify extent.
             scheme (str, optional): Which LayoutScheme should be used. Represented by the
                 constants: `FLOAT` and `ZOOM`. If not specified, then `FLOAT` is used.
             tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
@@ -523,17 +554,23 @@ class TiledRasterRDD(RDDWrapper):
                 is used.
 
         Note:
-            `extent` and `layout` must both be defined if they are to be used.
+            ``extent`` and ``layout`` must both be defined if they are to be used.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
 
         Raises:
-            TypeError if either `extent` or `layout` is defined bu the other is not.
+            TypeError if either ``extent`` or ``layout`` is defined bu the other is not.
         """
 
         if resample_method not in RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
+
+        if extent and not isinstance(extent, dict):
+            extent = extent._asdict()
+
+        if layout and not isinstance(layout, dict):
+            layout = layout._asdict()
 
         if isinstance(target_crs, int):
             target_crs = str(target_crs)
@@ -562,11 +599,11 @@ class TiledRasterRDD(RDDWrapper):
         """
         if self.rdd_type != SPATIAL:
             raise ValueError("Only TiledRasterRDDs with a rdd_type of Spatial can use lookup()")
-        bounds = self.layer_metadata['bounds']
-        min_col = bounds['minKey']['col']
-        min_row = bounds['minKey']['row']
-        max_col = bounds['maxKey']['col']
-        max_row = bounds['maxKey']['row']
+        bounds = self.layer_metadata.bounds
+        min_col = bounds.minKey['col']
+        min_row = bounds.minKey['row']
+        max_col = bounds.maxKey['col']
+        max_row = bounds.maxKey['row']
 
         if col < min_col or col > max_col:
             raise IndexError("column out of bounds")
@@ -584,9 +621,10 @@ class TiledRasterRDD(RDDWrapper):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layout (:ref:`tile_layout`): Specify the TileLayout to cut to.
+            layout (:obj:`~geopyspark.geotrellis.TileLayout`): Specify the
+                ``TileLayout`` to cut to.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by a constant. If none is specified, then NEARESTNEIGHBOR
+                This is represented by a constant. If none is specified, then ``NEARESTNEIGHBOR``
                 is used.
 
         Returns:
@@ -595,6 +633,9 @@ class TiledRasterRDD(RDDWrapper):
 
         if resample_method not in RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
+
+        if not isinstance(layout, dict):
+            layout = layout._asdict()
 
         srdd = self.srdd.tileToLayout(layout, resample_method)
 
@@ -609,19 +650,20 @@ class TiledRasterRDD(RDDWrapper):
             end_zoom (int): The zoom level where pyramiding should end. Represents
                 the level that is most zoomed out.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by a constant. If none is specified, then NEARESTNEIGHBOR
+                This is represented by a constant. If none is specified, then ``NEARESTNEIGHBOR``
                 is used.
 
         Returns:
-            Pyramided TiledRasterRDDs (list): A list of TiledRasterRDDs.
+            Pyramided TiledRasterRDDs (list): A list of ``TiledRasterRDDs``.
         """
 
         if resample_method not in RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
 
-        size = self.layer_metadata['layoutDefinition']['tileLayout']['tileRows']
+        num_cols = self.layer_metadata.tile_layout.tileCols
+        num_rows = self.layer_metadata.tile_layout.tileRows
 
-        if (size & (size - 1)) != 0:
+        if (num_cols & (num_cols - 1)) != 0 or (num_rows & (num_rows - 1)) != 0:
             raise ValueError("Tiles must have a col and row count that is a power of 2")
 
         result = self.srdd.pyramid(start_zoom, end_zoom, resample_method)
@@ -643,10 +685,10 @@ class TiledRasterRDD(RDDWrapper):
             param_3 (int or float, optional): The third argument of the `neighborhood`.
 
         Note:
-            ``param``s only need to be set if ``neighborhood`` is not an instance of
+            ``param`` only need to be set if ``neighborhood`` is not an instance of
             ``Neighborhood`` or if ``neighborhood`` is ``None``.
 
-            Any `param` that is not set will default to 0.0.
+            Any ``param`` that is not set will default to 0.0.
 
             If ``neighborhood`` is ``None`` then ``operation`` **must** be either ``SLOPE`` or
             ``ASPECT``.
@@ -688,7 +730,7 @@ class TiledRasterRDD(RDDWrapper):
         """Stitch all of the rasters within the RDD into one raster.
 
         Note:
-            This can only be used on `SPATIAL` TiledRasterRDDs.
+            This can only be used on ``SPATIAL TiledRasterRDDs``.
 
         Returns:
             :ref:`raster`
@@ -897,8 +939,7 @@ class TiledRasterRDD(RDDWrapper):
             if self.rdd_type != value.rdd_type:
                 raise ValueError("Both TiledRasterRDDs need to have the same rdd_type")
 
-            if self.layer_metadata['layoutDefinition']['tileLayout'] != \
-               value.layer_metadata['layoutDefinition']['tileLayout']:
+            if self.layer_metadata.tile_layout != value.layer_metadata.tile_layout:
                 raise ValueError("Both TiledRasterRDDs need to have the same layout")
 
             srdd = operation(value.srdd)

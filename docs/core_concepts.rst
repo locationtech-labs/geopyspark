@@ -33,50 +33,6 @@ The fields used to represent rasters:
 **Note**: All rasters in GeoPySpark are represented as having multiple bands,
 even if the original raster just contained one.
 
-.. _tile_layout:
-
-TileLayout
-----------
-
-Describes the grid in which the rasters within a RDD should be laid out.
-In GeoPySpark, this is represented as a ``dict``.
-
-The fields used to represent ``TileLayout``:
- - **layoutCols** (int): The number of columns of rasters that runs east to
-   west.
- - **layoutRows** (int): The number of rows of rasters that runs north to south.
- - **tileCols** (int): The number of columns of pixels in each raster that runs
-   east to west.
- - **tileRows** (int): The number of rows of pixels in each raster that runs
-   north to south.
-
-Example:
-
-.. code:: python
-
-   tile_layout = {'layoutCols': 1, 'layoutRows': 1, 'tileCols': 256, 'tileRows': 256}
-
-.. _extent:
-
-Extent
-------
-
-The "bounding box" or geographic region of an area on Earth a raster represents.
-In GeoPySpark, this is represented as a ``dict``.
-
-The fields used to represent ``Extent``:
- - **xmin** (double): The minimum x coordinate.
- - **ymin** (double): The minimum y coordinate.
- - **xmax** (double): The maximum x coordinate.
- - **ymax** (double): The maximum y coordinate.
-
-Example:
-
-.. code:: python
-
-   extent = {'xmin': 0.0, 'ymin': 1.0, 'xmax': 2.0, 'ymax': 3.0}
-
-
 .. _projected_extent:
 
 ProjectedExtent
@@ -86,7 +42,8 @@ Describes both the area on Earth a raster represents in addition to its CRS.
 In GeoPySpark, this is represented as a ``dict``.
 
 The fields used to represent ``ProjectedExtent``:
- - **extent** (Extent): The area the raster represents.
+ - **extent** (:obj:`~geopyspark.geotrellis.data_structures.Extent`): The area the raster
+   represents.
  - **epsg** (int, optional): The EPSG code of the CRS.
  - **proj4** (str, optional): The Proj.4 string representation of the CRS.
 
@@ -94,7 +51,7 @@ Example:
 
 .. code:: python
 
-   extent = {'xmin': 0.0, 'ymin': 1.0, 'xmax': 2.0, 'ymax': 3.0}
+   extent = Extent(0.0, 1.0, 2.0, 3.0)
 
    # using epsg
    epsg_code = 3857
@@ -116,7 +73,8 @@ Describes the area on Earth the raster represents, its CRS, and the time the
 data was collected. In GeoPySpark, this is represented as a ``dict``.
 
 The fields used to represent ``TemporalProjectedExtent``.
- - **extent** (Extent): The area the raster represents.
+ - **extent** (:obj:`~geopyspark.geotrellis.data_structures.Extent`): The area the raster
+   represents.
  - **epsg** (int, optional): The EPSG code of the CRS.
  - **proj4** (str, optional): The Proj.4 string representation of the CRS.
  - **instance** (int): The time stamp of the raster.
@@ -125,7 +83,7 @@ Example:
 
 .. code:: python
 
-   extent = {'xmin': 0.0, 'ymin': 1.0, 'xmax': 2.0, 'ymax': 3.0}
+   extent = Extent(0.0, 1.0, 2.0, 3.0)
 
    epsg_code = 3857
    instance = 1.0
@@ -171,43 +129,6 @@ Example:
 .. code:: python
 
    spatial_key = {'col': 0, 'row': 0, 'instant': 0.0}
-
-Bounds
-------
-
-Represents the area covered by all of the values in a RDD on a grid. Uses
-either ``SpatialKey`` s or ``SpaceTimeKey`` s depending on the type of data.
-In GeoPySpark, this is represented as a ``dict``.
-
-The fields used to represent ``Bounds``:
- - **minKey** (SpatialKey or SpaceTimeKey): The smallest SpatialKey or
-   SpaceTimeKey.
- - **maxKey** (SpatialKey or SpaceTimeKey): The largest SpatialKey or
-   SpaceTimeKey.
-
-Example:
-
-.. code:: python
-
-  min_key = {'col': 0, 'row': 0}
-  max_key = {'col' 100', 'row': 100}
-
-  bounds = {'minKey': min_key, 'max_key': max_key}
-
-.. _metadata:
-
-TileLayerMetadata
------------------
-
-Information on the values within a RDD. This is often needed when performing
-certain actions. In GeoPySpark, this is represented as a ``dict``.
-
-The fields that are used to represent ``TileLayerMetadata``:
- - **cellType** (str): The type of all values in the rasters.
- - **layoutDefinition** (dict)
- - **extent** (Extent): The entire area of the source data.
- - **crs** (str): The CRS that the rasters are projected in.
- - **bounds** (Bounds): Represents the min and max boundary of the rasters.
 
 
 How Data is Stored in RDDs
