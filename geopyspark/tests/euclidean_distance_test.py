@@ -19,29 +19,29 @@ class EuclideanDistanceTest(BaseTestClass):
 
     latlong = pyproj.Proj(init='epsg:4326')
     webmerc = pyproj.Proj(init='epsg:3857')
-    pts_wm = MultiPoint([pyproj.transform(latlong, webmerc, 1, 1), 
+    pts_wm = MultiPoint([pyproj.transform(latlong, webmerc, 1, 1),
                          pyproj.transform(latlong, webmerc, 2, 2)])
     pts = MultiPoint([(1,1), (2,2)])
 
     def test_euclideandistance(self):
         def mapTransform(layoutDefinition, spatialKey):
-            ex = layoutDefinition['extent']
-            xrange = ex['xmax'] - ex['xmin']
-            xinc = xrange/layoutDefinition['tileLayout']['layoutCols']
-            yrange = ex['ymax'] - ex['ymin']
-            yinc = yrange/layoutDefinition['tileLayout']['layoutRows']
+            ex = layoutDefinition.extent
+            x_range = ex.xmax - ex.xmin
+            xinc = x_range/layoutDefinition.tileLayout.layoutCols
+            yrange = ex.ymax - ex.ymin
+            yinc = yrange/layoutDefinition.tileLayout.layoutRows
 
-            return {'xmin': ex['xmin'] + xinc * spatialKey['col'],
-                    'xmax': ex['xmin'] + xinc * (spatialKey['col'] + 1),
-                    'ymin': ex['ymax'] - yinc * (spatialKey['row'] + 1),
-                    'ymax': ex['ymax'] - yinc * spatialKey['row']}
+            return {'xmin': ex.xmin + xinc * spatialKey['col'],
+                    'xmax': ex.xmin + xinc * (spatialKey['col'] + 1),
+                    'ymin': ex.ymax - yinc * (spatialKey['row'] + 1),
+                    'ymax': ex.ymax - yinc * spatialKey['row']}
 
         def gridToMap(layoutDefinition, spatialKey, px, py):
             ex = mapTransform(layoutDefinition, spatialKey)
-            xrange = ex['xmax'] - ex['xmin']
-            xinc = xrange/layoutDefinition['tileLayout']['tileCols']
+            x_range = ex['xmax'] - ex['xmin']
+            xinc = x_range/layoutDefinition.tileLayout.tileCols
             yrange = ex['ymax'] - ex['ymin']
-            yinc = yrange/layoutDefinition['tileLayout']['tileRows']
+            yinc = yrange/layoutDefinition.tileLayout.tileRows
             return (ex['xmin'] + xinc * (px + 0.5), ex['ymax'] - yinc * (py + 0.5))
 
         def distanceToGeom(layoutDefinition, spatialKey, geom, px, py):
@@ -55,10 +55,10 @@ class EuclideanDistanceTest(BaseTestClass):
         it = np.nditer(arr, flags=['multi_index'])
         while not it.finished:
             py, px = it.multi_index
-            arr[py][px] = distanceToGeom(tiled.layer_metadata['layoutDefinition'], 
-                                         {'col': 64, 'row':63}, 
-                                         self.pts_wm, 
-                                         px, 
+            arr[py][px] = distanceToGeom(tiled.layer_metadata.layout_definition,
+                                         {'col': 64, 'row':63},
+                                         self.pts_wm,
+                                         px,
                                          py)
             it.iternext()
 
