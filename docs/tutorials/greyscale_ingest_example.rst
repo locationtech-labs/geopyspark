@@ -118,8 +118,8 @@ Collecting the Metadata
  metadata = rdd.collect_metadata()
 
 Before we can begin formatting the data to our desired layout, we must first
-collect the :ref:`metadata` of the entire RDD. The metadata itself will contain
-the :ref:`tile_layout` that the data will be formatted to. There are various
+collect the :class:`~geopyspark.geotrellis.Metadata` of the entire RDD. The metadata itself will contain
+the :obj:`~geopyspark.geotrellis.TileLayout` that the data will be formatted to. There are various
 ways to collect the metadata depending on how you want the layout to look
 (see :meth:`~geopyspark.geotrellis.rdd.RasterRDD.collect_metadata`), but for
 this example, we will just go with the default parameters.
