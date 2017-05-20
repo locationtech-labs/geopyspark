@@ -28,6 +28,8 @@ ${WHEEL}: ${DIST-ASSEMBLY} $(call rwildcard, geopyspark, *.py) setup.py
 
 wheel: ${WHEEL}
 
+build: ${DIST-ASSEMBLY}
+
 pyspark: ${DIST-ASSEMBLY}
 	pyspark --jars ${DIST-ASSEMBLY} \
 		--conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
