@@ -24,13 +24,13 @@ class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
 
     @classmethod
     def from_polygon(cls, polygon):
-        """Creates a new instance of ``Extent`` from a Shapely ``Polygon``.
+        """Creates a new instance of ``Extent`` from a Shapely Polygon.
 
-        The new ``Extent`` will contain the min and max coordinates of the ``Polygon``;
-        regardless of the ``Polygon``'s shape.
+        The new ``Extent`` will contain the min and max coordinates of the Polygon;
+        regardless of the Polygon's shape.
 
         Args:
-            polygon (Polygon): A Shapely Polygon.
+            polygon (shapely.geometry.Polygon): A Shapely Polygon.
 
         Returns:
             :class:`~geopyspark.geotrellis.Extent`
@@ -40,12 +40,12 @@ class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
 
     @property
     def to_polygon(self):
-        """Converts this instance to a Shapely ``Polygon``.
+        """Converts this instance to a Shapely Polygon.
 
-        The resulting ``Polygon`` will be in the shape of a box.
+        The resulting Polygon will be in the shape of a box.
 
         Returns:
-            A Shapely Polygon
+            ``shapely.geometry.Polygon``
         """
 
         return box(*self)
@@ -60,6 +60,7 @@ Args:
     layoutRows (int): The number of rows of rasters that runs north to south.
     tileCols (int): The number of columns of pixels in each raster that runs east to west.
     tileRows (int): The number of rows of pixels in each raster that runs north to south.
+
 Returns:
     :obj:`~geopyspark.geotrellis.TileLayout`
 """
@@ -93,23 +94,23 @@ Returns:
 
 
 class Metadata(object):
-    """Information of the values within ``RasterRDD`` or ``TiledRasterRDD``.
+    """Information of the values within a ``RasterRDD`` or ``TiledRasterRDD``.
     This data pertains to the layout and other attributes of the data within the classes.
 
     Args:
-        bounds (:obj:`~geopyspark.geotrellis.data_structres.Bounds`): The ``Bounds`` of the
+        bounds (:obj:`~geopyspark.geotrellis.Bounds`): The ``Bounds`` of the
             values in the class.
         crs (str or int): The ``CRS`` of the data. Can either be the EPSG code, well-known name, or
             a PROJ.4 projection string.
         cell_type (str): The data type of the cells of the rasters.
         extent (:class:`~geopyspark.geotrellis.Extent`): The ``Extent`` that covers
             the all of the rasters.
-        layout_definition (:obj:`~geopyspark.geotrellis.LaoutDefinition`): The
+        layout_definition (:obj:`~geopyspark.geotrellis.LayoutDefinition`): The
             ``LayoutDefinition`` of all rasters.
 
     Attributes:
         bounds (:obj:`~geopyspark.geotrellis.Bounds`): The ``Bounds`` of the values in the class.
-        crs (str or int): The ``CRS`` of the data. Can either be the EPSG code, well-known name, or
+        crs (str or int): The CRS of the data. Can either be the EPSG code, well-known name, or
             a PROJ.4 projection string.
         cell_type (str): The data type of the cells of the rasters.
         extent (:class:`~geopyspark.geotrellis.Extent`): The ``Extent`` that covers

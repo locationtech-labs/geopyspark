@@ -1,4 +1,4 @@
-"""A wrapper for `SparkContext` that provides extra functionality for GeoPySpark."""
+"""A wrapper for ``SparkContext`` that provides extra functionality for GeoPySpark."""
 from geopyspark.avroregistry import AvroRegistry
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.geopyspark_utils import check_environment
@@ -9,33 +9,34 @@ from pyspark.serializers import AutoBatchedSerializer
 
 
 class GeoPyContext(object):
-    """A wrapper of `SparkContext`.
+    """A wrapper of ``SparkContext``.
     This wrapper provides extra functionality by providing methods that help with sending/recieving
     information to/from python.
 
     Args:
-        pysc (SparkContext, optional): An existing `SparkContext`.
-        **kwargs: GeoPyContext can create a `SparkContext` if given its constructing arguments.
+        pysc (pypspark.SparkContext, optional): An existing ``SparkContext``.
+        **kwargs: ``GeoPyContext`` can create a ``SparkContext`` if given its constructing
+            arguments.
 
     Note:
-        If both `pysc` and `kwargs` are set the `pysc` will be used.
+        If both ``pysc`` and ``kwargs`` are set the ``pysc`` will be used.
 
     Attributes:
-        pysc (SparkContext): The wrapped `SparkContext`.
-        sc (org.apache.spark.SparkContext): The scala `SparkContext` derived from the python one.
+        pysc (pyspark.SparkContext): The wrapped ``SparkContext``.
+        sc (org.apache.spark.SparkContext): The scala ``SparkContext`` derived from the python one.
 
     Raises:
-        TypeError if neither a `SparkContext` or its constructing arguments are given.
+        TypeError: If neither a ``SparkContext`` or its constructing arguments are given.
 
     Examples:
-        Creating `GeoPyContext` from an existing `SparkContext`.
+        Creating ``GeoPyContext`` from an existing ``SparkContext``.
 
         >>> sc = SparkContext(appName="example", master="local[*]")
         >>> SparkContext
         >>> geopysc = GeoPyContext(sc)
         >>> GeoPyContext
 
-        Creating `GeoPyContext` from the constructing arguments of `SparkContext`.
+        Creating ``GeoPyContext`` from the constructing arguments of ``SparkContext``.
 
         >>> geopysc = GeoPyContext(appName="example", master="local[*]")
         >>> GeoPyContext
@@ -62,8 +63,8 @@ class GeoPyContext(object):
         """Gets the mapped GeoTrellis type from the `key_type`.
 
         Args:
-            key_type (str): The type of the K in the tuple, (K, V) in the RDD.
-            is_boundable (bool): The type of K boundable.
+            key_type (str): The type of the ``K`` in the tuple, ``(K, V)`` in the RDD.
+            is_boundable (bool): Is ``K`` boundable.
 
         Returns:
             The corresponding GeoTrellis type.
@@ -88,7 +89,7 @@ class GeoPyContext(object):
         """Creates an AvroSchema.
 
         Args:
-            key_type (str): The type of the K in the tuple, (K, V) in the RDD.
+            key_type (str): The type of the ``K`` in the tuple, ``(K, V)`` in the RDD.
 
         Returns:
             An AvroSchema for the types within the RDD.
@@ -114,16 +115,15 @@ class GeoPyContext(object):
         return AvroSerializer(schema, decoder, encoder)
 
     def create_python_rdd(self, jrdd, serializer):
-        """Creates a python RDD from a RDD from scala.
+        """Creates a Python RDD from a RDD from Scala.
 
         Args:
-            jrdd (org.apache.spark.api.java.JavaRDD): The RDD that came from scala.
-            serializer (AvroSerializer, AutoBatchedSerializer(AvroSerializer)): An AvroSerializer
-                instance, or an `AvroSerializer` insteance that is wrapped by
-                `AutoBatchedSerializer`.
+            jrdd (org.apache.spark.api.java.JavaRDD): The RDD that came from Scala.
+            serializer (:class:`~geopyspark.AvroSerializer` or pyspark.serializers.AutoBatchedSerializer(AvroSerializer)):
+                An instance of ``AvroSerializer`` that is either alone, or wrapped by ``AutoBatchedSerializer``.
 
         Returns:
-            RDD
+            ``pyspark.RDD``
         """
 
         if isinstance(serializer, AutoBatchedSerializer):

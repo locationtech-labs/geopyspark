@@ -1,4 +1,4 @@
-"""The class which serializes/deserializes values in a RDD to/from python."""
+"""The class which serializes/deserializes values in a RDD to/from Python."""
 import io
 from fastavro import schemaless_writer, schemaless_reader
 from geopyspark.geopyspark_utils import check_environment
@@ -7,10 +7,8 @@ check_environment()
 from pyspark.serializers import Serializer, FramedSerializer
 
 
-
-
 class AvroSerializer(FramedSerializer):
-    """The serializer used by RDDs to encode/decode values to/from python.
+    """The serializer used by a RDD to encode/decode values to/from Python.
 
     Args:
         schema (str): The AvroSchema of the RDD.
@@ -64,13 +62,13 @@ class AvroSerializer(FramedSerializer):
         """Serialize an object into a byte array.
 
         Note:
-            When batching is used, this will be called with an array of objects.
+            When batching is used, this will be called with a list of objects.
 
         Args:
             obj: The object to serialized into a byte array.
 
         Returns:
-            The byte array representation of the `obj`.
+            The byte array representation of the ``obj``.
         """
 
         if isinstance(obj, list):
@@ -80,7 +78,7 @@ class AvroSerializer(FramedSerializer):
             return self._dumps(obj)
 
     def loads(self, obj):
-        """Deserializes a byte array into a collection of python objects.
+        """Deserializes a byte array into a collection of Python objects.
 
         Args:
             obj: The byte array representation of an object to be deserialized into the object.

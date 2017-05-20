@@ -5,12 +5,12 @@ def get_breaks(geopysc, ramp_name, num_colors=None):
     """Returns a list of values that represent the breaks in color for the given color ramp.
 
     Args:
-        ramp_name (str): The name of a color ramp; options are hot, coolwarm, magma,
-            inferno, plasma, viridis, BlueToOrange, LightYellowToOrange, BlueToRed,
-            GreenToRedOrange, LightToDarkSunset, LightToDarkGreen, HeatmapYellowToRed,
-            HeatmapBlueToYellowToRedSpectrum, HeatmapDarkRedToYellowWhite,
-            HeatmapLightPurpleToDarkPurpleToWhite, ClassificationBoldLandUse, and
-            ClassificationMutedTerrain
+        ramp_name (str): The name of a color ramp; options are hot, COOLWARM, MAGMA,
+            INFERNO, PLASMA, VIRIDIS, BLUETOORANGE, LIGHTYELLOWTOORANGE, BLUETORED,
+            GREENTOREDORANGE, LIGHTTODARKSUNSET, LIGHTTODARKGREEN, HEATMAPYELLOWTORED,
+            HEATMAPBLUETOYELLOWTOREDSPECTRUM, HEATMAPDARKREDTOYELLOWWHITE,
+            HEATMAPLIGHTPURPLETODARKPURPLETOWHITE, CLASSIFICATIONBOLDLANDUSE, and
+            CLASSIFICATIONMUTEDTERRAIN
         num_colors (int, optional): How many colors should be represented in the range. Defaults
             to ``None``. If not specified, then the full range of values will be returned.
 
@@ -30,12 +30,12 @@ def get_hex(geopysc, ramp_name, num_colors=None):
         The returning hex values contain an alpha value.
 
     Args:
-        ramp_name (str): The name of a color ramp; options are hot, coolwarm, magma,
-            inferno, plasma, viridis, BlueToOrange, LightYellowToOrange, BlueToRed,
-            GreenToRedOrange, LightToDarkSunset, LightToDarkGreen, HeatmapYellowToRed,
-            HeatmapBlueToYellowToRedSpectrum, HeatmapDarkRedToYellowWhite,
-            HeatmapLightPurpleToDarkPurpleToWhite, ClassificationBoldLandUse, and
-            ClassificationMutedTerrain
+        ramp_name (str): The name of a color ramp; options are HOT, COOLWARM, MAGMA,
+            INFERNO, PLASMA, VIRIDIS, BLUETOORANGE, LIGHTYELLOWTOORANGE, BLUETORED,
+            GREENTOREDORANGE, LIGHTTODARKSUNSET, LIGHTTODARKGREEN, HEATMAPYELLOWTORED,
+            HEATMAPBLUETOYELLOWTOREDSPECTRUM, HEATMAPDARKREDTOYELLOWWHITE,
+            HEATMAPLIGHTPURPLETODARKPURPLETOWHITE, CLASSIFICATIONBOLDLANDUSE, and
+            CLASSIFICATIONMUTEDTERRAIN
         num_colors (int, optional): How many colors should be represented in the range. Defaults
             to ``None``. If not specified, then the full range of values will be returned.
 
