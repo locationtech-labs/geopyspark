@@ -131,6 +131,8 @@ Example:
    spatial_key = {'col': 0, 'row': 0, 'instant': 0.0}
 
 
+.. _data_rep:
+
 How Data is Stored in RDDs
 ==========================
 

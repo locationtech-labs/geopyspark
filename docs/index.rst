@@ -130,12 +130,13 @@ a need for it.
   contributing
 
 .. toctree::
-  :maxdepth: 3
+  :maxdepth: 4
   :caption: User Guides
   :glob:
   :hidden:
 
   guides/core_concepts
+  guides/rdd
 
 .. toctree::
   :maxdepth: 3
