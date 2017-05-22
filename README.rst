@@ -13,6 +13,82 @@ It is currently under development, and has just entered alpha.
 Currently, only functionality from GeoTrellis has been supported. GeoMesa
 LocationTech frameworks will be added at a later date.
 
+A Quick Example
+----------------
+
+Here is a quick example of GeoPySpark. In the following code, we take NLCD data
+of the state of Pennslyvania from 2011, and do a polygonal summary of an area
+of interest to find the min and max classifcations values of that area.
+
+If you wish to follow along with this example, you will need to download the
+NLCD data and the geojson that represents the area of interest. Running these
+two commands will download these files for you:
+
+.. code:: console
+
+   curl -o /tmp/NLCD2011_LC_Pennsylvannia.zip https://s3-us-west-2.amazonaws.com/prd-tnm/StagedProducts/NLCD/2011/landcover/states/NLCD2011_LC_Pennsylvania.zip?ORIG=513_SBDDG
+   unzip /tmp/NLCD2011_LC_Pennsylvannia.zip
+   curl -o /tmp/area_of_interest.geojson https://s3.amazonaws.com/geopyspark-test/area_of_interest.json
+
+.. code:: python
+
+  import json
+  from functools import partial
+
+  from geopyspark.geopycontext import GeoPyContext
+  from geopyspark.geotrellis.constants import SPATIAL, ZOOM
+  from geopyspark.geotrellis.geotiff_rdd import get
+  from geopyspark.geotrellis.catalog import write
+
+  from shapely.geometry import Polygon, shape
+  from shapely.ops import transform
+  import pyproj
+
+
+  # Create the GeoPyContext
+  geopysc = GeoPyContext(appName="example", master="local[*]")
+
+  # Read in the NLCD tif that has been saved locally.
+  # This tif represents the state of Pennsylvania.
+  raster_rdd = get(geopysc=geopysc, rdd_type=SPATIAL,
+  uri='/tmp/NLCD2011_LC_Pennsylvania.tif',
+  options={'numPartitions': 100})
+
+  tiled_rdd = raster_rdd.to_tiled_layer()
+
+  # Reproject the reclassified TiledRasterRDD so that it is in WebMercator
+  reprojected_rdd = tiled_rdd.reproject(3857, scheme=ZOOM).cache().repartition(150)
+
+  # We will do a polygonal summary of the north-west region of Philadelphia.
+  with open('/tmp/area_of_interest.json') as f:
+      txt = json.load(f)
+
+  geom = shape(txt['features'][0]['geometry'])
+
+  # We need to reporject the geometry to WebMercator so that it will intersect with
+  # the TiledRasterRDD.
+  project = partial(
+      pyproj.transform,
+      pyproj.Proj(init='epsg:4326'),
+      pyproj.Proj(init='epsg:3857'))
+
+  area_of_interest = transform(project, geom)
+
+  # Find the min and max of the values within the area of interest polygon.
+  min_val = reprojected_rdd.polygonal_min(geometry=area_of_interest, data_type=int)
+  max_val = reprojected_rdd.polygonal_max(geometry=area_of_interest, data_type=int)
+
+  print('The min value of the area of interest is:', min_val)
+  print('The max value of the area of interest is:', max_val)
+
+  # We will now pyramid the relcassified TiledRasterRDD so that we can use it in a TMS server later.
+  pyramided_rdd = reprojected_rdd.pyramid(start_zoom=1, end_zoom=12)
+
+  # Save each layer of the pyramid locally so that it can be accessed at a later time.
+  for pyramid in pyramided_rdd:
+      write('file:///tmp/nld-2011', 'pa', pyramid)
+
+
 Contact and Support
 --------------------
 
