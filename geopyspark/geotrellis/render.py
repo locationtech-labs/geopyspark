@@ -1,19 +1,52 @@
 from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, COLOR_RAMPS
 
-class ColorRamp(object):
-    @classmethod
-    def get(cls, geopysc, name, num_colors=None):
-        if num_colors:
-            return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.get(name, num_colors))
-        else:
-            return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.get(name))
 
-    @classmethod
-    def getHex(cls, geopysc, name, num_colors=None):
-        if num_colors:
-            return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(name, num_colors))
-        else:
-            return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(name))
+def get_breaks(geopysc, ramp_name, num_colors=None):
+    """Returns a list of values that represent the breaks in color for the given color ramp.
+
+    Args:
+        ramp_name (str): The name of a color ramp; options are hot, coolwarm, magma,
+            inferno, plasma, viridis, BlueToOrange, LightYellowToOrange, BlueToRed,
+            GreenToRedOrange, LightToDarkSunset, LightToDarkGreen, HeatmapYellowToRed,
+            HeatmapBlueToYellowToRedSpectrum, HeatmapDarkRedToYellowWhite,
+            HeatmapLightPurpleToDarkPurpleToWhite, ClassificationBoldLandUse, and
+            ClassificationMutedTerrain
+        num_colors (int, optional): How many colors should be represented in the range. Defaults
+            to ``None``. If not specified, then the full range of values will be returned.
+
+    Returns:
+        [int]
+    """
+
+    if num_colors:
+        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.get(ramp_name, num_colors))
+    else:
+        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.get(ramp_name))
+
+def get_hex(geopysc, ramp_name, num_colors=None):
+    """Returns a list of the hex values that represent the colors for the given color ramp.
+
+    Note:
+        The returning hex values contain an alpha value.
+
+    Args:
+        ramp_name (str): The name of a color ramp; options are hot, coolwarm, magma,
+            inferno, plasma, viridis, BlueToOrange, LightYellowToOrange, BlueToRed,
+            GreenToRedOrange, LightToDarkSunset, LightToDarkGreen, HeatmapYellowToRed,
+            HeatmapBlueToYellowToRedSpectrum, HeatmapDarkRedToYellowWhite,
+            HeatmapLightPurpleToDarkPurpleToWhite, ClassificationBoldLandUse, and
+            ClassificationMutedTerrain
+        num_colors (int, optional): How many colors should be represented in the range. Defaults
+            to ``None``. If not specified, then the full range of values will be returned.
+
+    Returns:
+        [str]
+    """
+
+    if num_colors:
+        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(ramp_name, num_colors))
+    else:
+        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(ramp_name))
 
 
 class PngRDD(object):
