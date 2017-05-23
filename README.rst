@@ -25,8 +25,8 @@ know what you're working on!) you contact us at:
 As you may have noticed from the above links, those are links to the GeoTrellis
 gitter channel and mailing list. This is because this project is currently an
 offshoot of GeoTrellis, and we will be using their mailing list and gitter
-channel as a means of contact. However, we will form our own if there is
-a need for it.
+channel as a means of contact. However, we will form our own if there is a need
+for it.
 
 Setup
 ------
@@ -43,12 +43,12 @@ Python       3.3 - 3.5
 Hadoop       >=2.0.1
 ============ ============
 
-Java 8 and Scala 2.11 are needed for GeoPySpark to work; as they are required
-by GeoTrellis. In addition, Spark needs to be installed and configured with the
+Java 8 and Scala 2.11 are needed for GeoPySpark to work; as they are required by
+GeoTrellis. In addition, Spark needs to be installed and configured with the
 environment variable, ``SPARK_HOME`` set.
 
-You can test to see if Spark is installed properly by running the following in the
-terminal:
+You can test to see if Spark is installed properly by running the following in
+the terminal:
 
 .. code:: console
 
@@ -64,6 +64,9 @@ How to Install
 Before installing, check the above table to make sure that the
 requirements are met.
 
+Installing From Pip
+~~~~~~~~~~~~~~~~~~~~
+
 To install via ``pip`` open the terminal and run the following:
 
 .. code:: console
@@ -76,7 +79,7 @@ downloads the backend, jar file. If no path is given when downloading the jar,
 then it will be downloaded to wherever GeoPySpark was installed at.
 
 What's With That Weird Pip Install?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+====================================
 
 "What's with that weird pip install?", you may be asking yourself. The reason
 for its unusualness is due to how GeoPySpark functions. Because this library
@@ -89,53 +92,123 @@ method of distribution where the jar must be downloaded in a serperate command
 when using ``pip install``.
 
 Note:
-  Installing from source does not require the seperate download of the jar.
+  Installing from source or for development does not require the seperate
+  download of the jar.
 
-If you would rather install from source, you can do so by running the following
-in the terminal:
+Installing From Source
+~~~~~~~~~~~~~~~~~~~~~~~
+
+If you would rather install from source, clone the GeoPySpark repo and enter it.
 
 .. code:: console
 
    git clone https://github.com/locationtech-labs/geopyspark.git
    cd geopyspark
+
+Installing For Users
+=====================
+
+.. code:: console
+
    make install
 
 This will assemble the backend-end ``jar`` that contains the Scala code,
-move it to the ``jars`` module, and then runs the ``setup.py`` script.
+move it to the ``jars`` sub-package, and then runs the ``setup.py`` script.
 
 Note:
-  If you have somehow altered the global behavior of ``sbt`` this install may
-  not work correctly.
+  If you have altered the global behavior of ``sbt`` this install may
+  not work the way it was intended.
 
-Make Targets
-^^^^^^^^^^^^
-
- - **install** - install ``GeoPySpark`` python package locally
- - **wheel** - build python ``GeoPySpark`` wheel for distribution
- - **pyspark** - start pyspark shell with project jars
- - **docker-build** - build docker image for Jupyter with ``GeoPySpark``
- - **clean** - remove the wheel, the backend jar file, and clean the
-   ``geotrellis-backend`` directory
- - **cleaner** - the same as **clean**, but also erase all ``.pyc``
-   files and delete binary artifacts in the ``docker`` directory
-
-Docker Container
-^^^^^^^^^^^^^^^^
-
-To build the docker container, type the following in a terminal:
+Installing For Developers
+===========================
 
 .. code:: console
 
-   make docker-build
+   make build
+   pip install -e .
 
-If you encounter problems, typing ``make cleaner`` before typing
-``make docker-build`` could help.
+``make build`` will assemble the back-end ``jar`` and move it the ``jars``
+sub-package. The second command will install GeoPySpark in "editable" mode.
+Meaning any changes to the source files will also appear in your system
+installation.
 
-To run the container, type:
+Installing to a Virtual Environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A third option is to install GeoPySpark in a virtual environment. To get things
+started, enter the envrionemnt and run the following:
 
 .. code:: console
 
-   docker run -it --rm -p 8000:8000 quay.io/geodocker/jupyter-geopyspark:6
+   git clone https://github.com/locationtech-labs/geopyspark.git
+   cd geopyspark
+   export PYTHONPATH=$VIRTUAL_ENV/lib/<your python version>/site-packages
+
+Replace ``<your python version`` with whatever Python version
+``virtualenvwrapper`` is set to. Installation in a virtual environment can be
+a bit weird with GeoPySpark. This is why you need to export the
+``PYTHONPATH`` before installing to ensure that it performs correctly.
+
+Installing For Users
+=====================
+
+.. code:: console
+
+   make virtual-install
+
+Installing For Developers
+===========================
+
+.. code:: console
+
+   make build
+   pip install -e .
+
+
+Developing GeoPySpark With GeoNotebook
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`GeoNotebook <https://github.com/OpenGeoscience/geonotebook>`_ is a Jupyter
+notebook extension that specializes in working with geospatial data. GeoPySpark
+can be used with this notebook; which allows for a more interactive experience
+when using the library. For this section, we will be installing both tools in a
+virtual environment. It is recomended that you start with a new environment
+before following this guide.
+
+Because there's already documentation on how to install GeoPySpark in a virtual
+environment, we won't go over it here. As for GeoNotebook, it also has a section
+on `installtion <https://github.com/OpenGeoscience/geonotebook#make-a-virtualenv-install-jupyternotebook-install-geonotebook>`_
+so that will not be covered here either.
+
+Once you've setup both GeoPySpark and GeoNotebook, all that needs to be done
+is go to where you want to save/have saved your notebooks and execute this
+command:
+
+.. code:: console
+
+   jupyter notebook
+
+This will open up the jupyter hub and will allow you to work on your notebooks.
+
+Side Note For Developers
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An optional (but recomended!) step for developers is to place these
+two lines of code at the top of your notebooks.
+
+.. code:: console
+
+   %load_ext autoreload
+   $autoreload 2
+
+This will make it so that you don't have to leave the notebook for your changes
+to take affect. Rather, you just have to reimport the module and it will be
+updated. However, there are a few caveats when using ``autoreload`` that can be
+read `here <http://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#caveats>`_.
+
+Using ``pip install -e`` in conjunction with ``autoreload`` should cover any
+changes made, though, and will make the development experience much less
+painful.
 
 GeoPySpark Script
 -----------------
@@ -159,6 +232,37 @@ These can be used regardless of installation method. However, if installed
 through ``pip``, then the jar must be downloaded first or these commands
 will not work.
 
+Make Targets
+^^^^^^^^^^^^
+
+ - **install** - install GeoPySpark python package locally
+ - **wheel** - build python GeoPySpark wheel for distribution
+ - **pyspark** - start pyspark shell with project jars
+ - **build** - builds the backend jar and moves it to the jars sub-package
+ - **docker-build** - build docker image for Jupyter with GeoPySpark
+ - **clean** - remove the wheel, the backend jar file, and clean the
+   geotrellis-backend directory
+ - **cleaner** - the same as **clean**, but also erase all .pyc
+   files and delete binary artifacts in the docker directory
+
+Docker Container
+^^^^^^^^^^^^^^^^
+
+To build the docker container, type the following in a terminal:
+
+.. code:: console
+
+   make docker-build
+
+If you encounter problems, typing ``make cleaner`` before typing
+``make docker-build`` could help.
+
+To run the container, type:
+
+.. code:: console
+
+   docker run -it --rm -p 8000:8000 quay.io/geodocker/jupyter-geopyspark:6
+
 Uninstalling
 ------------
 
@@ -168,7 +272,6 @@ To uninstall GeoPySpark, run the following in the terminal:
 
    pip uninstall geopyspark
    rm .local/bin/geopyspark
-
 
 Contributing
 ------------

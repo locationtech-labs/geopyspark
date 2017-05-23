@@ -13,6 +13,10 @@ rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst 
 install: ${DIST-ASSEMBLY} ${WHEEL}
 	${PYTHON} setup.py install --user --force --prefix=
 
+virtual-install: ${DIST-ASSEMBLY}
+	pip install -r requirements.txt --force && \
+	${PYTHON} setup.py install --force
+
 ${DIST-ASSEMBLY}: ${BUILD-ASSEMBLY}
 	cp -f ${BUILD-ASSEMBLY} ${DIST-ASSEMBLY}
 
@@ -23,6 +27,8 @@ ${WHEEL}: ${DIST-ASSEMBLY} $(call rwildcard, geopyspark, *.py) setup.py
 	${PYTHON} setup.py bdist_wheel
 
 wheel: ${WHEEL}
+
+build: ${DIST-ASSEMBLY}
 
 pyspark: ${DIST-ASSEMBLY}
 	pyspark --jars ${DIST-ASSEMBLY} \
