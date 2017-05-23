@@ -1,7 +1,7 @@
 Catalog
 ========
 
-The ``Catalog`` method allows the user to read, write, and query GeoTrellis
+The ``Catalog`` class allows the user to read, write, and query GeoTrellis
 layers in GeoPySpark. Because GeoPySpark is a Python binding of GeoTrellis,
 the layers it saves are GeoTrellis layers.
 
@@ -21,7 +21,7 @@ are the current backends supported:
 Each of these needs to accessed via the ``URI`` for the given system. Here are
 example ``URI``\s for each:
 
- - **Local** Filesystem: file://my_folder/my_catalog/
+ - **Local Filesystem**: file://my_folder/my_catalog/
  - **HDFS**: hdfs://my_folder/my_catalog/
  - **S3**: s3://my_bucket/my_catalog/
  - **Cassandra**: cassandra:name?username=user&password=pass&host=host1&keyspace=key&table=table
@@ -38,8 +38,8 @@ The ``URI`` for Accumulo follows this pattern:
  - accumulo://username:password/zoo1, zoo2/instance/table
 
 Some backends require various options to be set, and each function in
-``Catalog`` has an ``options`` parameter where they can be set. These are
-backends that need these additional values and the options to set for each.
+``Catalog`` has an ``options`` parameter where they can specified. These are
+the backends that need additional values and the options to set for each.
 
 Fields that can be set for Cassandra:
  - **replicationStrategy** (str, optional): If not specified, then

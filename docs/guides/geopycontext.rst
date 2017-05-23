@@ -19,7 +19,7 @@ Initializing GeoPyContext
 --------------------------
 
 Initializing ``GeoPyContext`` can be done through two different methods:
-either by giving it an exisiting ``SparkContext`` or by passing in the
+either by giving it an exisiting ``SparkContext``, or by passing in the
 arguments used to construct a ``SparkContext``.
 
 .. code:: python

@@ -3,7 +3,7 @@ RasterRDD and TiledRasterRDD
 
 This section seeks to explain how to create and use ``RasterRDD`` and
 ``TiledRasterRDD``. Before continuing this example, it is suggested that
-you read :ref:`data_rep` before continuing.
+you read :ref:`data_rep`.
 
 
 Creating RasterRDD and TiledRasterRDD
@@ -14,7 +14,7 @@ RasterRDD
 
 Of the two different RDD classes, ``RasterRDD`` has the least number of ways
 to be initialized. There are just two: through reading GeoTiffs from the local
-file system, ``S3``, or ``HDFS``; or from an existing PySpark RDD.
+file system, S3, or HDFS; or from an existing PySpark RDD.
 
 From GeoTiffs
 ^^^^^^^^^^^^^^
@@ -34,8 +34,8 @@ GeoTiffs.
    raster_rdd = get(geopysc=geopysc, rdd_type=SPATIAL, "path/to/your/geotiff.tif")
 
 Note: If you have multiple GeoTiffs, you can just specify the directory where
-they're all stored. Or if the GeoTiffs are spread out in multiplelocations, you
-can give ``get`` a ``list`` of the places to read in the GeoTiffs.
+they're all stored. Or if the GeoTiffs are spread out in multiple locations,
+you can give ``get`` a ``list`` of the places to read in the GeoTiffs.
 
 
 From PySpark RDDs
@@ -213,8 +213,8 @@ use them.
 Common Methods
 ~~~~~~~~~~~~~~~
 
-While different, ``RasterRDD`` and ``TiledRasterRDD`` both share some
-functionality.
+While different in terms of functionality, ``RasterRDD`` and ``TiledRasterRDD``
+both share some methods.
 
 
 Converting to a PySpark RDD
@@ -388,7 +388,7 @@ save a little time when writing.
 TiledRasterRDD
 ~~~~~~~~~~~~~~~
 
-``TiledRasterRDD`` will be the class that will see the must use. It provides
+``TiledRasterRDD`` will be the class that will see the most use. It provides
 all the methods needed to perform a computations and analysis on the data. When
 reading and saving layers, this class will be used.
 
@@ -451,7 +451,7 @@ then there are two different ways to different ways to do so.
    reprojected_rdd = tiled_rdd.reproject(target_crs=3857)
 
 
-If you do wish to make a TMS server, then there is only one option available
+If you want to make a TMS server, then there is only one option available
 for reprojecting.
 
 .. code:: python
@@ -466,9 +466,10 @@ for reprojecting.
 
 What is the difference between using and not using ``ZOOM``? It has to do with
 how GeoTrellis represents the layout of the data in the RDD. There are three
-different classes: ``LayoutDefinition``, ``FloatingLayoutScheme`` and
-``ZoomedLayoutScheme``. The exact nature and differences between these classes
-will not be discussed here, rather, a brief explanation will be give.
+different classes GeoTrellis uses: ``LayoutDefinition``,
+``FloatingLayoutScheme`` and ``ZoomedLayoutScheme``. The exact nature and
+differences between these classes will not be discussed here, rather, a brief
+explanation will be given.
 
 Because the resolution of images changes as one zooms in and out when using
 a TMS server, the layout of the tiles changes. Neither ``LayoutDefinition`` or
