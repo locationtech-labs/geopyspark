@@ -31,6 +31,8 @@ class PngRDD(object):
                 CLASSIFICATION_BOLD_LAND_USE, and CLASSIFICATION_MUTED_TERRAIN
         """
 
+        __slots__ = ['geopysc', 'rdd_type', 'layer_metadata', 'max_zoom', 'pngpyramid', 'debug']
+
         if ramp_name not in COLOR_RAMPS:
             raise ValueError(ramp_name, "Is not a known color ramp")
 
@@ -96,11 +98,11 @@ class PngRDD(object):
         pngrdd = self.pngpyramid[idx]
         metadata = self.layer_metadata[idx]
 
-        bounds = metadata['bounds']
-        min_col = bounds['minKey']['col']
-        min_row = bounds['minKey']['row']
-        max_col = bounds['maxKey']['col']
-        max_row = bounds['maxKey']['row']
+        bounds = metadata.bounds
+        min_col = bounds.minKey['col']
+        min_row = bounds.minKey['row']
+        max_col = bounds.maxKey['col']
+        max_row = bounds.maxKey['row']
 
         if col < min_col or col > max_col:
             raise IndexError("column out of bounds")

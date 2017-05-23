@@ -4,6 +4,7 @@ import geopyspark.geotrellis.GeoTrellisUtils._
 
 import geotrellis.proj4._
 import geotrellis.raster._
+import geotrellis.raster.distance._
 import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
 import geotrellis.raster.resample.ResampleMethod
@@ -18,14 +19,18 @@ import geotrellis.spark.mask.Mask
 import geotrellis.spark.pyramid._
 import geotrellis.spark.reproject._
 import geotrellis.spark.tiling._
+import geotrellis.spark.util._
 import geotrellis.util._
 import geotrellis.vector._
 import geotrellis.vector.io.wkt.WKT
+import geotrellis.vector.triangulation._
+import geotrellis.vector.voronoi._
 
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 import spire.syntax.cfor._
 
+import com.vividsolutions.jts.geom.Coordinate
 import org.apache.spark._
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd._
@@ -623,6 +628,61 @@ object SpatialTiledRasterRDD {
 
     SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata), metadata))
   }
+
+  def euclideanDistance(sc: SparkContext, geomWKT: String, srcCRSStr: String, requestedZoom: Int): TiledRasterRDD[SpatialKey]= {
+    val geom = geotrellis.vector.io.wkt.WKT.read(geomWKT)
+    val srcCRS = TileRDD.getCRS(srcCRSStr).get
+    val LayoutLevel(z, ld) = ZoomedLayoutScheme(WebMercator).levelForZoom(requestedZoom)
+    val maptrans = ld.mapTransform
+    val reprojected = geom.reproject(srcCRS, WebMercator)
+    val GridBounds(cmin, rmin, cmax, rmax) = maptrans(reprojected.envelope)
+
+    val keys = for (r <- rmin to rmax; c <- cmin to cmax) yield SpatialKey(c, r)
+
+    val pts = 
+      if (reprojected.isInstanceOf[MultiPoint]) {
+        reprojected.asInstanceOf[MultiPoint].points.map(_.jtsGeom.getCoordinate)
+      } else {
+        val coords = collection.mutable.ListBuffer.empty[Coordinate]
+
+        def createPoints(sk: SpatialKey) = {
+          val ex = maptrans(sk)
+          val re = RasterExtent(ex, ld.tileCols, ld.tileRows)
+
+          def rasterizeToPoints(px: Int, py: Int): Unit = {
+            val (x, y) = re.gridToMap(px, py)
+            val coord = new Coordinate(x, y)
+            coords += coord
+          }
+
+          Rasterizer.foreachCellByGeometry(reprojected, re)(rasterizeToPoints)
+                                                           (sk, coords.toArray)
+        }
+        keys.foreach(createPoints)
+
+        coords.toArray
+      }
+
+    val dt = KryoWrapper(DelaunayTriangulation(pts))
+    val skRDD = sc.parallelize(keys)
+    val mbtileRDD: RDD[(SpatialKey, MultibandTile)] = skRDD.mapPartitions({ skiter => skiter.map { sk =>
+      val ex = maptrans(sk)
+      val re = RasterExtent(ex, ld.tileCols, ld.tileRows)
+      val tile = DoubleArrayTile.empty(re.cols, re.rows)
+      val vd = new VoronoiDiagram(dt.value, ex)
+      vd.voronoiCellsWithPoints.foreach(EuclideanDistanceTile.rasterizeDistanceCell(re, tile)(_))
+      (sk, MultibandTile(tile))
+    } }, preservesPartitioning=true)
+
+    val projectedRDD: RDD[(ProjectedExtent, MultibandTile)] = mbtileRDD.map{ case (sk, mbtile) => {
+      val ex = maptrans(sk)
+      val projEx = ProjectedExtent(ex, WebMercator)
+      (projEx, mbtile)
+    }}
+
+    SpatialTiledRasterRDD(Some(z), MultibandTileLayerRDD(mbtileRDD, projectedRDD.collectMetadata[SpatialKey](ld)))
+  }
+
 }
 
 object TemporalTiledRasterRDD {
