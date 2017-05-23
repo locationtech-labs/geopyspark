@@ -53,6 +53,7 @@ import json
 from collections import namedtuple
 from urllib.parse import urlparse
 
+from geopyspark.geotrellis import Metadata, Extent
 from geopyspark.geotrellis.rdd import TiledRasterRDD
 from geopyspark.geotrellis.constants import TILE, ZORDER, SPATIAL
 
@@ -168,9 +169,9 @@ def _construct_catalog(geopysc, new_uri, options):
 def _in_bounds(geopysc, rdd_type, uri, layer_name, zoom_level, col, row):
     if (layer_name, zoom_level) not in _mapped_bounds:
         layer_metadata = read_layer_metadata(geopysc, rdd_type, uri, layer_name, zoom_level)
-        bounds_dict = layer_metadata['bounds']
-        min_key = bounds_dict['minKey']
-        max_key = bounds_dict['maxKey']
+        bounds_dict = layer_metadata.bounds
+        min_key = bounds_dict.minKey
+        max_key = bounds_dict.maxKey
         bounds = _bounds(min_key['col'], min_key['row'], max_key['col'], max_key['row'])
         _mapped_bounds[(layer_name, zoom_level)] = bounds
     else:
@@ -210,7 +211,7 @@ def read_layer_metadata(geopysc,
             be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
-        :ref:`metadata`
+        :class:`~geopyspark.geotrellis.Metadata`
     """
 
     if options:
@@ -228,7 +229,7 @@ def read_layer_metadata(geopysc,
     else:
         metadata = cached.store.metadataSpaceTime(layer_name, layer_zoom)
 
-    return json.loads(metadata)
+    return Metadata.from_dict(json.loads(metadata))
 
 def get_layer_ids(geopysc,
                   uri,
@@ -265,7 +266,7 @@ def get_layer_ids(geopysc,
     _construct_catalog(geopysc, uri, options)
     cached = _mapped_cached[uri]
 
-    return cached.reader.layerIds()
+    return list(cached.reader.layerIds())
 
 def read(geopysc,
          rdd_type,
@@ -426,8 +427,9 @@ def query(geopysc,
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be querried.
         layer_zoom (int): The zoom level of the layer that is to be querried.
-        intersects (str, Polygon): The desired spatial area to be returned. Can either be a string
-            or a shapely Polygon. If the value is a string, it must be the WKT string, geometry
+        intersects (str or Polygon or :class:`~geopyspark.geotrellis.data_structures.Extent`): The
+            desired spatial area to be returned. Can either be a string, a shapely Polygon, or an
+            instance of ``Extent``. If the value is a string, it must be the WKT string, geometry
             format.
 
             The types of Polygons supported:
@@ -483,6 +485,15 @@ def query(geopysc,
                                    layer_name,
                                    layer_zoom,
                                    dumps(intersects),
+                                   time_intervals,
+                                   proj_query,
+                                   numPartitions)
+
+    elif isinstance(intersects, Extent):
+        srdd = cached.reader.query(key,
+                                   layer_name,
+                                   layer_zoom,
+                                   dumps(intersects.to_poly),
                                    time_intervals,
                                    proj_query,
                                    numPartitions)

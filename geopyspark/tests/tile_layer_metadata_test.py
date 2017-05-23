@@ -23,9 +23,9 @@ class TileLayerMetadataTest(BaseTestClass):
     def test_collection_avro_rdd(self):
         result = self.rdd.collect_metadata(self.extent, self.layout)
 
-        self.assertDictEqual(result['extent'], self.extent)
-        self.assertDictEqual(result['layoutDefinition']['extent'], self.extent)
-        self.assertDictEqual(result['layoutDefinition']['tileLayout'], self.layout)
+        self.assertEqual(result.extent, self.extent)
+        self.assertEqual(result.layout_definition.extent, self.extent)
+        self.assertEqual(result.layout_definition.tileLayout, self.layout)
 
     @pytest.mark.skipif('TRAVIS' in os.environ,
                         reason="Test causes memory errors on Travis")
@@ -38,16 +38,16 @@ class TileLayerMetadataTest(BaseTestClass):
 
         result = raster_rdd.collect_metadata(extent=self.extent, layout=self.layout)
 
-        self.assertDictEqual(result['extent'], self.extent)
-        self.assertDictEqual(result['layoutDefinition']['extent'], self.extent)
-        self.assertDictEqual(result['layoutDefinition']['tileLayout'], self.layout)
+        self.assertEqual(result.extent, self.extent)
+        self.assertEqual(result.layout_definition.extent, self.extent)
+        self.assertEqual(result.layout_definition.tileLayout, self.layout)
 
     def test_collection_floating(self):
         result = self.rdd.collect_metadata(tile_size=self.cols)
 
-        self.assertDictEqual(result['extent'], self.extent)
-        self.assertDictEqual(result['layoutDefinition']['extent'], self.extent)
-        self.assertDictEqual(result['layoutDefinition']['tileLayout'], self.layout)
+        self.assertEqual(result.extent, self.extent)
+        self.assertEqual(result.layout_definition.extent, self.extent)
+        self.assertEqual(result.layout_definition.tileLayout, self.layout)
 
 
 if __name__ == "__main__":

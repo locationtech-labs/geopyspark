@@ -1,4 +1,4 @@
-from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM
+from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, COLOR_RAMPS
 
 
 def get_breaks(geopysc, ramp_name, num_colors=None):
@@ -56,15 +56,19 @@ class PngRDD(object):
         Args:
             pyramid (list): A pyramid of TiledRasterRDD resulting from calling the pyramid
                 method on an instance of that class
-            ramp_name (str): The name of a color ramp; options are hot, coolwarm, magma,
-                inferno, plasma, viridis, BlueToOrange, LightYellowToOrange, BlueToRed,
-                GreenToRedOrange, LightToDarkSunset, LightToDarkGreen, HeatmapYellowToRed,
-                HeatmapBlueToYellowToRedSpectrum, HeatmapDarkRedToYellowWhite,
-                HeatmapLightPurpleToDarkPurpleToWhite, ClassificationBoldLandUse, and
-                ClassificationMutedTerrain
-
-        Returns: A PngRDD object
+            ramp_name (str): The name of a color ramp; This is represented by the following
+                constants; HOT, COOLWARM, MAGMA, INFERNO, PLASMA, VIRIDIS, BLUE_TO_ORANGE,
+                LIGHT_YELLOW_TO_ORANGE, BLUE_TO_RED, GREEN_TO_RED_ORANGE, LIGHT_TO_DARK_SUNSET,
+                LIGHT_TO_DARK_GREEN, HEATMAP_YELLOW_TO_RED, HEATMAP_BLUE_TO_YELLOW_TO_RED_SPECTRUM,
+                HEATMAP_DARK_RED_TO_YELLOW_WHITE, HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE,
+                CLASSIFICATION_BOLD_LAND_USE, and CLASSIFICATION_MUTED_TERRAIN
         """
+
+        __slots__ = ['geopysc', 'rdd_type', 'layer_metadata', 'max_zoom', 'pngpyramid', 'debug']
+
+        if ramp_name not in COLOR_RAMPS:
+            raise ValueError(ramp_name, "Is not a known color ramp")
+
         level0 = pyramid[0]
         self.geopysc = level0.geopysc
         self.rdd_type = level0.rdd_type
@@ -79,12 +83,12 @@ class PngRDD(object):
 
         Args:
             tiledrdd (TiledRasterRDD): The TiledRasterRDD source
-            ramp_name (str): The name of a color ramp; options are hot, coolwarm, magma,
-                inferno, plasma, viridis, BlueToOrange, LightYellowToOrange, BlueToRed,
-                GreenToRedOrange, LightToDarkSunset, LightToDarkGreen, HeatmapYellowToRed,
-                HeatmapBlueToYellowToRedSpectrum, HeatmapDarkRedToYellowWhite,
-                HeatmapLightPurpleToDarkPurpleToWhite, ClassificationBoldLandUse, and
-                ClassificationMutedTerrain
+            ramp_name (str): The name of a color ramp; This is represented by the following
+                constants; HOT, COOLWARM, MAGMA, INFERNO, PLASMA, VIRIDIS, BLUE_TO_ORANGE,
+                LIGHT_YELLOW_TO_ORANGE, BLUE_TO_RED, GREEN_TO_RED_ORANGE, LIGHT_TO_DARK_SUNSET,
+                LIGHT_TO_DARK_GREEN, HEATMAP_YELLOW_TO_RED, HEATMAP_BLUE_TO_YELLOW_TO_RED_SPECTRUM,
+                HEATMAP_DARK_RED_TO_YELLOW_WHITE, HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE,
+                CLASSIFICATION_BOLD_LAND_USE, and CLASSIFICATION_MUTED_TERRAIN
             start_zoom (int, optional): The starting (highest resolution) zoom level for
                 the pyramid.  Defaults to the zoom level of the source RDD.
             end_zoom (int, optional): The final (lowest resolution) zoom level for the
@@ -127,11 +131,11 @@ class PngRDD(object):
         pngrdd = self.pngpyramid[idx]
         metadata = self.layer_metadata[idx]
 
-        bounds = metadata['bounds']
-        min_col = bounds['minKey']['col']
-        min_row = bounds['minKey']['row']
-        max_col = bounds['maxKey']['col']
-        max_row = bounds['maxKey']['row']
+        bounds = metadata.bounds
+        min_col = bounds.minKey['col']
+        min_row = bounds.minKey['row']
+        max_col = bounds.maxKey['col']
+        max_row = bounds.maxKey['row']
 
         if col < min_col or col > max_col:
             raise IndexError("column out of bounds")

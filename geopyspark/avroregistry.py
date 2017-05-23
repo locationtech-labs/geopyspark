@@ -166,6 +166,9 @@ class AvroRegistry(object):
 
     @classmethod
     def projected_extent_encoder(cls, obj):
+        if not isinstance(obj['extent'], dict):
+            obj['extent'] = obj['extent']._asdict()
+
         if obj.get('epsg'):
             obj['proj4'] = 'null'
         else:
