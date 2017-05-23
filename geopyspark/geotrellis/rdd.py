@@ -1,7 +1,7 @@
 '''
-This module contains the RasterRDD and the TiledRasterRDD classes. Both of these classes are
-wrappers of their scala counterparts. These will be used in leau of actual PySpark RDDs when
-performing operations.
+This module contains the ``RasterRDD`` and the ``TiledRasterRDD`` classes. Both of these classes are
+wrappers of their Scala counterparts. These will be used in leau of actual PySpark RDDs
+when performing operations.
 '''
 import json
 import shapely.wkt
@@ -54,11 +54,11 @@ def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_wi
 
 class RDDWrapper(object):
     """
-    Base class for class that wraps a scala RDD instance through py4j reference.
+    Base class for class that wraps a Scala RDD instance through a py4j reference.
 
     Attributes:
-        geopysc (GeoPyContext): The GeoPyContext being used this session.
-        srdd (JavaObject): The coresponding scala RDD class.
+        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        srdd (py4j.java_gateway.JavaObject): The coresponding Scala RDD class.
     """
 
     def __init__(self):
@@ -94,28 +94,30 @@ class RDDWrapper(object):
         self.srdd.unpersist()
         return self
 
+
 class RasterRDD(RDDWrapper):
     """A wrapper of a RDD that contains GeoTrellis rasters.
 
-    Represents a RDD that contains (K, V). Where K is either :ref:`projected_extent` or
-    :ref:`temporal_extent` depending on the ``rdd_type`` of the RDD, and V being a raster.
+    Represents a RDD that contains ``(K, V)``. Where ``K`` is either :ref:`projected_extent` or
+    :ref:`temporal_extent` depending on the ``rdd_type`` of the RDD, and ``V`` being a
+    :ref:`raster`.
 
-    The data held within the RDD has not yet been tiled. Meaning the data has yet to be
+    The data held within the RDD has not been tiled. Meaning the data has yet to be
     modified to fit a certain layout. See :ref:`raster_rdd` for more information.
 
     Args:
-        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
-            represented by the constants: `SPATIAL` and `SPACETIME`.
-        srdd (JavaObject): The coresponding scala class. This is what allows RasterRDD to access
-            the various scala methods.
+            represented by the constants: ``SPATIAL`` and ``SPACETIME``.
+        srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
+            ``RasterRDD`` to access the various Scala methods.
 
     Attributes:
-        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
-            represented by the constants: `SPATIAL` and `SPACETIME`.
-        srdd (JavaObject): The coresponding scala class. This is what allows RasterRDD to access
-            the various scala methods.
+            represented by the constants: ``SPATIAL`` and ``SPACETIME``.
+        srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
+            ``RasterRDD`` to access the various Scala methods.
     """
 
     __slots__ = ['geopysc', 'rdd_type', 'srdd']
@@ -128,14 +130,16 @@ class RasterRDD(RDDWrapper):
 
     @classmethod
     def from_numpy_rdd(cls, geopysc, rdd_type, numpy_rdd):
-        """Create a RasterRDD from a numpy RDD.
+        """Create a ``RasterRDD`` from a numpy RDD.
 
         Args:
-            geopysc (GeoPyContext): The GeoPyContext being used this session.
+            geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this
+                session.
             rdd_type (str): What the spatial type of the geotiffs are. This is
-                represented by the constants: `SPATIAL` and `SPACETIME`.
-            numpy_rdd (RDD): A PySpark RDD that contains tuples of either ProjectedExtents or
-                TemporalProjectedExtents and raster that is represented by a numpy array.
+                represented by the constants: ``SPATIAL`` and ``SPACETIME``.
+            numpy_rdd (pyspark.RDD): A PySpark RDD that contains tuples of either
+                :ref:`projected_extent`\s or :ref:`temporal_extent`\s and rasters that are represented
+                by a numpy array.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.RasterRDD`
@@ -159,14 +163,14 @@ class RasterRDD(RDDWrapper):
         return cls(geopysc, rdd_type, srdd)
 
     def to_numpy_rdd(self):
-        """Converts a RasterRDD to a numpy RDD.
+        """Converts a ``RasterRDD`` to a numpy RDD.
 
         Note:
             Depending on the size of the data stored within the RDD, this can be an exspensive
             operation and should be used with caution.
 
         Returns:
-            RDD
+            ``pyspark.RDD``
         """
 
         result = self.srdd.toAvroRDD()
@@ -189,8 +193,9 @@ class RasterRDD(RDDWrapper):
             crs (str or int, optional): Ignore CRS from records and use given one instead.
             tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by a constant. If none is specified, then ``NEARESTNEIGHBOR``
-                is used.
+                This is represented by the following constants: ``NEARESTNEIGHBOR``, ``BILINEAR``,
+                ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
+                ``MIN``. If none is specified, then ``NEARESTNEIGHBOR`` is used.
 
         Note:
             ``extent`` and ``layout`` must both be defined if they are to be used.
@@ -222,15 +227,16 @@ class RasterRDD(RDDWrapper):
         return RasterRDD(self.geopysc, self.rdd_type, self.srdd.convertDataType(new_type))
 
     def collect_metadata(self, extent=None, layout=None, crs=None, tile_size=256):
-        """Iterate over RDD records and generates layer metadata desribing the contained rasters.
+        """Iterate over RDD records and generates layer metadata desribing the contained
+        rasters.
 
         Args:
             extent (:class:`~geopyspark.geotrellis.Extent`, optional): Specify layout extent, must
-                also specify layout.
+                also specify ``layout``.
             layout (:obj:`~geopyspark.geotrellis.TileLayout`, optional): Specify tile layout, must
-                also specify extent.
+                also specify ``extent``.
             crs (str or int, optional): Ignore CRS from records and use given one instead.
-            tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
+            tile_size (int, optional): Pixel dimensions of each tile, if not using ``layout``.
 
         Note:
             ``extent`` and ``layout`` must both be defined if they are to be used.
@@ -264,14 +270,15 @@ class RasterRDD(RDDWrapper):
         return Metadata.from_dict(json.loads(json_metadata))
 
     def reproject(self, target_crs, resample_method=NEARESTNEIGHBOR):
-        """Reproject every individual raster to `target_crs`, does not sample past tile boundary
+        """Reproject every individual raster to ``target_crs``, does not sample past tile boundary
 
         Args:
             target_crs (str or int): The CRS to reproject to. Can either be the EPSG code,
                 well-known name, or a PROJ.4 projection string.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by a constant. If none is specified, then `NEARESTNEIGHBOR`
-                is used.
+                This is represented by the following constants: ``NEARESTNEIGHBOR``, ``BILINEAR``,
+                ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
+                ``MIN``. If none is specified, then ``NEARESTNEIGHBOR`` is used.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.RasterRDD`
@@ -291,10 +298,11 @@ class RasterRDD(RDDWrapper):
 
         Args:
             layer_metadata (:class:`~geopyspark.geotrellis.Metadata`): The
-                metadata of the ``RasterRDD`` instance.
+                ``Metadata`` of the ``RasterRDD`` instance.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by a constant. If none is specified, then ``NEARESTNEIGHBOR``
-                is used.
+                This is represented by the following constants: ``NEARESTNEIGHBOR``, ``BILINEAR``,
+                ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
+                ``MIN``. If none is specified, then ``NEARESTNEIGHBOR`` is used.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
@@ -313,11 +321,12 @@ class RasterRDD(RDDWrapper):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layer_metadata (:class:`~geopyspark.geotrellis.Metadata`): The metadata
-                of the ``RasterRDD`` instance.
+            layer_metadata (:class:`~geopyspark.geotrellis.Metadata`): The
+                ``Metadata`` of the ``RasterRDD`` instance.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by a constant. If none is specified, then `NEARESTNEIGHBOR`
-                is used.
+                This is represented by the following constants: ``NEARESTNEIGHBOR``, ``BILINEAR``,
+                ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
+                ``MIN``. If none is specified, then ``NEARESTNEIGHBOR`` is used.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
@@ -342,7 +351,9 @@ class RasterRDD(RDDWrapper):
             data_type (type): The type of the values within the rasters. Can either be ``int`` or
                 ``float``.
             boundary_strategy (str, optional): How the cells should be classified along the breaks.
-                If unspecified, then ``LESSTHANOREQUALTO`` will be used.
+                This is represented by the following constants: ``GREATERTHAN``,
+                ``GREATERTHANOREQUALTO``, ``LESSTHAN``, ``LESSTHANOREQUALTO``, and ``EXACT``. If
+                unspecified, then ``LESSTHANOREQUALTO`` will be used.
             replace_nodata_with (data_type, optional): When remapping values, nodata values must be
                 treated separately.  If nodata values are intended to be replaced during the
                 reclassify, this variable should be set to the intended value.  If unspecified,
@@ -375,25 +386,26 @@ class RasterRDD(RDDWrapper):
 class TiledRasterRDD(RDDWrapper):
     """Wraps a RDD of tiled, GeoTrellis rasters.
 
-    Represents a RDD that contains (K, V). Where K is either :ref:`spatial-key` or
-    :ref:`space-time-key` depending on the ``rdd_type`` of the RDD, and V being a raster.
+    Represents a RDD that contains ``(K, V)``. Where ``K`` is either :ref:`spatial-key` or
+    :ref:`space-time-key` depending on the ``rdd_type`` of the RDD, and ``V`` being a
+    :ref:`raster`.
 
     The data held within the RDD is tiled. This means that the rasters have been modified to fit
     a larger layout. For more information, see :ref:`tiled-raster-rdd`.
 
     Args:
-        geopysc (GeoPyContext): The GeoPyContext being used this session.
-        rdd_type (str): What the spatial type of the geotiffs are. This is
-            represented by the constants: `SPATIAL` and `SPACETIME`.
-        srdd (JavaObject): The coresponding scala class. This is what allows RasterRDD to access
-            the various scala methods.
+        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        rdd_type (str): What the spatial type of the geotiffs are. This is represented by the
+            constants: ``SPATIAL`` and ``SPACETIME``.
+        srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
+            ``TiledRasterRDD`` to access the various Scala methods.
 
     Attributes:
-        geopysc (GeoPyContext): The GeoPyContext being used this session.
-        rdd_type (str): What the spatial type of the geotiffs are. This is
-            represented by the constants: `SPATIAL` and `SPACETIME`.
-        srdd (JavaObject): The coresponding scala class. This is what allows RasterRDD to access
-            the various scala methods.
+        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        rdd_type (str): What the spatial type of the geotiffs are. This is represented by the
+            constants: ``SPATIAL` and ``SPACETIME``.
+        srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
+            ``RasterRDD`` to access the various Scala methods.
     """
 
     __slots__ = ['geopysc', 'rdd_type', 'srdd']
@@ -411,20 +423,22 @@ class TiledRasterRDD(RDDWrapper):
 
     @property
     def zoom_level(self):
-        """The zoom level of the RDD. Can be `None`."""
+        """The zoom level of the RDD. Can be ``None``."""
         return self.srdd.getZoom()
 
     @classmethod
     def from_numpy_rdd(cls, geopysc, rdd_type, numpy_rdd, metadata):
-        """Create a TiledRasterRDD from a numpy RDD.
+        """Create a ``TiledRasterRDD`` from a numpy RDD.
 
         Args:
-            geopysc (GeoPyContext): The GeoPyContext being used this session.
-            rdd_type (str): What the spatial type of the geotiffs are. This is
-                represented by the constants: `SPATIAL` and `SPACETIME`.
-            numpy_rdd (RDD): A PySpark RDD that contains tuples of either ProjectedExtents or
-                TemporalProjectedExtents and raster that is represented by a numpy array.
-            metadata (:class:`~geopyspark.geotrellis.Metadata`): The metadata of
+            geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this
+                session.
+            rdd_type (str): What the spatial type of the geotiffs are. This is represented by the
+                constants: ``SPATIAL`` and ``SPACETIME``.
+            numpy_rdd (pyspark.RDD): A PySpark RDD that contains tuples of either
+                :ref:`spatial-key` or :ref:`space-time-key` and rasters that are represented by a
+                numpy array.
+            metadata (:class:`~geopyspark.geotrellis.Metadata`): The ``Metadata`` of
                 the ``TiledRasterRDD`` instance.
 
         Returns:
@@ -453,17 +467,16 @@ class TiledRasterRDD(RDDWrapper):
     @classmethod
     def rasterize(cls, geopysc, rdd_type, geometry, extent, crs, cols, rows,
                   fill_value, instant=None):
-        """Creates a TiledRasterRDD from a shapely geomety.
+        """Creates a ``TiledRasterRDD`` from a shapely geomety.
 
         Args:
-            geopysc (GeoPyContext): The GeoPyContext being used this session.
+            geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
             rdd_type (str): What the spatial type of the geotiffs are. This is
-                represented by the constants: `SPATIAL` and `SPACETIME`.
-            geometry (str, Polygon): The value to be turned into a raster. Can either be a
-                string or a ``Polygon``. If the value is a string, it must be the WKT string,
-                geometry format.
-            extent (:class:`~geopyspark.geotrellis.Extent`): The ``extent`` of the
-                new raster.
+                represented by the constants: ``SPATIAL`` and ``SPACETIME``.
+            geometry (str or shapely.geometry.Polygon): The value to be turned into a raster. Can
+                either be a string or a ``Polygon``. If the value is a string, it must be the WKT
+                string, geometry format.
+            extent (:class:`~geopyspark.geotrellis.Extent`): The ``extent`` of the new raster.
             crs (str or int): The CRS the new raster should be in.
             cols (int): The number of cols the new raster should have.
             rows (int): The number of rows the new raster should have.
@@ -480,8 +493,8 @@ class TiledRasterRDD(RDDWrapper):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
 
         Raises:
-            TypeError: If ``geometry`` is not a ``str`` or a ``Polygon``; or if there was a
-                mistach in inputs. Mainly, setting the ``rdd_type`` as ``SPATIAL`` but also setting
+            TypeError: If ``geometry`` is not a ``str`` or a Polygon; or if there was a
+                mistach in inputs like setting the ``rdd_type`` as ``SPATIAL`` but also setting
                 ``instant``.
         """
 
@@ -510,11 +523,13 @@ class TiledRasterRDD(RDDWrapper):
 
     @classmethod
     def euclidean_distance(cls, geopysc, geometry, source_crs, zoom):
-        """Calculates the Euclidean distance of a Shapely geometry .
+        """Calculates the Euclidean distance of a Shapely geometry.
 
         Args:
-            geopysc (GeoPyContext): The GeoPyContext being used this session.
-            geometry (shapely.geometry): The input geometry to compute the Euclidean distance for.
+            geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this
+                session.
+            geometry (shapely.geometry): The input geometry to compute the Euclidean distance
+                for.
             source_crs (str or int): The CRS of the input geometry.
             zoom (int): The zoom level of the output raster.
 
@@ -523,7 +538,7 @@ class TiledRasterRDD(RDDWrapper):
             the output raster.
 
         Returns:
-            RDD
+            :class:`~geopyspark.geotrellis.rdd.RDD`
         """
         if isinstance(source_crs, int):
             source_crs = str(source_crs)
@@ -532,14 +547,14 @@ class TiledRasterRDD(RDDWrapper):
         return cls(geopysc, SPATIAL, srdd)
 
     def to_numpy_rdd(self):
-        """Converts a TiledRasterRDD to a numpy RDD.
+        """Converts a ``TiledRasterRDD`` to a numpy RDD.
 
         Note:
             Depending on the size of the data stored within the RDD, this can be an exspensive
             operation and should be used with caution.
 
         Returns:
-            RDD
+            ``pyspark.RDD``
         """
         result = self.srdd.toAvroRDD()
         ser = self.geopysc.create_tuple_serializer(result._2(), key_type=None,
@@ -564,19 +579,20 @@ class TiledRasterRDD(RDDWrapper):
         Args:
             target_crs (str or int): The CRS to reproject to. Can either be the EPSG code,
                 well-known name, or a PROJ.4 projection string.
-            extent (:class:`~geopyspark.geotrellis.Extent`, optional): Specify layout
-                extent, must also specify layout.
-            layout (:obj:`~geopyspark.geotrellis.TileLayout`, optional): Specify
-                tile layout, must also specify extent.
+            extent (:class:`~geopyspark.geotrellis.Extent`, optional): Specify the layout
+                extent, must also specify ``layout``.
+            layout (:obj:`~geopyspark.geotrellis.TileLayout`, optional): Specify the tile layout,
+                must also specify ``extent``.
             scheme (str, optional): Which LayoutScheme should be used. Represented by the
-                constants: `FLOAT` and `ZOOM`. If not specified, then `FLOAT` is used.
+                constants: ``FLOAT`` and ``ZOOM``. If not specified, then ``FLOAT`` is used.
             tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
             resolution_threshold (double, optional): The percent difference between a cell size
                 and a zoom level along with the resolution difference between the zoom level and
                 the next one that is tolerated to snap to the lower-resolution zoom.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by a constant. If none is specified, then NEARESTNEIGHBOR
-                is used.
+                This is represented by the following constants: ``NEARESTNEIGHBOR``, ``BILINEAR``,
+                ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
+                ``MIN``. If none is specified, then ``NEARESTNEIGHBOR`` is used.
 
         Note:
             ``extent`` and ``layout`` must both be defined if they are to be used.
@@ -585,7 +601,7 @@ class TiledRasterRDD(RDDWrapper):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
 
         Raises:
-            TypeError if either ``extent`` or ``layout`` is defined bu the other is not.
+            TypeError: If either ``extent`` or ``layout`` is defined but the other is not.
         """
 
         if resample_method not in RESAMPLE_METHODS:
@@ -614,13 +630,18 @@ class TiledRasterRDD(RDDWrapper):
         return TiledRasterRDD(self.geopysc, self.rdd_type, self.srdd.repartition(num_partitions))
 
     def lookup(self, col, row):
-        """Return the value(s) in the image of a particular SpatialKey (given by col and row)
+        """Return the value(s) in the image of a particular ``SpatialKey`` (given by col and row).
 
         Args:
-            col (int): The SpatialKey column
-            row (int): The SpatialKey row
+            col (int): The ``SpatialKey`` column.
+            row (int): The ``SpatialKey`` row.
 
-        Returns: An array of numpy arrays (the tiles)
+        Returns:
+            A list of numpy arrays (the tiles)
+
+        Raises:
+            ValueError: If using lookup on a non ``SPATIAL`` ``TiledRasterRDD``.
+            IndexError: If col and row are not within the ``TiledRasterRDD``\'s bounds.
         """
         if self.rdd_type != SPATIAL:
             raise ValueError("Only TiledRasterRDDs with a rdd_type of Spatial can use lookup()")
@@ -643,14 +664,15 @@ class TiledRasterRDD(RDDWrapper):
         return [ser.loads(tile)[0] for tile in array_of_tiles]
 
     def tile_to_layout(self, layout, resample_method=NEARESTNEIGHBOR):
-        """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
+        """Cut tiles to a given layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layout (:obj:`~geopyspark.geotrellis.TileLayout`): Specify the
-                ``TileLayout`` to cut to.
+            layout (:obj:`~geopyspark.geotrellis.TileLayout`): Specify the ``TileLayout`` to cut
+                to.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by a constant. If none is specified, then ``NEARESTNEIGHBOR``
-                is used.
+                This is represented by the following constants: ``NEARESTNEIGHBOR``, ``BILINEAR``,
+                ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
+                ``MIN``. If none is specified, then ``NEARESTNEIGHBOR`` is used.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
@@ -675,11 +697,16 @@ class TiledRasterRDD(RDDWrapper):
             end_zoom (int): The zoom level where pyramiding should end. Represents
                 the level that is most zoomed out.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by a constant. If none is specified, then ``NEARESTNEIGHBOR``
-                is used.
+                This is represented by the following constants: ``NEARESTNEIGHBOR``, ``BILINEAR``,
+                ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
+                ``MIN``. If none is specified, then ``NEARESTNEIGHBOR`` is used.
 
         Returns:
-            Pyramided TiledRasterRDDs (list): A list of ``TiledRasterRDDs``.
+            ``[TiledRasterRDDs]``.
+
+        Raises:
+            ValueError: If the given ``resample_method`` is not known.
+            ValueError: If the col and row count is not a power of 2.
         """
 
         if resample_method not in RESAMPLE_METHODS:
@@ -699,15 +726,17 @@ class TiledRasterRDD(RDDWrapper):
         """Performs the given focal operation on the layers contained in the RDD.
 
         Args:
-            operation (str): The focal operation such as SUM, ASPECT, SLOPE, etc.
+            operation (str): The focal operation. Represented by constants: ``SUM``, ``MIN``,
+                ``MAX``, ``MEAN``, ``MEDIAN``, ``MODE``, ``STANDARDDEVIATION``, ``ASPECT``, and
+                ``SLOPE``.
             neighborhood (str or :class:`~geopyspark.geotrellis.neighborhoods.Neighborhood`, optional):
                 The type of neighborhood to use in the focal operation. This can be represented by
-                either an instance of ``Neighborhood``, or by a constant such as ANNULUS, SQUARE,
-                etc. Defaults to ``None``.
+                either an instance of ``Neighborhood``, or by the constants: ``ANNULUS``, ``NEWS``,
+                ``SQUARE``, ``WEDGE``, and ``CIRCLE``. Defaults to ``None``.
             param_1 (int or float, optional): If using ``SLOPE``, then this is the zFactor, else it
                 is the first argument of ``neighborhood``.
-            param_2 (int or float, optional): The second argument of the `neighborhood`.
-            param_3 (int or float, optional): The third argument of the `neighborhood`.
+            param_2 (int or float, optional): The second argument of the ``neighborhood``.
+            param_3 (int or float, optional): The third argument of the ``neighborhood``.
 
         Note:
             ``param`` only need to be set if ``neighborhood`` is not an instance of
@@ -720,6 +749,12 @@ class TiledRasterRDD(RDDWrapper):
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+
+        Raises:
+            ValueError: If ``operation`` is not a known operation.
+            ValueError: If ``neighborhood`` is not a known neighborhood.
+            ValueError: If ``neighborhood`` was not set, and ``operation`` is not ``SLOPE`` or
+                ``ASPECT``.
         """
 
         if operation not in OPERATIONS:
@@ -755,7 +790,7 @@ class TiledRasterRDD(RDDWrapper):
         """Stitch all of the rasters within the RDD into one raster.
 
         Note:
-            This can only be used on ``SPATIAL TiledRasterRDDs``.
+            This can only be used on ``SPATIAL`` ``TiledRasterRDDs``.
 
         Returns:
             :ref:`raster`
@@ -769,10 +804,12 @@ class TiledRasterRDD(RDDWrapper):
         return ser.loads(tup._1())[0]
 
     def mask(self, geometries):
-        """Performs cost distance of a TileLayer.
+        """Masks the ``TiledRasterRDD`` so that only values that intersect the geometries will
+        be available.
 
         Args:
-            geometries (list): A list of shapely geometries to use as masks.
+            geometries (list):
+                A list of shapely geometries to use as masks.
 
                 Note:
                     All geometries must be in the same CRS as the TileLayer.
@@ -792,12 +829,13 @@ class TiledRasterRDD(RDDWrapper):
         """Performs cost distance of a TileLayer.
 
         Args:
-            geometries (list): A list of shapely geometries to be used as a starting point.
+            geometries (list):
+                A list of shapely geometries to be used as a starting point.
 
                 Note:
                     All geometries must be in the same CRS as the TileLayer.
-            max_distance (int, float): The maximum ocst that a path may reach before operation.
-                This value can be an ``int`` or ``float``.
+            max_distance (int, float): The maximum cost that a path may reach before the operation.
+                stops. This value can be an ``int`` or ``float``.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
@@ -818,7 +856,9 @@ class TiledRasterRDD(RDDWrapper):
             data_type (type): The type of the values within the rasters. Can either be ``int`` or
                 ``float``.
             boundary_strategy (str, optional): How the cells should be classified along the breaks.
-                If unspecified, then ``LESSTHANOREQUALTO`` will be used.
+                This is represented by the following constants: ``GREATERTHAN``,
+                ``GREATERTHANOREQUALTO``, ``LESSTHAN``, ``LESSTHANOREQUALTO``, and ``EXACT``. If
+                unspecified, then ``LESSTHANOREQUALTO`` will be used.
             replace_nodata_with (data_type, optional): When remapping values, nodata values must be
                 treated separately.  If nodata values are intended to be replaced during the
                 reclassify, this variable should be set to the intended value.  If unspecified,
@@ -842,7 +882,7 @@ class TiledRasterRDD(RDDWrapper):
         """Returns the maximum and minimum values of all of the rasters in the RDD.
 
         Returns:
-            (float, float)
+            ``(float, float)``
         """
         min_max = self.srdd.getMinMax()
         return (min_max._1(), min_max._2())
@@ -860,14 +900,17 @@ class TiledRasterRDD(RDDWrapper):
         """Finds the min value that is contained within the given geometry.
 
         Args:
-            geometry (Polygon or MultiPolygon or str): A Shapely Polygon or MultiPolygon that
-                represents the area where the summary should be computed; or a WKT string
-                representation of the geometry.
+            geometry (`shapely.geometry.Polygon` or `shapely.geometry.MultiPolygon` or str): A
+                Shapely ``Polygon`` or ``MultiPolygon`` that represents the area where the summary
+                should be computed; or a WKT string representation of the geometry.
             data_type (type): The type of the values within the rasters. Can either be ``int`` or
                 ``float``.
 
         Returns:
-            int or float depending on ``data_type``.
+            ``int`` or ``float`` depending on ``data_type``.
+
+        Raises:
+            TypeError: If ``data_type`` is not an ``int`` or ``float``.
         """
 
         if data_type is int:
@@ -881,14 +924,17 @@ class TiledRasterRDD(RDDWrapper):
         """Finds the max value that is contained within the given geometry.
 
         Args:
-            geometry (Polygon or MultiPolygon or str): A Shapely Polygon or MultiPolygon that
-                represents the area where the summary should be computed; or a WKT string
-                representation of the geometry.
+            geometry (`shapely.geometry.Polygon` or `shapely.geometry.MultiPolygon` or str): A
+                Shapely ``Polygon`` or ``MultiPolygon`` that represents the area where the summary
+                should be computed; or a WKT string representation of the geometry.
             data_type (type): The type of the values within the rasters. Can either be ``int`` or
                 ``float``.
 
         Returns:
-            int or float depending on ``data_type``.
+            ``int`` or ``float`` depending on ``data_type``.
+
+        Raises:
+            TypeError: If ``data_type`` is not an ``int`` or ``float``.
         """
 
         if data_type is int:
@@ -902,14 +948,17 @@ class TiledRasterRDD(RDDWrapper):
         """Finds the sum of all of the values that are contained within the given geometry.
 
         Args:
-            geometry (Polygon or MultiPolygon or str): A Shapely Polygon or MultiPolygon that
-                represents the area where the summary should be computed; or a WKT string
-                representation of the geometry.
+            geometry (`shapely.geometry.Polygon` or `shapely.geometry.MultiPolygon` or str): A
+                Shapely ``Polygon`` or ``MultiPolygon`` that represents the area where the summary
+                should be computed; or a WKT string representation of the geometry.
             data_type (type): The type of the values within the rasters. Can either be ``int`` or
                 ``float``.
 
         Returns:
-            int or float depending on ``data_type``.
+            ``int`` or ``float`` depending on ``data_type``.
+
+        Raises:
+            TypeError: If ``data_type`` is not an ``int`` or ``float``.
         """
 
         if data_type is int:
@@ -923,12 +972,12 @@ class TiledRasterRDD(RDDWrapper):
         """Finds the mean of all of the values that are contained within the given geometry.
 
         Args:
-            geometry (Polygon or MultiPolygon or str): A Shapely Polygon or MultiPolygon that
-                represents the area where the summary should be computed; or a WKT string
-                representation of the geometry.
+            geometry (`shapely.geometry.Polygon` or `shapely.geometry.MultiPolygon` or str): A
+                Shapely ``Polygon`` or ``MultiPolygon`` that represents the area where the summary
+                should be computed; or a WKT string representation of the geometry.
 
         Returns:
-            float
+            ``float``
         """
 
         return self._process_polygonal_summary(geometry, self.srdd.polygonalMean)
@@ -940,20 +989,20 @@ class TiledRasterRDD(RDDWrapper):
             num_breaks (int): The number of breaks to return.
 
         Returns:
-            [float]
+            ``[float]``
         """
         return list(self.srdd.quantileBreaks(num_breaks))
 
     def get_quantile_breaks_exact_int(self, num_breaks):
         """Returns quantile breaks for this RDD.
-        This version uses the FastMapHistogram, which counts exact integer values.
+        This version uses the ``FastMapHistogram``, which counts exact integer values.
         If your RDD has too many values, this can cause memory errors.
 
         Args:
             num_breaks (int): The number of breaks to return.
 
         Returns:
-            [int]
+            ``[int]``
         """
         return list(self.srdd.quantileBreaksExactInt(num_breaks))
 

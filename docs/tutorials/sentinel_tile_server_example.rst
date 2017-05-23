@@ -1,5 +1,5 @@
-Creating a Tile Server From Ingested, Sentinel Data
-****************************************************
+Creating a Tile Server From Sentinel Data
+******************************************
 
 Now that we have ingested data, we can use it using a tile server.
 We will be using the catalog that was created in :ref:`sentinel_ingest_example`.
@@ -80,7 +80,7 @@ Running the tile server is done the same way as in :ref:`Greyscale Tile Server
 Running the Code <running_code>`. The only difference being the resulting
 image, of course.
 
-.. image:: pictures/sentinel_image.png
+.. image:: ../pictures/sentinel_image.png
    :align: center
 
 You'll need to scroll over Corsica, and you should see something that matches

@@ -1,52 +1,4 @@
 """Methods for reading, querying, and saving tile layers to and from GeoTrellis Catalogs.
-
-Because GeoPySpark represents all raster data as 3D numpy arrays, data that is read/written out
-will be in a multiband format; regardless of how the data was originally formatted.
-
-This module can read, write, and query from a variety of backends.
-These are the ones that are currently supported:
-
- - **Local Filesystem**
- - **HDFS**
- - **S3**
- - **Cassandra**
- - **HBase**
- - **Accumulo**
-
-Example uris for each backend:
- - Local Filesystem: file://my_folder/my_catalog/
- - HDFS: hdfs://my_folder/my_catalog/
- - S3: s3://my_bucket/my_catalog/
- - Cassandra: cassandra:name?username=user&password=pass&host=host1&keyspace=key&table=table
- - HBase: hbase://zoo1, zoo2: port/table
- - Accumulo: accumulo://username:password/zoo1, zoo2/instance/table
-
-Note:
-    Neither ``HBase`` or ``Accumulo`` support URI strings to query data. Therefore, URIs for both
-    backends have been constructed for use in GeoPySpark.
-
-The URI for ``HBase`` follows this pattern:
- - hbase://zoo1, zoo2, ..., zooN: port/table
-
-The URI for ``Accumulo`` follows this pattern:
- - accumulo://username:password/zoo1, zoo2/instance/table
-
-Some backends require various options to be set in the ``options`` parameter
-of each function. These are backends and the additonal options to set for
-each.
-
-Fields that can be set for ``Cassandra``:
- - **replicationStrategy** (str, optional): If not specified, then
-   'SimpleStrategy' will be used.
- - **replicationFactor** (int, optional): If not specified, then 1 will be used.
- - **localDc** (str, optional): If not specified, then 'datacenter1' will be used.
- - **usedHostsPerRemoteDc** (int, optional): If not specified, then 0 will be used.
- - **allowRemoteDCsForLocalConsistencyLevel** (int, optional): If you'd like this feature,
-     then the value would be 1, Otherwise, the value should be 0. If not specified,
-     then 0 will be used.
-
-Fields that can be set for ``HBase``:
- - **master** (str, optional): If not specified, then 'null' will be used.
 """
 
 import json
@@ -196,7 +148,7 @@ def read_layer_metadata(geopysc,
     """Reads the metadata from a saved layer without reading in the whole layer.
 
     Args:
-        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        geopysc (geopyspark.GeoPyContext): The ``GeoPyContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
@@ -204,8 +156,8 @@ def read_layer_metadata(geopysc,
         layer_name (str): The name of the GeoTrellis catalog to be read from.
         layer_zoom (int): The zoom level of the layer that is to be read.
         options (dict, optional): Additional parameters for reading the layer for specific backends.
-            The dictionary is only used for Cassandra and HBase, no other backend requires this
-            to be set.
+            The dictionary is only used for ``Cassandra`` and ``HBase``, no other backend requires
+            this to be set.
         numPartitions (int, optional): Sets RDD partition count when reading from catalog.
         **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.
@@ -239,7 +191,7 @@ def get_layer_ids(geopysc,
     name and zoom of a given layer.
 
     Args:
-        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        geopysc (geopyspark.GeoPyContext): The ``GeoPyContext`` being used this session.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         options (dict, optional): Additional parameters for reading the layer for specific backends.
@@ -279,9 +231,6 @@ def read(geopysc,
 
     """Reads a single, zoom layer from a GeoTrellis catalog.
 
-    Please read more about the various backends that GeoPySpark supports and how to access them
-    [link].
-
     Note:
         This will read the entire layer. If only part of the layer is needed,
         use :func:`query` instead.
@@ -289,14 +238,14 @@ def read(geopysc,
     Args:
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
-            represented by the constants: `SPATIAL` and `SPACETIME`.
+            represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be read from.
         layer_zoom (int): The zoom level of the layer that is to be read.
         options (dict, optional): Additional parameters for reading the layer for specific backends.
-            The dictionary is only used for Cassandra and HBase, no other backend requires this
-            to be set.
+            The dictionary is only used for ``Cassandra`` and ``HBase``, no other backend requires
+            this to be set.
         numPartitions (int, optional): Sets RDD partition count when reading from catalog.
         **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.
@@ -337,16 +286,16 @@ def read_value(geopysc,
                **kwargs):
 
     """Reads a single tile from a GeoTrellis catalog.
-    Unlike other functions in this module, this will not return a TiledRasterRDD, but rather a
+    Unlike other functions in this module, this will not return a ``TiledRasterRDD``, but rather a
     GeoPySpark formatted raster. This is the function to use when creating a tile server.
 
     Note:
         When requesting a tile that does not exist, ``None`` will be returned.
 
     Args:
-        geopysc (GeoPyContext): The GeoPyContext being used this session.
+        geopysc (geopyspark.GeoPyContext): The ``GeoPyContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
-            represented by the constants: `SPATIAL` and `SPACETIME`.
+            represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be read from.
@@ -357,8 +306,8 @@ def read_value(geopysc,
             format. This parameter is only used when querying spatial-temporal data. The default
             value is, None. If None, then only the spatial area will be queried.
         options (dict, optional): Additional parameters for reading the tile for specific backends.
-            The dictionary is only used for Cassandra and HBase, no other backend requires this
-            to be set.
+            The dictionary is only used for ``Cassandra`` and ``HBase``, no other backend requires
+            this to be set.
         **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.
 
@@ -415,13 +364,13 @@ def query(geopysc,
     region.
 
     Note:
-        The whole layer could still be read in if `intersects` and/or `time_intervals` have not
+        The whole layer could still be read in if ``intersects`` and/or ``time_intervals`` have not
         been set, or if the querried region contains the entire layer.
 
     Args:
         geopysc (GeoPyContext): The GeoPyContext being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
-            represented by the constants: SPATIAL and SPACETIME. Note: All of the
+            represented by the constants: ``SPATIAL`` and ``SPACETIME``. Note: All of the
             GeoTiffs must have the same saptial type.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
@@ -445,8 +394,8 @@ def query(geopysc,
             querying spatial-temporal data. The default value is, None. If None, then only the
             spatial area will be querried.
         options (dict, optional): Additional parameters for querying the tile for specific backends.
-            The dictioanry is only used for Cassandra and HBase, no other backend requires this
-            to be set.
+            The dictioanry is only used for ``Cassandra`` and ``HBase``, no other backend requires
+            this to be set.
         numPartitions (int, optional): Sets RDD partition count when reading from catalog.
         **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.
@@ -525,15 +474,16 @@ def write(uri,
             the tile layer to written to. The shape of this string varies depending on backend.
         layer_name (str): The name of the new, tile layer.
         layer_zoom (int): The zoom level the layer should be saved at.
-        tiled_raster_rdd (TiledRasterRDD): The TiledRasterRDD to be saved.
+        tiled_raster_rdd (:class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`): The
+            ``TiledRasterRDD`` to be saved.
         index_strategy (str): The method used to orginize the saved data. Depending on the type of
             data within the layer, only certain methods are available. The default method used is,
-            `ZORDER`.
+            ``ZORDER``.
         time_unit (str, optional): Which time unit should be used when saving spatial-temporal data.
             While this is set to None as default, it must be set if saving spatial-temporal data.
             Depending on the indexing method chosen, different time units are used.
         options (dict, optional): Additional parameters for writing the layer for specific
-            backends. The dictioanry is only used for Cassandra and HBase, no other backend
+            backends. The dictioanry is only used for ``Cassandra`` and ``HBase``, no other backend
             requires this to be set.
         **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.

@@ -1,7 +1,7 @@
 .. _sentinel_ingest_example:
 
-Ingesting a Sentinel Image Using GeoPySpark
-********************************************
+Ingesting a Sentinel Image
+***************************
 
 Sentinel-2 is an observation mission developed by the European Space Agency to
 monitor the surface of the Earth (`official website
@@ -42,7 +42,7 @@ Corsica taken on January 4th, 2017.
 All of the above helps create the following base url for this image set, which we
 will assign to the ``baseurl`` variable in the terminal:
 
-.. code-block:: none
+.. code:: console
 
   baseurl="http://sentinel-s2-l1c.s3.amazonaws.com/tiles/32/T/NM/2017/1/4/0/"
 
@@ -50,7 +50,7 @@ will assign to the ``baseurl`` variable in the terminal:
 To download the bands, we just have to ``wget`` each one, and then move the
 resulting ``jp2`` to ``/tmp``.
 
-.. code-block:: none
+.. code:: console
 
  wget ${baseurl}B01.jp2 ${baseurl}B09.jp2 ${baseurl}B10.jp2
  mv B01.jp2 B09.jp2 B10.jp2 /tmp
@@ -62,7 +62,7 @@ Now that we have our data, we can now begin the ingest process.
 The Code
 =========
 
-.. code-block:: python
+.. code:: python
 
   import numpy as np
   import rasterio
