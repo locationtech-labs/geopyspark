@@ -5,6 +5,8 @@ performing operations.
 '''
 import json
 import shapely.wkt
+from geopyspark.geopyspark_utils import check_environment
+check_environment()
 
 from pyspark.storagelevel import StorageLevel
 from shapely.geometry import Polygon, MultiPolygon
