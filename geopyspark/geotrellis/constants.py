@@ -277,3 +277,79 @@ CELL_TYPES = [
     FLOAT32UD,
     FLOAT64UD
 ]
+
+
+"""A ColorRamp."""
+HOT = "hot"
+
+"""A ColorRamp."""
+COOLWARM = "coolwarm"
+
+"""A ColorRamp."""
+MAGMA = "magma"
+
+"""A ColorRamp."""
+INFERNO = "inferno"
+
+"""A ColorRamp."""
+PLASMA = "plasma"
+
+"""A ColorRamp."""
+VIRIDIS = "viridis"
+
+"""A ColorRamp."""
+BLUE_TO_ORANGE = "BlueToOrange"
+
+"""A ColorRamp."""
+LIGHT_YELLOW_TO_ORANGE = "LightYellowToOrange"
+
+"""A ColorRamp."""
+BLUE_TO_RED = "BlueToRed"
+
+"""A ColorRamp."""
+GREEN_TO_RED_ORANGE = "GreenToRedOrange"
+
+"""A ColorRamp."""
+LIGHT_TO_DARK_SUNSET = "LightToDarkSunset"
+
+"""A ColorRamp."""
+LIGHT_TO_DARK_GREEN = "LightToDarkGreen"
+
+"""A ColorRamp."""
+HEATMAP_YELLOW_TO_RED = "HeatmapYellowToRed"
+
+"""A ColorRamp."""
+HEATMAP_BLUE_TO_YELLOW_TO_RED_SPECTRUM = "HeatmapBlueToYellowToRedSpectrum"
+
+"""A ColorRamp."""
+HEATMAP_DARK_RED_TO_YELLOW_WHITE = "HeatmapDarkRedToYellowWhite"
+
+"""A ColorRamp."""
+HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE = "HeatmapLightPurpleToDarkPurpleToWhite"
+
+"""A ColorRamp."""
+CLASSIFICATION_BOLD_LAND_USE = "ClassificationBoldLandUse"
+
+"""A ColorRamp."""
+CLASSIFICATION_MUTED_TERRAIN = "ClassificationMutedTerrain"
+
+COLOR_RAMPS = [
+    HOT,
+    COOLWARM,
+    MAGMA,
+    INFERNO,
+    PLASMA,
+    VIRIDIS,
+    BLUE_TO_ORANGE,
+    LIGHT_YELLOW_TO_ORANGE,
+    BLUE_TO_RED,
+    GREEN_TO_RED_ORANGE,
+    LIGHT_TO_DARK_SUNSET,
+    LIGHT_TO_DARK_GREEN,
+    HEATMAP_YELLOW_TO_RED,
+    HEATMAP_BLUE_TO_YELLOW_TO_RED_SPECTRUM,
+    HEATMAP_DARK_RED_TO_YELLOW_WHITE,
+    HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE,
+    CLASSIFICATION_BOLD_LAND_USE,
+    CLASSIFICATION_MUTED_TERRAIN
+]

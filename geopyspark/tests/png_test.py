@@ -4,7 +4,7 @@ import rasterio
 import numpy as np
 import pytest
 
-from geopyspark.geotrellis.constants import SPATIAL
+from geopyspark.geotrellis.constants import SPATIAL, HOT
 from geopyspark.geotrellis.rdd import RasterRDD
 from geopyspark.geotrellis.render import PngRDD
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -30,7 +30,7 @@ class PngRddTest(BaseTestClass):
 
         laid_out = raster_rdd.to_tiled_layer()
 
-        result = PngRDD.makePyramid(laid_out, "hot")
+        result = PngRDD.makePyramid(laid_out, HOT)
 
     ## TODO: add more specific test if/when we can color map directly from TiledRasterRDD
 
