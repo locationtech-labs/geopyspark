@@ -66,18 +66,32 @@ abstract class PngRDD[K: SpatialComponent :ClassTag] {
 }
 
 object PngRDD {
-  def asSingleband(tiled: SpatialTiledRasterRDD, rampName: String): SpatialPngRDD = {
+  def asIntSingleband(tiled: SpatialTiledRasterRDD, histogram: Histogram[Int], rampName: String): SpatialPngRDD = {
     val rdd = tiled.rdd
-    val histogram = rdd.histogram().head
     val mapped = rdd.mapValues({ mbtile =>
       mbtile.band(0).renderPng(Coloring.makeColorMap(histogram, rampName))
     })
     new SpatialPngRDD(mapped.asInstanceOf[RDD[(tiled.keyType, Png)]])
   }
 
-  def asSingleband(tiled: TemporalTiledRasterRDD, rampName: String): TemporalPngRDD = {
+  def asSingleband(tiled: SpatialTiledRasterRDD, histogram: Histogram[Double], rampName: String): SpatialPngRDD = {
     val rdd = tiled.rdd
-    val histogram = rdd.histogram().head
+    val mapped = rdd.mapValues({ mbtile =>
+      mbtile.band(0).renderPng(Coloring.makeColorMap(histogram, rampName))
+    })
+    new SpatialPngRDD(mapped.asInstanceOf[RDD[(tiled.keyType, Png)]])
+  }
+
+  def asIntSingleband(tiled: TemporalTiledRasterRDD, histogram: Histogram[Int], rampName: String): TemporalPngRDD = {
+    val rdd = tiled.rdd
+    val mapped = rdd.mapValues({ mbtile =>
+      mbtile.band(0).renderPng(Coloring.makeColorMap(histogram, rampName))
+    })
+    new TemporalPngRDD(mapped.asInstanceOf[RDD[(tiled.keyType, Png)]])
+  }
+
+  def asSingleband(tiled: TemporalTiledRasterRDD, histogram: Histogram[Double], rampName: String): TemporalPngRDD = {
+    val rdd = tiled.rdd
     val mapped = rdd.mapValues({ mbtile =>
       mbtile.band(0).renderPng(Coloring.makeColorMap(histogram, rampName))
     })

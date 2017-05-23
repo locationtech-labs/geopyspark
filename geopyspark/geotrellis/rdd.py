@@ -1006,6 +1006,16 @@ class TiledRasterRDD(RDDWrapper):
         """
         return list(self.srdd.quantileBreaksExactInt(num_breaks))
 
+    def is_floating_point_layer(self):
+        return self.srdd.isFloatingPointLayer()
+
+    def get_histogram(self):
+        if self.is_floating_point_layer:
+            histogram = self.srdd.getDoubleHistograms()
+        else:
+            histogram = self.srdd.getIntHistograms()
+        return histogram
+
     def _process_operation(self, value, operation):
         if isinstance(value, int) or isinstance(value, float):
             srdd = operation(value)
