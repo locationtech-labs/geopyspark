@@ -138,6 +138,7 @@ a need for it.
   guides/core_concepts
   guides/geopycontext
   guides/rdd
+  guides/catalog
 
 .. toctree::
   :maxdepth: 3
