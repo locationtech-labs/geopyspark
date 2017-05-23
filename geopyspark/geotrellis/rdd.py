@@ -1007,9 +1007,25 @@ class TiledRasterRDD(RDDWrapper):
         return list(self.srdd.quantileBreaksExactInt(num_breaks))
 
     def is_floating_point_layer(self):
+        """Determines whether the content of the TiledRasterRDD is of floating point type.
+
+        Args: 
+            None
+
+        Returns:
+            [boolean]
+        """
         return self.srdd.isFloatingPointLayer()
 
     def get_histogram(self):
+        """Returns an array of Java histogram objects, one for each band of the raster.
+
+        Args:
+            None
+
+        Returns:
+            An array of Java objects containing the histograms of each band
+        """
         if self.is_floating_point_layer:
             histogram = self.srdd.getDoubleHistograms()
         else:
