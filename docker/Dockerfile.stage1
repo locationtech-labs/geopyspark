@@ -18,7 +18,8 @@ RUN pip3 install --user -r /tmp/requirements.txt && \
 # Patch and install GeoNotebook
 COPY blobs/geonotebook.tar /tmp
 COPY config/patch.diff /tmp
-RUN (pushd /tmp ; tar axvf geonotebook.tar ; popd) && \
+RUN mkdir /home/hadoop/notebooks && \
+    (pushd /tmp ; tar axvf geonotebook.tar ; popd) && \
     (pushd /tmp/geonotebook ; patch -p1 < /tmp/patch.diff ; pip3 install --user . ; popd) && \
     jupyter nbextension enable --py widgetsnbextension && \
     jupyter serverextension enable --py geonotebook && \

@@ -135,7 +135,7 @@ To run the container, type:
 
 .. code:: console
 
-   docker run -it --rm -p 8000:8000 quay.io/geodocker/jupyter-geopyspark:5
+   docker run -it --rm -p 8000:8000 quay.io/geodocker/jupyter-geopyspark:6
 
 GeoPySpark Script
 -----------------
