@@ -1,6 +1,7 @@
 package geopyspark.geotrellis
 
 import org.apache.spark.rdd.RDD
+import org.apache.spark.storage.StorageLevel
 
 import geotrellis.raster._
 import geotrellis.raster.histogram._
@@ -63,6 +64,7 @@ object ColorRamp {
 
 abstract class PngRDD[K: SpatialComponent :ClassTag] {
   def rdd: RDD[(K, Png)]
+  def persist(storageLevel: StorageLevel) = rdd.persist(storageLevel)
 }
 
 object PngRDD {

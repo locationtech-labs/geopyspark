@@ -163,9 +163,10 @@ class PngRDD(RDDWrapper):
         Returns: The current object
         """
         self.is_cached = True
-
+        javaStorageLevel = self.geopysc.pysc._getJavaStorageLevel(storageLevel)
+        
         for level in self.pngpyramid:
-            level.persist(storageLevel)
+            level.persist(javaStorageLevel)
 
         return self
 
