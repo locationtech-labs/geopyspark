@@ -136,6 +136,7 @@ a need for it.
   :hidden:
 
   guides/core_concepts
+  guides/geopycontext
   guides/rdd
 
 .. toctree::
