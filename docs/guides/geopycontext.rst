@@ -12,15 +12,15 @@ Before being sent to the other side, though, the values must be formatted in
 such a way so they can be serialized/deserialzed. ``GeoPyContext`` makes this a
 little easier by providing methods that will prepare the data before it is
 sent over. This is why a ``GeoPyContext`` instance is needed for almost all
-functions and class consturctors.
+functions and class constructors.
 
 
 Initializing GeoPyContext
 --------------------------
 
-Initializing ``GeoPyContext`` cabe be done through two different methods:
+Initializing ``GeoPyContext`` can be done through two different methods:
 either by giving it an exisiting ``SparkContext`` or by passing in the
-arguements used to construct a ``SparkContext``.
+arguments used to construct a ``SparkContext``.
 
 .. code:: python
 

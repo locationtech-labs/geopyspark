@@ -13,7 +13,7 @@ RasterRDD
 ~~~~~~~~~
 
 Of the two different RDD classes, ``RasterRDD`` has the least number of ways
-to be intialized. There are just two: through reading GeoTiffs from the local
+to be initialized. There are just two: through reading GeoTiffs from the local
 file system, ``S3``, or ``HDFS``; or from an existing PySpark RDD.
 
 From GeoTiffs
@@ -68,7 +68,7 @@ the PySpark RDD to be formatted in a specific way.
    # Since the RasterRDD will be SPATIAL, a ProjectedExtent is constructed.
    projected_extent = {'extent': extent, 'epsg': 3857}
 
-   # Create a PySpark RDD that contains a singel tuple, (projected_extent, tile)
+   # Create a PySpark RDD that contains a single tuple, (projected_extent, tile)
    # Note: The order of the values in the tuple is important. ProjectedExtent
    # or TemporalProjectedExtent MUST Be the first element.
    rdd = geopysc.pysc.parallelize([(projected_extent, tile)])
@@ -172,7 +172,7 @@ Through Euclidean Distance
 The final way to create ``TiledRasterRDD`` is by calculating the Euclidean of
 a Shapely geometry. :meth:`~geopyspark.geotrellis.rdd.TiledRasterRDd.euclidean_distance`
 is the class method which does this. While you can use any geometry to perform
-Euclidean distance, it is reccomended **not** to use Polygons if they cover
+Euclidean distance, it is recommended **not** to use Polygons if they cover
 many cells of the resulting raster. As this can impact performance in a
 negative way.
 
@@ -259,7 +259,7 @@ with ``replace_nodata_with``.
 
    value_map = {5.0: 10.0, 15.0: 20.0}
 
-   # Only 5.0 and 15.0 will be reclassified. Everythin else will become -1000.0
+   # Only 5.0 and 15.0 will be reclassified. Everything else will become -1000.0
    tiled_rdd.relcassify(value_map=value_map, data_type=float, boundary_strategy=EXACT,
                         replace_no_data_with=-1000.0)
 
@@ -282,7 +282,7 @@ The purpose of ``RasterRDD`` is store and format data to produce a
 ``TiledRasterRDD``. Thus, this class lacks the methods needed to perform any
 kind of spatial analysis. It can be thought of as something of an "organizer".
 Which sorts and lays out the data so that ``TiledRasterRDD`` can perform
-operatons on the data.
+operations on the data.
 
 
 Collecting Metadata
@@ -345,7 +345,7 @@ will cut and then merge together areas that are overlapped. This matters as
 each ``Tile`` is referenced by a key, and if there's overlap than there could
 be duplicate keys.
 
-Therefore, it is recomended to use ``tile_to_layout`` to ensure there is no
+Therefore, it is recommended to use ``tile_to_layout`` to ensure there is no
 duplication.
 
 .. code:: python
@@ -389,7 +389,7 @@ TiledRasterRDD
 ~~~~~~~~~~~~~~~
 
 ``TiledRasterRDD`` will be the class that will see the must use. It provides
-all the methods needed to perform a computions and analysis on the data. When
+all the methods needed to perform a computations and analysis on the data. When
 reading and saving layers, this class will be used.
 
 A Note on Using Geometries
@@ -418,6 +418,7 @@ in this projection, the geometry being used will need to be reprojected.
       pyproj.Proj(init='epsg:3857'))
 
   reprojected_polygon = transform(project, geom)
+
 
 .. _reproject_meth:
 
@@ -515,9 +516,9 @@ Stitching
 ^^^^^^^^^^
 
 Using :meth:`~geopyspark.geotrellis.rdd.TiledRasterRDD.stitch` will produce
-a single raster by stictching together all of the tiles within the
+a single raster by stitching together all of the tiles within the
 ``TiledRasterRDD``. This can only be done with ``SPATIAL`` RDDs, and is not
-recomended if the data contained within is large. As it can cause crashes due
+recommended if the data contained within is large. As it can cause crashes due
 to its size.
 
 .. code:: python
@@ -541,7 +542,7 @@ either be accessed to fetch specific tiles or can be saved for later use.
 
 Why is ``start_zoom`` greater than ``end_zoom``? This is because ``start_zoom``
 represents the lowest or most zoomed level of the pyramid. And the pyramiding
-procress starts with the greatest zoom and works its way up to the most zoomed
+process starts with the greatest zoom and works its way up to the most zoomed
 out.
 
 
@@ -612,7 +613,7 @@ constant.
 Polygonal Summary Methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In additon to local and focal methods, ``TiledRasterRDD`` can also perform
+In addition to local and focal methods, ``TiledRasterRDD`` can also perform
 polygonal summary methods. Using Shapely geometries, one can find the min, max,
 sum, and mean of all of the values intersected by the geometry.
 
