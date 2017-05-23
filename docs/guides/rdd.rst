@@ -419,6 +419,7 @@ in this projection, the geometry being used will need to be reprojected.
 
   reprojected_polygon = transform(project, geom)
 
+.. _reproject_meth:
 
 Reprojecting
 ^^^^^^^^^^^^^
