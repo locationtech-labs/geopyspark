@@ -1,3 +1,6 @@
+from geopyspark.geopyspark_utils import check_environment
+check_environment()
+
 from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, COLOR_RAMPS
 from .rdd import RDDWrapper
 from pyspark.storagelevel import StorageLevel
@@ -78,10 +81,9 @@ class PngRDD(RDDWrapper):
         self.max_zoom = level0.zoom_level
         histogram = level0.get_histogram()
         if level0.is_floating_point_layer():
-            mapper = lambda layer: self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asSingleband(layer.srdd, histogram, ramp_name)
+            self.pngpyramid = [self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asSingleband(layer.srdd, histogram, ramp_name) for layer in pyramid]
         else:
-            mapper = lambda layer: self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asIntSingleband(layer.srdd, histogram, ramp_name)
-        self.pngpyramid = list(map(mapper, pyramid))
+            self.pngpyramid = [self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asIntSingleband(layer.srdd, histogram, ramp_name) for layer in pyramid]
         self.debug = debug
         self.is_cached = False
 
