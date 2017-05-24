@@ -65,6 +65,7 @@ object ColorRamp {
 abstract class PngRDD[K: SpatialComponent :ClassTag] {
   def rdd: RDD[(K, Png)]
   def persist(storageLevel: StorageLevel) = rdd.persist(storageLevel)
+  def unpersist() = rdd.unpersist()
 }
 
 object PngRDD {
