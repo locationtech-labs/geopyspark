@@ -159,30 +159,3 @@ class PngRDD(CachableRDD):
     def wrapped_rdds(self):
         return self.pngpyramid
 
-    # def persist(self, storageLevel=StorageLevel.MEMORY_ONLY):
-    #     """Set the persistence mode of the underlying RDD structure.
-
-    #     Args:
-    #         storage_mode (StorageLevel): The storage mode to set.
-
-    #     Returns: The current object
-    #     """
-    #     self.is_cached = True
-    #     javaStorageLevel = self.geopysc.pysc._getJavaStorageLevel(storageLevel)
-        
-    #     for level in self.pngpyramid:
-    #         level.persist(javaStorageLevel)
-
-    #     return self
-
-    # def unpersist(self):
-    #     """
-    #     Mark the RDD as non-persistent, and remove all blocks for it from
-    #     memory and disk.
-    #     """
-
-    #     self.is_cached = False
-    #     for level in self.pngpyramid:
-    #         level.unpersist()
-    #     return self
-
