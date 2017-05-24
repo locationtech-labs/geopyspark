@@ -636,7 +636,8 @@ object SpatialTiledRasterRDD {
     SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata), metadata))
   }
 
-  def euclideanDistance(sc: SparkContext, geomWKT: String, geomCRSStr: String, cellType: CellType, requestedZoom: Int): TiledRasterRDD[SpatialKey]= {
+  def euclideanDistance(sc: SparkContext, geomWKT: String, geomCRSStr: String, cellTypeString: String, requestedZoom: Int): TiledRasterRDD[SpatialKey]= {
+    val cellType = CellType.fromName(cellTypeString)
     val geom = geotrellis.vector.io.wkt.WKT.read(geomWKT)
     val srcCRS = TileRDD.getCRS(geomCRSStr).get
     val LayoutLevel(z, ld) = ZoomedLayoutScheme(srcCRS).levelForZoom(requestedZoom)

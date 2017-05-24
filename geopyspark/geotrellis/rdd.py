@@ -532,7 +532,7 @@ class TiledRasterRDD(CachableRDD):
         return cls(geopysc, rdd_type, srdd)
 
     @classmethod
-    def euclidean_distance(cls, geopysc, geometry, source_crs, zoom):
+    def euclidean_distance(cls, geopysc, geometry, source_crs, zoom, cellType='float64'):
         """Calculates the Euclidean distance of a Shapely geometry.
 
         Args:
@@ -553,7 +553,7 @@ class TiledRasterRDD(CachableRDD):
         if isinstance(source_crs, int):
             source_crs = str(source_crs)
 
-        srdd = geopysc._jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.euclideanDistance(geopysc.sc, dumps(geometry), source_crs, zoom)
+        srdd = geopysc._jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.euclideanDistance(geopysc.sc, dumps(geometry), source_crs, cellType, zoom)
         return cls(geopysc, SPATIAL, srdd)
 
     def to_numpy_rdd(self):
