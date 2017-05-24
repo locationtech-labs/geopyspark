@@ -266,6 +266,32 @@ command:
 
 This will open up the jupyter hub and will allow you to work on your notebooks.
 
+It is also possible to develop with both GeoPySpark and GeoNotebook in editable mode.
+To do so you will need to re-install and re-register GeoNotebook with Jupyter.
+
+.. code:: console
+
+   pip uninstall geonotebook
+   git clone --branch feature/geotrellis https://github.com/geotrellis/geonotebook ~/geonotebook
+   pip install -e ~/geonotebook
+   jupyter serverextension enable --py geonotebook
+   jupyter nbextension enable --py geonotebook
+   make notebook
+
+The default `Geonotebook (Python 3)` kernel will require the following environment variables to be defined:
+
+.. code:: console
+
+   export PYSPARK_PYTHON="/usr/local/bin/python3"
+   export SPARK_HOME="/usr/local/apache-spark/2.1.1/libexec"
+   export PYTHONPATH="${SPARK_HOME}/python/lib/py4j-0.10.4-src.zip:${SPARK_HOME}/python/lib/pyspark.zip"
+
+Make sure to define them to values that are correct for your system.
+The `make notebook` command also makes used of `PYSPARK_SUBMIT_ARGS` variable defined in the `Makefile`.
+
+GeoNotebook/GeoTrellis integration in currently in active development and not part of GeoNotebook master.
+The latest development is on a `feature/geotrellis` branch at `<https://github.com/geotrellis/geonotebook>`.
+
 Side Note For Developers
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
