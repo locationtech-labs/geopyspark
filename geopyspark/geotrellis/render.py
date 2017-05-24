@@ -2,7 +2,7 @@ from geopyspark.geopyspark_utils import check_environment
 check_environment()
 
 from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, COLOR_RAMPS
-from .rdd import RDDWrapper
+from .rdd import CachableRDD
 from pyspark.storagelevel import StorageLevel
 
 
@@ -54,7 +54,7 @@ def get_hex(geopysc, ramp_name, num_colors=None):
         return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(ramp_name))
 
 
-class PngRDD(RDDWrapper):
+class PngRDD(CachableRDD):
     def __init__(self, pyramid, ramp_name, debug=False):
         """Convert a pyramid of TiledRasterRDDs into a displayable structure of PNGs
 
@@ -156,35 +156,33 @@ class PngRDD(RDDWrapper):
 
         return [bytes for bytes in result]
 
-    def persist(self, storageLevel=StorageLevel.MEMORY_ONLY):
-        """Set the persistence mode of the underlying RDD structure.
+    def wrapped_rdds(self):
+        return self.pngpyramid
 
-        Args:
-            storage_mode (StorageLevel): The storage mode to set.
+    # def persist(self, storageLevel=StorageLevel.MEMORY_ONLY):
+    #     """Set the persistence mode of the underlying RDD structure.
 
-        Returns: The current object
-        """
-        self.is_cached = True
-        javaStorageLevel = self.geopysc.pysc._getJavaStorageLevel(storageLevel)
+    #     Args:
+    #         storage_mode (StorageLevel): The storage mode to set.
+
+    #     Returns: The current object
+    #     """
+    #     self.is_cached = True
+    #     javaStorageLevel = self.geopysc.pysc._getJavaStorageLevel(storageLevel)
         
-        for level in self.pngpyramid:
-            level.persist(javaStorageLevel)
+    #     for level in self.pngpyramid:
+    #         level.persist(javaStorageLevel)
 
-        return self
+    #     return self
 
-    def unpersist(self):
-        """
-        Mark the RDD as non-persistent, and remove all blocks for it from
-        memory and disk.
-        """
+    # def unpersist(self):
+    #     """
+    #     Mark the RDD as non-persistent, and remove all blocks for it from
+    #     memory and disk.
+    #     """
 
-        self.is_cached = False
-        for level in self.pngpyramid:
-            level.unpersist()
-        return self
+    #     self.is_cached = False
+    #     for level in self.pngpyramid:
+    #         level.unpersist()
+    #     return self
 
-    def cache(self):
-        """
-        Persist this RDD with the default storage level (C{MEMORY_ONLY}).
-        """
-        return self.persist()

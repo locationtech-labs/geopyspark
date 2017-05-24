@@ -52,7 +52,7 @@ def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_wi
             return srdd.reclassifyDouble(new_dict, boundary_strategy, replace_nodata_with)
 
 
-class RDDWrapper(object):
+class CachableRDD(object):
     """
     Base class for class that wraps a Scala RDD instance through a py4j reference.
 
@@ -63,6 +63,15 @@ class RDDWrapper(object):
 
     def __init__(self):
         self.is_cached = False
+
+    def wrapped_rdds(self):
+        """
+        Returns the list of RDD-containing objects wrapped by this object.  
+        The default implementation assumes that subclass contains a single 
+        RDD container, srdd, which implements the persist() and unpersist() 
+        methods.
+        """
+        return [self.srdd]
 
     def cache(self):
         """
@@ -81,7 +90,8 @@ class RDDWrapper(object):
 
         javaStorageLevel = self.geopysc.pysc._getJavaStorageLevel(storageLevel)
         self.is_cached = True
-        self.srdd.persist(javaStorageLevel)
+        for srdd in self.wrapped_rdds():
+            srdd.persist(javaStorageLevel)
         return self
 
     def unpersist(self):
@@ -91,11 +101,11 @@ class RDDWrapper(object):
         """
 
         self.is_cached = False
-        self.srdd.unpersist()
+        for srdd in self.wrapped_rdds():
+            srdd.unpersist()
         return self
 
-
-class RasterRDD(RDDWrapper):
+class RasterRDD(CachableRDD):
     """A wrapper of a RDD that contains GeoTrellis rasters.
 
     Represents a RDD that contains ``(K, V)``. Where ``K`` is either :ref:`projected_extent` or
@@ -123,7 +133,7 @@ class RasterRDD(RDDWrapper):
     __slots__ = ['geopysc', 'rdd_type', 'srdd']
 
     def __init__(self, geopysc, rdd_type, srdd):
-        RDDWrapper.__init__(self)
+        CachableRDD.__init__(self)
         self.geopysc = geopysc
         self.rdd_type = rdd_type
         self.srdd = srdd
@@ -383,7 +393,7 @@ class RasterRDD(RDDWrapper):
         return (min_max._1(), min_max._2())
 
 
-class TiledRasterRDD(RDDWrapper):
+class TiledRasterRDD(CachableRDD):
     """Wraps a RDD of tiled, GeoTrellis rasters.
 
     Represents a RDD that contains ``(K, V)``. Where ``K`` is either :ref:`spatial-key` or
@@ -411,7 +421,7 @@ class TiledRasterRDD(RDDWrapper):
     __slots__ = ['geopysc', 'rdd_type', 'srdd']
 
     def __init__(self, geopysc, rdd_type, srdd):
-        RDDWrapper.__init__(self)
+        CachableRDD.__init__(self)
         self.geopysc = geopysc
         self.rdd_type = rdd_type
         self.srdd = srdd
