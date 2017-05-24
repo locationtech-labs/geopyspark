@@ -278,7 +278,7 @@ To do so you will need to re-install and re-register GeoNotebook with Jupyter.
    jupyter nbextension enable --py geonotebook
    make notebook
 
-The default `Geonotebook (Python 3)` kernel will require the following environment variables to be defined:
+The default ``Geonotebook (Python 3)`` kernel will require the following environment variables to be defined:
 
 .. code:: console
 
@@ -287,10 +287,10 @@ The default `Geonotebook (Python 3)` kernel will require the following environme
    export PYTHONPATH="${SPARK_HOME}/python/lib/py4j-0.10.4-src.zip:${SPARK_HOME}/python/lib/pyspark.zip"
 
 Make sure to define them to values that are correct for your system.
-The `make notebook` command also makes used of `PYSPARK_SUBMIT_ARGS` variable defined in the `Makefile`.
+The ``make notebook`` command also makes used of ``PYSPARK_SUBMIT_ARGS`` variable defined in the ``Makefile``.
 
 GeoNotebook/GeoTrellis integration in currently in active development and not part of GeoNotebook master.
-The latest development is on a `feature/geotrellis` branch at `<https://github.com/geotrellis/geonotebook>`.
+The latest development is on a ``feature/geotrellis`` branch at ``<https://github.com/geotrellis/geonotebook>``.
 
 Side Note For Developers
 ~~~~~~~~~~~~~~~~~~~~~~~~~
