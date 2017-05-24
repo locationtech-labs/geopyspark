@@ -636,19 +636,19 @@ object SpatialTiledRasterRDD {
     SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata), metadata))
   }
 
-  def euclideanDistance(sc: SparkContext, geomWKT: String, srcCRSStr: String, requestedZoom: Int): TiledRasterRDD[SpatialKey]= {
+  def euclideanDistance(sc: SparkContext, geomWKT: String, geomCRSStr: String, cellTypeString: String, requestedZoom: Int): TiledRasterRDD[SpatialKey]= {
+    val cellType = CellType.fromName(cellTypeString)
     val geom = geotrellis.vector.io.wkt.WKT.read(geomWKT)
-    val srcCRS = TileRDD.getCRS(srcCRSStr).get
-    val LayoutLevel(z, ld) = ZoomedLayoutScheme(WebMercator).levelForZoom(requestedZoom)
+    val srcCRS = TileRDD.getCRS(geomCRSStr).get
+    val LayoutLevel(z, ld) = ZoomedLayoutScheme(srcCRS).levelForZoom(requestedZoom)
     val maptrans = ld.mapTransform
-    val reprojected = geom.reproject(srcCRS, WebMercator)
-    val GridBounds(cmin, rmin, cmax, rmax) = maptrans(reprojected.envelope)
+    val gb @ GridBounds(cmin, rmin, cmax, rmax) = maptrans(geom.envelope)
 
     val keys = for (r <- rmin to rmax; c <- cmin to cmax) yield SpatialKey(c, r)
 
     val pts = 
-      if (reprojected.isInstanceOf[MultiPoint]) {
-        reprojected.asInstanceOf[MultiPoint].points.map(_.jtsGeom.getCoordinate)
+      if (geom.isInstanceOf[MultiPoint]) {
+        geom.asInstanceOf[MultiPoint].points.map(_.jtsGeom.getCoordinate)
       } else {
         val coords = collection.mutable.ListBuffer.empty[Coordinate]
 
@@ -662,11 +662,10 @@ object SpatialTiledRasterRDD {
             coords += coord
           }
 
-          Rasterizer.foreachCellByGeometry(reprojected, re)(rasterizeToPoints)
-                                                           (sk, coords.toArray)
+          Rasterizer.foreachCellByGeometry(geom, re)(rasterizeToPoints)
         }
-        keys.foreach(createPoints)
 
+        keys.foreach(createPoints)
         coords.toArray
       }
 
@@ -675,19 +674,15 @@ object SpatialTiledRasterRDD {
     val mbtileRDD: RDD[(SpatialKey, MultibandTile)] = skRDD.mapPartitions({ skiter => skiter.map { sk =>
       val ex = maptrans(sk)
       val re = RasterExtent(ex, ld.tileCols, ld.tileRows)
-      val tile = DoubleArrayTile.empty(re.cols, re.rows)
+      val tile = ArrayTile.empty(cellType, re.cols, re.rows)
       val vd = new VoronoiDiagram(dt.value, ex)
       vd.voronoiCellsWithPoints.foreach(EuclideanDistanceTile.rasterizeDistanceCell(re, tile)(_))
       (sk, MultibandTile(tile))
     } }, preservesPartitioning=true)
 
-    val projectedRDD: RDD[(ProjectedExtent, MultibandTile)] = mbtileRDD.map{ case (sk, mbtile) => {
-      val ex = maptrans(sk)
-      val projEx = ProjectedExtent(ex, WebMercator)
-      (projEx, mbtile)
-    }}
+    val metadata = TileLayerMetadata(cellType, ld, maptrans(gb), srcCRS, KeyBounds(gb))
 
-    SpatialTiledRasterRDD(Some(z), MultibandTileLayerRDD(mbtileRDD, projectedRDD.collectMetadata[SpatialKey](ld)))
+    SpatialTiledRasterRDD(Some(z), MultibandTileLayerRDD(mbtileRDD, metadata))
   }
 
 }
