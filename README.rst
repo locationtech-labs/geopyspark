@@ -301,7 +301,7 @@ two lines of code at the top of your notebooks.
 .. code:: console
 
    %load_ext autoreload
-   $autoreload 2
+   %autoreload 2
 
 This will make it so that you don't have to leave the notebook for your changes
 to take affect. Rather, you just have to reimport the module and it will be
