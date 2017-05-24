@@ -273,6 +273,8 @@ To do so you will need to re-install and re-register GeoNotebook with Jupyter.
 
    pip uninstall geonotebook
    git clone --branch feature/geotrellis https://github.com/geotrellis/geonotebook ~/geonotebook
+   pip install -r ~/geonotebook/prerequirements.txt
+   pip install -r ~/geonotebook/requirements.txt
    pip install -e ~/geonotebook
    jupyter serverextension enable --py geonotebook
    jupyter nbextension enable --py geonotebook
