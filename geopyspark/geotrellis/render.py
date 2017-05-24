@@ -1,4 +1,9 @@
+from geopyspark.geopyspark_utils import check_environment
+check_environment()
+
 from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, COLOR_RAMPS
+from .rdd import CachableRDD
+from pyspark.storagelevel import StorageLevel
 
 
 def get_breaks(geopysc, ramp_name, num_colors=None):
@@ -49,7 +54,7 @@ def get_hex(geopysc, ramp_name, num_colors=None):
         return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(ramp_name))
 
 
-class PngRDD(object):
+class PngRDD(CachableRDD):
     def __init__(self, pyramid, ramp_name, debug=False):
         """Convert a pyramid of TiledRasterRDDs into a displayable structure of PNGs
 
@@ -74,8 +79,13 @@ class PngRDD(object):
         self.rdd_type = level0.rdd_type
         self.layer_metadata = list(map(lambda lev: lev.layer_metadata, pyramid))
         self.max_zoom = level0.zoom_level
-        self.pngpyramid = list(map(lambda layer: self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asSingleband(layer.srdd, ramp_name), pyramid))
+        histogram = level0.get_histogram()
+        if level0.is_floating_point_layer():
+            self.pngpyramid = [self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asSingleband(layer.srdd, histogram, ramp_name) for layer in pyramid]
+        else:
+            self.pngpyramid = [self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asIntSingleband(layer.srdd, histogram, ramp_name) for layer in pyramid]
         self.debug = debug
+        self.is_cached = False
 
     @classmethod
     def makePyramid(cls, tiledrdd, ramp_name, start_zoom=None, end_zoom=0, resample_method=NEARESTNEIGHBOR, debug=False):
@@ -145,3 +155,7 @@ class PngRDD(object):
         result = pngrdd.lookup(col, row)
 
         return [bytes for bytes in result]
+
+    def wrapped_rdds(self):
+        return self.pngpyramid
+

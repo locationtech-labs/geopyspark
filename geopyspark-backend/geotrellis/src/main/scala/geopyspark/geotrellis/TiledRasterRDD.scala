@@ -5,6 +5,7 @@ import geopyspark.geotrellis.GeoTrellisUtils._
 import geotrellis.proj4._
 import geotrellis.raster._
 import geotrellis.raster.distance._
+import geotrellis.raster.histogram._
 import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
 import geotrellis.raster.resample.ResampleMethod
@@ -277,6 +278,12 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
       case poly: Polygon => singleTileLayerRDD.polygonalSumDouble(poly)
       case multi: MultiPolygon => singleTileLayerRDD.polygonalSumDouble(multi)
     }
+
+  def isFloatingPointLayer(): Boolean = rdd.metadata.cellType.isFloatingPoint
+
+  def getIntHistograms(): Histogram[Int] = rdd.histogramExactInt.head
+
+  def getDoubleHistograms(): Histogram[Double] = rdd.histogram.head
 
   protected def withRDD(result: RDD[(K, MultibandTile)]): TiledRasterRDD[K]
 }
