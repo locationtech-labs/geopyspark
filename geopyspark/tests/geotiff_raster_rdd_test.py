@@ -4,7 +4,7 @@ import rasterio
 import pytest
 import numpy as np
 
-from geopyspark.geotrellis.constants import SPATIAL, INT32, BOOLRAW
+from geopyspark.geotrellis.constants import SPATIAL, INT32, BOOLRAW, create_no_data_constant, UINT8
 from geopyspark.tests.python_test_utils import geotiff_test_path
 from geopyspark.geotrellis.geotiff_rdd import get
 from geopyspark.geotrellis.rdd import RasterRDD
@@ -94,7 +94,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         projected_extent = {'extent': extent, 'epsg': epsg_code}
 
         tile = {'data': arr, 'no_data_value': float('nan')}
-        rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
+        rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
 
         converted = raster_rdd.convert_data_type(INT32)
@@ -107,6 +107,25 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         arr = converted.to_numpy_rdd().first()[1]['data']
 
         self.assertEqual(arr.dtype, np.uint8)
+
+    def test_to_ud_ubyte(self):
+        arr = np.array([[0.4324323432124, 0.0, 0.0],
+                        [1.0, 1.0, 1.0]], dtype=float)
+
+        epsg_code = 3857
+        extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 10.0, 'ymax': 10.0}
+        projected_extent = {'extent': extent, 'epsg': epsg_code}
+
+        tile = {'data': arr, 'no_data_value': float('nan')}
+        rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+
+        no_data_const = create_no_data_constant(UINT8, -1)
+        converted = raster_rdd.convert_data_type(no_data_const)
+        tile = converted.to_numpy_rdd().first()
+        no_data = tile[1]['no_data_value']
+
+        self.assertEqual(no_data, -1)
 
 
 if __name__ == "__main__":
