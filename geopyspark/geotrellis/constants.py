@@ -233,26 +233,36 @@ FLOAT32 = "float32"
 """Representes Double Cells with constant NoData values."""
 FLOAT64 = "float64"
 
-"""Representes Byte Cells with user defined NoData values."""
-INT8UD = "int8ud"
+def create_no_data_constant(cell_type, no_data_value):
+    """Creates a ``CellType`` that has a user defined NoData value.
 
-"""Representes UByte Cells with user defined NoData values."""
-UINT8UD = "uint8ud"
+    Cannot be used when the ``cell_type`` is either a boolean or contains raw values.
 
-"""Representes Short Cells with user defined NoData values."""
-INT16UD = "int16ud"
+    Args:
+        cell_type (str): The string representation of the ``CellType`` to convert to. It is
+            represented by a constant such as ``INT16``, ``FLOAT64``, etc.
+        no_data_value (int or float): The value that should be marked as NoData.
 
-"""Representes UShort Cells with user defined NoData values."""
-UINT16UD = "uint16ud"
+    Returns:
+        A user defined noData constant CellType (str)
 
-"""Representes Int Cells with user defined NoData values."""
-INT32UD = "int32ud"
+    Raises:
+        ValueError: If ``cell_type`` is a boolean.
+        ValueError: If the ``cell_type`` contains raw values.
+        ValueError: If the ``cell_type`` is not a known ``CellType``.
+    """
 
-"""Representes Float Cells with user defined NoData values."""
-FLOAT32UD = "float32ud"
+    if 'bool' in cell_type:
+        raise ValueError("Cannot add user defined types to Bool")
+    elif 'raw' in cell_type:
+        raise ValueError("Cannot add user defined types to raw values")
+    elif cell_type not in CELL_TYPES:
+        raise ValueError(cell_type, "Is not a known CellType")
+    else:
+        no_data_constant = cell_type + "ud" + str(no_data_value)
+        CELL_TYPES.append(no_data_constant)
 
-"""Representes Double Cells with user defined NoData values."""
-FLOAT64UD = "float64ud"
+        return no_data_constant
 
 
 CELL_TYPES = [
@@ -271,14 +281,7 @@ CELL_TYPES = [
     UINT16,
     INT32,
     FLOAT32,
-    FLOAT64,
-    INT8UD,
-    UINT8UD,
-    INT16UD,
-    UINT16UD,
-    INT32UD,
-    FLOAT32UD,
-    FLOAT64UD
+    FLOAT64
 ]
 
 
