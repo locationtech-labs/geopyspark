@@ -233,38 +233,6 @@ FLOAT32 = "float32"
 """Representes Double Cells with constant NoData values."""
 FLOAT64 = "float64"
 
-def create_no_data_constant(cell_type, no_data_value):
-    """Creates a ``CellType`` that has a user defined NoData value.
-
-    Cannot be used when the ``cell_type`` is either a boolean or contains raw values.
-
-    Args:
-        cell_type (str): The string representation of the ``CellType`` to convert to. It is
-            represented by a constant such as ``INT16``, ``FLOAT64``, etc.
-        no_data_value (int or float): The value that should be marked as NoData.
-
-    Returns:
-        A user defined noData constant CellType (str)
-
-    Raises:
-        ValueError: If ``cell_type`` is a boolean.
-        ValueError: If the ``cell_type`` contains raw values.
-        ValueError: If the ``cell_type`` is not a known ``CellType``.
-    """
-
-    if 'bool' in cell_type:
-        raise ValueError("Cannot add user defined types to Bool")
-    elif 'raw' in cell_type:
-        raise ValueError("Cannot add user defined types to raw values")
-    elif cell_type not in CELL_TYPES:
-        raise ValueError(cell_type, "Is not a known CellType")
-    else:
-        no_data_constant = cell_type + "ud" + str(no_data_value)
-        CELL_TYPES.append(no_data_constant)
-
-        return no_data_constant
-
-
 CELL_TYPES = [
     BOOLRAW,
     INT8RAW,
