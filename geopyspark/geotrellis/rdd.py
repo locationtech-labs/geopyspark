@@ -158,7 +158,7 @@ class RasterRDD(CachableRDD):
         key = geopysc.map_key_input(rdd_type, False)
 
         schema = geopysc.create_schema(key)
-        ser = geopysc.create_tuple_serializer(schema, key_type="Projected", value_type=TILE)
+        ser = geopysc.create_tuple_serializer(schema, key_type=key, value_type=TILE)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
         if rdd_type == SPATIAL:
@@ -184,7 +184,8 @@ class RasterRDD(CachableRDD):
         """
 
         result = self.srdd.toAvroRDD()
-        ser = self.geopysc.create_tuple_serializer(result._2(), key_type="Projected",
+        key = self.geopysc.map_key_input(self.rdd_type, False)
+        ser = self.geopysc.create_tuple_serializer(result._2(), key_type=key,
                                                    value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
 
@@ -457,7 +458,7 @@ class TiledRasterRDD(CachableRDD):
         key = geopysc.map_key_input(rdd_type, True)
 
         schema = geopysc.create_schema(key)
-        ser = geopysc.create_tuple_serializer(schema, key_type=None, value_type=TILE)
+        ser = geopysc.create_tuple_serializer(schema, key_type=key, value_type=TILE)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
         if isinstance(metadata, Metadata):
@@ -567,7 +568,8 @@ class TiledRasterRDD(CachableRDD):
             ``pyspark.RDD``
         """
         result = self.srdd.toAvroRDD()
-        ser = self.geopysc.create_tuple_serializer(result._2(), key_type=None,
+        key = self.geopysc.map_key_input(self.rdd_type, True)
+        ser = self.geopysc.create_tuple_serializer(result._2(), key_type=key,
                                                    value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
 
@@ -656,10 +658,10 @@ class TiledRasterRDD(CachableRDD):
         if self.rdd_type != SPATIAL:
             raise ValueError("Only TiledRasterRDDs with a rdd_type of Spatial can use lookup()")
         bounds = self.layer_metadata.bounds
-        min_col = bounds.minKey['col']
-        min_row = bounds.minKey['row']
-        max_col = bounds.maxKey['col']
-        max_row = bounds.maxKey['row']
+        min_col = bounds.minKey.col
+        min_row = bounds.minKey.row
+        max_col = bounds.maxKey.col
+        max_row = bounds.maxKey.row
 
         if col < min_col or col > max_col:
             raise IndexError("column out of bounds")

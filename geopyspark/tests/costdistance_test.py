@@ -46,7 +46,7 @@ class CostDistanceTest(BaseTestClass):
     def test_costdistance_finite(self):
         def zero_one(kv):
             k = kv[0]
-            return (k['col'] == 0 and k['row'] == 1)
+            return (k.col == 0 and k.row == 1)
 
         result = self.raster_rdd.cost_distance(geometries=[Point(13, 13)], max_distance=144000.0)
 
@@ -57,7 +57,7 @@ class CostDistanceTest(BaseTestClass):
     def test_costdistance_finite_int(self):
         def zero_one(kv):
             k = kv[0]
-            return (k['col'] == 0 and k['row'] == 1)
+            return (k.col == 0 and k.row == 1)
 
         result = self.raster_rdd.cost_distance(geometries=[Point(13, 13)], max_distance=144000)
 
@@ -68,7 +68,7 @@ class CostDistanceTest(BaseTestClass):
     def test_costdistance_infinite(self):
         def zero_one(kv):
             k = kv[0]
-            return (k['col'] == 0 and k['row'] == 1)
+            return (k.col == 0 and k.row == 1)
 
         result = self.raster_rdd.cost_distance(geometries=[Point(13, 13)], max_distance=float('inf'))
 

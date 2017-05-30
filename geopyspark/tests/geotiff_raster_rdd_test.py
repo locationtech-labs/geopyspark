@@ -53,7 +53,6 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
     def test_to_numpy_rdd(self, option=None):
         pyrdd = self.result.to_numpy_rdd()
         (key, tile) = pyrdd.first()
-        self.assertTrue('extent' in key.keys())
         self.assertEqual(tile['data'].shape, (2, 512, 512))
 
     def test_collect_metadata(self, options=None):

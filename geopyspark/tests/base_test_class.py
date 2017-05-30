@@ -24,11 +24,9 @@ class BaseTestClass(unittest.TestCase):
     value = rdd.to_numpy_rdd().collect()[0]
 
     projected_extent = value[0]
-
-    extent = Extent(**projected_extent['extent'])
+    extent = projected_extent.extent
 
     expected_tile = value[1]['data']
-
     (_, rows, cols) = expected_tile.shape
 
     layout = TileLayout(1, 1, cols, rows)

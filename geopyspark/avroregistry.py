@@ -6,6 +6,9 @@ import numpy as np
 from geopyspark.geopyspark_utils import check_environment
 check_environment()
 
+from geopyspark.geotrellis import (Extent, ProjectedExtent, TemporalProjectedExtent, SpatialKey,
+                                   SpaceTimeKey)
+
 
 class AvroRegistry(object):
     """Holds the encoding/decoding methods needed to bring a scala RDD to/from Python."""
@@ -53,7 +56,7 @@ class AvroRegistry(object):
         return {'data': tile, 'no_data_value': no_data}
 
     @staticmethod
-    def tuple_decoder(schema_dict, key_decoder=None, value_decoder=None):
+    def tuple_decoder(schema_dict, key_decoder, value_decoder):
         """Decodes a tuple into Python.
 
         Args:
@@ -65,29 +68,28 @@ class AvroRegistry(object):
             tuple
         """
 
-        schema_1 = schema_dict['_1']
-        schema_2 = schema_dict['_2']
+        return (key_decoder(schema_dict['_1']), value_decoder(schema_dict['_2']))
 
-        if key_decoder and value_decoder:
-            return (key_decoder(schema_1), value_decoder(schema_2))
-        elif key_decoder:
-            return (key_decoder(schema_1), schema_2)
-        elif value_decoder:
-            return (schema_1, value_decoder(schema_2))
-        else:
-            return (schema_1, schema_2)
+    @staticmethod
+    def projected_extent_decoder(schema_dict):
+        return ProjectedExtent(Extent(**schema_dict['extent']), schema_dict.get('epsg'),
+                               schema_dict.get('proj4'))
+
+    @staticmethod
+    def temporal_projected_extent_decoder(schema_dict):
+        return TemporalProjectedExtent(Extent(**schema_dict['extent']), schema_dict['instant'],
+                                       schema_dict.get('epsg'), schema_dict.get('proj4'))
+
+    @staticmethod
+    def spatial_key_decoder(schema_dict):
+        return SpatialKey(**schema_dict)
+
+    @staticmethod
+    def space_time_key_decoder(schema_dict):
+        return SpaceTimeKey(**schema_dict)
 
     @classmethod
-    def _get_decoder(cls, name):
-        if name == "Tile":
-            return cls.tile_decoder
-        elif name == 'Projected':
-            pass
-        else:
-            raise Exception("Could not find value type that matches", name)
-
-    @classmethod
-    def create_partial_tuple_decoder(cls, key_type=None, value_type=None):
+    def create_partial_tuple_decoder(cls, key_type, value_type):
         """Creates a partial, tuple decoder function.
 
         Args:
@@ -98,19 +100,27 @@ class AvroRegistry(object):
             A partial tuple_decoder function that requires a schema_dict to execute.
         """
 
-        if key_type:
-            key_decoder = cls._get_decoder(key_type)
-        else:
-            key_decoder = None
-
-        if value_type:
-            value_decoder = cls._get_decoder(value_type)
-        else:
-            value_decoder = None
+        key_decoder = cls._get_decoder(key_type)
+        value_decoder = cls._get_decoder(value_type)
 
         return partial(cls.tuple_decoder,
                        key_decoder=key_decoder,
                        value_decoder=value_decoder)
+
+    @classmethod
+    def _get_decoder(cls, name):
+        if name == "Tile":
+            return cls.tile_decoder
+        elif name == 'ProjectedExtent':
+            return cls.projected_extent_decoder
+        elif name == 'TemporalProjectedExtent':
+            return cls.temporal_projected_extent_decoder
+        elif name == "SpatialKey":
+            return cls.spatial_key_decoder
+        elif name == "SpaceTimeKey":
+            return cls.space_time_key_decoder
+        else:
+            raise Exception("Could not find value type that matches", name)
 
     # ENCODERS
 
@@ -165,9 +175,9 @@ class AvroRegistry(object):
         return {'bands': tile_datums}
 
     @classmethod
-    def projected_extent_encoder(cls, obj):
-        if not isinstance(obj['extent'], dict):
-            obj['extent'] = obj['extent']._asdict()
+    def extent_encoder(cls, obj):
+        if not isinstance(obj, dict):
+            obj = obj._asdict()
 
         if obj.get('epsg'):
             obj['proj4'] = 'null'
@@ -176,8 +186,15 @@ class AvroRegistry(object):
 
         return obj
 
+    @classmethod
+    def key_encoder(cls, obj):
+        if isinstance(obj, dict):
+            return obj
+        else:
+            return obj._asdict()
+
     @staticmethod
-    def tuple_encoder(obj, key_encoder=None, value_encoder=None):
+    def tuple_encoder(obj, key_encoder, value_encoder):
         """Encodes a tuple to send to Scala.
 
         Args:
@@ -188,25 +205,11 @@ class AvroRegistry(object):
         Returns:
             avro_schema_dict (``dict``)
         """
-        (value_1, value_2) = obj
 
-        if key_encoder and value_encoder:
-            datum_1 = key_encoder(value_1)
-            datum_2 = value_encoder(value_2)
-        elif key_encoder:
-            datum_1 = key_encoder(value_1)
-            datum_2 = value_2
-        elif value_encoder:
-            datum_1 = value_1
-            datum_2 = value_encoder(value_2)
-        else:
-            datum_1 = value_1
-            datum_2 = value_2
-
-        return {'_1': datum_1, '_2': datum_2}
+        return {'_1': key_encoder(obj[0]), '_2': value_encoder(obj[1])}
 
     @classmethod
-    def create_partial_tuple_encoder(cls, key_type=None, value_type=None):
+    def create_partial_tuple_encoder(cls, key_type, value_type):
         """Creates a partial, tuple encoder function.
 
         Args:
@@ -216,15 +219,9 @@ class AvroRegistry(object):
         Returns:
             A partial tuple_encoder function that requires a obj to execute.
         """
-        if key_type:
-            key_encoder = cls._get_encoder(key_type)
-        else:
-            key_encoder = None
 
-        if value_type:
-            value_encoder = cls._get_encoder(value_type)
-        else:
-            value_encoder = None
+        key_encoder = cls._get_encoder(key_type)
+        value_encoder = cls._get_encoder(value_type)
 
         return partial(cls.tuple_encoder,
                        key_encoder=key_encoder,
@@ -234,7 +231,9 @@ class AvroRegistry(object):
     def _get_encoder(cls, name):
         if name == "Tile":
             return cls.tile_encoder
-        elif name == "Projected":
-            return cls.projected_extent_encoder
+        elif name == "ProjectedExtent" or name == "TemporalProjectedExtent":
+            return cls.extent_encoder
+        elif name == "SpatialKey" or name == "SpaceTimeKey":
+            return cls.key_encoder
         else:
             raise Exception("Could not find value type that matches", name)
