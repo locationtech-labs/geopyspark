@@ -108,9 +108,10 @@ class CachableRDD(object):
 class RasterRDD(CachableRDD):
     """A wrapper of a RDD that contains GeoTrellis rasters.
 
-    Represents a RDD that contains ``(K, V)``. Where ``K`` is either :ref:`projected_extent` or
-    :ref:`temporal_extent` depending on the ``rdd_type`` of the RDD, and ``V`` being a
-    :ref:`raster`.
+    Represents a RDD that contains ``(K, V)``. Where ``K`` is either
+    :cls:`~geopyspark.geotrellis.ProjectedExtent` or
+    :cls:`~geopyspark.geotrellis.TemporalProjectedExtent` depending on the ``rdd_type`` of the RDD,
+    and ``V`` being a :ref:`raster`.
 
     The data held within the RDD has not been tiled. Meaning the data has yet to be
     modified to fit a certain layout. See :ref:`raster_rdd` for more information.
@@ -397,9 +398,9 @@ class RasterRDD(CachableRDD):
 class TiledRasterRDD(CachableRDD):
     """Wraps a RDD of tiled, GeoTrellis rasters.
 
-    Represents a RDD that contains ``(K, V)``. Where ``K`` is either :ref:`spatial-key` or
-    :ref:`space-time-key` depending on the ``rdd_type`` of the RDD, and ``V`` being a
-    :ref:`raster`.
+    Represents a RDD that contains ``(K, V)``. Where ``K`` is either
+    :cls:`~geopyspark.geotrellis.SpatialKey` or :cls:`~geopyspark.geotrellis.SpaceTimeKey`
+    depending on the ``rdd_type`` of the RDD, and ``V`` being a :ref:`raster`.
 
     The data held within the RDD is tiled. This means that the rasters have been modified to fit
     a larger layout. For more information, see :ref:`tiled-raster-rdd`.

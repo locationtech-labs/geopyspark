@@ -157,7 +157,7 @@ Returns:
 """
 
 
-SpaceTimeKey = namedtuple("SpaceTimeKey", 'col, row instant')
+SpaceTimeKey = namedtuple("SpaceTimeKey", 'col row instant')
 """Represents the position of a raster within a grid.
 This grid is a 3D plane where raster positions are represented by a pair of coordinates as well as
 a z value that represents time.
