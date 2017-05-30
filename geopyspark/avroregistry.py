@@ -179,6 +179,9 @@ class AvroRegistry(object):
         if not isinstance(obj, dict):
             obj = obj._asdict()
 
+        if not isinstance(obj['extent'], dict):
+            obj['extent'] = obj['extent']._asdict()
+
         if obj.get('epsg'):
             obj['proj4'] = 'null'
         else:
