@@ -51,6 +51,34 @@ class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
         return box(*self)
 
 
+class ProjectedExtent(namedtuple("ProjectedExtent", 'extent epsg proj4')):
+    __slots__ = []
+
+    def __new__(cls, extent, epsg=None, proj4=None):
+        return super(ProjectedExtent, cls).__new__(cls, extent, epsg, proj4)
+
+    def _asdict(self):
+        if isinstance(self.extent, dict):
+            return {'extent': self.extent, 'epsg': self.epsg, 'proj4': self.proj4}
+        else:
+            return {'extent': self.extent._asdict(), 'epsg': self.epsg, 'proj4': self.proj4}
+
+
+class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent instant epsg proj4')):
+    __slots__ = []
+
+    def __new__(cls, extent, instant, epsg=None, proj4=None):
+        return super(TemporalProjectedExtent, cls).__new__(cls, extent, instant, epsg, proj4)
+
+    def _asdict(self):
+        if isinstance(self.extent, dict):
+            return {'extent': self.extent, 'instant': self.instant, 'epsg': self.epsg,
+                    'proj4': self.proj4}
+        else:
+            return {'extent': self.extent._asdict(), 'instant': self.instant, 'epsg': self.epsg,
+                    'proj4': self.proj4}
+
+
 TileLayout = namedtuple("TileLayout", 'layoutCols layoutRows tileCols tileRows')
 """
 Describes the grid in which the rasters within a RDD should be laid out.
@@ -78,19 +106,40 @@ Returns:
     :obj:`~geopyspark.geotrellis.LayoutDefinition`
 """
 
-Bounds = namedtuple("Bounds", 'minKey maxKey')
-"""
-Represents the grid that covers the area of the rasters in a RDD on a grid.
+SpatialKey = namedtuple("SpatialKey", 'col row')
 
-Args:
-    minKey (:ref:`spatial-key` or :ref:`space-time-key`): The smallest ``SpatialKey`` or
-        ``SpaceTimeKey``.
-    maxKey (:ref:`spatial-key` or :ref:`space-time-key`): The largest ``SpatialKey`` or
-        ``SpaceTimeKey``.
 
-Returns:
-    :obj:`~geopyspark.geotrellis.Bounds`
-"""
+SpaceTimeKey = namedtuple("SpaceTimeKey", 'col, row instant')
+
+
+class Bounds(namedtuple("Bounds", 'minKey maxKey')):
+    """
+    Represents the grid that covers the area of the rasters in a RDD on a grid.
+
+    Args:
+        minKey (:ref:`spatial-key` or :ref:`space-time-key`): The smallest ``SpatialKey`` or
+            ``SpaceTimeKey``.
+        maxKey (:ref:`spatial-key` or :ref:`space-time-key`): The largest ``SpatialKey`` or
+            ``SpaceTimeKey``.
+
+    Returns:
+        :cls:`~geopyspark.geotrellis.Bounds`
+    """
+
+    __slots__ = []
+
+    def _asdict(self):
+        if isinstance(self.minKey, dict):
+            min_key_dict = self.minKey
+        else:
+            min_key_dict = self.minKey._asdict()
+
+        if isinstance(self.maxKey, dict):
+            max_key_dict = self.maxKey
+        else:
+            max_key_dict = self.maxKey._asdict()
+
+        return {'minKey': min_key_dict, 'maxKey': max_key_dict}
 
 
 class Metadata(object):
@@ -146,7 +195,16 @@ class Metadata(object):
         crs = metadata_dict['crs']
         cell_type = metadata_dict['cellType']
 
-        bounds = Bounds(**metadata_dict['bounds'])
+        bounds_dict = metadata_dict['bounds']
+
+        if len(bounds_dict['minKey']) == 2:
+            min_key = SpatialKey(**bounds_dict['minKey'])
+            max_key = SpatialKey(**bounds_dict['maxKey'])
+        else:
+            min_key = SpaceTimeKey(**bounds_dict['minKey'])
+            max_key = SpaceTimeKey(**bounds_dict['maxKey'])
+
+        bounds = Bounds(min_key, max_key)
         extent = Extent(**metadata_dict['extent'])
 
         layout_definition = LayoutDefinition(
