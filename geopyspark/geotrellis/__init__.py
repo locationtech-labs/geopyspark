@@ -52,6 +52,22 @@ class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
 
 
 class ProjectedExtent(namedtuple("ProjectedExtent", 'extent epsg proj4')):
+    """Describes both the area on Earth a raster represents in addition to its CRS.
+
+    Args:
+        extent (:cls:~geopyspark.geotrellis.Extent): The area the raster represents.
+        epsg (int, optional): The EPSG code of the CRS.
+        proj4 (str, optional): The Proj.4 string representation of the CRS.
+
+    Attributes:
+        extent (:cls:~geopyspark.geotrellis.Extent): The area the raster represents.
+        epsg (int, optional): The EPSG code of the CRS.
+        proj4 (str, optional): The Proj.4 string representation of the CRS.
+
+    Note:
+        Either ``epsg`` or ``proj4`` must be defined.
+    """
+
     __slots__ = []
 
     def __new__(cls, extent, epsg=None, proj4=None):
@@ -65,6 +81,25 @@ class ProjectedExtent(namedtuple("ProjectedExtent", 'extent epsg proj4')):
 
 
 class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent instant epsg proj4')):
+    """Describes the area on Earth the raster represents, its CRS, and the time the data was
+    collected.
+
+    Args:
+        extent (:cls:`~geopyspark.geotrellis.Extent`): The area the raster represents.
+        instance (int): The time stamp of the raster.
+        epsg (int, optional): The EPSG code of the CRS.
+        proj4 (str, optional): The Proj.4 string representation of the CRS.
+
+    Attributes:
+        extent (:cls:~geopyspark.geotrellis.Extent): The area the raster represents.
+        instance (int): The time stamp of the raster.
+        epsg (int, optional): The EPSG code of the CRS.
+        proj4 (str, optional): The Proj.4 string representation of the CRS.
+
+    Note:
+        Either ``epsg`` or ``proj4`` must be defined.
+    """
+
     __slots__ = []
 
     def __new__(cls, extent, instant, epsg=None, proj4=None):
@@ -93,6 +128,7 @@ Returns:
     :obj:`~geopyspark.geotrellis.TileLayout`
 """
 
+
 LayoutDefinition = namedtuple("LayoutDefinition", 'extent tileLayout')
 """
 Describes the layout of the rasters within a RDD and how they are projected.
@@ -106,10 +142,34 @@ Returns:
     :obj:`~geopyspark.geotrellis.LayoutDefinition`
 """
 
+
 SpatialKey = namedtuple("SpatialKey", 'col row')
+"""Represents the position of a raster within a grid.
+
+This grid is a 2D plane where raster positions are represented by a pair of coordinates.
+
+Args:
+    col (int): The column of the grid, the numbers run east to west.
+    row (int): The row of the grid, the numbers run north to south.
+
+Returns:
+    :obj:`~geopyspark.geotrellis.SpatialKey`
+"""
 
 
 SpaceTimeKey = namedtuple("SpaceTimeKey", 'col, row instant')
+"""Represents the position of a raster within a grid.
+This grid is a 3D plane where raster positions are represented by a pair of coordinates as well as
+a z value that represents time.
+
+Args:
+    col (int): The column of the grid, the numbers run east to west.
+    row (int): The row of the grid, the numbers run north to south.
+    instance (int): The time stamp of the raster.
+
+Returns:
+    :obj:`~geopyspark.geotrellis.SpaceTimeKey`
+"""
 
 
 class Bounds(namedtuple("Bounds", 'minKey maxKey')):
@@ -117,10 +177,10 @@ class Bounds(namedtuple("Bounds", 'minKey maxKey')):
     Represents the grid that covers the area of the rasters in a RDD on a grid.
 
     Args:
-        minKey (:ref:`spatial-key` or :ref:`space-time-key`): The smallest ``SpatialKey`` or
-            ``SpaceTimeKey``.
-        maxKey (:ref:`spatial-key` or :ref:`space-time-key`): The largest ``SpatialKey`` or
-            ``SpaceTimeKey``.
+        minKey (:obj:`~geopyspark.geotrellis.SpatialKey` or :obj:`~geopyspark.geotrellis.SpaceTimeKey`):
+            The smallest ``SpatialKey`` or ``SpaceTimeKey``.
+        minKey (:obj:`~geopyspark.geotrellis.SpatialKey` or :obj:`~geopyspark.geotrellis.SpaceTimeKey`):
+            The largest ``SpatialKey`` or ``SpaceTimeKey``.
 
     Returns:
         :cls:`~geopyspark.geotrellis.Bounds`
