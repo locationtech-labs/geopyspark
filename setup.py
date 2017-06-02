@@ -21,6 +21,7 @@ setup_args = dict(
     ],
     packages=[
         'geopyspark',
+        'geopyspark.protobuf',
         'geopyspark.geotrellis',
         'geopyspark.geotrellis.protobuf',
         'geopyspark.command',
