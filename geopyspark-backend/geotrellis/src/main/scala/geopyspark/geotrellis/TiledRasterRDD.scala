@@ -147,6 +147,13 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
     maxDistance: Double
   ): TiledRasterRDD[K]
 
+  def hillshade(sc: SparkContext,
+                azimuth: Double, 
+                altitude: Double, 
+                zFactor: Double, 
+                band: Int
+  ): TiledRasterRDD[K]
+
   def localAdd(i: Int): TiledRasterRDD[K] =
     withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y + i })) })
 
@@ -429,6 +436,25 @@ class SpatialTiledRasterRDD(
     SpatialTiledRasterRDD(None, multibandRDD)
   }
 
+  def hillshade(
+    sc: SparkContext, 
+    azimuth: Double, 
+    altitude: Double, 
+    zFactor: Double, 
+    band: Int
+  ): TiledRasterRDD[SpatialKey] = {
+    val tileLayer = TileLayerRDD(rdd.mapValues(_.band(band)), rdd.metadata)
+
+    implicit val _sc = sc
+
+    val result = tileLayer.hillshade(azimuth, altitude, zFactor)
+
+    val multibandRDD: MultibandTileLayerRDD[SpatialKey] = 
+      MultibandTileLayerRDD(result.mapValues{ tile => MultibandTile(tile) }, result.metadata)
+
+    SpatialTiledRasterRDD(None, multibandRDD)
+  }
+
   def reclassify(reclassifiedRDD: RDD[(SpatialKey, MultibandTile)]): TiledRasterRDD[SpatialKey] =
     SpatialTiledRasterRDD(zoomLevel, MultibandTileLayerRDD(reclassifiedRDD, rdd.metadata))
 
@@ -574,6 +600,25 @@ class TemporalTiledRasterRDD(
 
     val multibandRDD: MultibandTileLayerRDD[SpaceTimeKey] =
       MultibandTileLayerRDD(result.map{ x => (x._1, MultibandTile(x._2)) }, result.metadata)
+
+    TemporalTiledRasterRDD(None, multibandRDD)
+  }
+
+  def hillshade(
+    sc: SparkContext,
+    azimuth: Double,
+    altitude: Double,
+    zFactor: Double,
+    band: Int
+  ): TiledRasterRDD[SpaceTimeKey] = {
+    val tileLayer = TileLayerRDD(rdd.mapValues(_.band(band)), rdd.metadata)
+
+    implicit val _sc = sc
+
+    val result = tileLayer.hillshade(azimuth, altitude, zFactor)
+
+    val multibandRDD: MultibandTileLayerRDD[SpaceTimeKey] = 
+      MultibandTileLayerRDD(result.mapValues(MultibandTile(_)), result.metadata)
 
     TemporalTiledRasterRDD(None, multibandRDD)
   }

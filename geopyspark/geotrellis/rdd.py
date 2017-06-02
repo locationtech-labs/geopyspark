@@ -856,6 +856,9 @@ class TiledRasterRDD(CachableRDD):
 
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
+    def hillshade(self, band=0, azimuth=315.0, altitude=45.0, z_factor=1.0):
+        self.srdd.hillhade(azimuth, altitude, z_factor, band)
+
     def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO,
                    replace_nodata_with=None):
         """Changes the cell values of a raster based on how the data is broken up.
