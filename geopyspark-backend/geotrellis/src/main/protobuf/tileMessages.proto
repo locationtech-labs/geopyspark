@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package protos;
+
+message TileInfo {
+  string name = 1;
+  int32 cols = 2;
+  int32 rows = 3;
+}
+
+message Int32NoData {
+  sint32 noDataValue = 1;
+}
+
+message UInt32NoData {
+  int32 noDataValue = 1;
+}
+
+message BitTile {
+  TileInfo info = 1;
+  repeated sint32 cells = 2;
+}
+
+message ByteTile {
+  TileInfo info = 1;
+  repeated sint32 cells = 2;
+  Int32NoData noDataValue = 3;
+}
+
+message UByteTile {
+  TileInfo info = 1;
+  repeated int32 cells = 2;
+  UInt32NoData noDataValue = 3;
+}
+
+message ShortTile {
+  TileInfo info = 1;
+  repeated sint32 cells = 2;
+  Int32NoData noDataValue = 3;
+}
+
+message UShortTile {
+  TileInfo info = 1;
+  repeated int32 cells = 2;
+  UInt32NoData noDataValue = 3;
+}
+
+message IntTile {
+  TileInfo info = 1;
+  repeated sint32 cells = 2;
+  Int32NoData noDataValue = 3;
+}
+
+message FloatTile {
+  TileInfo info = 1;
+  repeated float cells = 2;
+  float noDataValue = 3;
+}
+
+message DoubleTile {
+  TileInfo info = 1;
+  repeated double cells = 2;
+  double noDataValue = 3;
+}
+
+message MultibandTile {
+  message TileType {
+    oneof bands {
+      BitTile bit_tiles = 1;
+      ByteTile byte_tiles = 2;
+      UByteTile ubyte_tiles = 3;
+      ShortTile short_tiles = 4;
+      UShortTile ushort_tiles = 5;
+      IntTile int_tiles = 6;
+      FloatTile float_tiles = 7;
+      DoubleTile double_tiles = 8;
+    }
+  }
+
+  repeated TileType tiles = 1;
+}

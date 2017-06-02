@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package protos;
+
+message CRS {
+  int32 epsg = 1;
+  string proj4 = 2;
+}
+
+message Extent {
+  double xmin = 1;
+  double ymin = 2;
+  double xmax = 3;
+  double ymax = 4;
+}
+
+message ProjectedExtent {
+  Extent extent = 1;
+  CRS crs = 2;
+}
+
+message TemporalProjectedExtent {
+  Extent extent = 1;
+  CRS crs = 2;
+  uint64 instant = 3;
+}
