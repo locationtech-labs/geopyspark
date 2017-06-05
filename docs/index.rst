@@ -1,7 +1,7 @@
 What is GeoPySpark?
 --------------------
 
-*GeoPySpark* is a python language binding library of the scala library,
+*GeoPySpark* is a Python language binding library of the Scala library,
 `GeoTrellis <https://github.com/locationtech/geotrellis>`_. Like GeoTrellis,
 this project is released under the Apache 2 License.
 
@@ -22,7 +22,7 @@ these sorts of problems will become more common as larger amounts of data are
 made available to the public.
 
 One could turn to GeoTrellis to resolve the aforementioned problems (and one
-should try it out!), yet this brings about new challanges. Scala, while a
+should try it out!), yet this brings about new challenges. Scala, while a
 powerful language, has something of a steep learning curve. This can put off
 those who do not have the time and/or interest in learning a new language.
 
@@ -34,10 +34,10 @@ A Quick Example
 
 Here is a quick example of GeoPySpark. In the following code, we take NLCD data
 of the state of Pennslyvania from 2011, and do a polygonal summary of an area
-of interest to find the min and max classifcations values of that area.
+of interest to find the min and max classifications values of that area.
 
 If you wish to follow along with this example, you will need to download the
-NLCD data and the geojson that represents the area of interest. Running these
+NLCD data and the GeoJSON that represents the area of interest. Running these
 two commands will download these files for you:
 
 .. code:: console
@@ -108,8 +108,8 @@ two commands will download these files for you:
 Contact and Support
 --------------------
 
-If you need help, have questions, or like to talk to the developers (let us
-know what you're working on!) you contact us at:
+If you need help, have questions, or would like to talk to the developers (let us
+know what you're working on!) you can contact us at:
 
  * `Gitter <https://gitter.im/geotrellis/geotrellis>`_
  * `Mailing list <https://locationtech.org/mailman/listinfo/geotrellis-user>`_
