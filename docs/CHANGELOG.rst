@@ -27,17 +27,17 @@ or updated per se, we'll just go over the features that will be present in
  - Added ``PngRDD`` to make rendering to PNGs more efficient.
  - Added ``RDDWrapper`` to provide more functionality to the RDD classes.
  - Polygonal summary methods are now available to ``TiledRasterRDD``.
- - Eublidean distance added to ``TiledRasterRDD``.
+ - Euclidean distance added to ``TiledRasterRDD``.
  - Neighborhoods submodule added to make focal operations easier.
 
 **geopyspark.command**
 
- - GeoPySpark can now be used a script to download the jar.
+ - GeoPySpark can now use a script to download the jar. 
    Used when installing GeoPySpark from pip.
 
 **Documentation**
 
  - Added docstrings to all python classes, methods, etc.
  - Core-Concepts, rdd, geopycontext, and catalog.
- - Ingesting and creating a tile server with a greyscale data.
+ - Ingesting and creating a tile server with a greyscale raster dataset.
  - Ingesting and creating a tile server with data from Sentinel.
