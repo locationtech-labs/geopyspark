@@ -76,16 +76,16 @@ abstract class TileRDD[K: ClassTag] {
     val breakMap = new BreakMap(scalaMap, mapStrategy, { i: Int => isNoData(i) })
 
     val reclassifiedRDD =
-      rdd.map { x =>
-        val count = x._2.bandCount
+      rdd.mapValues { x =>
+        val count = x.bandCount
         val tiles = Array.ofDim[Tile](count)
 
         for (y <- 0 until count) {
-          val band = x._2.band(y)
+          val band = x.band(y)
           tiles(y) = band.map(i => breakMap.apply(i))
         }
 
-        (x._1, MultibandTile(tiles))
+        MultibandTile(tiles)
       }
     reclassify(reclassifiedRDD)
   }
@@ -111,16 +111,16 @@ abstract class TileRDD[K: ClassTag] {
     val breakMap = new BreakMap(scalaMap, mapStrategy, { d: Double => isNoData(d) })
 
     val reclassifiedRDD =
-      rdd.map { x =>
-        val count = x._2.bandCount
+      rdd.mapValues { x =>
+        val count = x.bandCount
         val tiles = Array.ofDim[Tile](count)
 
         for (y <- 0 until count) {
-          val band = x._2.band(y)
+          val band = x.band(y)
           tiles(y) = band.mapDouble(i => breakMap.apply(i))
         }
 
-        (x._1, MultibandTile(tiles))
+        MultibandTile(tiles)
       }
     reclassifyDouble(reclassifiedRDD)
   }
