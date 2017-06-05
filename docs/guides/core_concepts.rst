@@ -22,7 +22,7 @@ Raster
 ------
 
 GeoPySpark differs in how it represents rasters from other geo-spatial Python
-libraries like rasterio. In GeoPySpark, they are represented as a ``dict``.
+libraries like rasterIO. In GeoPySpark, they are represented as a ``dict``.
 
 The fields used to represent rasters:
  - **no_data_value**: The value that represents no data in raster. This can be
@@ -119,7 +119,7 @@ Represents the position of a raster within a grid. This grid is a 3D plane
 where raster positions are represented by a pair of coordinates as well as a z
 value that represents time. In GeoPySpark, this is represented as a ``dict``.
 
-The fields used to reprsent ``SpaceTimeKey``:
+The fields used to represent ``SpaceTimeKey``:
  - **col** (int): The column of the grid, the numbers run east to west.
  - **row** (int): The row of the grid, the numbers run north to south.
  - **instance** (int): The time stamp of the raster.

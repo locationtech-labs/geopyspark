@@ -18,9 +18,9 @@ Building GeoPySpark
 -------------------
 
 1. Install and setup Hadoop (the master branch is currently built with 2.0.1).
-2. Check out this repository.
+2. Check out `this <https://github.com/locationtech-labs/geopyspark>`__. repository.
 3. Pick the branch corresponding to the version you are targeting
-4. Run ``make install`` to build GeoPyspark.
+4. Run ``make install`` to build GeoPySpark.
 
 Style Guide
 -----------
@@ -49,7 +49,7 @@ If you find a bug and would like to report it please go there and create
 an issue. As always, if you need some help join us on
 `Gitter <https://gitter.im/locationtech/geotrellis>`__ to chat with a
 developer. As with the mailing list, we will be using the GeoTrellis
-gitter channel until the need arises to form our own.
+Gitter channel until the need arises to form our own.
 
 Pull Requests
 -------------

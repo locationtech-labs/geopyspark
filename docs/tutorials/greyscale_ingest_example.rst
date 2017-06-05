@@ -3,7 +3,7 @@
 Ingesting a Grayscale Image
 ****************************
 
-This example shows how to ingest a grayscale image and save the resultsr
+This example shows how to ingest a grayscale image and save the results
 locally.
 
 The Code

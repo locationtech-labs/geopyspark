@@ -1,7 +1,7 @@
 What is GeoPySpark?
 --------------------
 
-*GeoPySpark* is a python language binding library of the scala library,
+*GeoPySpark* is a Python language binding library of the Scala library,
 `GeoTrellis <https://github.com/locationtech/geotrellis>`_. Like GeoTrellis,
 this project is released under the Apache 2 License.
 
@@ -22,7 +22,7 @@ these sorts of problems will become more common as larger amounts of data are
 made available to the public.
 
 One could turn to GeoTrellis to resolve the aforementioned problems (and one
-should try it out!), yet this brings about new challanges. Scala, while a
+should try it out!), yet this brings about new challenges. Scala, while a
 powerful language, has something of a steep learning curve. This can put off
 those who do not have the time and/or interest in learning a new language.
 
@@ -33,11 +33,11 @@ A Quick Example
 ----------------
 
 Here is a quick example of GeoPySpark. In the following code, we take NLCD data
-of the state of Pennslyvania from 2011, and do a polygonal summary of an area
-of interest to find the min and max classifcations values of that area.
+of the state of Pennsylvania from 2011, and do a polygonal summary of an area
+of interest to find the min and max classifications values of that area.
 
 If you wish to follow along with this example, you will need to download the
-NLCD data and the geojson that represents the area of interest. Running these
+NLCD data and the GeoJSON that represents the area of interest. Running these
 two commands will download these files for you:
 
 .. code:: console
@@ -115,7 +115,7 @@ know what you're working on!) you contact us at:
  * `Mailing list <https://locationtech.org/mailman/listinfo/geotrellis-user>`_
 
 As you may have noticed from the above links, those are links to the GeoTrellis
-gitter channel and mailing list. This is because this project is currently an
+Gitter channel and mailing list. This is because this project is currently an
 offshoot of GeoTrellis, and we will be using their mailing list and gitter
 channel as a means of contact. However, we will form our own if there is
 a need for it.
