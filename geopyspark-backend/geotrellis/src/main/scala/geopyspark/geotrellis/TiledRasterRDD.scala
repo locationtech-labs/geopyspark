@@ -66,6 +66,8 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
   /** Encode RDD as Avro bytes and return it with avro schema used */
   def toProtoRDD(): JavaRDD[Array[Byte]]
 
+  def toProtoRDD(): JavaRDD[Array[Byte]]
+
   def layerMetadata: String = rdd.metadata.toJson.prettyPrint
 
   def mask(wkbs: java.util.ArrayList[Array[Byte]]): TiledRasterRDD[K] = {
@@ -719,6 +721,17 @@ object SpatialTiledRasterRDD {
     SpatialTiledRasterRDD(None, tileLayer)
   }
 
+  def fromProtoEncodedRDD(
+    javaRDD: JavaRDD[Array[Byte]],
+    metadata: String
+  ): SpatialTiledRasterRDD = {
+    val md = metadata.parseJson.convertTo[TileLayerMetadata[SpatialKey]]
+    val tileLayer = MultibandTileLayerRDD(
+      PythonTranslator.fromPython[(SpatialKey, MultibandTile), ProtoTuple](javaRDD, ProtoTuple.parseFrom), md)
+
+    SpatialTiledRasterRDD(None, tileLayer)
+  }
+
   def apply(
     zoomLevel: Option[Int],
     rdd: RDD[(SpatialKey, MultibandTile)] with Metadata[TileLayerMetadata[SpatialKey]]
@@ -803,6 +816,17 @@ object SpatialTiledRasterRDD {
 }
 
 object TemporalTiledRasterRDD {
+  def fromProtoEncodedRDD(
+    javaRDD: JavaRDD[Array[Byte]],
+    metadata: String
+  ): TemporalTiledRasterRDD = {
+    val md = metadata.parseJson.convertTo[TileLayerMetadata[SpaceTimeKey]]
+    val tileLayer = MultibandTileLayerRDD(
+      PythonTranslator.fromPython[(SpaceTimeKey, MultibandTile), ProtoTuple](javaRDD, ProtoTuple.parseFrom), md)
+
+    TemporalTiledRasterRDD(None, tileLayer)
+  }
+
   def fromProtoEncodedRDD(
     javaRDD: JavaRDD[Array[Byte]],
     metadata: String

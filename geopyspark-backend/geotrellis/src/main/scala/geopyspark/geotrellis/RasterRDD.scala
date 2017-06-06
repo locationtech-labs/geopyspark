@@ -169,6 +169,8 @@ abstract class RasterRDD[K: ClassTag] extends TileRDD[K] {
   /** Encode RDD as Avro bytes and return it with avro schema used */
   def toProtoRDD(): JavaRDD[Array[Byte]]
 
+  def toProtoRDD(): JavaRDD[Array[Byte]]
+
   def collectMetadata(
     extent: java.util.Map[String, Double],
     layout: java.util.Map[String, Int],
@@ -301,11 +303,23 @@ object ProjectedRasterRDD {
         (ProjectedExtent, MultibandTile), ProtoTuple
       ](javaRDD, ProtoTuple.parseFrom))
 
+  def fromProtoEncodedRDD(javaRDD: JavaRDD[Array[Byte]]): ProjectedRasterRDD =
+    ProjectedRasterRDD(
+      PythonTranslator.fromPython[
+        (ProjectedExtent, MultibandTile), ProtoTuple
+      ](javaRDD, ProtoTuple.parseFrom))
+
   def apply(rdd: RDD[(ProjectedExtent, MultibandTile)]): ProjectedRasterRDD =
     new ProjectedRasterRDD(rdd)
 }
 
 object TemporalRasterRDD {
+  def fromProtoEncodedRDD(javaRDD: JavaRDD[Array[Byte]]): TemporalRasterRDD =
+    TemporalRasterRDD(
+      PythonTranslator.fromPython[
+        (TemporalProjectedExtent, MultibandTile), ProtoTuple
+      ](javaRDD, ProtoTuple.parseFrom))
+
   def fromProtoEncodedRDD(javaRDD: JavaRDD[Array[Byte]]): TemporalRasterRDD =
     TemporalRasterRDD(
       PythonTranslator.fromPython[
