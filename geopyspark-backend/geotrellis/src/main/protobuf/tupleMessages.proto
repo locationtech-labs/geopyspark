@@ -6,16 +6,10 @@ import "extentMessages.proto";
 import "keyMessages.proto";
 import "tileMessages.proto";
 
-message First {
-  oneof first {
-    ProjectedExtent projected_extnet = 1;
-    TemporalProjectedExtent temporal_projected_extnet = 2;
-    SpatialKey spatial_key = 3;
-    SpaceTimeKey space_time_key = 4;
-  }
-}
-
-message Tuple2 {
-  First key = 1;
-  MultibandTile bands = 2;
+message ProtoTuple {
+  ProtoProjectedExtent projectedExtent = 1;
+  ProtoTemporalProjectedExtent temporalProjectedExtent = 2;
+  ProtoSpatialKey spatialKey = 3;
+  ProtoSpaceTimeKey spaceTimeKey = 4;
+  ProtoMultibandTile tiles = 5;
 }

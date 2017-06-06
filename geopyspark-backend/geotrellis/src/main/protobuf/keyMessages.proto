@@ -2,12 +2,12 @@ syntax = "proto3";
 
 package protos;
 
-message SpatialKey {
+message ProtoSpatialKey {
   int32 col = 1;
   int32 row = 2;
 }
 
-message SpaceTimeKey {
+message ProtoSpaceTimeKey {
   int32 col = 1;
   int32 row = 2;
   uint64 instant = 3;

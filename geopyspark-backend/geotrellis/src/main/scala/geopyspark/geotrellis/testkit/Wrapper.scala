@@ -10,7 +10,7 @@ import org.apache.spark.rdd.RDD
 import scala.reflect.ClassTag
 
 abstract class Wrapper[T: AvroRecordCodec: ClassTag] {
-  def testOut(sc: SparkContext) = PythonTranslator.toPython(testRdd(sc))
+  def testOut(sc: SparkContext) = PythonTranslator.toPython[T](testRdd(sc))
 
   def testIn(rdd: RDD[Array[Byte]], schema: String) =
     PythonTranslator.fromPython[T](rdd, Some(schema))
