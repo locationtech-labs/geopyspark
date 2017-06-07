@@ -174,8 +174,7 @@ Note:
 Installing From Source
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-If you would rather install 
-from source, clone the GeoPySpark repo and enter it.
+If you would rather install from source, clone the GeoPySpark repo and enter it.
 
 .. code:: console
 
