@@ -6,7 +6,7 @@ GeoPySpark
 .. image:: https://readthedocs.org/projects/geopyspark/badge/?version=latest
    :target: https://geopyspark.readthedocs.io/en/latest/?badge=latest
 
-``GeoPySpark`` provides Python bindings for working with geospatial data using `PySpark <http://spark.apache.org/docs/latest/api/python/pyspark.html>`_
+``GeoPySpark`` provides Python bindings for working with geospatial data using `PySpark <http://spark.apache.org/docs/latest/api/python/pyspark.html>`_.
 It will provide interfaces into GeoTrellis and GeoMesa LocationTech frameworks.
 It is currently under development, and has just entered alpha.
 
@@ -17,7 +17,7 @@ A Quick Example
 ----------------
 
 Here is a quick example of GeoPySpark. In the following code, we take NLCD data
-of the state of Pennslyvania from 2011, and do a polygonal summary of an area
+of the state of Pennsylvania from 2011, and do a polygonal summary of an area
 of interest to find the min and max classifcations values of that area.
 
 If you wish to follow along with this example, you will need to download the
@@ -174,7 +174,8 @@ Note:
 Installing From Source
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-If you would rather install from source, clone the GeoPySpark repo and enter it.
+If you would rather install 
+from source, clone the GeoPySpark repo and enter it.
 
 .. code:: console
 
