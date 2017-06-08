@@ -108,8 +108,8 @@ two commands will download these files for you:
 Contact and Support
 --------------------
 
-If you need help, have questions, or like to talk to the developers (let us
-know what you're working on!) you contact us at:
+If you need help, have questions, or would like to talk to the developers (let us
+know what you're working on!) you can contact us at:
 
  * `Gitter <https://gitter.im/geotrellis/geotrellis>`_
  * `Mailing list <https://locationtech.org/mailman/listinfo/geotrellis-user>`_

@@ -6,7 +6,7 @@ GeoPySpark
 .. image:: https://readthedocs.org/projects/geopyspark/badge/?version=latest
    :target: https://geopyspark.readthedocs.io/en/latest/?badge=latest
 
-``GeoPySpark`` provides Python bindings for working with geospatial data using `PySpark <http://spark.apache.org/docs/latest/api/python/pyspark.html>`_
+``GeoPySpark`` provides Python bindings for working with geospatial data using `PySpark <http://spark.apache.org/docs/latest/api/python/pyspark.html>`_.
 It will provide interfaces into GeoTrellis and GeoMesa LocationTech frameworks.
 It is currently under development, and has just entered alpha.
 
@@ -17,8 +17,8 @@ A Quick Example
 ----------------
 
 Here is a quick example of GeoPySpark. In the following code, we take NLCD data
-of the state of Pennslyvania from 2011, and do a polygonal summary of an area
-of interest to find the min and max classifcations values of that area.
+of the state of Pennsylvania from 2011, and do a polygonal summary of an area
+of interest to find the min and max classifications values of that area.
 
 If you wish to follow along with this example, you will need to download the
 NLCD data and the geojson that represents the area of interest. Running these
@@ -164,11 +164,11 @@ Scala backend. To do this, we plug into PySpark which acts as a bridge between
 Python and Scala. However, in order to achieve this the Scala code needs to be
 assembled into a jar file. This poses a problem due to its size (117.7 MB at
 v0.1.0-RC!). To get around the size constraints of PyPi, we thus utilized this
-method of distribution where the jar must be downloaded in a serperate command
+method of distribution where the jar must be downloaded in a separate command
 when using ``pip install``.
 
 Note:
-  Installing from source or for development does not require the seperate
+  Installing from source or for development does not require the separate
   download of the jar.
 
 Installing From Source
@@ -212,7 +212,7 @@ Installing to a Virtual Environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A third option is to install GeoPySpark in a virtual environment. To get things
-started, enter the envrionemnt and run the following:
+started, enter the environment and run the following:
 
 .. code:: console
 
@@ -248,12 +248,12 @@ Developing GeoPySpark With GeoNotebook
 notebook extension that specializes in working with geospatial data. GeoPySpark
 can be used with this notebook; which allows for a more interactive experience
 when using the library. For this section, we will be installing both tools in a
-virtual environment. It is recomended that you start with a new environment
+virtual environment. It is recommended that you start with a new environment
 before following this guide.
 
 Because there's already documentation on how to install GeoPySpark in a virtual
 environment, we won't go over it here. As for GeoNotebook, it also has a section
-on `installtion <https://github.com/OpenGeoscience/geonotebook#make-a-virtualenv-install-jupyternotebook-install-geonotebook>`_
+on `installation <https://github.com/OpenGeoscience/geonotebook#make-a-virtualenv-install-jupyternotebook-install-geonotebook>`_
 so that will not be covered here either.
 
 Once you've setup both GeoPySpark and GeoNotebook, all that needs to be done
@@ -297,7 +297,7 @@ The latest development is on a ``feature/geotrellis`` branch at ``<https://githu
 Side Note For Developers
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-An optional (but recomended!) step for developers is to place these
+An optional (but recommended!) step for developers is to place these
 two lines of code at the top of your notebooks.
 
 .. code:: console
