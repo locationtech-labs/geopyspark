@@ -14,13 +14,19 @@ def decoder(x):
     tup_decoder = AvroRegistry.tuple_decoder
     tile_decoder = AvroRegistry.tile_decoder
 
-    return tup_decoder(x, key_decoder=tile_decoder)
+    def value_decoder(val):
+        return val
+
+    return tup_decoder(x, key_decoder=tile_decoder, value_decoder=value_decoder)
 
 def encoder(x):
     tup_encoder = AvroRegistry.tuple_encoder
     tile_encoder = AvroRegistry.tile_encoder
 
-    return tup_encoder(x, key_encoder=tile_encoder)
+    def value_encoder(val):
+        return val
+
+    return tup_encoder(x, key_encoder=tile_encoder, value_encoder=value_encoder)
 
 
 class TupleSchemaTest(BaseTestClass):

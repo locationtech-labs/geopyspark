@@ -33,19 +33,11 @@ The fields used to represent rasters:
 **Note**: All rasters in GeoPySpark are represented as having multiple bands,
 even if the original raster just contained one.
 
-.. _projected_extent:
-
 ProjectedExtent
 ---------------
 
 Describes both the area on Earth a raster represents in addition to its CRS.
-In GeoPySpark, this is represented as a ``dict``.
-
-The fields used to represent ``ProjectedExtent``:
- - **extent** (:obj:`~geopyspark.geotrellis.data_structures.Extent`): The area the raster
-   represents.
- - **epsg** (int, optional): The EPSG code of the CRS.
- - **proj4** (str, optional): The Proj.4 string representation of the CRS.
+In GeoPySpark, this is represented by :cls:`geopyspark.geotrellis.ProjectedExtent`.
 
 Example:
 
@@ -55,29 +47,18 @@ Example:
 
    # using epsg
    epsg_code = 3857
-   projected_extent = {'extent': extent, 'epsg': epsg}
+   projected_extent = ProjectedExtent(extent, epsg=epsg)
 
    # using proj4
    proj4 = "+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs "
-   projected_extent = {'extent': extent, 'proj4': proj4}
-
-
-**Note**: Either ``epsg`` or ``proj4`` must be defined.
-
-.. _temporal_extent:
+   projected_extent = ProjectedExtent(extent, proj4=proj4)
 
 TemporalProjectedExtent
 -----------------------
 
 Describes the area on Earth the raster represents, its CRS, and the time the
-data was collected. In GeoPySpark, this is represented as a ``dict``.
-
-The fields used to represent ``TemporalProjectedExtent``.
- - **extent** (:obj:`~geopyspark.geotrellis.data_structures.Extent`): The area the raster
-   represents.
- - **epsg** (int, optional): The EPSG code of the CRS.
- - **proj4** (str, optional): The Proj.4 string representation of the CRS.
- - **instance** (int): The time stamp of the raster.
+data was collected. In GeoPySpark, this is represented by
+:cls:`geopyspark.geotrellis.TemporalProjectedExtent`.
 
 Example:
 
@@ -87,48 +68,34 @@ Example:
 
    epsg_code = 3857
    instance = 1.0
-   projected_extent = {'extent': extent, 'epsg': epsg, 'instance': instance}
-
-**Note**: Either ``epsg`` or ``proj4`` must be defined.
-
-.. _spatial-key:
+   temporal_projected_extent = TemporalProjectedExtent(extent, instance, epsg=epsg)
 
 SpatialKey
 ----------
 
 Represents the position of a raster within a grid. This grid is a 2D plane
 where raster positions are represented by a pair of coordinates. In GeoPySpark,
-this is represented as a ``dict``.
-
-The fields used to represent ``SpatialKey``:
- - **col** (int): The column of the grid, the numbers run east to west.
- - **row** (int): The row of the grid, the numbers run north to south.
+this is represented by :cls:`geopyspark.geotrellis.SpatialKey`.
 
 Example:
 
 .. code:: python
 
-   spatial_key = {'col': 0, 'row': 0}
-
-.. _space-time-key:
+   spatial_key = SpatialKey(0, 0)
 
 SpaceTimeKey
 ------------
 
 Represents the position of a raster within a grid. This grid is a 3D plane
 where raster positions are represented by a pair of coordinates as well as a z
-value that represents time. In GeoPySpark, this is represented as a ``dict``.
-
-The fields used to reprsent ``SpaceTimeKey``:
- - **col** (int): The column of the grid, the numbers run east to west.
- - **row** (int): The row of the grid, the numbers run north to south.
- - **instance** (int): The time stamp of the raster.
+value that represents time. In GeoPySpark, this is represented by
+:cls:`geopyspark.geotrellis.SpaceTimeKey`.
 
 Example:
 
 .. code:: python
 
-   spatial_key = {'col': 0, 'row': 0, 'instant': 0.0}
+   space_time_key = SpaceTimeKey(0, 0, 0.0)
 
 
 .. _data_rep:

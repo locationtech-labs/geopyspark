@@ -14,11 +14,11 @@ def decoder(x):
     tup_decoder = AvroRegistry.tuple_decoder
 
     tuples = x['pairs']
-    return [tup_decoder(tup) for tup in tuples]
+    return [tup_decoder(tup, AvroRegistry.tile_decoder, lambda x: x) for tup in tuples]
 
 def encoder(xs):
     tup_encoder = AvroRegistry.tuple_encoder
-    return {'pairs': [tup_encoder(x) for x in xs]}
+    return {'pairs': [tup_encoder(x, AvroRegistry.tile_encoder, lambda x: x) for x in xs]}
 
 
 class KeyValueRecordSchemaTest(unittest.TestCase):
