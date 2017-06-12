@@ -5,10 +5,10 @@ WHL := archives/geopyspark-0.1.0-py3-none-any.whl
 JAR := archives/geotrellis-backend-assembly-0.1.0.jar
 GDAL-BLOB := archives/gdal-and-friends.tar.gz
 PYTHON-BLOB := archives/geopyspark-and-friends.tar.gz
-VERSION := 6
+VERSION := 7
 STAGE0 := jamesmcclain/jupyter-geopyspark:stage0
 STAGE1 := quay.io/geodocker/jupyter-geopyspark:$(VERSION)
-GEONOTEBOOK := dcfcd81ac3e928fc35fe83a5a937561ccee3aa19
+GEONOTEBOOK := 178bde1679ae3bc084c044ca3eeb915a137f689f
 
 all: stage0 stage1
 
@@ -34,7 +34,7 @@ archives/gdal-2.1.3.tar.gz:
 	(cd archives; curl -L "http://download.osgeo.org/gdal/2.1.3/gdal-2.1.3.tar.gz" -o gdal-2.1.3.tar.gz)
 
 archives/$(GEONOTEBOOK).zip:
-	(cd archives; curl -L -O "https://github.com/OpenGeoscience/geonotebook/archive/$(GEONOTEBOOK).zip")
+	(cd archives; curl -L -O "https://github.com/geotrellis/geonotebook/archive/$(GEONOTEBOOK).zip")
 
 archives/geonotebook.tar: archives/$(GEONOTEBOOK).zip
 	(cd archives; unzip $(GEONOTEBOOK).zip; mv geonotebook-$(GEONOTEBOOK) geonotebook ; tar cvf geonotebook.tar geonotebook/ ; rm -rf geonotebook/)

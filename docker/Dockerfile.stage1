@@ -15,12 +15,11 @@ RUN /scripts/install-blobs.sh
 RUN pip3 install --user -r /tmp/requirements.txt && \
     pip3 install --user "https://github.com/OpenGeoscience/ktile/archive/6f134e86f90242c8393fe1912435a5fb99c6256d.zip"
 
-# Patch and install GeoNotebook
+# Install GeoNotebook
 COPY blobs/geonotebook.tar /tmp
-COPY config/patch.diff /tmp
 RUN mkdir /home/hadoop/notebooks && \
     (pushd /tmp ; tar axvf geonotebook.tar ; popd) && \
-    (pushd /tmp/geonotebook ; patch -p1 < /tmp/patch.diff ; pip3 install --user . ; popd) && \
+    (pushd /tmp/geonotebook ; pip3 install --user . ; popd) && \
     jupyter nbextension enable --py widgetsnbextension && \
     jupyter serverextension enable --py geonotebook && \
     jupyter nbextension enable --py geonotebook
