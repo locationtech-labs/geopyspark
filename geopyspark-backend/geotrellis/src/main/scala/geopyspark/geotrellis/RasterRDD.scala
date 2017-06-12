@@ -13,7 +13,6 @@ import geotrellis.raster.histogram.Histogram
 import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.json._
-import geotrellis.spark.io.avro._
 import geotrellis.spark.tiling._
 
 import spray.json._
@@ -164,12 +163,10 @@ abstract class TileRDD[K: ClassTag] {
 /**
  * RDD of Rasters, untiled and unsorted
  */
-abstract class RasterRDD[K: AvroRecordCodec: ClassTag] extends TileRDD[K] {
+abstract class RasterRDD[K: ClassTag] extends TileRDD[K] {
   def rdd: RDD[(K, MultibandTile)]
 
   /** Encode RDD as Avro bytes and return it with avro schema used */
-  def toAvroRDD(): (JavaRDD[Array[Byte]], String) = PythonTranslator.toPython(rdd)
-
   def toProtoRDD(): JavaRDD[Array[Byte]]
 
   def collectMetadata(
@@ -298,9 +295,6 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
 }
 
 object ProjectedRasterRDD {
-  def fromAvroEncodedRDD(javaRDD: JavaRDD[Array[Byte]], schema: String): ProjectedRasterRDD =
-    ProjectedRasterRDD(PythonTranslator.fromPython(javaRDD, Some(schema)))
-
   def fromProtoEncodedRDD(javaRDD: JavaRDD[Array[Byte]]): ProjectedRasterRDD =
     ProjectedRasterRDD(
       PythonTranslator.fromPython[
@@ -312,9 +306,6 @@ object ProjectedRasterRDD {
 }
 
 object TemporalRasterRDD {
-  def fromAvroEncodedRDD(javaRDD: JavaRDD[Array[Byte]], schema: String): TemporalRasterRDD =
-    TemporalRasterRDD(PythonTranslator.fromPython(javaRDD, Some(schema)))
-
   def fromProtoEncodedRDD(javaRDD: JavaRDD[Array[Byte]]): TemporalRasterRDD =
     TemporalRasterRDD(
       PythonTranslator.fromPython[

@@ -1,13 +1,21 @@
 package geopyspark.geotrellis.tests.schemas
 
+import geopyspark.geotrellis._
+import protos.extentMessages._
 import geopyspark.geotrellis.testkit._
+
 import geotrellis.vector.Extent
 import geotrellis.spark._
 
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.api.java.JavaRDD
 
-object ExtentWrapper extends Wrapper[Extent]{
+object ExtentWrapper extends Wrapper2[Extent, ProtoExtent]{
+  def testOut(sc: SparkContext): JavaRDD[Array[Byte]] =
+    PythonTranslator.toPython[Extent, ProtoExtent](testRdd(sc))
+  def testIn(rdd: RDD[Array[Byte]]) =
+    PythonTranslator.fromPython[Extent, ProtoExtent](rdd, ProtoExtent.parseFrom)
 
   def testRdd(sc: SparkContext): RDD[Extent] = {
     val arr = Array(

@@ -8,9 +8,10 @@ import geotrellis.spark._
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 
-object TupleWrapper extends Wrapper[(IntArrayTile, Extent)]{
+/*
+object TupleWrapper extends Wrapper[(Tile, Extent)]{
 
-  def testRdd(sc: SparkContext): RDD[(IntArrayTile, Extent)] = {
+  def testRdd(sc: SparkContext): RDD[(Tile, Extent)] = {
     val arr = Array(
       (IntArrayTile(Array[Int](0, 1, 2, 3, 4, 5), 2, 3), Extent(0, 0, 1, 1)),
       (IntArrayTile(Array[Int](0, 1, 2, 3, 4, 5), 3, 2), Extent(1, 2, 3, 4)),
@@ -18,3 +19,4 @@ object TupleWrapper extends Wrapper[(IntArrayTile, Extent)]{
     sc.parallelize(arr)
   }
 }
+*/

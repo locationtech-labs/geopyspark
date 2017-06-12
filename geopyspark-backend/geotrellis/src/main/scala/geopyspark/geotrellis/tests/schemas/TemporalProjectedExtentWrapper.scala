@@ -1,5 +1,7 @@
 package geopyspark.geotrellis.tests.schemas
 
+import geopyspark.geotrellis._
+import protos.extentMessages._
 import geopyspark.geotrellis.testkit._
 
 import geotrellis.proj4._
@@ -9,8 +11,13 @@ import geotrellis.spark.io._
 
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.api.java.JavaRDD
 
-object TemporalProjectedExtentWrapper extends Wrapper[TemporalProjectedExtent]{
+object TemporalProjectedExtentWrapper extends Wrapper2[TemporalProjectedExtent, ProtoTemporalProjectedExtent]{
+  def testOut(sc: SparkContext): JavaRDD[Array[Byte]] =
+    PythonTranslator.toPython[TemporalProjectedExtent, ProtoTemporalProjectedExtent](testRdd(sc))
+  def testIn(rdd: RDD[Array[Byte]]) =
+    PythonTranslator.fromPython[TemporalProjectedExtent, ProtoTemporalProjectedExtent](rdd, ProtoTemporalProjectedExtent.parseFrom)
 
   def testRdd(sc: SparkContext): RDD[TemporalProjectedExtent] = {
     val arr = Array(
