@@ -20,7 +20,7 @@ class RDDWrapperTest(BaseTestClass):
                         [[2, 2, 2, 2]],
                         [[3, 3, 3, 3]],
                         [[4, 4, 4, 4]]], dtype=int)
-        tile = {'data': arr, 'no_data_value': -500}
+        tile = {'data': arr, 'no_data_value': -500, 'data_type': 'INT'}
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)

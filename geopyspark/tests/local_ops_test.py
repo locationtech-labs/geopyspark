@@ -2,6 +2,7 @@ import unittest
 import pytest
 import numpy as np
 
+from geopyspark.geotrellis import SpatialKey
 from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.geotrellis.rdd import TiledRasterRDD
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -20,7 +21,7 @@ class LocalOpertaionsTest(BaseTestClass):
                     'extent': extent,
                     'tileLayout': {'tileCols': 4, 'tileRows': 4, 'layoutCols': 1, 'layoutRows': 1}}}
 
-    spatial_key = {'col': 0, 'row': 0}
+    spatial_key = SpatialKey(0, 0)
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
@@ -30,7 +31,7 @@ class LocalOpertaionsTest(BaseTestClass):
     def test_add_int(self):
         arr = np.zeros((1, 4, 4))
 
-        tile = {'data': arr, 'no_data_value': -500}
+        tile = {'data': arr, 'no_data_value': -500, 'data_type': 'FLOAT'}
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.spatial_key, tile)])
         tiled = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, self.metadata)
 
@@ -45,7 +46,7 @@ class LocalOpertaionsTest(BaseTestClass):
                          [3.0, 3.0, 3.0, 3.0],
                          [4.0, 4.0, 4.0, 4.0]]], dtype=float)
 
-        tile = {'data': arr, 'no_data_value': -500}
+        tile = {'data': arr, 'no_data_value': -500, 'data_type': 'FLOAT'}
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.spatial_key, tile)])
         tiled = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, self.metadata)
 
@@ -65,7 +66,7 @@ class LocalOpertaionsTest(BaseTestClass):
                          [3.0, 3.0, 3.0, 3.0],
                          [4.0, 4.0, 4.0, 4.0]]], dtype=float)
 
-        tile = {'data': arr, 'no_data_value': float('nan')}
+        tile = {'data': arr, 'no_data_value': float('nan'), 'data_type': 'FLOAT'}
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.spatial_key, tile)])
         tiled = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, self.metadata)
 
@@ -90,8 +91,8 @@ class LocalOpertaionsTest(BaseTestClass):
                              [1.0, 1.0, 1.0, 1.0],
                              [1.0, 1.0, 1.0, 1.0]]], dtype=float)
 
-        tile = {'data': arr, 'no_data_value': float('nan')}
-        tile2 = {'data': divider, 'no_data_value': float('nan')}
+        tile = {'data': arr, 'no_data_value': float('nan'), 'data_type': 'FLOAT'}
+        tile2 = {'data': divider, 'no_data_value': float('nan'), 'data_type': 'FLOAT'}
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.spatial_key, tile)])
         rdd2 = BaseTestClass.geopysc.pysc.parallelize([(self.spatial_key, tile2)])
@@ -110,7 +111,7 @@ class LocalOpertaionsTest(BaseTestClass):
                          [10, 10, 10, 10],
                          [20, 20, 20, 20]]], dtype=int)
 
-        tile = {'data': arr, 'no_data_value': -500}
+        tile = {'data': arr, 'no_data_value': -500, 'data_type': 'INT'}
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.spatial_key, tile)])
 

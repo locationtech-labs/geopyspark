@@ -200,17 +200,17 @@ class RasterRDD(CachableRDD):
         key = geopysc.map_key_input(rdd_type, False)
 
         schema = geopysc.create_schema(key)
-        ser = geopysc.create_tuple_serializer(schema, key_type=key, value_type=TILE)
+        ser = geopysc.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
         if rdd_type == SPATIAL:
             srdd = \
-                    geopysc._jvm.geopyspark.geotrellis.ProjectedRasterRDD.fromAvroEncodedRDD(
-                        reserialized_rdd._jrdd, schema)
+                    geopysc._jvm.geopyspark.geotrellis.ProjectedRasterRDD.fromProtoEncodedRDD(
+                        reserialized_rdd._jrdd)
         else:
             srdd = \
-                    geopysc._jvm.geopyspark.geotrellis.TemporalRasterRDD.fromAvroEncodedRDD(
-                        reserialized_rdd._jrdd, schema)
+                    geopysc._jvm.geopyspark.geotrellis.TemporalRasterRDD.fromProtoEncodedRDD(
+                        reserialized_rdd._jrdd)
 
         return cls(geopysc, rdd_type, srdd)
 
@@ -225,11 +225,11 @@ class RasterRDD(CachableRDD):
             ``pyspark.RDD``
         """
 
-        result = self.srdd.toAvroRDD()
+        result = self.srdd.toProtoRDD()
         key = self.geopysc.map_key_input(self.rdd_type, False)
-        ser = self.geopysc.create_tuple_serializer(result._2(), key_type=key,
-                                                   value_type=TILE)
-        return self.geopysc.create_python_rdd(result._1(), ser)
+        ser = self.geopysc.create_tuple_serializer(key_type=key)
+
+        return self.geopysc.create_python_rdd(result, ser)
 
     def to_tiled_layer(self, extent=None, layout=None, crs=None, tile_size=256,
                        resample_method=NEARESTNEIGHBOR):
@@ -514,7 +514,7 @@ class TiledRasterRDD(CachableRDD):
         key = geopysc.map_key_input(rdd_type, True)
 
         schema = geopysc.create_schema(key)
-        ser = geopysc.create_tuple_serializer(schema, key_type=key, value_type=TILE)
+        ser = geopysc.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
         if isinstance(metadata, Metadata):
@@ -522,12 +522,12 @@ class TiledRasterRDD(CachableRDD):
 
         if rdd_type == SPATIAL:
             srdd = \
-                    geopysc._jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.fromAvroEncodedRDD(
-                        reserialized_rdd._jrdd, schema, json.dumps(metadata))
+                    geopysc._jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.fromProtoEncodedRDD(
+                        reserialized_rdd._jrdd, json.dumps(metadata))
         else:
             srdd = \
-                    geopysc._jvm.geopyspark.geotrellis.TemporalTiledRasterRDD.fromAvroEncodedRDD(
-                        reserialized_rdd._jrdd, schema, json.dumps(metadata))
+                    geopysc._jvm.geopyspark.geotrellis.TemporalTiledRasterRDD.fromProtoEncodedRDD(
+                        reserialized_rdd._jrdd, json.dumps(metadata))
 
         return cls(geopysc, rdd_type, srdd)
 
@@ -566,11 +566,11 @@ class TiledRasterRDD(CachableRDD):
         Returns:
             ``pyspark.RDD``
         """
-        result = self.srdd.toAvroRDD()
+        result = self.srdd.toProtoRDD()
         key = self.geopysc.map_key_input(self.rdd_type, True)
-        ser = self.geopysc.create_tuple_serializer(result._2(), key_type=key,
-                                                   value_type=TILE)
-        return self.geopysc.create_python_rdd(result._1(), ser)
+        ser = self.geopysc.create_tuple_serializer(key_type=key)
+
+        return self.geopysc.create_python_rdd(result, ser)
 
     def convert_data_type(self, new_type, no_data_value=None):
         """Converts the underlying, raster values to a new ``CellType``.
@@ -689,10 +689,8 @@ class TiledRasterRDD(CachableRDD):
         if row < min_row or row > max_row:
             raise IndexError("row out of bounds")
 
-        tup = self.srdd.lookup(col, row)
-        array_of_tiles = tup._1()
-        schema = tup._2()
-        ser = self.geopysc.create_value_serializer(schema, TILE)
+        array_of_tiles = self.srdd.lookup(col, row)
+        ser = self.geopysc.create_value_serializer(TILE)
 
         return [ser.loads(tile)[0] for tile in array_of_tiles]
 
@@ -840,9 +838,9 @@ class TiledRasterRDD(CachableRDD):
         if self.rdd_type != SPATIAL:
             raise ValueError("Only TiledRasterRDDs with a rdd_type of Spatial can use stitch()")
 
-        tup = self.srdd.stitch()
-        ser = self.geopysc.create_value_serializer(tup._2(), TILE)
-        return ser.loads(tup._1())[0]
+        value = self.srdd.stitch()
+        ser = self.geopysc.create_value_serializer("Tile")
+        return ser.loads(value)[0]
 
     def mask(self, geometries):
         """Masks the ``TiledRasterRDD`` so that only values that intersect the geometries will

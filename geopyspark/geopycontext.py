@@ -1,6 +1,6 @@
 """A wrapper for ``SparkContext`` that provides extra functionality for GeoPySpark."""
-from geopyspark.avroregistry import AvroRegistry
-from geopyspark.avroserializer import AvroSerializer
+from geopyspark.protobufregistry import ProtoBufRegistry
+from geopyspark.protobufserializer import ProtoBufSerializer
 from geopyspark.geopyspark_utils import check_environment
 import geopyspark.geotrellis.converters
 
@@ -61,8 +61,8 @@ class GeoPyContext(object):
 
         self.pysc._gateway.start_callback_server()
 
-        self.avroregistry = AvroRegistry()
         java_import(self._jvm, 'geopyspark.geotrellis.SpatialTiledRasterRDD')
+        self.protobufregistry = ProtoBufRegistry()
 
     @staticmethod
     def map_key_input(key_type, is_boundable):
@@ -103,6 +103,7 @@ class GeoPyContext(object):
 
         return self._jvm.geopyspark.geotrellis.SchemaProducer.getSchema(key_type)
 
+    '''
     def create_tuple_serializer(self, schema, key_type, value_type):
         decoder = \
                 self.avroregistry.create_partial_tuple_decoder(key_type=key_type,
@@ -113,12 +114,19 @@ class GeoPyContext(object):
                                                                value_type=value_type)
 
         return AutoBatchedSerializer(AvroSerializer(schema, decoder, encoder))
+    '''
 
-    def create_value_serializer(self, schema, value_type):
-        decoder = self.avroregistry._get_decoder(value_type)
-        encoder = self.avroregistry._get_encoder(value_type)
+    def create_tuple_serializer(self, key_type):
+        decoder = self.protobufregistry.create_partial_tuple_decoder(key_type=key_type)
+        encoder = self.protobufregistry.create_partial_tuple_encoder(key_type=key_type)
 
-        return AvroSerializer(schema, decoder, encoder)
+        return AutoBatchedSerializer(ProtoBufSerializer(decoder, encoder))
+
+    def create_value_serializer(self, value_type):
+        decoder = self.protobufregistry._get_decoder(value_type)
+        encoder = self.protobufregistry._get_encoder(value_type)
+
+        return ProtoBufSerializer(decoder, encoder)
 
     def create_python_rdd(self, jrdd, serializer):
         """Creates a Python RDD from a RDD from Scala.

@@ -22,19 +22,13 @@ class ProtoBufSerializer(FramedSerializer):
 
     def __init__(self, decoding_method, encoding_method):
 
-        super(FramedSerializer).__init__(self)
+        super().__init__()
 
         self.decoding_method = decoding_method
         self.encoding_method = encoding_method
 
     def _dumps(self, obj):
-        #bytes_writer = io.BytesIO()
-
         return self.encoding_method(obj)
-        #datum = self.encoding_method(obj)
-        #schemaless_writer(bytes_writer, self.schema_dict, datum)
-
-        #return bytes_writer.getvalue()
 
     def dumps(self, obj):
         """Serialize an object into a byte array.
@@ -64,7 +58,4 @@ class ProtoBufSerializer(FramedSerializer):
         Returns:
             A list of deserialized objects.
         """
-
-        buf = io.BytesIO(obj)
-
-        return [self.decoding_method(buf)]
+        return [self.decoding_method(obj)]

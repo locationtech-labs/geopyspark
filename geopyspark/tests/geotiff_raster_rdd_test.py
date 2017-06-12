@@ -83,6 +83,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
 
         self.assertDictEqual(tiled.layer_metadata.to_dict(),
                              converted.layer_metadata.to_dict())
+    '''
 
     def test_to_int(self):
         arr = np.array([[0.4324323432124, 0.0, 0.0],
@@ -106,6 +107,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         arr = converted.to_numpy_rdd().first()[1]['data']
 
         self.assertEqual(arr.dtype, np.uint8)
+    '''
 
     def test_to_ud_ubyte(self):
         arr = np.array([[0.4324323432124, 0.0, 0.0],

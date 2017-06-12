@@ -336,12 +336,12 @@ def read_value(geopysc,
                                            row,
                                            zdt)
 
-        ser = geopysc.create_value_serializer(tup._2(), TILE)
+        ser = geopysc.create_value_serializer("MultibandTile")
 
         if uri not in _mapped_serializers:
             _mapped_serializers[uri] = ser
 
-        return ser.loads(tup._1())[0]
+        return ser.loads(tup)[0]
 
 def query(geopysc,
           rdd_type,
