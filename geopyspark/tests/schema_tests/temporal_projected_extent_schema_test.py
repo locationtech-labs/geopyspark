@@ -36,6 +36,7 @@ class TemporalProjectedExtentSchemaTest(BaseTestClass):
         for actual, expected in zip(actual_tpe, expected_tpe):
             self.assertDictEqual(actual, expected)
 
+    '''
     def test_encoded_tpextents(self):
         actual_encoded = [temporal_projected_extent_encoder(x) for x in self.rdd.collect()]
 

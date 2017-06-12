@@ -2,6 +2,11 @@
 from collections import namedtuple
 from shapely.geometry import box
 
+from geopyspark.protobuf import extentMessages_pb2
+from geopyspark.protobuf import tileMessages_pb2
+from geopyspark.protobuf import keyMessages_pb2
+from geopyspark.protobuf import tupleMessages_pb2
+
 
 import warnings
 import functools
@@ -56,6 +61,10 @@ class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
 
         return cls(*polygon.bounds)
 
+    @classmethod
+    def from_protobuf_extent(cls, proto_extent):
+        return cls(proto_extent.xmin, proto_extent.ymin, proto_extent.xmax, proto_extent.ymax)
+
     @property
     def to_polygon(self):
         """Converts this instance to a Shapely Polygon.
@@ -67,6 +76,17 @@ class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
         """
 
         return box(*self)
+
+    @property
+    def to_protobuf_extent(self):
+        ex = extentMessages_pb2.ProtoExtent()
+
+        ex.xmin = self.xmin
+        ex.ymin = self.ymin
+        ex.xmax = self.xmax
+        ex.ymax = self.ymax
+
+        return ex
 
 
 class ProjectedExtent(namedtuple("ProjectedExtent", 'extent epsg proj4')):
@@ -93,7 +113,6 @@ class ProjectedExtent(namedtuple("ProjectedExtent", 'extent epsg proj4')):
 
     @classmethod
     def from_protobuf_projected_extent(cls, proto_projected_extent):
-
         if proto_projected_extent.crs.epsg is not 0:
             return cls(extent=Extent.from_protobuf_extent(proto_projected_extent.extent),
                        epsg=proto_projected_extent.crs.epsg)
@@ -106,6 +125,23 @@ class ProjectedExtent(namedtuple("ProjectedExtent", 'extent epsg proj4')):
             return {'extent': self.extent, 'epsg': self.epsg, 'proj4': self.proj4}
         else:
             return {'extent': self.extent._asdict(), 'epsg': self.epsg, 'proj4': self.proj4}
+
+    @property
+    def to_protobuf_projected_extent(self):
+        pex = extentMessages_pb2.ProtoProjectedExtent()
+
+        crs = extentMessages_pb2.ProtoCRS()
+        ex = self.extent.to_protobuf_extent
+
+        if self.epsg:
+            crs.epsg = self.epsg
+        else:
+            crs.proj4 = self.proj4
+
+        pex.extent.CopyFrom(ex)
+        pex.crs.CopyFrom(crs)
+
+        return pex
 
 
 class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent instant epsg proj4')):
@@ -133,6 +169,17 @@ class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent inst
     def __new__(cls, extent, instant, epsg=None, proj4=None):
         return super(TemporalProjectedExtent, cls).__new__(cls, extent, instant, epsg, proj4)
 
+    @classmethod
+    def from_protobuf_temporal_projected_extent(cls, proto_temp_projected_extent):
+        if proto_temp_projected_extent.crs.epsg is not 0:
+            return cls(extent=Extent.from_protobuf_extent(proto_temp_projected_extent.extent),
+                       epsg=proto_temp_projected_extent.crs.epsg,
+                       instant=proto_temp_projected_extent.instant)
+        else:
+            return cls(extent=Extent.from_protobuf_extent(proto_temp_projected_extent.extent),
+                       proj4=proto_temp_projected_extent.crs.proj4,
+                       instant=proto_temp_projected_extent.instant)
+
     def _asdict(self):
         if isinstance(self.extent, dict):
             return {'extent': self.extent, 'instant': self.instant, 'epsg': self.epsg,
@@ -141,6 +188,23 @@ class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent inst
             return {'extent': self.extent._asdict(), 'instant': self.instant, 'epsg': self.epsg,
                     'proj4': self.proj4}
 
+    @property
+    def to_protobuf_temporal_projected_extent(self):
+        tpex = extentMessages_pb2.ProtoTemporalProjectedExtent()
+
+        crs = extentMessages_pb2.ProtoCRS()
+        ex = self.extent.to_protobuf_extent
+
+        if self.epsg:
+            crs.epsg = self.epsg
+        else:
+            crs.proj4 = self.proj4
+
+        tpex.extent.CopyFrom(ex)
+        tpex.crs.CopyFrom(crs)
+        tpex.instant = self.instant
+
+        return tpex
 
 TileLayout = namedtuple("TileLayout", 'layoutCols layoutRows tileCols tileRows')
 """
@@ -171,34 +235,65 @@ Returns:
 """
 
 
-SpatialKey = namedtuple("SpatialKey", 'col row')
-"""
-Represents the position of a raster within a grid.
-This grid is a 2D plane where raster positions are represented by a pair of coordinates.
+class SpatialKey(namedtuple("SpatialKey", 'col row')):
+    """Represents the position of a raster within a grid.
 
-Args:
-    col (int): The column of the grid, the numbers run east to west.
-    row (int): The row of the grid, the numbers run north to south.
+    This grid is a 2D plane where raster positions are represented by a pair of coordinates.
 
-Returns:
-    :obj:`~geopyspark.geotrellis.SpatialKey`
-"""
+    Args:
+        col (int): The column of the grid, the numbers run east to west.
+        row (int): The row of the grid, the numbers run north to south.
+
+    Returns:
+        :obj:`~geopyspark.geotrellis.SpatialKey`
+    """
+
+    __slots__ = []
+
+    @classmethod
+    def from_protobuf_spatial_key(cls, proto_spatial_key):
+        return cls(col=proto_spatial_key.col, row=proto_spatial_key.row)
+
+    @property
+    def to_protobuf_spatial_key(self):
+        spatial_key = keyMessages_pb2.ProtoSpatialKey()
+
+        spatial_key.col = self.col
+        spatial_key.row = self.row
+
+        return spatial_key
 
 
-SpaceTimeKey = namedtuple("SpaceTimeKey", 'col row instant')
-"""
-Represents the position of a raster within a grid.
-This grid is a 3D plane where raster positions are represented by a pair of coordinates as well
-as a z value that represents time.
+class SpaceTimeKey(namedtuple("SpaceTimeKey", 'col row instant')):
+    """Represents the position of a raster within a grid.
+    This grid is a 3D plane where raster positions are represented by a pair of coordinates as well
+    as a z value that represents time.
 
-Args:
-    col (int): The column of the grid, the numbers run east to west.
-    row (int): The row of the grid, the numbers run north to south.
-    instance (int): The time stamp of the raster.
+    Args:
+        col (int): The column of the grid, the numbers run east to west.
+        row (int): The row of the grid, the numbers run north to south.
+        instance (int): The time stamp of the raster.
 
-Returns:
-    :obj:`~geopyspark.geotrellis.SpaceTimeKey`
-"""
+    Returns:
+        :obj:`~geopyspark.geotrellis.SpaceTimeKey`
+    """
+
+    __slots__ = []
+
+    @classmethod
+    def from_protobuf_space_time_key(cls, proto_space_time_key):
+        return cls(col=proto_space_time_key.col, row=proto_space_time_key.row,
+                   instant=proto_space_time_key.instant)
+
+    @property
+    def to_protobuf_space_time_key(self):
+        space_time_key = keyMessages_pb2.ProtoSpaceTimeKey()
+
+        space_time_key.col = self.col
+        space_time_key.row = self.row
+        space_time_key.instant = self.instant
+
+        return space_time_key
 
 RasterizerOptions = namedtuple("RasterizeOption", 'includePartial sampleType')
 """Represents options available to geometry rasterizer

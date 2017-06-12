@@ -36,6 +36,7 @@ class ProjectedExtentSchemaTest(BaseTestClass):
         for actual, expected in zip(actual_pe, expected_pe):
             self.assertDictEqual(actual, expected)
 
+    '''
     def test_encoded_pextents(self):
         actual_encoded = [projected_extent_encoder(x) for x in self.rdd.collect()]
 

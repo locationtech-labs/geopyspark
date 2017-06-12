@@ -33,6 +33,7 @@ class SpatialKeySchemaTest(BaseTestClass):
     def result_checker(self, actual_keys, expected_keys):
         self.assertDictEqual(actual_keys, expected_keys)
 
+    '''
     def test_encoded_keyss(self):
         actual_encoded = [spatial_key_encoder(x) for x in self.rdd.collect()]
         proto_spatial_key = keyMessages_pb2.ProtoSpatialKey()
@@ -74,6 +75,7 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
         for actual, expected in zip(actual_keys, expected_keys):
             self.assertDictEqual(actual, expected)
 
+    '''
     def test_encoded_keyss(self):
         expected_encoded = [space_time_key_encoder(x) for x in self.rdd.collect()]
         actual_encoded = []
@@ -89,7 +91,6 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
 
         for actual, expected in zip(actual_encoded, expected_encoded):
             self.assertEqual(actual, expected)
-
 
     def test_decoded_extents(self):
         self.result_checker(self.collected, self.expected_keys)

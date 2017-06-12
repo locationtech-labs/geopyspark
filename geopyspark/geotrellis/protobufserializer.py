@@ -44,6 +44,8 @@ class ProtoBufSerializer(FramedSerializer):
 
         return cls(decoder, encoder)
 
+=======
+>>>>>>> Removed Avro from the Python side:geopyspark/protobufserializer.py
     def _dumps(self, obj):
         return self.encoding_method(obj)
 

@@ -37,6 +37,7 @@ class ShortTileSchemaTest(BaseTestClass):
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
+    '''
     def test_encoded_tiles(self):
         expected_encoded = [to_pb_tile(x) for x in self.collected]
 
@@ -56,6 +57,7 @@ class ShortTileSchemaTest(BaseTestClass):
             self.assertEqual(actual['data'].shape, actual['data'].shape)
 
 
+'''
 class UShortTileSchemaTest(BaseTestClass):
     tiles = [
         {'data': np.uint16([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': 0, 'data_type': 'USHORT'},
