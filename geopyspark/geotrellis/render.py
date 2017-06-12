@@ -142,10 +142,10 @@ class PngRDD(CachableRDD):
         metadata = self.layer_metadata[idx]
 
         bounds = metadata.bounds
-        min_col = bounds.minKey['col']
-        min_row = bounds.minKey['row']
-        max_col = bounds.maxKey['col']
-        max_row = bounds.maxKey['row']
+        min_col = bounds.minKey.col
+        min_row = bounds.minKey.row
+        max_col = bounds.maxKey.col
+        max_row = bounds.maxKey.row
 
         if col < min_col or col > max_col:
             raise IndexError("column out of bounds")
