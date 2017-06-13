@@ -39,6 +39,7 @@ def rasterize(geopysc, geoms, crs, zoom, fill_value, cell_type='float64', option
         zoom (int): The zoom level of the output raster.
         fill_value: Value to burn into pixels intersectiong geometry
         cell_type (str): The string representation of the ``CellType`` to convert to.
+        options (:class:`~geopyspark.geotrellis.RasterizerOptions`): Pixel intersection options.
 
     Returns:
         :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`

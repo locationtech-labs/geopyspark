@@ -171,14 +171,14 @@ Returns:
     :obj:`~geopyspark.geotrellis.SpaceTimeKey`
 """
 
-RasterizeOptions = namedtuple("RasterizeOption", 'includePartial sampleType')
+RasterizerOptions = namedtuple("RasterizeOption", 'includePartial sampleType')
 """Represents options available to geometry rasterizer
 
 Args:
     includePartial (bool): Include partial pixel intersection (default: True)
     sampleType (str): 'PixelIsArea' or 'PixelIsPoint' (default: 'PixelIsPoint')
 """
-RasterizeOptions.__new__.__defaults__ = (True, 'PixelIsPoint')
+RasterizerOptions.__new__.__defaults__ = (True, 'PixelIsPoint')
 
 class Bounds(namedtuple("Bounds", 'minKey maxKey')):
     """
