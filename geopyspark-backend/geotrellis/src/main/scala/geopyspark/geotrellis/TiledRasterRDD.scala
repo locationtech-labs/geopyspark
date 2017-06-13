@@ -659,7 +659,9 @@ object SpatialTiledRasterRDD {
   ): SpatialTiledRasterRDD =
     new SpatialTiledRasterRDD(zoomLevel, rdd)
 
-  def rasterizeGeometry(sc: SparkContext, geomWKB: ArrayList[Array[Byte]], geomCRSStr: String, requestedZoom: Int, fillValue: Double, cellTypeString: String): TiledRasterRDD[SpatialKey]= {
+  def rasterizeGeometry(sc: SparkContext, geomWKB: ArrayList[Array[Byte]], geomCRSStr: String,
+    requestedZoom: Int, fillValue: Double, cellTypeString: String, options: Rasterizer.Options
+  ): TiledRasterRDD[SpatialKey]= {
     val cellType = CellType.fromName(cellTypeString)
     val geoms = geomWKB.asScala.map(WKB.read)
     val srcCRS = TileRDD.getCRS(geomCRSStr).get
@@ -675,7 +677,7 @@ object SpatialTiledRasterRDD {
       layout = ld,
       ct = cellType,
       value = fillValue,
-      options = Options(true, PixelIsArea),
+      options = Option(options).getOrElse(Options.DEFAULT),
       numPartitions = math.max(gb.size / 512, 1))
     val metadata = TileLayerMetadata(cellType, ld, maptrans(gb), srcCRS, KeyBounds(gb))
     SpatialTiledRasterRDD(Some(requestedZoom),

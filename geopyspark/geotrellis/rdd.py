@@ -29,7 +29,7 @@ from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                             )
 from geopyspark.geotrellis.neighborhoods import Neighborhood
 
-def rasterize(geopysc, geoms, crs, zoom, fill_value, cell_type='float64'):
+def rasterize(geopysc, geoms, crs, zoom, fill_value, cell_type='float64', options=None):
     """Rasterizes a Shapely geometries.
 
     Args:
@@ -47,7 +47,7 @@ def rasterize(geopysc, geoms, crs, zoom, fill_value, cell_type='float64'):
         crs = str(crs)
 
     wkb_geoms = [shapely.wkb.dumps(g) for g in geoms]
-    srdd = geopysc._jvm.SpatialTiledRasterRDD.rasterizeGeometry(geopysc.sc, wkb_geoms, crs, zoom, float(fill_value), cell_type)
+    srdd = geopysc._jvm.SpatialTiledRasterRDD.rasterizeGeometry(geopysc.sc, wkb_geoms, crs, zoom, float(fill_value), cell_type, options)
     return TiledRasterRDD(geopysc, SPATIAL, srdd)
 
 def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_with):
@@ -1072,7 +1072,7 @@ class TiledRasterRDD(CachableRDD):
     def is_floating_point_layer(self):
         """Determines whether the content of the TiledRasterRDD is of floating point type.
 
-        Args: 
+        Args:
             None
 
         Returns:

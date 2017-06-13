@@ -2,6 +2,8 @@
 from geopyspark.avroregistry import AvroRegistry
 from geopyspark.avroserializer import AvroSerializer
 from geopyspark.geopyspark_utils import check_environment
+import geopyspark.geotrellis.converters
+
 check_environment()
 
 from pyspark import RDD, SparkContext
