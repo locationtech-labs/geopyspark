@@ -24,6 +24,7 @@ import geotrellis.spark.util._
 import geotrellis.util._
 import geotrellis.vector._
 import geotrellis.vector.io.wkt.WKT
+import geotrellis.vector.io.wkb.WKB
 import geotrellis.vector.triangulation._
 import geotrellis.vector.voronoi._
 
@@ -658,27 +659,27 @@ object SpatialTiledRasterRDD {
   ): SpatialTiledRasterRDD =
     new SpatialTiledRasterRDD(zoomLevel, rdd)
 
-  def rasterize(
-    sc: SparkContext,
-    geometryString: String,
-    extent: java.util.Map[String, Double],
-    crs: String,
-    cols: Int,
-    rows: Int,
-    fillValue: Int
-  ): TiledRasterRDD[SpatialKey] = {
-    val rasterExtent = RasterExtent(extent.toExtent, cols, rows)
-    val projectedExtent = ProjectedExtent(rasterExtent.extent, TileRDD.getCRS(crs).get)
+  def rasterizeGeometry(sc: SparkContext, geomWKB: ArrayList[Array[Byte]], geomCRSStr: String, requestedZoom: Int, fillValue: Double, cellTypeString: String): TiledRasterRDD[SpatialKey]= {
+    val cellType = CellType.fromName(cellTypeString)
+    val geoms = geomWKB.asScala.map(WKB.read)
+    val srcCRS = TileRDD.getCRS(geomCRSStr).get
+    val LayoutLevel(z, ld) = ZoomedLayoutScheme(srcCRS).levelForZoom(requestedZoom)
+    val maptrans = ld.mapTransform
+    val fullEnvelope = geoms.map(_.envelope).reduce(_ combine _)
+    val gb @ GridBounds(cmin, rmin, cmax, rmax) = maptrans(fullEnvelope)
 
-    val tile = Rasterizer.rasterizeWithValue(WKT.read(geometryString), rasterExtent, fillValue)
-    val rdd = sc.parallelize(Array((projectedExtent, MultibandTile(tile))))
-
-    val tileLayout = TileLayout(1, 1, cols, rows)
-    val layoutDefinition = LayoutDefinition(rasterExtent.extent, tileLayout)
-
-    val metadata = rdd.collectMetadata[SpatialKey](layoutDefinition)
-
-    SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata), metadata))
+    val geomsRdd = sc.parallelize(geoms)
+    import geotrellis.raster.rasterize.Rasterizer.Options
+    val tiles = RasterizeRDD.fromGeometry(
+      geoms = geomsRdd,
+      layout = ld,
+      ct = cellType,
+      value = fillValue,
+      options = Options(true, PixelIsArea),
+      numPartitions = math.max(gb.size / 512, 1))
+    val metadata = TileLayerMetadata(cellType, ld, maptrans(gb), srcCRS, KeyBounds(gb))
+    SpatialTiledRasterRDD(Some(requestedZoom),
+      MultibandTileLayerRDD(tiles.mapValues(MultibandTile(_)), metadata))
   }
 
   def euclideanDistance(sc: SparkContext, geomWKT: String, geomCRSStr: String, cellTypeString: String, requestedZoom: Int): TiledRasterRDD[SpatialKey]= {

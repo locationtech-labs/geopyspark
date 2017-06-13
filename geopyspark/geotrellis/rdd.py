@@ -5,6 +5,7 @@ when performing operations.
 '''
 import json
 import shapely.wkt
+import shapely.wkb
 from geopyspark.geopyspark_utils import check_environment
 check_environment()
 
@@ -28,6 +29,26 @@ from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                             )
 from geopyspark.geotrellis.neighborhoods import Neighborhood
 
+def rasterize(geopysc, geoms, crs, zoom, fill_value, cell_type='float64'):
+    """Rasterizes a Shapely geometries.
+
+    Args:
+        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` instance.
+        geoms (shapely.geometry): List of geometries to rasterize.
+        crs (str or int): The CRS of the input geometry.
+        zoom (int): The zoom level of the output raster.
+        fill_value: Value to burn into pixels intersectiong geometry
+        cell_type (str): The string representation of the ``CellType`` to convert to.
+
+    Returns:
+        :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+    """
+    if isinstance(crs, int):
+        crs = str(crs)
+
+    wkb_geoms = [shapely.wkb.dumps(g) for g in geoms]
+    srdd = geopysc._jvm.SpatialTiledRasterRDD.rasterizeGeometry(geopysc.sc, wkb_geoms, crs, zoom, float(fill_value), cell_type)
+    return TiledRasterRDD(geopysc, SPATIAL, srdd)
 
 def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_with):
     new_dict = {}
@@ -506,63 +527,6 @@ class TiledRasterRDD(CachableRDD):
             srdd = \
                     geopysc._jvm.geopyspark.geotrellis.TemporalTiledRasterRDD.fromAvroEncodedRDD(
                         reserialized_rdd._jrdd, schema, json.dumps(metadata))
-
-        return cls(geopysc, rdd_type, srdd)
-
-    @classmethod
-    def rasterize(cls, geopysc, rdd_type, geometry, extent, crs, cols, rows,
-                  fill_value, instant=None):
-        """Creates a ``TiledRasterRDD`` from a shapely geomety.
-
-        Args:
-            geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
-            rdd_type (str): What the spatial type of the geotiffs are. This is
-                represented by the constants: ``SPATIAL`` and ``SPACETIME``.
-            geometry (str or shapely.geometry.Polygon): The value to be turned into a raster. Can
-                either be a string or a ``Polygon``. If the value is a string, it must be the WKT
-                string, geometry format.
-            extent (:class:`~geopyspark.geotrellis.Extent`): The ``extent`` of the new raster.
-            crs (str or int): The CRS the new raster should be in.
-            cols (int): The number of cols the new raster should have.
-            rows (int): The number of rows the new raster should have.
-            fill_value (int): The value to fill the raster with.
-
-                Note:
-                    Only the area the raster intersects with the ``extent`` will have this value.
-                    Any other area will be filled with GeoTrellis' NoData value for ``int`` which
-                    is represented in GeoPySpark as the constant, ``NODATAINT``.
-            instant(int, optional): Optional if the data has no time component (ie is ``SPATIAL``).
-                Otherwise, it is requires and represents the time stamp of the data.
-
-        Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
-
-        Raises:
-            TypeError: If ``geometry`` is not a ``str`` or a Polygon; or if there was a
-                mistach in inputs like setting the ``rdd_type`` as ``SPATIAL`` but also setting
-                ``instant``.
-        """
-
-        if not isinstance(geometry, str):
-            try:
-                geometry = dumps(geometry)
-            except:
-                raise TypeError(geometry, "Needs to be either a Shapely Geometry or a string")
-
-        if not isinstance(extent, dict):
-            extent = extent._asdict()
-
-        if isinstance(crs, int):
-            crs = str(crs)
-
-        if instant and rdd_type != SPATIAL:
-            srdd = geopysc._jvm.geopyspark.geotrellis.TemporalTiledRasterRDD.rasterize(
-                geopysc.sc, geometry, extent, crs, instant, cols, rows, fill_value)
-        elif not instant and rdd_type == SPATIAL:
-            srdd = geopysc._jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.rasterize(
-                geopysc.sc, geometry, extent, crs, cols, rows, fill_value)
-        else:
-            raise TypeError("Abiguous inputs. Given ", instant, " but rdd_type is SPATIAL")
 
         return cls(geopysc, rdd_type, srdd)
 
