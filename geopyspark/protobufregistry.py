@@ -60,11 +60,12 @@ class ProtoBufRegistry(object):
         """Decodes a ``TILE`` into Python.
 
         Args:
-            schema_dict (dict): The dict representation of the AvroSchema.
+            proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
 
         Returns:
             :ref:`Tile <raster>`
         """
+
         tile = ProtoTile.FromString(proto_bytes)
         data_type = cls._mapped_data_types[tile.cellType.dataType]
         arr = np.array([cls._tile_decoder(tile, data_type)])
@@ -87,17 +88,98 @@ class ProtoBufRegistry(object):
 
     @classmethod
     def multibandtile_decoder(cls, proto_bytes):
+        """Decodes a ``TILE`` into Python.
+
+        Args:
+            proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
+
+        Returns:
+            :ref:`Tile <raster>`
+        """
+
         return cls._multibandtile_decoder(ProtoMultibandTile.FromString(proto_bytes))
+
+    @staticmethod
+    def extent_decoder(proto_bytes):
+        """Decodes an ``Extent`` into Python.
+
+        Args:
+            proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.Extent`
+        """
+
+        return Extent.from_protobuf_extent(
+            ProtoExtent.FromString(proto_bytes))
+
+    @staticmethod
+    def projected_extent_decoder(proto_bytes):
+        """Decodes a ``TemporalProjectedExtent`` into Python.
+
+        Args:
+            proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.ProjectedExtent`
+        """
+
+        return ProjectedExtent.from_protobuf_projected_extent(
+            ProtoProjectedExtent.FromString(proto_bytes))
+
+    @staticmethod
+    def temporal_projected_extent_decoder(proto_bytes):
+        """Decodes a ``TemproalProjectedExtent`` into Python.
+
+        Args:
+            proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.TemporalProjectedExtent`
+        """
+
+        return TemporalProjectedExtent.from_protobuf_temporal_projected_extent(
+            ProtoTemporalProjectedExtent.FromString(proto_bytes))
+
+    @staticmethod
+    def spatial_key_decoder(proto_bytes):
+        """Decodes a ``SpatialKey`` into Python.
+
+        Args:
+            proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.SpatialKey`
+        """
+
+        return SpatialKey.from_protobuf_spatial_key(
+            keyMessages_pb2.ProtoSpatialKey.FromString(proto_bytes))
+
+    @staticmethod
+    def space_time_key_decoder(proto_bytes):
+        """Decodes a ``SpaceTimeKey`` into Python.
+
+        Args:
+            proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.SpaceTimeKey`
+        """
+
+        return SpaceTimeKey.from_protobuf_space_time_key(
+            keyMessages_pb2.ProtoSpaceTimeKey.FromString(proto_bytes))
 
     @classmethod
     def tuple_decoder(cls, proto_bytes, key_decoder):
-        import io
         """Decodes a tuple into Python.
 
+        Note:
+            The value of the tuple is always assumed to be a :ref:`Tile <raster>`,
+            thus, only the decoding method of the key is required.
+
         Args:
-            schema_dict (dict): The ``dict`` representation of the AvroSchema.
-            key_decoder (func, optional): The decoding function of the key.
-            value_decoder (func, optional): The decoding function fo the value.
+            proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
+            key_decoder (str): The name of the key type of the tuple.
 
         Returns:
             tuple
@@ -117,41 +199,16 @@ class ProtoBufRegistry(object):
         else:
             return (SpaceTimeKey.from_protobuf_space_time_key(tup.spaceTimeKey), multiband)
 
-    @staticmethod
-    def extent_decoder(proto_bytes):
-        return Extent.from_protobuf_extent(
-            ProtoExtent.FromString(proto_bytes))
-
-    @staticmethod
-    def projected_extent_decoder(proto_bytes):
-        return ProjectedExtent.from_protobuf_projected_extent(
-            ProtoProjectedExtent.FromString(proto_bytes))
-
-    @staticmethod
-    def temporal_projected_extent_decoder(proto_bytes):
-        return TemporalProjectedExtent.from_protobuf_temporal_projected_extent(
-            ProtoTemporalProjectedExtent.FromString(proto_bytes))
-
-    @staticmethod
-    def spatial_key_decoder(proto_bytes):
-        return SpatialKey.from_protobuf_spatial_key(
-            keyMessages_pb2.ProtoSpatialKey.FromString(proto_bytes))
-
-    @staticmethod
-    def space_time_key_decoder(proto_bytes):
-        return SpaceTimeKey.from_protobuf_space_time_key(
-            keyMessages_pb2.ProtoSpaceTimeKey.FromString(proto_bytes))
-
     @classmethod
     def create_partial_tuple_decoder(cls, key_type):
-        """Creates a partial, tuple encoder function.
+        """Creates a partial, tuple decoder function.
 
         Args:
-            key_type (str, optional): The type of the key in the tuple.
-            value_type (str, optional): The type of the value in the tuple.
+            value_type (str): The type of the value in the tuple.
 
         Returns:
-            A partial tuple_encoder function that requires a obj to execute.
+            A partial :meth:`~geopyspark.protobufregistry.ProtoBufRegistry.tuple_decoder`
+            function that requires ``proto_bytes`` to execute.
         """
 
         return partial(cls.tuple_decoder, key_decoder=key_type)
@@ -173,8 +230,8 @@ class ProtoBufRegistry(object):
         else:
             raise Exception("Could not find value type that matches", name)
 
-    # ENCODERS
 
+    # ENCODERS
 
     @staticmethod
     def _tile_encoder(obj):
@@ -225,6 +282,15 @@ class ProtoBufRegistry(object):
 
     @classmethod
     def tile_encoder(cls, obj):
+        """Decodes a ``TILE`` into bytes.
+
+        Args:
+            obj (:ref:`Tile <raster>`): An instance of ``Extent``.
+
+        Returns:
+            bytes
+        """
+
         return cls._tile_encoder(obj).SerializeToString()
 
     @classmethod
@@ -246,30 +312,100 @@ class ProtoBufRegistry(object):
 
     @classmethod
     def multibandtile_encoder(cls, obj):
+        """Decodes a ``TILE`` into bytes.
+
+        Args:
+            obj (:ref:`Tile <raster>`): An instance of ``Extent``.
+
+        Returns:
+            bytes
+        """
+
         return cls._multibandtile_encoder(obj).SerializeToString()
 
     @staticmethod
-    def extent_encoder(cls, obj):
+    def extent_encoder(obj):
+        """Encodes an ``Extent`` into bytes.
+
+        Args:
+            obj (:class:`~geopyspark.geotrellis.Extent`): An instance of ``Extent``.
+
+        Returns:
+            bytes
+        """
+
         return obj.to_protobuf_extent.SerializeToString()
 
     @staticmethod
-    def projected_extent_encoder(cls, obj):
+    def projected_extent_encoder(obj):
+        """Encodes a ``ProjectedExtent`` into bytes.
+
+        Args:
+            obj (:class:`~geopyspark.geotrellis.ProjectedExtent`): An instance of
+                ``ProjectedExtent``.
+
+        Returns:
+            bytes
+        """
+
         return obj.to_protobuf_projected_extent.SerializeToString()
 
     @staticmethod
-    def temporal_projected_extent_encoder(cls, obj):
+    def temporal_projected_extent_encoder(obj):
+        """Encodes a ``TemproalProjectedExtent`` into bytes.
+
+        Args:
+            obj (:class:`~geopyspark.geotrellis.TemporalProjectedExtent`): An instance of
+                ``TemporalProjectedExtent``.
+
+        Returns:
+            bytes
+        """
+
         return obj.to_protobuf_temporal_projected_extent.SerializeToString()
 
     @staticmethod
-    def spatial_key_encoder(cls, obj):
+    def spatial_key_encoder(obj):
+        """Encodes a ``SpatialKey`` into bytes.
+
+        Args:
+            obj (:class:`~geopyspark.geotrellis.SpatialKey`): An instance of ``SpatialKey``.
+
+        Returns:
+            bytes
+        """
+
         return obj.to_protobuf_spatial_key.SerializeToString()
 
     @staticmethod
-    def space_time_key_encoder(cls, obj):
+    def space_time_key_encoder(obj):
+        """Encodes a ``SpaceTimeKey`` into bytes.
+
+        Args:
+            obj (:class:`~geopyspark.geotrellis.SpaceTimeKey`): An instance of ``SpaceTimeKey``.
+
+        Returns:
+            bytes
+        """
+
         return obj.to_protobuf_space_time_key.SerializeToString()
 
     @classmethod
     def tuple_encoder(cls, obj, key_encoder):
+        """Encodes a tuple into bytes.
+
+        Note:
+            The value of the tuple is always assumed to be a :ref:`Tile <raster>`,
+            thus, only the encoding method of the key is required.
+
+        Args:
+            obj (tuple): The tuple to encode.
+            key_encoder (str): The name of the key type of the tuple.
+
+        Returns:
+           bytes
+        """
+
         tup = tupleMessages_pb2.ProtoTuple()
         tup.tiles.CopyFrom(cls._multibandtile_encoder(obj[1]))
 
@@ -289,11 +425,11 @@ class ProtoBufRegistry(object):
         """Creates a partial, tuple encoder function.
 
         Args:
-            key_type (str, optional): The type of the key in the tuple.
-            value_type (str, optional): The type of the value in the tuple.
+            key_type (str): The type of the key in the tuple.
 
         Returns:
-            A partial tuple_encoder function that requires a obj to execute.
+            A partial :meth:`~geopyspark.protobufregistry.tuple_encoder` function that requires an
+            obj to execute.
         """
 
         return partial(cls.tuple_encoder, key_encoder=key_type)
