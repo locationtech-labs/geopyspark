@@ -63,6 +63,16 @@ class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
 
     @classmethod
     def from_protobuf_extent(cls, proto_extent):
+        """Creates an ``Extent`` from a ``ProtoExtent``.
+
+        Args:
+            proto_extent (:class:`~geopyspark.protobuf.extentMessages_pb2.ProtoExtent`): An instance
+                of ``ProtoExtent``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.Extent`
+        """
+
         return cls(proto_extent.xmin, proto_extent.ymin, proto_extent.xmax, proto_extent.ymax)
 
     @property
@@ -79,6 +89,12 @@ class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
 
     @property
     def to_protobuf_extent(self):
+        """Converts this instance to a ``ProtoExtent``.
+
+        Returns:
+            :class:`~geopyspark.protobuf.extentMessages_pb2.ProtoExtent`
+        """
+
         ex = extentMessages_pb2.ProtoExtent()
 
         ex.xmin = self.xmin
@@ -93,12 +109,12 @@ class ProjectedExtent(namedtuple("ProjectedExtent", 'extent epsg proj4')):
     """Describes both the area on Earth a raster represents in addition to its CRS.
 
     Args:
-        extent (:cls:~geopyspark.geotrellis.Extent): The area the raster represents.
+        extent (:class:`~geopyspark.geotrellis.Extent`): The area the raster represents.
         epsg (int, optional): The EPSG code of the CRS.
         proj4 (str, optional): The Proj.4 string representation of the CRS.
 
     Attributes:
-        extent (:cls:~geopyspark.geotrellis.Extent): The area the raster represents.
+        extent (:class:`~geopyspark.geotrellis.Extent`): The area the raster represents.
         epsg (int, optional): The EPSG code of the CRS.
         proj4 (str, optional): The Proj.4 string representation of the CRS.
 
@@ -113,6 +129,16 @@ class ProjectedExtent(namedtuple("ProjectedExtent", 'extent epsg proj4')):
 
     @classmethod
     def from_protobuf_projected_extent(cls, proto_projected_extent):
+        """Creates a ``ProjectedExtent`` from a ``ProtoProjectedExtent``.
+
+        Args:
+            proto_extent (:class:`~geopyspark.protobuf.extentMessages_pb2.ProtoProjectedExtent`):
+                An instance of ``ProtoProjectedExtent``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.ProjectedExtent`
+        """
+
         if proto_projected_extent.crs.epsg is not 0:
             return cls(extent=Extent.from_protobuf_extent(proto_projected_extent.extent),
                        epsg=proto_projected_extent.crs.epsg)
@@ -128,6 +154,12 @@ class ProjectedExtent(namedtuple("ProjectedExtent", 'extent epsg proj4')):
 
     @property
     def to_protobuf_projected_extent(self):
+        """Converts this instance to a ``ProtoProjectedExtent``.
+
+        Returns:
+            :class:`~geopyspark.protobuf.extentMessages_pb2.ProtoProjectedExtent`
+        """
+
         pex = extentMessages_pb2.ProtoProjectedExtent()
 
         crs = extentMessages_pb2.ProtoCRS()
@@ -149,13 +181,13 @@ class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent inst
     collected.
 
     Args:
-        extent (:cls:`~geopyspark.geotrellis.Extent`): The area the raster represents.
+        extent (:class:`~geopyspark.geotrellis.Extent`): The area the raster represents.
         instance (int): The time stamp of the raster.
         epsg (int, optional): The EPSG code of the CRS.
         proj4 (str, optional): The Proj.4 string representation of the CRS.
 
     Attributes:
-        extent (:cls:~geopyspark.geotrellis.Extent): The area the raster represents.
+        extent (:class:`~geopyspark.geotrellis.Extent`): The area the raster represents.
         instance (int): The time stamp of the raster.
         epsg (int, optional): The EPSG code of the CRS.
         proj4 (str, optional): The Proj.4 string representation of the CRS.
@@ -171,6 +203,16 @@ class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent inst
 
     @classmethod
     def from_protobuf_temporal_projected_extent(cls, proto_temp_projected_extent):
+        """Creates a ``TemporalProjectedExtent`` from a ``ProtoTemporalProjectedExtent``.
+
+        Args:
+            proto_extent (:class:`~geopyspark.protobuf.extentMessages_pb2.ProtoTemporalProjectedExtent`):
+                An instance of ``ProtoTemporalProjectedExtent``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.TemporalProjectedExtent`
+        """
+
         if proto_temp_projected_extent.crs.epsg is not 0:
             return cls(extent=Extent.from_protobuf_extent(proto_temp_projected_extent.extent),
                        epsg=proto_temp_projected_extent.crs.epsg,
@@ -190,6 +232,12 @@ class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent inst
 
     @property
     def to_protobuf_temporal_projected_extent(self):
+        """Converts this instance to a ``ProtoTemporalProjectedExtent``.
+
+        Returns:
+            :class:`~geopyspark.protobuf.extentMessages_pb2.ProtoTemporalProjectedExtent`
+        """
+
         tpex = extentMessages_pb2.ProtoTemporalProjectedExtent()
 
         crs = extentMessages_pb2.ProtoCRS()
@@ -246,17 +294,33 @@ class SpatialKey(namedtuple("SpatialKey", 'col row')):
         row (int): The row of the grid, the numbers run north to south.
 
     Returns:
-        :obj:`~geopyspark.geotrellis.SpatialKey`
+        :class:`~geopyspark.geotrellis.SpatialKey`
     """
 
     __slots__ = []
 
     @classmethod
     def from_protobuf_spatial_key(cls, proto_spatial_key):
+        """Creates a ``SpatialKey`` from a ``ProtoSpatialKey``.
+
+        Args:
+            proto_extent (:class:`~geopyspark.protobuf.keyMessages_pb2.ProtoSpatialKey`):
+                An instance of ``ProtoSpatialKey``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.SpatialKey`
+        """
+
         return cls(col=proto_spatial_key.col, row=proto_spatial_key.row)
 
     @property
     def to_protobuf_spatial_key(self):
+        """Converts this instance to a ``ProtoSpatialKey``.
+
+        Returns:
+            :class:`~geopyspark.protobuf.keyMessages_pb2.ProtoSpatialKey`
+        """
+
         spatial_key = keyMessages_pb2.ProtoSpatialKey()
 
         spatial_key.col = self.col
@@ -276,18 +340,34 @@ class SpaceTimeKey(namedtuple("SpaceTimeKey", 'col row instant')):
         instance (int): The time stamp of the raster.
 
     Returns:
-        :obj:`~geopyspark.geotrellis.SpaceTimeKey`
+        :class:`~geopyspark.geotrellis.SpaceTimeKey`
     """
 
     __slots__ = []
 
     @classmethod
     def from_protobuf_space_time_key(cls, proto_space_time_key):
+        """Creates a ``SpaceTimeKey`` from a ``ProtoSpaceTimeKey``.
+
+        Args:
+            proto_extent (:class:`~geopyspark.protobuf.keyMessages_pb2.ProtoSpaceTimeKey`):
+                An instance of ``ProtoSpaceTimeKey``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.SpaceTimeKey`
+        """
+
         return cls(col=proto_space_time_key.col, row=proto_space_time_key.row,
                    instant=proto_space_time_key.instant)
 
     @property
     def to_protobuf_space_time_key(self):
+        """Converts this instance to a ``ProtoSpaceTimeKey``.
+
+        Returns:
+            :class:`~geopyspark.protobuf.keyMessages_pb2.ProtoSpaceTimeKey`
+        """
+
         space_time_key = keyMessages_pb2.ProtoSpaceTimeKey()
 
         space_time_key.col = self.col
@@ -316,7 +396,7 @@ class Bounds(namedtuple("Bounds", 'minKey maxKey')):
             The largest ``SpatialKey`` or ``SpaceTimeKey``.
 
     Returns:
-        :cls:`~geopyspark.geotrellis.Bounds`
+        :class:`~geopyspark.geotrellis.Bounds`
     """
 
     __slots__ = []

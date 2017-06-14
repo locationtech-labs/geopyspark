@@ -9,7 +9,6 @@ geopyspark.geotrellis package
 geopyspark.geotrellis.catalog module
 -------------------------------------
 
-
 .. automodule:: geopyspark.geotrellis.catalog
    :members:
    :inherited-members:

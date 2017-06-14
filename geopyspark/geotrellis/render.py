@@ -34,7 +34,9 @@ def get_hex(geopysc, ramp_name, num_colors=None):
 
 # What does this do? implements lookup method ... this is a wrapper, a delegator
 class PngRDD(CachableRDD):
-    def __init__(self, pyramid, color_map, debug=False):
+    __slots__ = ['geopysc', 'rdd_type', 'layer_metadata', 'max_zoom', 'pngpyramid', 'debug']
+
+    def __init__(self, pyramid, ramp_name, debug=False):
         """Convert a pyramid of TiledRasterRDDs into a displayable structure of PNGs
 
         Args:

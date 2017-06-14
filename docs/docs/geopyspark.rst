@@ -1,14 +1,26 @@
 geopyspark package
 ==================
 
-geopyspark
-----------
+.. automodule:: geopyspark
+   :members:
+   :undoc-members:
+   :inherited-members:
 
-.. autoclass:: geopyspark.geopycontext.AvroRegistry
+
+geopyspark.ProtoBufRegistry
+----------------------------
+
+.. autoclass:: geopyspark.protobufregistry.ProtoBufRegistry
    :members:
 
-.. autoclass:: geopyspark.geopycontext.AvroSerializer
+geopyspark.ProtoBufSerializer
+------------------------------
+
+.. autoclass:: geopyspark.protobufserializer.ProtoBufSerializer
    :members:
+
+geopyspark.GeoPyContext
+------------------------
 
 .. autoclass:: geopyspark.geopycontext.GeoPyContext
    :members:

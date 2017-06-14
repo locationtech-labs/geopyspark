@@ -1,5 +1,4 @@
 """The class which serializes/deserializes values in a RDD to/from Python."""
-import io
 from geopyspark.geopyspark_utils import check_environment
 check_environment()
 
@@ -10,20 +9,17 @@ class ProtoBufSerializer(FramedSerializer):
     """The serializer used by a RDD to encode/decode values to/from Python.
 
     Args:
-        schema (str): The AvroSchema of the RDD.
-        decoding_method (func, optional): The decocding function for the values within the RDD.
-        encoding_method (func, optional): The encocding function for the values within the RDD.
+        decoding_method (func): The decocding function for the values within the RDD.
+        encoding_method (func): The encocding function for the values within the RDD.
 
     Attributes:
-        schema (str): The AvroSchema of the RDD.
-        decoding_method (func, optional): The decocding function for the values within the RDD.
-        encoding_method (func, optional): The encocding function for the values within the RDD.
+        decoding_method (func): The decocding function for the values within the RDD.
+        encoding_method (func): The encocding function for the values within the RDD.
     """
 
+    __slots__ = ['decoding_method', 'encoding_method']
+
     def __init__(self, decoding_method, encoding_method):
-
-        __slots__ = [decoding_method, encoding_method]
-
         super().__init__()
 
         self.decoding_method = decoding_method

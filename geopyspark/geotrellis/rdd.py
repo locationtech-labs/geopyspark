@@ -150,8 +150,8 @@ class RasterRDD(CachableRDD):
     """A wrapper of a RDD that contains GeoTrellis rasters.
 
     Represents a RDD that contains ``(K, V)``. Where ``K`` is either
-    :cls:`~geopyspark.geotrellis.ProjectedExtent` or
-    :cls:`~geopyspark.geotrellis.TemporalProjectedExtent` depending on the ``rdd_type`` of the RDD,
+    :class:`~geopyspark.geotrellis.ProjectedExtent` or
+    :class:`~geopyspark.geotrellis.TemporalProjectedExtent` depending on the ``rdd_type`` of the RDD,
     and ``V`` being a :ref:`raster`.
 
     The data held within the RDD has not been tiled. Meaning the data has yet to be
@@ -190,8 +190,9 @@ class RasterRDD(CachableRDD):
             rdd_type (str): What the spatial type of the geotiffs are. This is
                 represented by the constants: ``SPATIAL`` and ``SPACETIME``.
             numpy_rdd (pyspark.RDD): A PySpark RDD that contains tuples of either
-                :ref:`projected_extent`\s or :ref:`temporal_extent`\s and rasters that are represented
-                by a numpy array.
+                :class:`~geopyspark.geotrellis.ProjectedExtent`\s or
+                :class:`~geopyspark.geotrellis.TemporalProjectedExtent`\s and rasters that
+                are represented by a numpy array.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.RasterRDD`
@@ -452,7 +453,7 @@ class TiledRasterRDD(CachableRDD):
     """Wraps a RDD of tiled, GeoTrellis rasters.
 
     Represents a RDD that contains ``(K, V)``. Where ``K`` is either
-    :cls:`~geopyspark.geotrellis.SpatialKey` or :cls:`~geopyspark.geotrellis.SpaceTimeKey`
+    :class:`~geopyspark.geotrellis.SpatialKey` or :class:`~geopyspark.geotrellis.SpaceTimeKey`
     depending on the ``rdd_type`` of the RDD, and ``V`` being a :ref:`raster`.
 
     The data held within the RDD is tiled. This means that the rasters have been modified to fit
@@ -501,7 +502,8 @@ class TiledRasterRDD(CachableRDD):
             rdd_type (str): What the spatial type of the geotiffs are. This is represented by the
                 constants: ``SPATIAL`` and ``SPACETIME``.
             numpy_rdd (pyspark.RDD): A PySpark RDD that contains tuples of either
-                :ref:`spatial-key` or :ref:`space-time-key` and rasters that are represented by a
+                :class:`~geopyspark.geotrellis.SpatialKey` or
+                :class:`~geopyspark.geotrellis.SpaceTimeKey` and rasters that are represented by a
                 numpy array.
             metadata (:class:`~geopyspark.geotrellis.Metadata`): The ``Metadata`` of
                 the ``TiledRasterRDD`` instance.
