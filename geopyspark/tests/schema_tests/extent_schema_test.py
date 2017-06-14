@@ -10,8 +10,6 @@ from geopyspark.geotrellis.protobufcodecs import (extent_decoder,
 from geopyspark.geotrellis import Extent
 from geopyspark.tests.base_test_class import BaseTestClass
 
-from geopyspark.protobuf import extentMessages_pb2
-
 
 class ExtentSchemaTest(BaseTestClass):
     ew = BaseTestClass.geopysc._jvm.geopyspark.geotrellis.tests.schemas.ExtentWrapper

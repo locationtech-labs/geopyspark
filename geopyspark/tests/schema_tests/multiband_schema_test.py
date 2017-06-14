@@ -4,9 +4,15 @@ import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
+<<<<<<< e701df8c72cfbfc72798e101398f01b228069d8a
 from geopyspark.geotrellis.protobuf import tileMessages_pb2
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder, multibandtile_encoder
+=======
+from geopyspark.protobuf import tileMessages_pb2
+from geopyspark.protobufserializer import ProtoBufSerializer
+from geopyspark.protobufregistry import ProtoBufRegistry
+>>>>>>> Updated all Python tests
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -24,7 +30,11 @@ class MultibandSchemaTest(BaseTestClass):
     mw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.ArrayMultibandTileWrapper
 
     java_rdd = mw.testOut(sc)
+<<<<<<< e701df8c72cfbfc72798e101398f01b228069d8a
     ser = ProtoBufSerializer(multibandtile_decoder, multibandtile_encoder)
+=======
+    ser = ProtoBufSerializer(ProtoBufRegistry.multibandtile_decoder, ProtoBufRegistry.multibandtile_encoder)
+>>>>>>> Updated all Python tests
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
@@ -35,7 +45,11 @@ class MultibandSchemaTest(BaseTestClass):
         BaseTestClass.geopysc.pysc._gateway.close()
 
     def test_encoded_multibands(self):
+<<<<<<< e701df8c72cfbfc72798e101398f01b228069d8a
         actual_encoded = [multibandtile_encoder(x) for x in self.collected]
+=======
+        actual_encoded = [ProtoBufRegistry.multibandtile_encoder(x) for x in self.collected]
+>>>>>>> Updated all Python tests
 
         proto_tile = tileMessages_pb2.ProtoTile()
         cell_type = tileMessages_pb2.ProtoCellType()

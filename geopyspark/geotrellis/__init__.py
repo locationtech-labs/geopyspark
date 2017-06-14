@@ -206,6 +206,7 @@ class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent inst
 
         return tpex
 
+
 TileLayout = namedtuple("TileLayout", 'layoutCols layoutRows tileCols tileRows')
 """
 Describes the grid in which the rasters within a RDD should be laid out.

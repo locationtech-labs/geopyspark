@@ -3,12 +3,18 @@ import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
+<<<<<<< e701df8c72cfbfc72798e101398f01b228069d8a
 from geopyspark.geotrellis.protobuf import keyMessages_pb2
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geotrellis.protobufcodecs import (spatial_key_decoder,
                                                   spatial_key_encoder,
                                                   space_time_key_decoder,
                                                   space_time_key_encoder)
+=======
+from geopyspark.protobuf import keyMessages_pb2
+from geopyspark.protobufserializer import ProtoBufSerializer
+from geopyspark.protobufregistry import ProtoBufRegistry
+>>>>>>> Updated all Python tests
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -33,9 +39,12 @@ class SpatialKeySchemaTest(BaseTestClass):
     def result_checker(self, actual_keys, expected_keys):
         self.assertDictEqual(actual_keys, expected_keys)
 
-    '''
     def test_encoded_keyss(self):
+<<<<<<< e701df8c72cfbfc72798e101398f01b228069d8a
         actual_encoded = [spatial_key_encoder(x) for x in self.rdd.collect()]
+=======
+        actual_encoded = [ProtoBufRegistry.spatial_key_encoder(x) for x in self.rdd.collect()]
+>>>>>>> Updated all Python tests
         proto_spatial_key = keyMessages_pb2.ProtoSpatialKey()
 
         proto_spatial_key.col = 7
@@ -75,8 +84,8 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
         for actual, expected in zip(actual_keys, expected_keys):
             self.assertDictEqual(actual, expected)
 
-    '''
     def test_encoded_keyss(self):
+<<<<<<< e701df8c72cfbfc72798e101398f01b228069d8a
         expected_encoded = [space_time_key_encoder(x) for x in self.rdd.collect()]
         actual_encoded = []
 
@@ -91,6 +100,23 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
 
         for actual, expected in zip(actual_encoded, expected_encoded):
             self.assertEqual(actual, expected)
+=======
+        expected_encoded = [ProtoBufRegistry.space_time_key_encoder(x) for x in self.rdd.collect()]
+        actual_encoded = []
+
+        for x in self.expected_keys:
+            proto_space_time_key = keyMessages_pb2.ProtoSpaceTimeKey()
+
+            proto_space_time_key.col = x['col']
+            proto_space_time_key.row = x['row']
+            proto_space_time_key.instant = x['instant']
+
+            actual_encoded.append(proto_space_time_key.SerializeToString())
+
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
+
+>>>>>>> Updated all Python tests
 
     def test_decoded_extents(self):
         self.result_checker(self.collected, self.expected_keys)
