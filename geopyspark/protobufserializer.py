@@ -3,7 +3,7 @@ import io
 from geopyspark.geopyspark_utils import check_environment
 check_environment()
 
-from pyspark.serializers import Serializer, FramedSerializer
+from pyspark.serializers import FramedSerializer
 
 
 class ProtoBufSerializer(FramedSerializer):
@@ -21,6 +21,8 @@ class ProtoBufSerializer(FramedSerializer):
     """
 
     def __init__(self, decoding_method, encoding_method):
+
+        __slots__ = [decoding_method, encoding_method]
 
         super().__init__()
 

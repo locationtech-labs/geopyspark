@@ -1,3 +1,4 @@
+import math
 import unittest
 import numpy as np
 
@@ -8,11 +9,23 @@ from geopyspark.protobufregistry import ProtoBufRegistry
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
+mapped_data_types = {
+    'BIT': 0,
+    'BYTE': 1,
+    'UBYTE': 2,
+    'SHORT': 3,
+    'USHORT': 4,
+    'INT': 5,
+    'FLOAT': 6,
+    'DOUBLE': 7
+}
+
+
 class ShortTileSchemaTest(BaseTestClass):
     tiles = [
-        {'data': np.int16([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -32768},
-        {'data': np.int16([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': -32768},
-        {'data': np.int16([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -32768}
+        {'data': np.int16([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -32768, 'data_type': 'SHORT'},
+        {'data': np.int16([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': -32768, 'data_type': 'SHORT'},
+        {'data': np.int16([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -32768, 'data_type': 'SHORT'}
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
@@ -24,231 +37,233 @@ class ShortTileSchemaTest(BaseTestClass):
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
-    '''
     def test_encoded_tiles(self):
-        encoded = self.rdd.map(lambda s: AvroRegistry.tile_encoder(s))
-        actual_encoded = encoded.collect()
+        expected_encoded = [ProtoBufRegistry._tile_encoder(x) for x in self.collected]
 
-        expected_encoded = [
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': -32768}]},
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': -32768}]},
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': -32768}]}
-        ]
+        for actual, expected in zip(self.tiles, expected_encoded):
+            data = actual['data']
+            rows, cols = data.shape
 
-        for actual, expected in zip(actual_encoded, expected_encoded):
-            self.assertEqual(actual, expected)
-    '''
+            self.assertEqual(expected.cols, cols)
+            self.assertEqual(expected.rows, rows)
+            self.assertEqual(expected.cellType.nd, actual['no_data_value'])
+            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual['data_type']])
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
             self.assertTrue((actual['data'] == expected['data']).all())
             self.assertTrue(actual['data'].dtype == expected['data'].dtype)
+            self.assertEqual(actual['data'].shape, actual['data'].shape)
 
 
-'''
 class UShortTileSchemaTest(BaseTestClass):
     tiles = [
-        {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': 0},
-        {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': 0},
-        {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': 0}
+        {'data': np.uint16([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': 0, 'data_type': 'USHORT'},
+        {'data': np.uint16([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': 0, 'data_type': 'USHORT'},
+        {'data': np.uint16([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': 0, 'data_type': 'USHORT'}
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
     tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.UShortArrayTileWrapper
 
     java_rdd = tw.testOut(sc)
-    ser = AvroSerializer(tup._2(), AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
+    ser = ProtoBufSerializer(ProtoBufRegistry.tile_decoder, ProtoBufRegistry.tile_encoder)
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
-        encoded = self.rdd.map(lambda s: AvroRegistry.tile_encoder(s))
-        actual_encoded = encoded.collect()
+        expected_encoded = [ProtoBufRegistry._tile_encoder(x) for x in self.collected]
 
-        expected_encoded = [
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': 0}]},
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': 0}]},
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': 0}]}
-        ]
+        for actual, expected in zip(self.tiles, expected_encoded):
+            data = actual['data']
+            rows, cols = data.shape
 
-        for actual, expected in zip(actual_encoded, expected_encoded):
-            self.assertEqual(actual, expected)
+            self.assertEqual(expected.cols, cols)
+            self.assertEqual(expected.rows, rows)
+            self.assertEqual(expected.cellType.nd, actual['no_data_value'])
+            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual['data_type']])
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
             self.assertTrue((actual['data'] == expected['data']).all())
+            self.assertTrue(actual['data'].dtype == expected['data'].dtype)
+            self.assertEqual(actual['data'].shape, actual['data'].shape)
 
 
 class ByteTileSchemaTest(BaseTestClass):
     tiles = [
-        {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -128},
-        {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': -128},
-        {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -128}
+        {'data': np.int8([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -128, 'data_type': 'BYTE'},
+        {'data': np.int8([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': -128, 'data_type': 'BYTE'},
+        {'data': np.int8([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -128, 'data_type': 'BYTE'}
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
     tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.ByteArrayTileWrapper
 
     java_rdd = tw.testOut(sc)
-    ser = AvroSerializer(tup._2(), AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
+    ser = ProtoBufSerializer(ProtoBufRegistry.tile_decoder, ProtoBufRegistry.tile_encoder)
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
-        encoded = self.rdd.map(lambda s: AvroRegistry.tile_encoder(s))
-        actual_encoded = encoded.collect()
+        expected_encoded = [ProtoBufRegistry._tile_encoder(x) for x in self.collected]
 
-        expected_encoded = [
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': bytearray([0, 0, 1, 1]), 'noDataValue': -128}]},
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': bytearray([1, 2, 3, 4]), 'noDataValue': -128}]},
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': bytearray([5, 6, 7, 8]), 'noDataValue': -128}]}
-        ]
+        for actual, expected in zip(self.tiles, expected_encoded):
+            data = actual['data']
+            rows, cols = data.shape
 
-        for actual, expected in zip(actual_encoded, expected_encoded):
-            self.assertEqual(actual, expected)
+            self.assertEqual(expected.cols, cols)
+            self.assertEqual(expected.rows, rows)
+            self.assertEqual(expected.cellType.nd, actual['no_data_value'])
+            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual['data_type']])
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
             self.assertTrue((actual['data'] == expected['data']).all())
+            self.assertTrue(actual['data'].dtype == expected['data'].dtype)
+            self.assertEqual(actual['data'].shape, actual['data'].shape)
 
 
 class UByteTileSchemaTest(BaseTestClass):
     tiles = [
-        {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': 0},
-        {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': 0},
-        {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': 0}
+        {'data': np.uint8([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': 0, 'data_type': 'UBYTE'},
+        {'data': np.uint8([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': 0, 'data_type': 'UBYTE'},
+        {'data': np.uint8([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': 0, 'data_type': 'UBYTE'}
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
     tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.UByteArrayTileWrapper
 
     java_rdd = tw.testOut(sc)
-    ser = AvroSerializer(tup._2(), AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
+    ser = ProtoBufSerializer(ProtoBufRegistry.tile_decoder, ProtoBufRegistry.tile_encoder)
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
-        encoded = self.rdd.map(lambda s: AvroRegistry.tile_encoder(s))
-        actual_encoded = encoded.collect()
+        expected_encoded = [ProtoBufRegistry._tile_encoder(x) for x in self.collected]
 
-        expected_encoded = [
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': bytearray([0, 0, 1, 1]), 'noDataValue': 0}]},
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': bytearray([1, 2, 3, 4]), 'noDataValue': 0}]},
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': bytearray([5, 6, 7, 8]), 'noDataValue': 0}]}
-        ]
+        for actual, expected in zip(self.tiles, expected_encoded):
+            data = actual['data']
+            rows, cols = data.shape
 
-        for actual, expected in zip(actual_encoded, expected_encoded):
-            self.assertEqual(actual, expected)
+            self.assertEqual(expected.cols, cols)
+            self.assertEqual(expected.rows, rows)
+            self.assertEqual(expected.cellType.nd, actual['no_data_value'])
+            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual['data_type']])
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
             self.assertTrue((actual['data'] == expected['data']).all())
+            self.assertTrue(actual['data'].dtype == expected['data'].dtype)
+            self.assertEqual(actual['data'].shape, actual['data'].shape)
 
 
 class IntTileSchemaTest(BaseTestClass):
     tiles = [
-        {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -2147483648},
-        {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': -2147483648},
-        {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -2147483648}
+        {'data': np.int32([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -2147483648, 'data_type': 'INT'},
+        {'data': np.int32([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': -2147483648, 'data_type': 'INT'},
+        {'data': np.int32([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -2147483648, 'data_type': 'INT'}
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
     tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.IntArrayTileWrapper
 
     java_rdd = tw.testOut(sc)
-    ser = AvroSerializer(tup._2(), AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
+    ser = ProtoBufSerializer(ProtoBufRegistry.tile_decoder, ProtoBufRegistry.tile_encoder)
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
-        encoded = self.rdd.map(lambda s: AvroRegistry.tile_encoder(s))
-        actual_encoded = encoded.collect()
+        expected_encoded = [ProtoBufRegistry._tile_encoder(x) for x in self.collected]
 
-        expected_encoded = [
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': -2147483648}]},
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': -2147483648}]},
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': -2147483648}]}
-        ]
+        for actual, expected in zip(self.tiles, expected_encoded):
+            data = actual['data']
+            rows, cols = data.shape
 
-        for actual, expected in zip(actual_encoded, expected_encoded):
-            self.assertEqual(actual, expected)
+            self.assertEqual(expected.cols, cols)
+            self.assertEqual(expected.rows, rows)
+            self.assertEqual(expected.cellType.nd, actual['no_data_value'])
+            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual['data_type']])
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
             self.assertTrue((actual['data'] == expected['data']).all())
+            self.assertTrue(actual['data'].dtype == expected['data'].dtype)
+            self.assertEqual(actual['data'].shape, actual['data'].shape)
 
 
 class DoubleTileSchemaTest(BaseTestClass):
     tiles = [
-        {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': True},
-        {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': True},
-        {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': True}
+        {'data': np.double([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': True, 'data_type': 'DOUBLE'},
+        {'data': np.double([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': True, 'data_type': 'DOUBLE'},
+        {'data': np.double([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': True, 'data_type': 'DOUBLE'}
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
     tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.DoubleArrayTileWrapper
 
     java_rdd = tw.testOut(sc)
-    ser = AvroSerializer(tup._2(), AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
+    ser = ProtoBufSerializer(ProtoBufRegistry.tile_decoder, ProtoBufRegistry.tile_encoder)
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
-        encoded = self.rdd.map(lambda s: AvroRegistry.tile_encoder(s))
-        actual_encoded = encoded.collect()
+        expected_encoded = [ProtoBufRegistry._tile_encoder(x) for x in self.collected]
 
-        expected_encoded = [
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': True}]},
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': True}]},
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': True}]}
-        ]
+        for actual, expected in zip(self.tiles, expected_encoded):
+            data = actual['data']
+            rows, cols = data.shape
 
-        for actual, expected in zip(actual_encoded, expected_encoded):
-            self.assertEqual(actual, expected)
+            self.assertEqual(expected.cols, cols)
+            self.assertEqual(expected.rows, rows)
+            self.assertTrue(math.isnan(expected.cellType.nd))
+            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual['data_type']])
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
             self.assertTrue((actual['data'] == expected['data']).all())
+            self.assertTrue(actual['data'].dtype == expected['data'].dtype)
+            self.assertEqual(actual['data'].shape, actual['data'].shape)
 
 
 class FloatTileSchemaTest(BaseTestClass):
     tiles = [
-        {'data': np.array([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': True},
-        {'data': np.array([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': True},
-        {'data': np.array([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': True}
+        {'data': np.float32([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': True, 'data_type': 'FLOAT'},
+        {'data': np.float32([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': True, 'data_type': 'FLOAT'},
+        {'data': np.float32([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': True, 'data_type': 'FLOAT'}
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
     tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.FloatArrayTileWrapper
 
     java_rdd = tw.testOut(sc)
-    ser = AvroSerializer(tup._2(), AvroRegistry.tile_decoder, AvroRegistry.tile_encoder)
+    ser = ProtoBufSerializer(ProtoBufRegistry.tile_decoder, ProtoBufRegistry.tile_encoder)
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
-        encoded = self.rdd.map(lambda s: AvroRegistry.tile_encoder(s))
-        actual_encoded = encoded.collect()
+        expected_encoded = [ProtoBufRegistry._tile_encoder(x) for x in self.collected]
 
-        expected_encoded = [
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [0, 0, 1, 1], 'noDataValue': True}]},
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [1, 2, 3, 4], 'noDataValue': True}]},
-            {'bands': [{'cols': 2, 'rows': 2, 'cells': [5, 6, 7, 8], 'noDataValue': True}]}
-        ]
+        for actual, expected in zip(self.tiles, expected_encoded):
+            data = actual['data']
+            rows, cols = data.shape
 
-        for actual, expected in zip(actual_encoded, expected_encoded):
-            self.assertEqual(actual, expected)
+            self.assertEqual(expected.cols, cols)
+            self.assertEqual(expected.rows, rows)
+            self.assertTrue(math.isnan(expected.cellType.nd))
+            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual['data_type']])
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
             self.assertTrue((actual['data'] == expected['data']).all())
-'''
+            self.assertTrue(actual['data'].dtype == expected['data'].dtype)
+            self.assertEqual(actual['data'].shape, actual['data'].shape)
 
 
 if __name__ == "__main__":

@@ -8,8 +8,6 @@ from geopyspark.protobufregistry import ProtoBufRegistry
 from geopyspark.geotrellis import Extent
 from geopyspark.tests.base_test_class import BaseTestClass
 
-from geopyspark.protobuf import extentMessages_pb2
-
 
 class ExtentSchemaTest(BaseTestClass):
     ew = BaseTestClass.geopysc._jvm.geopyspark.geotrellis.tests.schemas.ExtentWrapper
@@ -34,12 +32,14 @@ class ExtentSchemaTest(BaseTestClass):
             self.assertDictEqual(actual, expected)
 
     def test_decoded_extents(self):
-        actual_encoded = [Extent.from_protobuf_extent(ex)._asdict() for ex in self.collected]
-        self.result_checker(actual_encoded, self.expected_extents)
+        actual_decoded = [Extent.from_protobuf_extent(ex)._asdict() for ex in self.collected]
+        self.result_checker(actual_decoded, self.expected_extents)
 
     def test_encoded_extents(self):
-        enocded = [extentMessages_pb2.ProtoExtent.FromString)
-        self.result_checker(self.collected, self.expected_extents)
+        expected_encoded = [Extent(**x).to_protobuf_extent.SerializeToString() for x in self.expected_extents]
+        actual_encoded = [ProtoBufRegistry.extent_encoder(x) for x in self.collected]
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
 
 
 if __name__ == "__main__":

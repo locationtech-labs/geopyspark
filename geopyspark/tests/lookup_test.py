@@ -45,22 +45,19 @@ class LookupTest(BaseTestClass):
         BaseTestClass.geopysc.pysc._gateway.close()
 
     def test_lookup_1(self):
-        #print(self.raster_rdd.to_numpy_rdd().collect())
-        result = self.raster_rdd.lookup(0, 0)#[0]
-        #print(result)
-    '''
+        result = self.raster_rdd.lookup(0, 0)[0]
         n = np.sum(result['data'])
         self.assertEqual(n, 24 + 0*25)
 
     def test_lookup_2(self):
         result = self.raster_rdd.lookup(0, 1)[0]
         n = np.sum(result['data'])
-        self.assertEqual(n, 24 + 1*25)
+        self.assertEqual(n, 24 + 2*25)
 
     def test_lookup_3(self):
         result = self.raster_rdd.lookup(1, 0)[0]
         n = np.sum(result['data'])
-        self.assertEqual(n, 24 + 2*25)
+        self.assertEqual(n, 24 + 1*25)
 
     def test_lookup_4(self):
         result = self.raster_rdd.lookup(1, 1)[0]
@@ -70,7 +67,7 @@ class LookupTest(BaseTestClass):
     def test_lookup_5(self):
         with pytest.raises(IndexError):
             result = self.raster_rdd.lookup(13, 33)
-    '''
+
 
 if __name__ == "__main__":
     unittest.main()

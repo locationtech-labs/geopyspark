@@ -3,6 +3,7 @@ import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
+from geopyspark.protobuf import keyMessages_pb2
 from geopyspark.protobufserializer import ProtoBufSerializer
 from geopyspark.protobufregistry import ProtoBufRegistry
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -29,13 +30,16 @@ class SpatialKeySchemaTest(BaseTestClass):
     def result_checker(self, actual_keys, expected_keys):
         self.assertDictEqual(actual_keys, expected_keys)
 
-    '''
     def test_encoded_keyss(self):
-        encoded = self.rdd.map(lambda s: s)
-        actual_encoded = encoded.first()
+        actual_encoded = [ProtoBufRegistry.spatial_key_encoder(x) for x in self.rdd.collect()]
+        proto_spatial_key = keyMessages_pb2.ProtoSpatialKey()
 
-        self.result_checker(actual_encoded, self.expected_keys)
-    '''
+        proto_spatial_key.col = 7
+        proto_spatial_key.row = 3
+
+        expected_encoded = proto_spatial_key.SerializeToString()
+
+        self.assertEqual(actual_encoded[0], expected_encoded)
 
     def test_decoded_extents(self):
         self.assertDictEqual(self.collected, self.expected_keys)
@@ -67,13 +71,22 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
         for actual, expected in zip(actual_keys, expected_keys):
             self.assertDictEqual(actual, expected)
 
-    '''
     def test_encoded_keyss(self):
-        encoded = self.rdd.map(lambda s: s)
-        actual_encoded = encoded.collect()
+        expected_encoded = [ProtoBufRegistry.space_time_key_encoder(x) for x in self.rdd.collect()]
+        actual_encoded = []
 
-        self.result_checker(actual_encoded, self.expected_keys)
-    '''
+        for x in self.expected_keys:
+            proto_space_time_key = keyMessages_pb2.ProtoSpaceTimeKey()
+
+            proto_space_time_key.col = x['col']
+            proto_space_time_key.row = x['row']
+            proto_space_time_key.instant = x['instant']
+
+            actual_encoded.append(proto_space_time_key.SerializeToString())
+
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
+
 
     def test_decoded_extents(self):
         self.result_checker(self.collected, self.expected_keys)

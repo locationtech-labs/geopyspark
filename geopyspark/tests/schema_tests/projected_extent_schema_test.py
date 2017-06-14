@@ -3,6 +3,7 @@ import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
+from geopyspark.geotrellis import Extent, ProjectedExtent
 from geopyspark.protobufserializer import ProtoBufSerializer
 from geopyspark.protobufregistry import ProtoBufRegistry
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -19,7 +20,7 @@ class ProjectedExtentSchemaTest(BaseTestClass):
 
     java_rdd = ew.testOut(sc)
     ser = ProtoBufSerializer(ProtoBufRegistry.projected_extent_decoder,
-                             ProtoBufRegistry.extent_encoder)
+                             ProtoBufRegistry.projected_extent_encoder)
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = [pex._asdict() for pex in rdd.collect()]
@@ -33,13 +34,18 @@ class ProjectedExtentSchemaTest(BaseTestClass):
         for actual, expected in zip(actual_pe, expected_pe):
             self.assertDictEqual(actual, expected)
 
-    '''
     def test_encoded_pextents(self):
-        encoded = self.rdd.map(lambda s: s)
-        actual_encoded = encoded.collect()
+        actual_encoded = [ProtoBufRegistry.projected_extent_encoder(x) for x in self.rdd.collect()]
 
-        self.result_checker(actual_encoded, self.projected_extents)
-    '''
+        for x in range(0, len(self.projected_extents)):
+            self.projected_extents[x]['extent'] = Extent(**self.projected_extents[x]['extent'])
+
+        expected_encoded = [
+            ProjectedExtent(**ex).to_protobuf_projected_extent.SerializeToString() for ex in self.projected_extents
+        ]
+
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
 
     def test_decoded_pextents(self):
         self.result_checker(self.collected, self.projected_extents)
