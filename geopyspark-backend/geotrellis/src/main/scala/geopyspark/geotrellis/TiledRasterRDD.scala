@@ -308,10 +308,8 @@ class SpatialTiledRasterRDD(
   def lookup(
     col: Int,
     row: Int
-  //): (java.util.ArrayList[Array[Byte]], String) = {
   ): java.util.ArrayList[Array[Byte]] = {
     val tiles = rdd.lookup(SpatialKey(col, row))
-    //PythonTranslator.toPython(tiles)
     PythonTranslator.toPython[MultibandTile, ProtoMultibandTile](tiles)
   }
 

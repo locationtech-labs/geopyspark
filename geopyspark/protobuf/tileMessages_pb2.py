@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='tileMessages.proto',
   package='protos',
   syntax='proto3',
-  serialized_pb=_b('\n\x12tileMessages.proto\x12\x06protos\"\xc1\x01\n\rProtoCellType\x12\x30\n\x08\x64\x61taType\x18\x01 \x01(\x0e\x32\x1e.protos.ProtoCellType.DataType\x12\n\n\x02nd\x18\x02 \x01(\x01\x12\x11\n\thasNoData\x18\x03 \x01(\x08\"_\n\x08\x44\x61taType\x12\x07\n\x03\x42IT\x10\x00\x12\x08\n\x04\x42YTE\x10\x01\x12\t\n\x05UBYTE\x10\x02\x12\t\n\x05SHORT\x10\x03\x12\n\n\x06USHORT\x10\x04\x12\x07\n\x03INT\x10\x05\x12\t\n\x05\x46LOAT\x10\x06\x12\n\n\x06\x44OUBLE\x10\x07\"\xa3\x01\n\tProtoTile\x12\x0c\n\x04\x63ols\x18\x01 \x01(\x05\x12\x0c\n\x04rows\x18\x02 \x01(\x05\x12\'\n\x08\x63\x65llType\x18\x03 \x01(\x0b\x32\x15.protos.ProtoCellType\x12\x13\n\x0bsint32Cells\x18\x04 \x03(\x11\x12\x13\n\x0buint32Cells\x18\x05 \x03(\r\x12\x12\n\nfloatCells\x18\x06 \x03(\x02\x12\x13\n\x0b\x64oubleCells\x18\x07 \x03(\x01\"6\n\x12ProtoMultibandTile\x12 \n\x05tiles\x18\x01 \x03(\x0b\x32\x11.protos.ProtoTileb\x06proto3')
+  serialized_pb=_b('\n\x12tileMessages.proto\x12\x06protos\"\xc1\x01\n\rProtoCellType\x12\x30\n\x08\x64\x61taType\x18\x01 \x01(\x0e\x32\x1e.protos.ProtoCellType.DataType\x12\n\n\x02nd\x18\x02 \x01(\x01\x12\x11\n\thasNoData\x18\x03 \x01(\x08\"_\n\x08\x44\x61taType\x12\x07\n\x03\x42IT\x10\x00\x12\x08\n\x04\x42YTE\x10\x01\x12\t\n\x05UBYTE\x10\x02\x12\t\n\x05SHORT\x10\x03\x12\n\n\x06USHORT\x10\x04\x12\x07\n\x03INT\x10\x05\x12\t\n\x05\x46LOAT\x10\x06\x12\n\n\x06\x44OUBLE\x10\x07\"\xb3\x01\n\tProtoTile\x12\x0c\n\x04\x63ols\x18\x01 \x01(\x05\x12\x0c\n\x04rows\x18\x02 \x01(\x05\x12\'\n\x08\x63\x65llType\x18\x03 \x01(\x0b\x32\x15.protos.ProtoCellType\x12\x17\n\x0bsint32Cells\x18\x04 \x03(\x11\x42\x02\x10\x01\x12\x17\n\x0buint32Cells\x18\x05 \x03(\rB\x02\x10\x01\x12\x16\n\nfloatCells\x18\x06 \x03(\x02\x42\x02\x10\x01\x12\x17\n\x0b\x64oubleCells\x18\x07 \x03(\x01\x42\x02\x10\x01\"6\n\x12ProtoMultibandTile\x12 \n\x05tiles\x18\x01 \x03(\x0b\x32\x11.protos.ProtoTileb\x06proto3')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -152,28 +152,28 @@ _PROTOTILE = _descriptor.Descriptor(
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))),
     _descriptor.FieldDescriptor(
       name='uint32Cells', full_name='protos.ProtoTile.uint32Cells', index=4,
       number=5, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))),
     _descriptor.FieldDescriptor(
       name='floatCells', full_name='protos.ProtoTile.floatCells', index=5,
       number=6, type=2, cpp_type=6, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))),
     _descriptor.FieldDescriptor(
       name='doubleCells', full_name='protos.ProtoTile.doubleCells', index=6,
       number=7, type=1, cpp_type=5, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))),
   ],
   extensions=[
   ],
@@ -187,7 +187,7 @@ _PROTOTILE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=227,
-  serialized_end=390,
+  serialized_end=406,
 )
 
 
@@ -217,8 +217,8 @@ _PROTOMULTIBANDTILE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=392,
-  serialized_end=446,
+  serialized_start=408,
+  serialized_end=462,
 )
 
 _PROTOCELLTYPE.fields_by_name['dataType'].enum_type = _PROTOCELLTYPE_DATATYPE
@@ -251,4 +251,12 @@ ProtoMultibandTile = _reflection.GeneratedProtocolMessageType('ProtoMultibandTil
 _sym_db.RegisterMessage(ProtoMultibandTile)
 
 
+_PROTOTILE.fields_by_name['sint32Cells'].has_options = True
+_PROTOTILE.fields_by_name['sint32Cells']._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))
+_PROTOTILE.fields_by_name['uint32Cells'].has_options = True
+_PROTOTILE.fields_by_name['uint32Cells']._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))
+_PROTOTILE.fields_by_name['floatCells'].has_options = True
+_PROTOTILE.fields_by_name['floatCells']._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))
+_PROTOTILE.fields_by_name['doubleCells'].has_options = True
+_PROTOTILE.fields_by_name['doubleCells']._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))
 # @@protoc_insertion_point(module_scope)

@@ -1,5 +1,4 @@
 """Contains the various encoding/decoding methods to bring values to/from Python from Scala."""
-import array
 from functools import partial
 import numpy as np
 from geopyspark.geopyspark_utils import check_environment
@@ -10,13 +9,15 @@ from geopyspark.geotrellis import (Extent, ProjectedExtent, TemporalProjectedExt
 
 from geopyspark.protobuf.tileMessages_pb2 import ProtoTile, ProtoMultibandTile, ProtoCellType
 from geopyspark.protobuf.extentMessages_pb2 import (ProtoExtent, ProtoProjectedExtent,
-                                                ProtoTemporalProjectedExtent)
+                                                    ProtoTemporalProjectedExtent)
 from geopyspark.protobuf import keyMessages_pb2
 from geopyspark.protobuf import tupleMessages_pb2
 
 
 class ProtoBufRegistry(object):
     """Holds the encoding/decoding methods needed to bring a scala RDD to/from Python."""
+
+    __slots__ = []
 
     _mapped_data_types = {
         0: 'BIT',
@@ -37,21 +38,21 @@ class ProtoBufRegistry(object):
             data_type = cls._mapped_data_types[tile.cellType.dataType]
 
         if data_type == 'BIT':
-            arr = np.int8([x for x in tile.sint32Cells]).reshape(tile.rows, tile.cols)
+            arr = np.int8(tile.uint32Cells[:]).reshape(tile.rows, tile.cols)
         elif data_type == 'BYTE':
-            arr = np.int8([x for x in tile.sint32Cells]).reshape(tile.rows, tile.cols)
+            arr = np.int8(tile.sint32Cells[:]).reshape(tile.rows, tile.cols)
         elif data_type == 'UBYTE':
-            arr = np.uint8([x for x in tile.uint32Cells]).reshape(tile.rows, tile.cols)
+            arr = np.uint8(tile.uint32Cells[:]).reshape(tile.rows, tile.cols)
         elif data_type == 'SHORT':
-            arr = np.int16([x for x in tile.sint32Cells]).reshape(tile.rows, tile.cols)
+            arr = np.int16(tile.sint32Cells[:]).reshape(tile.rows, tile.cols)
         elif data_type == 'USHORT':
-            arr = np.uint16([x for x in tile.uint32Cells]).reshape(tile.rows, tile.cols)
+            arr = np.uint16(tile.uint32Cells[:]).reshape(tile.rows, tile.cols)
         elif data_type == 'INT':
-            arr = np.int32([x for x in tile.sint32Cells]).reshape(tile.rows, tile.cols)
+            arr = np.int32(tile.sint32Cells[:]).reshape(tile.rows, tile.cols)
         elif data_type == 'FLOAT':
-            arr = np.float32([x for x in tile.floatCells]).reshape(tile.rows, tile.cols)
+            arr = np.float32(tile.floatCells[:]).reshape(tile.rows, tile.cols)
         else:
-            arr = np.double([x for x in tile.doubleCells]).reshape(tile.rows, tile.cols)
+            arr = np.double(tile.doubleCells[:]).reshape(tile.rows, tile.cols)
 
         return arr
 
@@ -91,7 +92,6 @@ class ProtoBufRegistry(object):
 
     @classmethod
     def tuple_decoder(cls, proto_bytes, key_decoder):
-        import io
         """Decodes a tuple into Python.
 
         Args:
@@ -181,7 +181,10 @@ class ProtoBufRegistry(object):
         arr = obj['data']
         data_type = obj['data_type']
 
-        (rows, cols) = arr.shape
+        if len(arr.shape) > 2:
+            (_, rows, cols) = arr.shape
+        else:
+            (rows, cols) = arr.shape
 
         tile = ProtoTile()
         cell_type = tile.cellType
@@ -233,7 +236,6 @@ class ProtoBufRegistry(object):
             obj['data'] = np.expand_dims(obj['data'], 0)
 
         band_count = obj['data'].shape[0]
-        print(band_count)
 
         def create_dict(index):
             return {'data': obj['data'][index, :, :], 'no_data_value': obj['no_data_value'],
@@ -249,23 +251,23 @@ class ProtoBufRegistry(object):
         return cls._multibandtile_encoder(obj).SerializeToString()
 
     @staticmethod
-    def extent_encoder(cls, obj):
+    def extent_encoder(obj):
         return obj.to_protobuf_extent.SerializeToString()
 
     @staticmethod
-    def projected_extent_encoder(cls, obj):
+    def projected_extent_encoder(obj):
         return obj.to_protobuf_projected_extent.SerializeToString()
 
     @staticmethod
-    def temporal_projected_extent_encoder(cls, obj):
+    def temporal_projected_extent_encoder(obj):
         return obj.to_protobuf_temporal_projected_extent.SerializeToString()
 
     @staticmethod
-    def spatial_key_encoder(cls, obj):
+    def spatial_key_encoder(obj):
         return obj.to_protobuf_spatial_key.SerializeToString()
 
     @staticmethod
-    def space_time_key_encoder(cls, obj):
+    def space_time_key_encoder(obj):
         return obj.to_protobuf_space_time_key.SerializeToString()
 
     @classmethod

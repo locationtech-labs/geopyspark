@@ -34,7 +34,6 @@ object PythonTranslator {
   def fromPython[T: ClassTag, M <: GeneratedMessage](
     rdd: RDD[Array[Byte]],
     toProtoClass: Array[Byte] => M
-  )(
-    implicit codec: ProtoBufCodec[T, M]
-  ): RDD[T] = rdd.map { bytes => codec.decode(toProtoClass(bytes)) }
+  )(implicit codec: ProtoBufCodec[T, M]): RDD[T] =
+    rdd.map { bytes => codec.decode(toProtoClass(bytes)) }
 }

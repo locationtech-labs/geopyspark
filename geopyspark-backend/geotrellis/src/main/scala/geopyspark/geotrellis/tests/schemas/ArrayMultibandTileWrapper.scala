@@ -20,7 +20,8 @@ object ArrayMultibandTileWrapper extends Wrapper2[MultibandTile, ProtoMultibandT
   def testRdd(sc: SparkContext): RDD[MultibandTile] = {
     val tile = ByteArrayTile(Array[Byte](0, 0, 1, 1), 2, 2)
 
-    val multi = Array(ArrayMultibandTile(tile, tile, tile),
+    val multi = Array(
+      ArrayMultibandTile(tile, tile, tile),
       ArrayMultibandTile(tile, tile, tile),
       ArrayMultibandTile(tile, tile, tile))
 

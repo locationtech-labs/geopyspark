@@ -10,7 +10,7 @@ import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.api.java.JavaRDD
 
-object DoulbeArrayTileWrapper extends Wrapper2[Tile, ProtoTile]{
+object DoubleArrayTileWrapper extends Wrapper2[Tile, ProtoTile]{
   def testOut(sc: SparkContext): JavaRDD[Array[Byte]] =
     PythonTranslator.toPython[Tile, ProtoTile](testRdd(sc))
 
