@@ -3,6 +3,24 @@ from collections import namedtuple
 from shapely.geometry import box
 
 
+import warnings
+import functools
+
+def deprecated(func):
+    """This is a decorator which can be used to mark functions
+    as deprecated. It will result in a warning being emmitted
+    when the function is used."""
+
+    @functools.wraps(func)
+    def new_func(*args, **kwargs):
+        warnings.simplefilter('always', DeprecationWarning) #turn off filter 
+        warnings.warn("Call to deprecated function {}.".format(func.__name__), category=DeprecationWarning, stacklevel=2)
+        warnings.simplefilter('default', DeprecationWarning) #reset filter
+        return func(*args, **kwargs)
+
+    return new_func
+
+
 class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
     """
     The "bounding box" or geographic region of an area on Earth a raster represents.

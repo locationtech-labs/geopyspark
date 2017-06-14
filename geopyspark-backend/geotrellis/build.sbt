@@ -15,7 +15,8 @@ libraryDependencies ++= Seq(
   "org.locationtech.geotrellis" %% "geotrellis-spark"      % Version.geotrellis,
   "com.typesafe.akka"     %% "akka-actor"                        % Version.akka,
   "com.typesafe.akka"     %% "akka-http-experimental"            % Version.akka,
-  "com.typesafe.akka"     %% "akka-http-spray-json-experimental" % Version.akka
+  "com.typesafe.akka"     %% "akka-http-spray-json-experimental" % Version.akka,
+  "net.sf.py4j"           % "py4j"                               % "0.10.5"
 )
 
 assemblyMergeStrategy in assembly := {

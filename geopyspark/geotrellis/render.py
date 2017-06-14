@@ -4,54 +4,31 @@ check_environment()
 from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, COLOR_RAMPS
 from .rdd import CachableRDD
 from pyspark.storagelevel import StorageLevel
+import geopyspark.geotrellis.color as color
 
+@deprecated
+def get_breaks_from_colors(colors):
+    """Deprecated in favor of geopyspark.geotrellis.color.get_breaks_from_colors
+    """
+    return color.get_breaks_from_colors(colors)
 
+@deprecated
+def get_breaks_from_matplot(ramp_name, num_colors):
+    """Deprecated in favor of geopyspark.geotrellis.color.get_breaks_from_matplot
+    """
+    return color.get_breaks_from_matplot(ramp_name, num_colors)
+
+@deprecated
 def get_breaks(geopysc, ramp_name, num_colors=None):
-    """Returns a list of values that represent the breaks in color for the given color ramp.
-
-    Args:
-        ramp_name (str): The name of a color ramp; options are hot, COOLWARM, MAGMA,
-            INFERNO, PLASMA, VIRIDIS, BLUETOORANGE, LIGHTYELLOWTOORANGE, BLUETORED,
-            GREENTOREDORANGE, LIGHTTODARKSUNSET, LIGHTTODARKGREEN, HEATMAPYELLOWTORED,
-            HEATMAPBLUETOYELLOWTOREDSPECTRUM, HEATMAPDARKREDTOYELLOWWHITE,
-            HEATMAPLIGHTPURPLETODARKPURPLETOWHITE, CLASSIFICATIONBOLDLANDUSE, and
-            CLASSIFICATIONMUTEDTERRAIN
-        num_colors (int, optional): How many colors should be represented in the range. Defaults
-            to ``None``. If not specified, then the full range of values will be returned.
-
-    Returns:
-        [int]
+    """Deprecated in favor of geopyspark.geotrellis.color.get_breaks
     """
+    return color.get_breaks(geopysc, ramp_name, num_colors=None)
 
-    if num_colors:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.get(ramp_name, num_colors))
-    else:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.get(ramp_name))
-
+@deprecated
 def get_hex(geopysc, ramp_name, num_colors=None):
-    """Returns a list of the hex values that represent the colors for the given color ramp.
-
-    Note:
-        The returning hex values contain an alpha value.
-
-    Args:
-        ramp_name (str): The name of a color ramp; options are HOT, COOLWARM, MAGMA,
-            INFERNO, PLASMA, VIRIDIS, BLUETOORANGE, LIGHTYELLOWTOORANGE, BLUETORED,
-            GREENTOREDORANGE, LIGHTTODARKSUNSET, LIGHTTODARKGREEN, HEATMAPYELLOWTORED,
-            HEATMAPBLUETOYELLOWTOREDSPECTRUM, HEATMAPDARKREDTOYELLOWWHITE,
-            HEATMAPLIGHTPURPLETODARKPURPLETOWHITE, CLASSIFICATIONBOLDLANDUSE, and
-            CLASSIFICATIONMUTEDTERRAIN
-        num_colors (int, optional): How many colors should be represented in the range. Defaults
-            to ``None``. If not specified, then the full range of values will be returned.
-
-    Returns:
-        [str]
+    """Deprecated in favor of geopyspark.geotrellis.color.get_hex
     """
-
-    if num_colors:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(ramp_name, num_colors))
-    else:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(ramp_name))
+    return color.get_hex(geopysc, ramp_name, num_colors=None)
 
 
 # What does this do? implements lookup method ... this is a wrapper, a delegator

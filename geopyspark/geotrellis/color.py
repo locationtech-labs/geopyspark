@@ -1,0 +1,143 @@
+from geopyspark.geopyspark_utils import check_environment
+check_environment()
+
+from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, COLOR_RAMPS, LESSTHANOREQUALTO
+
+import struct
+
+def get_breaks_from_colors(colors):
+    """Returns a list of integer colors from a list of Color objects from the
+    colortools package.
+
+    Args:
+        colors ([Color]): A list of color stops using colortools.Color
+
+    Returns:
+        [int]
+    """
+    return [struct.unpack(">L", bytes(c.rgba))[0] for c in colors]
+
+def get_breaks_from_matplot(ramp_name, num_colors):
+    """Returns a list of color breaks from the color ramps defined by Matplotlib.
+
+    Args:
+        ramp_name (str): The name of a matplotlib color ramp; options are
+            'viridis', 'plasma', 'inferno', 'magma', 'Greys', 'Purples', 'Blues',
+            'Greens', 'Oranges', 'Reds', 'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd',
+            'RdPu', 'BuPu', 'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn',
+            'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink', 'spring',
+            'summer', 'autumn', 'winter', 'cool', 'Wistia', 'hot', 'afmhot',
+            'gist_heat', 'copper', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
+            'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic',
+            'Pastel1', 'Pastel2', 'Paired', 'Accent', 'Dark2', 'Set1', 'Set2',
+            'Set3', 'tab10', 'tab20', 'tab20b', 'tab20c', 'flag', 'prism',
+            'ocean', 'gist_earth', 'terrain', 'gist_stern', 'gnuplot',
+            'gnuplot2', 'CMRmap', 'cubehelix', 'brg', 'hsv', 'gist_rainbow',
+            'rainbow', 'jet', 'nipy_spectral', 'gist_ncar'.  See the matplotlib
+            documentation for details on each color ramp.
+        num_colors (int): The number of color breaks to derive from the named map.
+
+    Returns:
+        [int]
+    """
+    import colortools
+    import matplotlib.cm as mpc
+    ramp = mpc.get_cmap(ramp_name)
+    return  [ struct.unpack('>L', bytes(map(lambda x: int(x*255), ramp(x / (num_colors - 1)))))[0] for x in range(0, num_colors)]
+
+def get_breaks(geopysc, ramp_name, num_colors=None):
+    """Returns a list of values that represent the breaks in color for the given color ramp.
+
+    Args:
+        ramp_name (str): The name of a color ramp; options are hot, COOLWARM, MAGMA,
+            INFERNO, PLASMA, VIRIDIS, BLUETOORANGE, LIGHTYELLOWTOORANGE, BLUETORED,
+            GREENTOREDORANGE, LIGHTTODARKSUNSET, LIGHTTODARKGREEN, HEATMAPYELLOWTORED,
+            HEATMAPBLUETOYELLOWTOREDSPECTRUM, HEATMAPDARKREDTOYELLOWWHITE,
+            HEATMAPLIGHTPURPLETODARKPURPLETOWHITE, CLASSIFICATIONBOLDLANDUSE, and
+            CLASSIFICATIONMUTEDTERRAIN
+        num_colors (int, optional): How many colors should be represented in the range. Defaults
+            to ``None``. If not specified, then the full range of values will be returned.
+
+    Returns:
+        [int]
+    """
+
+    if num_colors:
+        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.get(ramp_name, num_colors))
+    else:
+        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.get(ramp_name))
+
+def get_hex(geopysc, ramp_name, num_colors=None):
+    """Returns a list of the hex values that represent the colors for the given color ramp.
+
+    Note:
+        The returning hex values contain an alpha value.
+
+    Args:
+        ramp_name (str): The name of a color ramp; options are HOT, COOLWARM, MAGMA,
+            INFERNO, PLASMA, VIRIDIS, BLUETOORANGE, LIGHTYELLOWTOORANGE, BLUETORED,
+            GREENTOREDORANGE, LIGHTTODARKSUNSET, LIGHTTODARKGREEN, HEATMAPYELLOWTORED,
+            HEATMAPBLUETOYELLOWTOREDSPECTRUM, HEATMAPDARKREDTOYELLOWWHITE,
+            HEATMAPLIGHTPURPLETODARKPURPLETOWHITE, CLASSIFICATIONBOLDLANDUSE, and
+            CLASSIFICATIONMUTEDTERRAIN
+        num_colors (int, optional): How many colors should be represented in the range. Defaults
+            to ``None``. If not specified, then the full range of values will be returned.
+
+    Returns:
+        [str]
+    """
+
+    if num_colors:
+        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(ramp_name, num_colors))
+    else:
+        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(ramp_name))
+
+class ColorMap(object):
+    def __init__(self, cmap):
+        self.cmap = cmap
+
+    @classmethod
+    def from_break_map(cls, geopysc, break_map, noDataColor=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+        if all(isinstance(x, int) for x in break_map.keys()):
+            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromMap(break_map, noDataColor, fallback, class_boundary_type))
+        elif all(isinstance(x, float) for x in break_map.keys()):
+            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromMapDouble(break_map, noDataColor, fallback, class_boundary_type))
+        else:
+            raise TypeError("Break map keys must be either int or float.")
+    
+    @classmethod
+    def from_colors(cls, geopysc, breaks, color_list, noDataColor=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+        if all(isinstance(x, int) for x in breaks):
+            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromBreaks(breaks, color_list, noDataColor, fallback, class_boundary_type))
+        else:
+            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromBreaksDouble([float(br) for br in breaks], color_list, noDataColor, fallback, class_boundary_type))
+
+    @classmethod
+    def from_histogram(cls, geopysc, histogram, color_list, noDataColor=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+        pass
+
+    @staticmethod
+    def nlcd_colormap(geopysc):
+        nlcd_color_map =  { 0  : 0x00000000,
+                            11 : 0x526095FF,     # Open Water
+                            12 : 0xFFFFFFFF,     # Perennial Ice/Snow
+                            21 : 0xD28170FF,     # Low Intensity Residential
+                            22 : 0xEE0006FF,     # High Intensity Residential
+                            23 : 0x990009FF,     # Commercial/Industrial/Transportation
+                            31 : 0xBFB8B1FF,     # Bare Rock/Sand/Clay
+                            32 : 0x969798FF,     # Quarries/Strip Mines/Gravel Pits
+                            33 : 0x382959FF,     # Transitional
+                            41 : 0x579D57FF,     # Deciduous Forest
+                            42 : 0x2A6B3DFF,     # Evergreen Forest
+                            43 : 0xA6BF7BFF,     # Mixed Forest
+                            51 : 0xBAA65CFF,     # Shrubland
+                            61 : 0x45511FFF,     # Orchards/Vineyards/Other
+                            71 : 0xD0CFAAFF,     # Grasslands/Herbaceous
+                            81 : 0xCCC82FFF,     # Pasture/Hay
+                            82 : 0x9D5D1DFF,     # Row Crops
+                            83 : 0xCD9747FF,     # Small Grains
+                            84 : 0xA7AB9FFF,     # Fallow
+                            85 : 0xE68A2AFF,     # Urban/Recreational Grasses
+                            91 : 0xB6D8F5FF,     # Woody Wetlands
+                            92 : 0xB6D8F5FF }    # Emergent Herbaceous Wetlands
+        return ColorMap.from_break_map(geopysc, nlcd_color_map)

@@ -16,6 +16,8 @@ import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.raster._
 
+import geopyspark.geotrellis.ColorMap
+ 
 import scala.reflect._
 
 /** TMS server for GeoTrellis catalogs and RDDs (later)*/
@@ -28,31 +30,30 @@ object Server {
     ???
   }
 
-  def getItHere(rf: TileRender): Server = {
+  def serveS3Catalog(handshake: String, bucket: String, root: String, catalog: String, cm: ColorMap): Server = {
     import geotrellis.spark.io.s3._
-    val reader = S3ValueReader("azavea-datahub", "catalog")
-    new Server("localhost", 0, reader, rf)
+    val reader = S3ValueReader(bucket, root)
+    new Server("0.0.0.0", 12345, reader, catalog, handshake, new RenderFromCM(cm.cmap))
   }
 
   def testRender(rf: TileRender): Array[Byte] = {
     val tile = IntArrayTile.fill(42,256, 256)
-    rf.render(tile.toArray, 256, 256)
+    rf.render(tile)
   }
 }
 
-class Server(host: String, port: Int, reader: ValueReader[LayerId], rf: TileRender) {
+class Server(host: String, portRequest: Int, reader: ValueReader[LayerId], catalog: String, handshake: String, rf: TileRender) {
   import AkkaSystem._
-
-  val binding: ServerBinding = {
-    val router = new TmsRoutes(reader, rf)
-    val futureBinding = Http()(system).bindAndHandle(router.root, host, port)
-    Await.result(futureBinding, 10.seconds)
-  }
 
   def port(): Int = binding.localAddress.getPort()
   def unbind(): Unit = Await.ready(binding.unbind, 10.seconds)
-}
 
+  val binding: ServerBinding = {
+    val router = new TmsRoutes(reader, catalog, handshake, rf)
+    val futureBinding = Http()(system).bindAndHandle(router.root, host, portRequest)
+    Await.result(futureBinding, 10.seconds)
+  }
+}
 
 object AkkaSystem {
   implicit val system = ActorSystem("geopyspark-tile-server")
