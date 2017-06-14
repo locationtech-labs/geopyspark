@@ -86,6 +86,11 @@ class SpatialRddRoute(
             bytes = time(s"Rendering tile @ $key (zoom=$zoom)"){ rf.render(tile) }
           } yield HttpEntity(`image/png`, bytes)
         }
+      }~
+      path("handshake") {
+        complete { handshake }
       }
     }
 }
+
+
