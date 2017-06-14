@@ -15,10 +15,9 @@ setup_args = dict(
     long_description=open('README.rst').read(),
     license='LICENSE',
     install_requires=[
-        'fastavro>=0.13.0',
+        'protobuf>=3.3.0',
         'numpy>=1.8',
         'shapely>=1.6b3',
-        'bitstring>=3.1.5'
     ],
     packages=[
         'geopyspark',

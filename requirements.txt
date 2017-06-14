@@ -1,7 +1,6 @@
 pytest>=3.0.6
 numpy>=1.8
-fastavro>=0.13.0
 shapely>=1.6b3
 rasterio>=1.0a7
 setuptools
-bitstring>=3.1.5
+protobuf>=3.3.0
