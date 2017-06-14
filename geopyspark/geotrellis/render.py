@@ -54,36 +54,26 @@ def get_hex(geopysc, ramp_name, num_colors=None):
         return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(ramp_name))
 
 
+# What does this do? implements lookup method ... this is a wrapper, a delegator
 class PngRDD(CachableRDD):
-    def __init__(self, pyramid, ramp_name, debug=False):
+    def __init__(self, pyramid, color_map, debug=False):
         """Convert a pyramid of TiledRasterRDDs into a displayable structure of PNGs
 
         Args:
             pyramid (list): A pyramid of TiledRasterRDD resulting from calling the pyramid
                 method on an instance of that class
-            ramp_name (str): The name of a color ramp; This is represented by the following
-                constants; HOT, COOLWARM, MAGMA, INFERNO, PLASMA, VIRIDIS, BLUE_TO_ORANGE,
-                LIGHT_YELLOW_TO_ORANGE, BLUE_TO_RED, GREEN_TO_RED_ORANGE, LIGHT_TO_DARK_SUNSET,
-                LIGHT_TO_DARK_GREEN, HEATMAP_YELLOW_TO_RED, HEATMAP_BLUE_TO_YELLOW_TO_RED_SPECTRUM,
-                HEATMAP_DARK_RED_TO_YELLOW_WHITE, HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE,
-                CLASSIFICATION_BOLD_LAND_USE, and CLASSIFICATION_MUTED_TERRAIN
+            color_map (JavaObject): Mapping from cell values to cell colors
         """
-
-        __slots__ = ['geopysc', 'rdd_type', 'layer_metadata', 'max_zoom', 'pngpyramid', 'debug']
-
-        if ramp_name not in COLOR_RAMPS:
-            raise ValueError(ramp_name, "Is not a known color ramp")
 
         level0 = pyramid[0]
         self.geopysc = level0.geopysc
         self.rdd_type = level0.rdd_type
-        self.layer_metadata = list(map(lambda lev: lev.layer_metadata, pyramid))
+        self.layer_metadata = dict([(lev.zoom_level, lev.layer_metadata) for lev in pyramid])
         self.max_zoom = level0.zoom_level
-        histogram = level0.get_histogram()
         if level0.is_floating_point_layer():
-            self.pngpyramid = [self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asSingleband(layer.srdd, histogram, ramp_name) for layer in pyramid]
+            self.pngpyramid = dict([(layer.zoom_level, self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asSingleband(layer.srdd, color_map)) for layer in pyramid])
         else:
-            self.pngpyramid = [self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asIntSingleband(layer.srdd, histogram, ramp_name) for layer in pyramid]
+            self.pngpyramid = dict([(layer.zoom_level, self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asIntSingleband(layer.srdd, color_map)) for layer in pyramid])
         self.debug = debug
         self.is_cached = False
 
@@ -133,13 +123,9 @@ class PngRDD(CachableRDD):
 
         Returns: A list of bytes containing the resulting PNG images
         """
-        if not zoom:
-            idx = 0
-        else:
-            idx = self.max_zoom - zoom
 
-        pngrdd = self.pngpyramid[idx]
-        metadata = self.layer_metadata[idx]
+        pngrdd = self.pngpyramid[zoom]
+        metadata = self.layer_metadata[zoom]
 
         bounds = metadata.bounds
         min_col = bounds.minKey.col
@@ -157,5 +143,5 @@ class PngRDD(CachableRDD):
         return [bytes for bytes in result]
 
     def wrapped_rdds(self):
-        return self.pngpyramid
-
+        print(self.pngpyramid.values())
+        return iter(self.pngpyramid.values())
