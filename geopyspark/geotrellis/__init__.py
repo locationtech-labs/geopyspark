@@ -293,3 +293,20 @@ class Metadata(object):
             }
 
         return self._metadata_dict
+
+    def __repr__(self):
+        return "Metadata({}, {}, {}, {}, {}, {})".format(self.bounds, self.cell_type,
+                                                         self.crs, self.extent,
+                                                         self.tile_layout, self.layout_definition)
+
+
+    def __str__(self):
+        return ("Metadata("
+                "bounds={}"
+                "cellType={}"
+                "crs={}"
+                "extent={}"
+                "tileLayout={}"
+                "layoutDefinition={})").format(self.bounds, self.cell_type,
+                                               self.crs, self.extent,
+                                               self.tile_layout, self.layout_definition)
