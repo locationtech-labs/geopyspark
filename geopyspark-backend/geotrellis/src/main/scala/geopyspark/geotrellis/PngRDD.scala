@@ -6,6 +6,7 @@ import org.apache.spark.storage.StorageLevel
 import geotrellis.raster._
 import geotrellis.raster.histogram._
 import geotrellis.raster.render._
+import geotrellis.raster.render.{ ColorMap => GTColorMap }
 import geotrellis.spark._
 import geotrellis.spark.render._
 
