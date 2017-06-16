@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.collection.concurrent._
 
-class TmsRoutes(valueReader: ValueReader[LayerId], catalog: String, handshake: String, rf: TileRender) extends Directives with AkkaSystem.LoggerExecutor {
+class TmsRoutes(valueReader: ValueReader[LayerId], catalog: String, server: Server, rf: TileRender) extends Directives with AkkaSystem.LoggerExecutor {
   def time[T](msg: String)(f: => T) = {
     val start = System.currentTimeMillis
     val v = f
@@ -33,7 +33,7 @@ class TmsRoutes(valueReader: ValueReader[LayerId], catalog: String, handshake: S
   val layers = TrieMap.empty[Int, Reader[SpatialKey, Tile]]
   def root =
     get {
-      pathPrefix(IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
+      pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
         val key = SpatialKey(x, y)
         complete {
           Future {
@@ -45,9 +45,28 @@ class TmsRoutes(valueReader: ValueReader[LayerId], catalog: String, handshake: S
         }
       }~
       path("handshake") {
-        complete { handshake }
+        complete { server.handshake }
       }
     }
+  // def root =
+  //   pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
+  //     get {
+  //       val key = SpatialKey(x, y)
+  //       complete {
+  //         Future {
+  //           val reader = layers.getOrElseUpdate(zoom, valueReader.reader[SpatialKey, Tile](LayerId(catalog, zoom)))
+  //           val tile: Tile = reader(key)
+  //           val bytes: Array[Byte] = time(s"Rendering tile @ $key (zoom=$zoom)"){ rf.render(tile) }
+  //           HttpEntity(`image/png`, bytes)
+  //         }
+  //       }
+  //     }
+  //   }~
+  //   path("handshake") {
+  //     get {
+  //       complete { server.handshake }
+  //     }
+  //   }
 }
 
 

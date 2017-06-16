@@ -5,6 +5,7 @@ from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, Z
 from .rdd import CachableRDD
 from pyspark.storagelevel import StorageLevel
 import geopyspark.geotrellis.color as color
+from geopyspark.geotrellis import deprecated
 
 @deprecated
 def get_breaks_from_colors(colors):

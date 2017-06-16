@@ -37,17 +37,28 @@ class TileRender(object):
     class Java:
         implements = ["geopyspark.geotrellis.tms.TileRender"]
 
-from geonotebook.vis.geotrellis.render_methods import render_nlcd
+class TMSServer(object):
+    def __init__(self, geopysc, server):
+        self.geopysc = geopysc
+        self.server = server
+        self.handshake = ''
 
-def make_s3_tms(geopysc, handshake, bucket, root, catalog, colormap):
+    def set_handshake(self, handshake):
+        self.server.set_handshake(handshake)
+        self.handshake = handshake
+
+# from geonotebook.vis.geotrellis.render_methods import render_nlcd
+
+def make_s3_tms(geopysc, bucket, root, catalog, colormap):
     print("Creating Scala tile server")
     #tr = TileRender(render_nlcd)
-    server = geopysc._jvm.geopyspark.geotrellis.tms.Server.serveS3Catalog(handshake, bucket, root, catalog, colormap.cmap)
+    server = geopysc._jvm.geopyspark.geotrellis.tms.Server.serveS3Catalog(bucket, root, catalog, colormap.cmap)
+    return TMSServer(geopysc, server)
     # gateway = ClientServer(
     #     java_parameters = JavaParameters(),
     #     python_parameters = PythonParameters())#,
     #     #python_server_entry_point = tr)
-    return server
+    #return server
     # make a server
     # give it NLCD function ... from geonotebook ?
 
