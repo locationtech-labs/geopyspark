@@ -47,18 +47,10 @@ class TMSServer(object):
         self.server.set_handshake(handshake)
         self.handshake = handshake
 
-# from geonotebook.vis.geotrellis.render_methods import render_nlcd
-
 def make_s3_tms(geopysc, bucket, root, catalog, colormap):
-    print("Creating Scala tile server")
-    #tr = TileRender(render_nlcd)
-    server = geopysc._jvm.geopyspark.geotrellis.tms.Server.serveS3Catalog(bucket, root, catalog, colormap.cmap)
+    server = geopysc._jvm.geopyspark.geotrellis.tms.TMSServer.serveS3Catalog(bucket, root, catalog, colormap.cmap)
     return TMSServer(geopysc, server)
-    # gateway = ClientServer(
-    #     java_parameters = JavaParameters(),
-    #     python_parameters = PythonParameters())#,
-    #     #python_server_entry_point = tr)
-    #return server
-    # make a server
-    # give it NLCD function ... from geonotebook ?
 
+def remote_tms_server(geopysc, pattern_url):
+    server = geopysc._jvm.geopyspark.geotrellis.tms.TMSServer.serveRemoteTMSLayer(pattern_url)
+    return TMSServer(geopysc, server)

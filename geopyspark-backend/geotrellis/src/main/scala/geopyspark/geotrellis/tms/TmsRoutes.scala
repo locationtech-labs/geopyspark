@@ -7,9 +7,9 @@ import geotrellis.spark.io._
 import geotrellis.vector._
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.model.HttpEntity
+import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.model.MediaTypes.{`image/png`, `text/plain`}
-import akka.http.scaladsl.server.Directives
+import akka.http.scaladsl.server.{Route, Directives}
 import akka.http.scaladsl.unmarshalling.Unmarshaller._
 import org.apache.spark.{SparkConf, SparkContext}
 import spray.json._
@@ -20,7 +20,18 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.collection.concurrent._
 
-class TmsRoutes(valueReader: ValueReader[LayerId], catalog: String, server: Server, rf: TileRender) extends Directives with AkkaSystem.LoggerExecutor {
+trait TMSServerRoute extends Directives with AkkaSystem.LoggerExecutor {
+  def root: Route
+  def route(server: TMSServer): Route = {
+    get { root ~ path("handshake") { complete { server.handshake } } }
+  }
+}
+
+class ValueReaderRoute(
+  valueReader: ValueReader[LayerId], 
+  catalog: String, 
+  rf: TileRender
+) extends TMSServerRoute {
   def time[T](msg: String)(f: => T) = {
     val start = System.currentTimeMillis
     val v = f
@@ -31,42 +42,26 @@ class TmsRoutes(valueReader: ValueReader[LayerId], catalog: String, server: Serv
 
   val reader = valueReader
   val layers = TrieMap.empty[Int, Reader[SpatialKey, Tile]]
-  def root =
-    get {
-      pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
-        val key = SpatialKey(x, y)
-        complete {
-          Future {
-            val reader = layers.getOrElseUpdate(zoom, valueReader.reader[SpatialKey, Tile](LayerId(catalog, zoom)))
-            val tile: Tile = reader(key)
-            val bytes: Array[Byte] = time(s"Rendering tile @ $key (zoom=$zoom)"){ rf.render(tile) }
-            HttpEntity(`image/png`, bytes)
-          }
+  def root: Route =
+    pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
+      val key = SpatialKey(x, y)
+      complete {
+        Future {
+          val reader = layers.getOrElseUpdate(zoom, valueReader.reader[SpatialKey, Tile](LayerId(catalog, zoom)))
+          val tile: Tile = reader(key)
+          val bytes: Array[Byte] = time(s"Rendering tile @ $key (zoom=$zoom)"){ rf.render(tile) }
+          HttpEntity(`image/png`, bytes)
         }
-      }~
-      path("handshake") {
-        complete { server.handshake }
       }
     }
-  // def root =
-  //   pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
-  //     get {
-  //       val key = SpatialKey(x, y)
-  //       complete {
-  //         Future {
-  //           val reader = layers.getOrElseUpdate(zoom, valueReader.reader[SpatialKey, Tile](LayerId(catalog, zoom)))
-  //           val tile: Tile = reader(key)
-  //           val bytes: Array[Byte] = time(s"Rendering tile @ $key (zoom=$zoom)"){ rf.render(tile) }
-  //           HttpEntity(`image/png`, bytes)
-  //         }
-  //       }
-  //     }
-  //   }~
-  //   path("handshake") {
-  //     get {
-  //       complete { server.handshake }
-  //     }
-  //   }
 }
 
-
+class ExternalTMSServerRoute(patternURL: String) extends TMSServerRoute {
+  def root: Route =
+    pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
+      val newUrl = patternURL.replace("{z}", zoom.toString)
+                             .replace("{x}", x.toString)
+                             .replace("{y}", y.toString)
+      redirect(newUrl, StatusCodes.PermanentRedirect)
+    }
+}

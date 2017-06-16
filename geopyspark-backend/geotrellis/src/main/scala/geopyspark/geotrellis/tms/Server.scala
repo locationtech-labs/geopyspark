@@ -21,48 +21,6 @@ import geopyspark.geotrellis.ColorMap
  
 import scala.reflect._
 
-/** TMS server for GeoTrellis catalogs and RDDs (later)*/
-object Server {
-  def forLayer(keyType: String, uri: String, layerName: String): String = {
-    ???
-  }
-
-  def serviceForLayer[K: ClassTag](uri: URI, layerName: String): URL = {
-    ???
-  }
-
-  def serveS3Catalog(bucket: String, root: String, catalog: String, cm: ColorMap): Server = {
-    import geotrellis.spark.io.s3._
-    val reader = S3ValueReader(bucket, root)
-    new Server("0.0.0.0", 12345, reader, catalog, new RenderFromCM(cm.cmap))
-  }
-
-  def testRender(rf: TileRender): Array[Byte] = {
-    val tile = IntArrayTile.fill(42,256, 256)
-    rf.render(tile)
-  }
-}
-
-class Server(host: String, portRequest: Int, reader: ValueReader[LayerId], catalog: String, rf: TileRender) {
-  import AkkaSystem._
-
-  var _handshake = ""
-
-  def port(): Int = binding.localAddress.getPort()
-  def unbind(): Unit = Await.ready(binding.unbind, 10.seconds)
-
-  val binding: ServerBinding = {
-    val router = new TmsRoutes(reader, catalog, this, rf)
-    val loggedRouter = DebuggingDirectives.logRequestResult("Client ReST", Logging.InfoLevel)(router.root)
-    val futureBinding = Http()(system).bindAndHandle(/*loggedRouter*/ router.root
-                                                     , host, portRequest)
-    Await.result(futureBinding, 10.seconds)
-  }
-
-  def set_handshake(str: String) = { _handshake = str }
-  def handshake(): String = _handshake
-}
-
 object AkkaSystem {
   implicit val system = ActorSystem("geopyspark-tile-server")
   implicit val materializer = ActorMaterializer()
@@ -71,3 +29,52 @@ object AkkaSystem {
     protected implicit val log = Logging(system, "tms")
   }
 }
+
+class TMSServer(router: TMSServerRoute) { //(reader: ValueReader[LayerId], catalog: String, rf: TileRender) {
+  import AkkaSystem._
+
+  var _handshake = ""
+  var binding: ServerBinding = null
+
+  def port(): Int = binding.localAddress.getPort()
+  def unbind(): Unit = {
+    Await.ready(binding.unbind, 10.seconds)
+    binding = null
+  }
+
+  def bind(host: String): ServerBinding = {
+    // val loggedRouter = DebuggingDirectives.logRequestResult("Client ReST", Logging.InfoLevel)(router.route(this))
+    var futureBinding: scala.util.Try[Future[ServerBinding]] = null
+    do {
+      var portReq = scala.util.Random.nextInt(16383) + 49152
+      futureBinding = scala.util.Try(Http()(system).bindAndHandle(router.route(this) /*loggedRouter*/, host, portReq))
+    } while (futureBinding.isFailure)
+    binding = Await.result(futureBinding.get, 10.seconds)
+    binding
+  }
+
+  def bind(host: String, requestedPort: Int): ServerBinding = {
+    // val loggedRouter = DebuggingDirectives.logRequestResult("Client ReST", Logging.InfoLevel)(router.route(this))
+    val futureBinding = Http()(system).bindAndHandle(router.route(this) /*loggedRouter*/, host, requestedPort)
+    binding = Await.result(futureBinding, 10.seconds)
+    binding
+  }
+
+  def setHandshake(str: String) = { _handshake = str }
+  def handshake(): String = _handshake
+}
+
+object TMSServer {
+  def serveS3Catalog(bucket: String, root: String, catalog: String, cm: ColorMap): TMSServer = {
+    import geotrellis.spark.io.s3._
+    val reader = S3ValueReader(bucket, root)
+    val route = new ValueReaderRoute(reader, catalog, new RenderFromCM(cm.cmap))
+    new TMSServer(route)
+  }
+
+  def serveRemoteTMSLayer(patternURL: String): TMSServer = {
+    val route = new ExternalTMSServerRoute(patternURL)
+    new TMSServer(route)
+  }
+}
+
