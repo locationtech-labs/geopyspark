@@ -126,7 +126,7 @@ Setup
 
   if __name__ == "__main__":
       uri = "file:///tmp/python-catalog/"
-      layer_name = "python-benchmark"
+      layer_name = "python-ingest"
 
       geopycontext = GeoPyContext(appName="server-example", master="local[*]")
 
