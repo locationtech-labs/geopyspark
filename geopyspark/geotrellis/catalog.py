@@ -110,7 +110,7 @@ def _construct_catalog(geopysc, new_uri, options):
                                                   split_parameters[2])
 
         else:
-            raise ValueError("Cannot find Attribute Store for, {}".format(backend))
+            raise ValueError("Cannot find Attribute Store for", backend)
 
         _mapped_cached[new_uri] = _cached(store=store,
                                           reader=reader,
