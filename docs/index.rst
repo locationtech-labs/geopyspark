@@ -33,7 +33,7 @@ A Quick Example
 ----------------
 
 Here is a quick example of GeoPySpark. In the following code, we take NLCD data
-of the state of Pennslyvania from 2011, and do a polygonal summary of an area
+of the state of Pennsylvania from 2011, and do a polygonal summary of an area
 of interest to find the min and max classifications values of that area.
 
 If you wish to follow along with this example, you will need to download the
@@ -115,7 +115,7 @@ know what you're working on!) you can contact us at:
  * `Mailing list <https://locationtech.org/mailman/listinfo/geotrellis-user>`_
 
 As you may have noticed from the above links, those are links to the GeoTrellis
-gitter channel and mailing list. This is because this project is currently an
+Gitter channel and mailing list. This is because this project is currently an
 offshoot of GeoTrellis, and we will be using their mailing list and gitter
 channel as a means of contact. However, we will form our own if there is
 a need for it.

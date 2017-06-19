@@ -13,8 +13,8 @@ RasterRDD
 ~~~~~~~~~
 
 Of the two different RDD classes, ``RasterRDD`` has the least number of ways
-to be initialized. There are just two: through reading GeoTiffs from the local
-file system, S3, or HDFS; or from an existing PySpark RDD.
+to be initialized. There are just two: (1) through reading GeoTiffs from the local
+file system, S3, or HDFS; or (2) from an existing PySpark RDD.
 
 From GeoTiffs
 ^^^^^^^^^^^^^^
@@ -169,7 +169,7 @@ method.
 Through Euclidean Distance
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The final way to create ``TiledRasterRDD`` is by calculating the Euclidean of
+The final way to create ``TiledRasterRDD`` is by calculating the Euclidean distance of
 a Shapely geometry. :meth:`~geopyspark.geotrellis.rdd.TiledRasterRDd.euclidean_distance`
 is the class method which does this. While you can use any geometry to perform
 Euclidean distance, it is recommended **not** to use Polygons if they cover
@@ -238,7 +238,7 @@ Reclassifying Values
 ``reclassify`` can reclassify values in either ``RasterRDD`` or
 ``TiledRasterRDD``. This is done by binning each value in the RDD.
 
-The ``boundary_startegy`` will determine how each value will be binned. These
+The ``boundary_strategy`` will determine how each value will be binned. These
 are the strategies to choose from: ``GREATERTHAN``, ``GREATERTHANOREQUALTO``,
 ``LESSTHAN``, ``LESSTHANOREQUALTO``, and ``EXACT``.
 
@@ -260,15 +260,15 @@ with ``replace_nodata_with``.
    value_map = {5.0: 10.0, 15.0: 20.0}
 
    # Only 5.0 and 15.0 will be reclassified. Everything else will become -1000.0
-   tiled_rdd.relcassify(value_map=value_map, data_type=float, boundary_strategy=EXACT,
+   tiled_rdd.reclassify(value_map=value_map, data_type=float, boundary_strategy=EXACT,
                         replace_no_data_with=-1000.0)
 
 
 Min and Max
 ^^^^^^^^^^^^
 
-``get_min_max`` will produce the min and max values of the RDD. They always be
-returned as ``float``\s. Regardless of the type of the values.
+``get_min_max`` will produce the min and max values of the RDD. They will always be
+returned as ``float``\s. Regardless of the type of the input values.
 
 .. code:: python
 
@@ -278,7 +278,7 @@ returned as ``float``\s. Regardless of the type of the values.
 RasterRDD
 ~~~~~~~~~~
 
-The purpose of ``RasterRDD`` is store and format data to produce a
+The purpose of ``RasterRDD`` is to store and format data to produce a
 ``TiledRasterRDD``. Thus, this class lacks the methods needed to perform any
 kind of spatial analysis. It can be thought of as something of an "organizer".
 Which sorts and lays out the data so that ``TiledRasterRDD`` can perform
@@ -292,10 +292,10 @@ In order to convert a ``RasterRDD`` to a ``TiledRasterRDD`` the
 :class:`~geopyspark.geotrellis.Metadata` must first be collected; as it
 contains the information on how the data should be formatted and laid out in
 the ``TiledRasterRDD``. :meth:`~geopyspark.geotrellis.rdd.RasterRDD.collect_metadata`
-is used to obtain the metadata, and it can accept to different types of inputs
+is used to obtain the metadata, and it can accept two different types of inputs
 depending on how one wishes to layout the data.
 
-The first option is to specify an :class:`~geopyspark.geotrellis.Extent` and a
+The first option is to specify a :class:`~geopyspark.geotrellis.Extent` and an
 :obj:`~geopyspark.geotrellis.TileLayout` for the ``Metadata``. Where the
 ``Extent`` is the area that will be covered by the ``Tile``\s and the
 ``TileLayout`` describes the ``Tile``\s and the grid they're arranged on.

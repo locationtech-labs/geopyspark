@@ -22,7 +22,7 @@ Raster
 ------
 
 GeoPySpark differs in how it represents rasters from other geo-spatial Python
-libraries like rasterio. In GeoPySpark, they are represented as a ``dict``.
+libraries like rasterIO. In GeoPySpark, they are represented as a ``dict``.
 
 The fields used to represent rasters:
  - **no_data_value**: The value that represents no data in raster. This can be
