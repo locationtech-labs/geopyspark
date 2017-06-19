@@ -35,7 +35,7 @@ Here's the code to run the ingest.
   # one for each zoom level
   pyramided = reprojected.pyramid(start_zoom=12, end_zoom=1)
 
-  # Save each TiledRasterRDDs locally
+  # Save each TiledRasterRDD locally
   for tiled in pyramided:
       write("file:///tmp/python-catalog", "python-ingest", tiled)
 
@@ -80,7 +80,7 @@ Reading in the Data
  geopysc = GeoPyContext(appName="python-ingest", master="local[*]")
 
  # Read the GeoTiff from S3
- rdd = get(geopysc, SPATIAL, "s3:///tmp/cropped.tif")
+ rdd = get(geopysc, SPATIAL, "file:///tmp/cropped.tif")
 
 Before doing anything when using GeoPySpark, it's best to create a
 :class:`~geopysaprk.GeoPyContext` instance. This acts as a wrapper for
@@ -140,7 +140,7 @@ Pyramiding the Data
 
 .. code-block:: python
 
- # pyramid the TiledRasterRDD to create 12 new TiledRasterRDD
+ # pyramid the TiledRasterRDD to create 12 new TiledRasterRDDs
  # one for each zoom level
  pyramided = reprojected.pyramid(start_zoom=12, end_zoom=1)
 
