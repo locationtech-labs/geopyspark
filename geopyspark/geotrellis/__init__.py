@@ -51,6 +51,69 @@ class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
         return box(*self)
 
 
+class ProjectedExtent(namedtuple("ProjectedExtent", 'extent epsg proj4')):
+    """Describes both the area on Earth a raster represents in addition to its CRS.
+
+    Args:
+        extent (:cls:~geopyspark.geotrellis.Extent): The area the raster represents.
+        epsg (int, optional): The EPSG code of the CRS.
+        proj4 (str, optional): The Proj.4 string representation of the CRS.
+
+    Attributes:
+        extent (:cls:~geopyspark.geotrellis.Extent): The area the raster represents.
+        epsg (int, optional): The EPSG code of the CRS.
+        proj4 (str, optional): The Proj.4 string representation of the CRS.
+
+    Note:
+        Either ``epsg`` or ``proj4`` must be defined.
+    """
+
+    __slots__ = []
+
+    def __new__(cls, extent, epsg=None, proj4=None):
+        return super(ProjectedExtent, cls).__new__(cls, extent, epsg, proj4)
+
+    def _asdict(self):
+        if isinstance(self.extent, dict):
+            return {'extent': self.extent, 'epsg': self.epsg, 'proj4': self.proj4}
+        else:
+            return {'extent': self.extent._asdict(), 'epsg': self.epsg, 'proj4': self.proj4}
+
+
+class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent instant epsg proj4')):
+    """Describes the area on Earth the raster represents, its CRS, and the time the data was
+    collected.
+
+    Args:
+        extent (:cls:`~geopyspark.geotrellis.Extent`): The area the raster represents.
+        instance (int): The time stamp of the raster.
+        epsg (int, optional): The EPSG code of the CRS.
+        proj4 (str, optional): The Proj.4 string representation of the CRS.
+
+    Attributes:
+        extent (:cls:~geopyspark.geotrellis.Extent): The area the raster represents.
+        instance (int): The time stamp of the raster.
+        epsg (int, optional): The EPSG code of the CRS.
+        proj4 (str, optional): The Proj.4 string representation of the CRS.
+
+    Note:
+        Either ``epsg`` or ``proj4`` must be defined.
+    """
+
+    __slots__ = []
+
+    def __new__(cls, extent, instant, epsg=None, proj4=None):
+        return super(TemporalProjectedExtent, cls).__new__(cls, extent, instant, epsg, proj4)
+
+    def _asdict(self):
+        if isinstance(self.extent, dict):
+            return {'extent': self.extent, 'instant': self.instant, 'epsg': self.epsg,
+                    'proj4': self.proj4}
+        else:
+            return {'extent': self.extent._asdict(), 'instant': self.instant, 'epsg': self.epsg,
+                    'proj4': self.proj4}
+
+
 TileLayout = namedtuple("TileLayout", 'layoutCols layoutRows tileCols tileRows')
 """
 Describes the grid in which the rasters within a RDD should be laid out.
@@ -65,6 +128,7 @@ Returns:
     :obj:`~geopyspark.geotrellis.TileLayout`
 """
 
+
 LayoutDefinition = namedtuple("LayoutDefinition", 'extent tileLayout')
 """
 Describes the layout of the rasters within a RDD and how they are projected.
@@ -78,19 +142,64 @@ Returns:
     :obj:`~geopyspark.geotrellis.LayoutDefinition`
 """
 
-Bounds = namedtuple("Bounds", 'minKey maxKey')
-"""
-Represents the grid that covers the area of the rasters in a RDD on a grid.
+
+SpatialKey = namedtuple("SpatialKey", 'col row')
+"""Represents the position of a raster within a grid.
+
+This grid is a 2D plane where raster positions are represented by a pair of coordinates.
 
 Args:
-    minKey (:ref:`spatial-key` or :ref:`space-time-key`): The smallest ``SpatialKey`` or
-        ``SpaceTimeKey``.
-    maxKey (:ref:`spatial-key` or :ref:`space-time-key`): The largest ``SpatialKey`` or
-        ``SpaceTimeKey``.
+    col (int): The column of the grid, the numbers run east to west.
+    row (int): The row of the grid, the numbers run north to south.
 
 Returns:
-    :obj:`~geopyspark.geotrellis.Bounds`
+    :obj:`~geopyspark.geotrellis.SpatialKey`
 """
+
+
+SpaceTimeKey = namedtuple("SpaceTimeKey", 'col row instant')
+"""Represents the position of a raster within a grid.
+This grid is a 3D plane where raster positions are represented by a pair of coordinates as well as
+a z value that represents time.
+
+Args:
+    col (int): The column of the grid, the numbers run east to west.
+    row (int): The row of the grid, the numbers run north to south.
+    instance (int): The time stamp of the raster.
+
+Returns:
+    :obj:`~geopyspark.geotrellis.SpaceTimeKey`
+"""
+
+
+class Bounds(namedtuple("Bounds", 'minKey maxKey')):
+    """
+    Represents the grid that covers the area of the rasters in a RDD on a grid.
+
+    Args:
+        minKey (:obj:`~geopyspark.geotrellis.SpatialKey` or :obj:`~geopyspark.geotrellis.SpaceTimeKey`):
+            The smallest ``SpatialKey`` or ``SpaceTimeKey``.
+        minKey (:obj:`~geopyspark.geotrellis.SpatialKey` or :obj:`~geopyspark.geotrellis.SpaceTimeKey`):
+            The largest ``SpatialKey`` or ``SpaceTimeKey``.
+
+    Returns:
+        :cls:`~geopyspark.geotrellis.Bounds`
+    """
+
+    __slots__ = []
+
+    def _asdict(self):
+        if isinstance(self.minKey, dict):
+            min_key_dict = self.minKey
+        else:
+            min_key_dict = self.minKey._asdict()
+
+        if isinstance(self.maxKey, dict):
+            max_key_dict = self.maxKey
+        else:
+            max_key_dict = self.maxKey._asdict()
+
+        return {'minKey': min_key_dict, 'maxKey': max_key_dict}
 
 
 class Metadata(object):
@@ -146,7 +255,16 @@ class Metadata(object):
         crs = metadata_dict['crs']
         cell_type = metadata_dict['cellType']
 
-        bounds = Bounds(**metadata_dict['bounds'])
+        bounds_dict = metadata_dict['bounds']
+
+        if len(bounds_dict['minKey']) == 2:
+            min_key = SpatialKey(**bounds_dict['minKey'])
+            max_key = SpatialKey(**bounds_dict['maxKey'])
+        else:
+            min_key = SpaceTimeKey(**bounds_dict['minKey'])
+            max_key = SpaceTimeKey(**bounds_dict['maxKey'])
+
+        bounds = Bounds(min_key, max_key)
         extent = Extent(**metadata_dict['extent'])
 
         layout_definition = LayoutDefinition(
@@ -175,3 +293,20 @@ class Metadata(object):
             }
 
         return self._metadata_dict
+
+    def __repr__(self):
+        return "Metadata({}, {}, {}, {}, {}, {})".format(self.bounds, self.cell_type,
+                                                         self.crs, self.extent,
+                                                         self.tile_layout, self.layout_definition)
+
+
+    def __str__(self):
+        return ("Metadata("
+                "bounds={}"
+                "cellType={}"
+                "crs={}"
+                "extent={}"
+                "tileLayout={}"
+                "layoutDefinition={})").format(self.bounds, self.cell_type,
+                                               self.crs, self.extent,
+                                               self.tile_layout, self.layout_definition)

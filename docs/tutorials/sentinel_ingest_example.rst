@@ -64,8 +64,8 @@ The Code
 
 .. code:: python
 
-  import numpy as np
   import rasterio
+  import numpy as np
 
   from geopyspark.geopycontext import GeoPyContext
   from geopyspark.geotrellis.constants import SPATIAL, ZOOM

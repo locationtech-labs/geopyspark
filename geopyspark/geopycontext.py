@@ -97,7 +97,7 @@ class GeoPyContext(object):
 
         return self._jvm.geopyspark.geotrellis.SchemaProducer.getSchema(key_type)
 
-    def create_tuple_serializer(self, schema, key_type=None, value_type=None):
+    def create_tuple_serializer(self, schema, key_type, value_type):
         decoder = \
                 self.avroregistry.create_partial_tuple_decoder(key_type=key_type,
                                                                value_type=value_type)
