@@ -6,6 +6,7 @@ when performing operations.
 import json
 import shapely.wkt
 import shapely.wkb
+from geopyspark.protobufregistry import ProtoBufRegistry
 from geopyspark.geopyspark_utils import check_environment
 check_environment()
 
@@ -688,9 +689,8 @@ class TiledRasterRDD(CachableRDD):
             raise IndexError("row out of bounds")
 
         array_of_tiles = self.srdd.lookup(col, row)
-        ser = self.geopysc.create_value_serializer("MultibandTile")
 
-        return [ser.loads(tile)[0] for tile in array_of_tiles]
+        return [ProtoBufRegistry.multibandtile_decoder(tile) for tile in array_of_tiles]
 
     def tile_to_layout(self, layout, resample_method=NEARESTNEIGHBOR):
         """Cut tiles to a given layout and merge overlapping tiles. This will produce unique keys.
