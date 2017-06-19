@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from geopyspark.geotrellis import Extent, TileLayout
-from geopyspark.geotrellis.constants import SPATIAL
+from geopyspark.geotrellis.constants import SPATIAL, ZOOM
 from geopyspark.geotrellis.rdd import RasterRDD
 from geopyspark.tests.base_test_class import BaseTestClass
 
@@ -35,6 +35,28 @@ class PyramidingTest(BaseTestClass):
         laid_out = raster_rdd.tile_to_layout(metadata)
 
         result = laid_out.pyramid(start_zoom=5, end_zoom=1)
+
+        self.pyramid_building_check(result)
+
+    def test_no_start_zoom(self):
+        arr = np.zeros((1, 16, 16))
+        epsg_code = 3857
+        extent = Extent(0.0, 0.0, 10.0, 10.0)
+
+        tile = {'data': arr, 'no_data_value': False}
+        projected_extent = {'extent': extent, 'epsg': epsg_code}
+
+        rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        tile_layout = TileLayout(32, 32, 16, 16)
+        new_extent = Extent(-20037508.342789244, -20037508.342789244, 20037508.342789244,
+                            20037508.342789244)
+
+        metadata = raster_rdd.collect_metadata(extent=new_extent, layout=tile_layout)
+        laid_out = raster_rdd.tile_to_layout(metadata)
+        reprojected = laid_out.reproject(3857, scheme=ZOOM)
+
+        result = reprojected.pyramid(end_zoom=1)
 
         self.pyramid_building_check(result)
 

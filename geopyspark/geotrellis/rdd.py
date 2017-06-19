@@ -701,14 +701,15 @@ class TiledRasterRDD(CachableRDD):
 
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
-    def pyramid(self, start_zoom, end_zoom, resample_method=NEARESTNEIGHBOR):
+    def pyramid(self, end_zoom, start_zoom=None, resample_method=NEARESTNEIGHBOR):
         """Creates a pyramid of GeoTrellis layers where each layer reprsents a given zoom.
 
         Args:
-            start_zoom (int): The zoom level where pyramiding should begin. Represents
-                the level that is most zoomed in.
             end_zoom (int): The zoom level where pyramiding should end. Represents
                 the level that is most zoomed out.
+            start_zoom (int, Optional): The zoom level where pyramiding should begin. Represents
+                the level that is most zoomed in. If None, then will use the zoom level from
+                :meth:`~geopyspark.geotrellis.rdd.TiledRasterRDD.zoom_level`.
             resample_method (str, optional): The resample method to use for the reprojection.
                 This is represented by the following constants: ``NEARESTNEIGHBOR``, ``BILINEAR``,
                 ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
@@ -730,6 +731,13 @@ class TiledRasterRDD(CachableRDD):
 
         if (num_cols & (num_cols - 1)) != 0 or (num_rows & (num_rows - 1)) != 0:
             raise ValueError("Tiles must have a col and row count that is a power of 2")
+
+        if start_zoom:
+            start_zoom = start_zoom
+        elif self.zoom_level:
+            start_zoom = self.zoom_level
+        else:
+            raise ValueError("No start_zoom given.")
 
         result = self.srdd.pyramid(start_zoom, end_zoom, resample_method)
 
