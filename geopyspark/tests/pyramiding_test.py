@@ -4,7 +4,7 @@ import rasterio
 import numpy as np
 import pytest
 
-from geopyspark.geotrellis import Extent, TileLayout
+from geopyspark.geotrellis import Extent, ProjectedExtent, TileLayout
 from geopyspark.geotrellis.constants import SPATIAL, ZOOM
 from geopyspark.geotrellis.rdd import RasterRDD
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -43,8 +43,8 @@ class PyramidingTest(BaseTestClass):
         epsg_code = 3857
         extent = Extent(0.0, 0.0, 10.0, 10.0)
 
-        tile = {'data': arr, 'no_data_value': False}
-        projected_extent = {'extent': extent, 'epsg': epsg_code}
+        tile = {'data': arr, 'no_data_value': False, 'data_type': 'FLOAT'}
+        projected_extent = ProjectedExtent(extent, epsg_code)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
