@@ -21,6 +21,21 @@ def deprecated(func):
 
 
 Tile = namedtuple("Tile", 'data no_data_value data_type')
+"""Represents a raster in GeoPySpark.
+
+    Note: All rasters in GeoPySpark are represented as having multiple bands,
+    even if the original raster just contained one.
+
+    Args:
+        data (nd.array): The raster data itself. It is contained within a NumPy array.
+        no_data_value: The value that represents no data in raster. This can be
+            represented by a variety of types depending on the value type of the raster.
+        data_type (str): The data type of the values within ``data`` if they were in Scala.
+
+    Returns:
+        :obj:`~geopyspark.geotrellis.Tile`
+"""
+
 
 
 class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
