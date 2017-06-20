@@ -1,5 +1,5 @@
 """A wrapper for ``SparkContext`` that provides extra functionality for GeoPySpark."""
-from geopyspark.protobufserializer import ProtoBufSerializer
+from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geopyspark_utils import check_environment
 import geopyspark.geotrellis.converters
 

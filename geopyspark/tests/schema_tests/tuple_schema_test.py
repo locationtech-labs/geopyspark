@@ -6,12 +6,12 @@ import numpy as np
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from geopyspark.geotrellis import Extent, ProjectedExtent
-from geopyspark.protobufserializer import ProtoBufSerializer
-from geopyspark.protobufregistry import (create_partial_tuple_decoder,
-                                         create_partial_tuple_encoder,
-                                         from_pb_multibandtile,
-                                         to_pb_multibandtile,
-                                         to_pb_projected_extent)
+from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
+from geopyspark.geotrellis.protobufcodecs import (create_partial_tuple_decoder,
+                                                  create_partial_tuple_encoder,
+                                                  from_pb_multibandtile,
+                                                  to_pb_multibandtile,
+                                                  to_pb_projected_extent)
 from geopyspark.tests.base_test_class import BaseTestClass
 
 from geopyspark.protobuf import tupleMessages_pb2

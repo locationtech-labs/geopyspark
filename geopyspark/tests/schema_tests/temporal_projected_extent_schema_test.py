@@ -4,10 +4,10 @@ import pytest
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from geopyspark.geotrellis import Extent, TemporalProjectedExtent
-from geopyspark.protobufserializer import ProtoBufSerializer
-from geopyspark.protobufregistry import (temporal_projected_extent_decoder,
-                                         temporal_projected_extent_encoder,
-                                         to_pb_temporal_projected_extent)
+from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
+from geopyspark.geotrellis.protobufcodecs import (temporal_projected_extent_decoder,
+                                                  temporal_projected_extent_encoder,
+                                                  to_pb_temporal_projected_extent)
 from geopyspark.tests.base_test_class import BaseTestClass
 
 

@@ -4,8 +4,8 @@ import numpy as np
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
-from geopyspark.protobufserializer import ProtoBufSerializer
-from geopyspark.protobufregistry import tile_decoder, tile_encoder, to_pb_tile
+from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
+from geopyspark.geotrellis.protobufcodecs import tile_decoder, tile_encoder, to_pb_tile
 from geopyspark.tests.base_test_class import BaseTestClass
 
 

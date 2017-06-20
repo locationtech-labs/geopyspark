@@ -3,9 +3,10 @@ import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
-from geopyspark.protobufserializer import ProtoBufSerializer
-from geopyspark.protobufregistry import (extent_decoder, extent_encoder, to_pb_extent,
-                                         from_pb_extent)
+from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
+from geopyspark.geotrellis.protobufcodecs import (extent_decoder,
+                                                   extent_encoder, to_pb_extent,
+                                                   from_pb_extent)
 from geopyspark.geotrellis import Extent
 from geopyspark.tests.base_test_class import BaseTestClass
 

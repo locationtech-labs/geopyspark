@@ -6,8 +6,8 @@ when performing operations.
 import json
 import shapely.wkt
 import shapely.wkb
-from geopyspark.protobufregistry import multibandtile_decoder
-from geopyspark.protobufserializer import ProtoBufSerializer
+from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
+from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geopyspark_utils import check_environment
 check_environment()
 

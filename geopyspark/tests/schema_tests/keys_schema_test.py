@@ -4,9 +4,11 @@ import pytest
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from geopyspark.protobuf import keyMessages_pb2
-from geopyspark.protobufserializer import ProtoBufSerializer
-from geopyspark.protobufregistry import (spatial_key_decoder, spatial_key_encoder,
-                                         space_time_key_decoder, space_time_key_encoder)
+from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
+from geopyspark.geotrellis.protobufcodecs import (spatial_key_decoder,
+                                                  spatial_key_encoder,
+                                                  space_time_key_decoder,
+                                                  space_time_key_encoder)
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
