@@ -66,9 +66,9 @@ class CachableRDD(object):
 
     def wrapped_rdds(self):
         """
-        Returns the list of RDD-containing objects wrapped by this object.  
-        The default implementation assumes that subclass contains a single 
-        RDD container, srdd, which implements the persist() and unpersist() 
+        Returns the list of RDD-containing objects wrapped by this object.
+        The default implementation assumes that subclass contains a single
+        RDD container, srdd, which implements the persist() and unpersist()
         methods.
         """
         return [self.srdd]
@@ -104,6 +104,25 @@ class CachableRDD(object):
         for srdd in self.wrapped_rdds():
             srdd.unpersist()
         return self
+
+    def getNumPartitions(self):
+        """Returns the number of partitions set for the wrapped RDD.
+
+        Returns:
+            Int: The number of partitions.
+        """
+
+        return self.srdd.rdd().getNumPartitions()
+
+    def count(self):
+        """Returns how many elements are within the wrapped RDD.
+
+        Returns:
+            Int: The number of elements in the RDD.
+        """
+
+        return self.rdd.rdd().count()
+
 
 class RasterRDD(CachableRDD):
     """A wrapper of a RDD that contains GeoTrellis rasters.
