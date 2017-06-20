@@ -4,7 +4,7 @@ import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
-from geopyspark.protobuf import tileMessages_pb2
+from geopyspark.geotrellis.protobuf import tileMessages_pb2
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder, multibandtile_encoder
 from geopyspark.tests.base_test_class import BaseTestClass

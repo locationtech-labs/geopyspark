@@ -14,7 +14,7 @@ from geopyspark.geotrellis.protobufcodecs import (create_partial_tuple_decoder,
                                                   to_pb_projected_extent)
 from geopyspark.tests.base_test_class import BaseTestClass
 
-from geopyspark.protobuf import tupleMessages_pb2
+from geopyspark.geotrellis.protobuf import tupleMessages_pb2
 
 
 class TupleSchemaTest(BaseTestClass):

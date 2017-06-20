@@ -13,9 +13,9 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
-from geopyspark.protobuf import extentMessages_pb2 as extentMessages__pb2
-from geopyspark.protobuf import keyMessages_pb2 as keyMessages__pb2
-from geopyspark.protobuf import tileMessages_pb2 as tileMessages__pb2
+from geopyspark.geotrellis.protobuf import extentMessages_pb2 as extentMessages__pb2
+from geopyspark.geotrellis.protobuf import keyMessages_pb2 as keyMessages__pb2
+from geopyspark.geotrellis.protobuf import tileMessages_pb2 as tileMessages__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
