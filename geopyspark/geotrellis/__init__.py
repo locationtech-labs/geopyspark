@@ -1,10 +1,9 @@
 """This subpackage contains the code that reads, writes, and processes data using GeoTrellis."""
 from collections import namedtuple
 from shapely.geometry import box
-
-
 import warnings
 import functools
+
 
 def deprecated(func):
     """This is a decorator which can be used to mark functions
@@ -19,6 +18,9 @@ def deprecated(func):
         return func(*args, **kwargs)
 
     return new_func
+
+
+Tile = namedtuple("Tile", 'data no_data_value data_type')
 
 
 class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):

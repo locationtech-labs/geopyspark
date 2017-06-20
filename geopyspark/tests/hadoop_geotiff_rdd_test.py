@@ -68,8 +68,8 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
         rasterio_tiles = self.read_geotiff_rasterio(file_paths, False)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x['data'] == y['data']).all())
-            self.assertEqual(x['no_data_value'], y['no_data_value'])
+            self.assertTrue((x.data == y['data']).all())
+            self.assertEqual(x.no_data_value, y['no_data_value'])
 
     def windowed_result_checker(self, windowed_tiles):
         self.assertEqual(len(windowed_tiles), 4)
@@ -83,8 +83,8 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
         self.windowed_result_checker(geotrellis_tiles)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x['data'] == y['data']).all())
-            self.assertEqual(x['no_data_value'], y['no_data_value'])
+            self.assertTrue((x.data == y['data']).all())
+            self.assertEqual(x.no_data_value, y['no_data_value'])
 
 if __name__ == "__main__":
     unittest.main()

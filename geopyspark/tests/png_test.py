@@ -4,7 +4,7 @@ import rasterio
 import numpy as np
 import pytest
 
-from geopyspark.geotrellis import Extent, ProjectedExtent
+from geopyspark.geotrellis import Extent, ProjectedExtent, Tile
 from geopyspark.geotrellis.constants import SPATIAL, HOT
 from geopyspark.geotrellis.rdd import RasterRDD
 from geopyspark.geotrellis.render import PngRDD
@@ -25,7 +25,7 @@ class PngRddTest(BaseTestClass):
         extent = Extent(0.0, 0.0, 10.0, 10.0)
         projected_extent = ProjectedExtent(extent, epsg_code)
 
-        tile = {'data': arr, 'no_data_value': False, 'data_type': 'FLOAT'}
+        tile = Tile(arr, False, 'FLOAT')
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)

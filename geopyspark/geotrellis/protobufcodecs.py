@@ -6,7 +6,7 @@ from geopyspark.geopyspark_utils import check_environment
 check_environment()
 
 from geopyspark.geotrellis import (Extent, ProjectedExtent, TemporalProjectedExtent, SpatialKey,
-                                   SpaceTimeKey)
+                                   SpaceTimeKey, Tile)
 
 from geopyspark.protobuf.tileMessages_pb2 import ProtoTile, ProtoMultibandTile, ProtoCellType
 from geopyspark.protobuf.extentMessages_pb2 import (ProtoExtent, ProtoProjectedExtent,
@@ -69,19 +69,23 @@ def tile_decoder(proto_bytes):
     arr = np.array([from_pb_tile(tile, data_type)])
 
     if tile.cellType.hasNoData:
-        return {'data': arr, 'no_data_value': tile.cellType.nd, 'data_type': data_type}
+        return Tile(arr, tile.cellType.nd, data_type)
+        #return {'data': arr, 'no_data_value': tile.cellType.nd, 'data_type': data_type}
     else:
-        return {'data': arr, 'data_type': data_type}
+        return Tile(arr, tile.cellType.nd, None)
+        #return {'data': arr, 'data_type': data_type}
 
 def from_pb_multibandtile(multibandtile):
     data_type = _mapped_data_types[multibandtile.tiles[0].cellType.dataType]
     bands = np.array([from_pb_tile(tile, data_type) for tile in multibandtile.tiles])
 
     if multibandtile.tiles[0].cellType.hasNoData:
-        return {'data': bands, 'no_data_value': multibandtile.tiles[0].cellType.nd,
-                'data_type': data_type}
+        return Tile(bands, multibandtile.tiles[0].cellType.nd, data_type)
+        #return {'data': bands, 'no_data_value': multibandtile.tiles[0].cellType.nd,
+                #'data_type': data_type}
     else:
-        return {'data': bands, 'data_type': data_type}
+        return Tile(bands, multibandtile.tiles[0].cellType.nd, None)
+        #return {'data': bands, 'data_type': data_type}
 
 def multibandtile_decoder(proto_bytes):
     """Decodes a ``TILE`` into Python.
@@ -299,8 +303,10 @@ def _get_decoder(name):
 # ENCODERS
 
 def to_pb_tile(obj):
-    arr = obj['data']
-    data_type = obj['data_type']
+    #arr = obj['data']
+    arr = obj.data
+    #data_type = obj['data_type']
+    data_type = obj.data_type
 
     if len(arr.shape) > 2:
         (_, rows, cols) = arr.shape
@@ -313,9 +319,11 @@ def to_pb_tile(obj):
     tile.cols = cols
     tile.rows = rows
 
-    if obj.get('no_data_value'):
+    #if obj.get('no_data_value'):
+    if obj.no_data_value:
         cell_type.hasNoData = True
-        cell_type.nd = obj['no_data_value']
+        #cell_type.nd = obj['no_data_value']
+        cell_type.nd = obj.no_data_value
     else:
         cell_type.hasNoData = False
 
@@ -362,17 +370,17 @@ def tile_encoder(obj):
 
 
 def to_pb_multibandtile(obj):
-    if obj['data'].ndim == 2:
-        obj['data'] = np.expand_dims(obj['data'], 0)
+    data = obj.data
+    if data.ndim == 2:
+        data = np.expand_dims(data, 0)
 
-    band_count = obj['data'].shape[0]
+    band_count = data.shape[0]
 
-    def create_dict(index):
-        return {'data': obj['data'][index, :, :], 'no_data_value': obj['no_data_value'],
-                'data_type': obj['data_type']}
+    def create_tile(index):
+        return Tile(data[index, :, :], obj.no_data_value, obj.data_type)
 
     multibandtile = ProtoMultibandTile()
-    multibandtile.tiles.extend([to_pb_tile(create_dict(x)) for x in range(band_count)])
+    multibandtile.tiles.extend([to_pb_tile(create_tile(x)) for x in range(band_count)])
 
     return multibandtile
 

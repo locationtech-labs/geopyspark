@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import unittest
 
-from geopyspark.geotrellis import Extent, ProjectedExtent
+from geopyspark.geotrellis import Extent, ProjectedExtent, Tile
 from geopyspark.geotrellis.rdd import RasterRDD
 from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -22,7 +22,7 @@ class MinMaxTest(BaseTestClass):
 
     def test_all_zeros(self):
         arr = np.zeros((1, 16, 16)).astype('int')
-        tile = {'data': arr, 'no_data_value': -500, 'data_type': 'INT'}
+        tile = Tile(arr, -500, 'INT')
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
@@ -35,7 +35,7 @@ class MinMaxTest(BaseTestClass):
                         [[2, 2, 2, 2]],
                         [[3, 3, 3, 3]],
                         [[4, 4, 4, 4]]], dtype=int)
-        tile = {'data': arr, 'no_data_value': -500, 'data_type': 'INT'}
+        tile = Tile(arr, -500, 'INT')
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
@@ -49,7 +49,7 @@ class MinMaxTest(BaseTestClass):
                          [1.5, 1.5, 1.5, 1.5],
                          [2.0, 2.0, 2.0, 2.0]]], dtype=float)
 
-        tile = {'data': arr, 'no_data_value': float('nan'), 'data_type': 'FLOAT'}
+        tile = Tile(arr, float('nan'), 'FLOAT')
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
         min_max = raster_rdd.get_min_max()

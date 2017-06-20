@@ -74,7 +74,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
         rasterio_tiles = self.read_geotiff_rasterio([self.file_path], False)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x['data'] == y['data']).all())
+            self.assertTrue((x.data == y['data']).all())
 
     def windowed_result_checker(self, windowed_tiles):
         self.assertEqual(len(windowed_tiles), 4)
@@ -86,7 +86,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
         self.windowed_result_checker(geotrellis_tiles)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x['data'] == y['data']).all())
+            self.assertTrue((x.data == y['data']).all())
 
 
 if __name__ == "__main__":
