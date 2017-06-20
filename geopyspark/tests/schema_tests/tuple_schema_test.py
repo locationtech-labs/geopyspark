@@ -7,7 +7,11 @@ from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from geopyspark.geotrellis import Extent, ProjectedExtent
 from geopyspark.protobufserializer import ProtoBufSerializer
-from geopyspark.protobufregistry import ProtoBufRegistry
+from geopyspark.protobufregistry import (create_partial_tuple_decoder,
+                                         create_partial_tuple_encoder,
+                                         from_pb_multibandtile,
+                                         to_pb_multibandtile,
+                                         to_pb_projected_extent)
 from geopyspark.tests.base_test_class import BaseTestClass
 
 from geopyspark.protobuf import tupleMessages_pb2
@@ -30,8 +34,8 @@ class TupleSchemaTest(BaseTestClass):
 
     java_rdd = ew.testOut(sc)
 
-    decoder = ProtoBufRegistry.create_partial_tuple_decoder(key_type="ProjectedExtent")
-    encoder = ProtoBufRegistry.create_partial_tuple_encoder(key_type="ProjectedExtent")
+    decoder = create_partial_tuple_decoder(key_type="ProjectedExtent")
+    encoder = create_partial_tuple_encoder(key_type="ProjectedExtent")
 
     ser = ProtoBufSerializer(decoder, encoder)
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
@@ -43,8 +47,8 @@ class TupleSchemaTest(BaseTestClass):
         proto_tuple = tupleMessages_pb2.ProtoTuple()
 
         self.extent['extent'] = Extent(**self.extent['extent'])
-        proto_extent = ProjectedExtent(**self.extent).to_protobuf_projected_extent
-        proto_multiband = ProtoBufRegistry._multibandtile_encoder(self.multiband_dict)
+        proto_extent = to_pb_projected_extent(ProjectedExtent(**self.extent))
+        proto_multiband = to_pb_multibandtile(self.multiband_dict)
 
         proto_tuple.projectedExtent.CopyFrom(proto_extent)
         proto_tuple.tiles.CopyFrom(proto_multiband)

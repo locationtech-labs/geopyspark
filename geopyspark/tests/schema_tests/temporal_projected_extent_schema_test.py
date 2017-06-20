@@ -5,7 +5,9 @@ from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from geopyspark.geotrellis import Extent, TemporalProjectedExtent
 from geopyspark.protobufserializer import ProtoBufSerializer
-from geopyspark.protobufregistry import ProtoBufRegistry
+from geopyspark.protobufregistry import (temporal_projected_extent_decoder,
+                                         temporal_projected_extent_encoder,
+                                         to_pb_temporal_projected_extent)
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -19,8 +21,8 @@ class TemporalProjectedExtentSchemaTest(BaseTestClass):
     ew = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.TemporalProjectedExtentWrapper
 
     java_rdd = ew.testOut(sc)
-    ser = ProtoBufSerializer(ProtoBufRegistry.temporal_projected_extent_decoder,
-                             ProtoBufRegistry.extent_encoder)
+    ser = ProtoBufSerializer(temporal_projected_extent_decoder,
+                             temporal_projected_extent_encoder)
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = [tpex._asdict() for tpex in rdd.collect()]
@@ -35,13 +37,13 @@ class TemporalProjectedExtentSchemaTest(BaseTestClass):
             self.assertDictEqual(actual, expected)
 
     def test_encoded_tpextents(self):
-        actual_encoded = [ProtoBufRegistry.temporal_projected_extent_encoder(x) for x in self.rdd.collect()]
+        actual_encoded = [temporal_projected_extent_encoder(x) for x in self.rdd.collect()]
 
         for x in range(0, len(self.expected_tpextents)):
             self.expected_tpextents[x]['extent'] = Extent(**self.expected_tpextents[x]['extent'])
 
         expected_encoded = [
-            TemporalProjectedExtent(**ex).to_protobuf_temporal_projected_extent.SerializeToString() \
+            to_pb_temporal_projected_extent(TemporalProjectedExtent(**ex)).SerializeToString() \
             for ex in self.expected_tpextents
         ]
 

@@ -5,7 +5,8 @@ from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from geopyspark.protobuf import keyMessages_pb2
 from geopyspark.protobufserializer import ProtoBufSerializer
-from geopyspark.protobufregistry import ProtoBufRegistry
+from geopyspark.protobufregistry import (spatial_key_decoder, spatial_key_encoder,
+                                         space_time_key_decoder, space_time_key_encoder)
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -16,8 +17,8 @@ class SpatialKeySchemaTest(BaseTestClass):
     ew = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.SpatialKeyWrapper
 
     java_rdd = ew.testOut(sc)
-    ser = ProtoBufSerializer(ProtoBufRegistry.spatial_key_decoder,
-                             ProtoBufRegistry.spatial_key_encoder)
+    ser = ProtoBufSerializer(spatial_key_decoder,
+                             spatial_key_encoder)
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.first()._asdict()
@@ -31,7 +32,7 @@ class SpatialKeySchemaTest(BaseTestClass):
         self.assertDictEqual(actual_keys, expected_keys)
 
     def test_encoded_keyss(self):
-        actual_encoded = [ProtoBufRegistry.spatial_key_encoder(x) for x in self.rdd.collect()]
+        actual_encoded = [spatial_key_encoder(x) for x in self.rdd.collect()]
         proto_spatial_key = keyMessages_pb2.ProtoSpatialKey()
 
         proto_spatial_key.col = 7
@@ -56,8 +57,8 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
     ew = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.SpaceTimeKeyWrapper
 
     java_rdd = ew.testOut(sc)
-    ser = ProtoBufSerializer(ProtoBufRegistry.space_time_key_decoder,
-                             ProtoBufRegistry.space_time_key_encoder)
+    ser = ProtoBufSerializer(space_time_key_decoder,
+                             space_time_key_encoder)
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = [stk._asdict() for stk in rdd.collect()]
@@ -72,7 +73,7 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
             self.assertDictEqual(actual, expected)
 
     def test_encoded_keyss(self):
-        expected_encoded = [ProtoBufRegistry.space_time_key_encoder(x) for x in self.rdd.collect()]
+        expected_encoded = [space_time_key_encoder(x) for x in self.rdd.collect()]
         actual_encoded = []
 
         for x in self.expected_keys:

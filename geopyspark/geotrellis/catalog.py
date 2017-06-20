@@ -5,7 +5,7 @@ import json
 from collections import namedtuple
 from urllib.parse import urlparse
 
-from geopyspark.protobufregistry import ProtoBufRegistry
+from geopyspark.protobufregistry import multibandtile_decoder
 from geopyspark.geotrellis import Metadata, Extent
 from geopyspark.geotrellis.rdd import TiledRasterRDD
 from geopyspark.geotrellis.constants import TILE, ZORDER, SPATIAL
@@ -339,7 +339,7 @@ def read_value(geopysc,
                                               row,
                                               zdt)
 
-        return ProtoBufRegistry.multibandtile_decoder(values)
+        return multibandtile_decoder(values)
 
 def query(geopysc,
           rdd_type,

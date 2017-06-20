@@ -6,7 +6,8 @@ when performing operations.
 import json
 import shapely.wkt
 import shapely.wkb
-from geopyspark.protobufregistry import ProtoBufRegistry
+from geopyspark.protobufregistry import multibandtile_decoder
+from geopyspark.protobufserializer import ProtoBufSerializer
 from geopyspark.geopyspark_utils import check_environment
 check_environment()
 
@@ -200,7 +201,7 @@ class RasterRDD(CachableRDD):
         """
 
         key = geopysc.map_key_input(rdd_type, False)
-        ser = geopysc.create_tuple_serializer(key_type=key)
+        ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
         if rdd_type == SPATIAL:
@@ -227,7 +228,7 @@ class RasterRDD(CachableRDD):
 
         result = self.srdd.toProtoRDD()
         key = self.geopysc.map_key_input(self.rdd_type, False)
-        ser = self.geopysc.create_tuple_serializer(key_type=key)
+        ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
 
         return self.geopysc.create_python_rdd(result, ser)
 
@@ -513,7 +514,7 @@ class TiledRasterRDD(CachableRDD):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
         """
         key = geopysc.map_key_input(rdd_type, True)
-        ser = geopysc.create_tuple_serializer(key_type=key)
+        ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
         if isinstance(metadata, Metadata):
@@ -567,7 +568,7 @@ class TiledRasterRDD(CachableRDD):
         """
         result = self.srdd.toProtoRDD()
         key = self.geopysc.map_key_input(self.rdd_type, True)
-        ser = self.geopysc.create_tuple_serializer(key_type=key)
+        ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
 
         return self.geopysc.create_python_rdd(result, ser)
 
@@ -690,7 +691,7 @@ class TiledRasterRDD(CachableRDD):
 
         array_of_tiles = self.srdd.lookup(col, row)
 
-        return [ProtoBufRegistry.multibandtile_decoder(tile) for tile in array_of_tiles]
+        return [multibandtile_decoder(tile) for tile in array_of_tiles]
 
     def tile_to_layout(self, layout, resample_method=NEARESTNEIGHBOR):
         """Cut tiles to a given layout and merge overlapping tiles. This will produce unique keys.
@@ -837,7 +838,7 @@ class TiledRasterRDD(CachableRDD):
             raise ValueError("Only TiledRasterRDDs with a rdd_type of Spatial can use stitch()")
 
         value = self.srdd.stitch()
-        ser = self.geopysc.create_value_serializer(TILE)
+        ser = ProtoBufSerializer.create_value_serializer(TILE)
         return ser.loads(value)[0]
 
     def mask(self, geometries):

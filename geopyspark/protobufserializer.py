@@ -1,8 +1,13 @@
 """The class which serializes/deserializes values in a RDD to/from Python."""
 from geopyspark.geopyspark_utils import check_environment
 check_environment()
+from geopyspark.protobufregistry import (create_partial_tuple_decoder,
+                                         create_partial_tuple_encoder,
+                                         _get_encoder,
+                                         _get_decoder)
 
 from pyspark.serializers import FramedSerializer
+from pyspark.serializers import AutoBatchedSerializer
 
 
 class ProtoBufSerializer(FramedSerializer):
@@ -24,6 +29,20 @@ class ProtoBufSerializer(FramedSerializer):
 
         self.decoding_method = decoding_method
         self.encoding_method = encoding_method
+
+    @classmethod
+    def create_tuple_serializer(cls, key_type):
+        decoder = create_partial_tuple_decoder(key_type=key_type)
+        encoder = create_partial_tuple_encoder(key_type=key_type)
+
+        return AutoBatchedSerializer(cls(decoder, encoder))
+
+    @classmethod
+    def create_value_serializer(cls, value_type):
+        decoder = _get_decoder(value_type)
+        encoder = _get_encoder(value_type)
+
+        return cls(decoder, encoder)
 
     def _dumps(self, obj):
         return self.encoding_method(obj)
