@@ -4,22 +4,37 @@ import io
 
 from py4j.clientserver import ClientServer, JavaParameters, PythonParameters
 
-# Return URL of tile server for a layer
-## http://localhost:2342/s3/azavea-datahub/catalog/tms/{z}/{x}/{y}
-def layer_tms(rdd_type, uri, layer_name, render_function=None, cmap=None):
-    # we neeed the setup so we can report common errors
-    pass
-
-def use_case():
-    url = layer_tms(SPATIAL, "s3://azavea-datahub/catalog", "us-ned-tms-epsg3857", cmap="viridean")
-
 class TileRender(object):
+    """A Python implementation of the Scala geopyspark.geotrellis.tms.TileRender
+    interface.  Permits a callback from Scala to Python to allow for custom
+    rendering functions.
+    """
 
     def __init__(self, render_function):
+        """Default constructor.
+
+        Args:
+            render_function (numpy array => bytes): A function to convert a numpy
+                array to a collection of bytes giving a binary image file.
+
+        Returns:
+            [TileRender]
+        """
         # render_function: numpyarry => Image
         self.render_function = render_function
 
     def render(self, cells, cols, rows): # return `bytes`
+        """A function to convert an array to an image.
+
+        Args:
+            cells (bytes): A linear array of bytes representing the contents of 
+                a tile
+            rows (int): The number of rows in the final array
+            cols (int): The number of cols in the final array
+
+        Returns:
+            [bytes] representing an image
+        """
         try:
             # tile = np.array(list(cells)) # turn tile to array with bands
             print("Reshaping to {}x{} matrix".format(rows, cols))
@@ -48,9 +63,31 @@ class TMSServer(object):
         self.handshake = handshake
 
 def make_s3_tms(geopysc, bucket, root, catalog, colormap):
+    """A function to create a TMS server for a catalog stored in an S3 bucket.
+
+    Args:
+        bucket (string): The name of the S3 bucket
+        root (string): The key in the bucket containing the catalog
+        catalog (string): The name of the catalog
+        colormap (ColorMap): A ColorMap to use in rendering the catalog tiles
+
+    Returns:
+        [TMSServer]
+    """
     server = geopysc._jvm.geopyspark.geotrellis.tms.TMSServer.serveS3Catalog(bucket, root, catalog, colormap.cmap)
     return TMSServer(geopysc, server)
 
 def remote_tms_server(geopysc, pattern_url):
+    """A function to create a TMS server delivering tiles from a remote TMS server
+
+    Args:
+        pattern_url (string): A string giving the form of the URL where tiles 
+            are stored.  The pattern should contain the literals '{z}', '{x}', 
+            and '{y}' giving the zoom, x, and y keys of the desired tile, 
+            respectively.
+
+    Returns:
+        [TMSServer]
+    """
     server = geopysc._jvm.geopyspark.geotrellis.tms.TMSServer.serveRemoteTMSLayer(pattern_url)
     return TMSServer(geopysc, server)

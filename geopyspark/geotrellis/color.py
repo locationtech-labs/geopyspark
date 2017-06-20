@@ -92,52 +92,107 @@ def get_hex(geopysc, ramp_name, num_colors=None):
     else:
         return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(ramp_name))
 
+"""A dict giving the color mapping from NLCD values to colors
+"""
+nlcd_color_map =  { 0  : 0x00000000,
+                    11 : 0x526095FF,     # Open Water
+                    12 : 0xFFFFFFFF,     # Perennial Ice/Snow
+                    21 : 0xD28170FF,     # Low Intensity Residential
+                    22 : 0xEE0006FF,     # High Intensity Residential
+                    23 : 0x990009FF,     # Commercial/Industrial/Transportation
+                    31 : 0xBFB8B1FF,     # Bare Rock/Sand/Clay
+                    32 : 0x969798FF,     # Quarries/Strip Mines/Gravel Pits
+                    33 : 0x382959FF,     # Transitional
+                    41 : 0x579D57FF,     # Deciduous Forest
+                    42 : 0x2A6B3DFF,     # Evergreen Forest
+                    43 : 0xA6BF7BFF,     # Mixed Forest
+                    51 : 0xBAA65CFF,     # Shrubland
+                    61 : 0x45511FFF,     # Orchards/Vineyards/Other
+                    71 : 0xD0CFAAFF,     # Grasslands/Herbaceous
+                    81 : 0xCCC82FFF,     # Pasture/Hay
+                    82 : 0x9D5D1DFF,     # Row Crops
+                    83 : 0xCD9747FF,     # Small Grains
+                    84 : 0xA7AB9FFF,     # Fallow
+                    85 : 0xE68A2AFF,     # Urban/Recreational Grasses
+                    91 : 0xB6D8F5FF,     # Woody Wetlands
+                    92 : 0xB6D8F5FF }    # Emergent Herbaceous Wetlands
+
 class ColorMap(object):
+    """A class to represent a color map
+    """
     def __init__(self, cmap):
         self.cmap = cmap
 
     @classmethod
-    def from_break_map(cls, geopysc, break_map, noDataColor=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+    def from_break_map(cls, geopysc, break_map, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+        """Converts a dictionary mapping from tile values to colors to a ColorMap.
+        
+        Args:
+            geopysc (GeoPyContext)
+            break_map (dict): A mapping from tile values to colors, the latter 
+                represented as integers---e.g., 0xff000080 is red at half opacity.
+            no_data_color(int, optional): A color to replace NODATA values with
+            fallback (int, optional): A color to replace cells that have no 
+                value in the mapping
+            class_boundary_type (string, optional): A string giving the strategy 
+                for converting tile values to colors.  E.g., if 
+                LESSTHANOREQUALTO is specified, and the break map is 
+                {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red, 
+                values from above 3 and up to and including 4 become green, and 
+                values over 4 become the fallback color.
+
+        Returns:
+            [ColorMap]
+        """
         if all(isinstance(x, int) for x in break_map.keys()):
-            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromMap(break_map, noDataColor, fallback, class_boundary_type))
+            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromMap(break_map, no_data_color, fallback, class_boundary_type))
         elif all(isinstance(x, float) for x in break_map.keys()):
-            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromMapDouble(break_map, noDataColor, fallback, class_boundary_type))
+            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromMapDouble(break_map, no_data_color, fallback, class_boundary_type))
         else:
             raise TypeError("Break map keys must be either int or float.")
     
     @classmethod
-    def from_colors(cls, geopysc, breaks, color_list, noDataColor=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+    def from_colors(cls, geopysc, breaks, color_list, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+        """Converts lists of values and colors to a ColorMap.
+        
+        Args:
+            geopysc (GeoPyContext)
+            breaks (list): The tile values that specify breaks in the color 
+                mapping
+            color_list (int list): The colors corresponding to the values in the 
+                breaks list, represented as integers---e.g., 0xff000080 is red 
+                at half opacity.
+            no_data_color(int, optional): A color to replace NODATA values with
+            fallback (int, optional): A color to replace cells that have no 
+                value in the mapping
+            class_boundary_type (string, optional): A string giving the strategy 
+                for converting tile values to colors.  E.g., if 
+                LESSTHANOREQUALTO is specified, and the break map is 
+                {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red, 
+                values from above 3 and up to and including 4 become green, and 
+                values over 4 become the fallback color.
+
+        Returns:
+            [ColorMap]
+        """
         if all(isinstance(x, int) for x in breaks):
-            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromBreaks(breaks, color_list, noDataColor, fallback, class_boundary_type))
+            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromBreaks(breaks, color_list, no_data_color, fallback, class_boundary_type))
         else:
-            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromBreaksDouble([float(br) for br in breaks], color_list, noDataColor, fallback, class_boundary_type))
+            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromBreaksDouble([float(br) for br in breaks], color_list, no_data_color, fallback, class_boundary_type))
 
     @classmethod
-    def from_histogram(cls, geopysc, histogram, color_list, noDataColor=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+    def from_histogram(cls, geopysc, histogram, color_list, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+        # TODO: Implement this!
         pass
 
     @staticmethod
     def nlcd_colormap(geopysc):
-        nlcd_color_map =  { 0  : 0x00000000,
-                            11 : 0x526095FF,     # Open Water
-                            12 : 0xFFFFFFFF,     # Perennial Ice/Snow
-                            21 : 0xD28170FF,     # Low Intensity Residential
-                            22 : 0xEE0006FF,     # High Intensity Residential
-                            23 : 0x990009FF,     # Commercial/Industrial/Transportation
-                            31 : 0xBFB8B1FF,     # Bare Rock/Sand/Clay
-                            32 : 0x969798FF,     # Quarries/Strip Mines/Gravel Pits
-                            33 : 0x382959FF,     # Transitional
-                            41 : 0x579D57FF,     # Deciduous Forest
-                            42 : 0x2A6B3DFF,     # Evergreen Forest
-                            43 : 0xA6BF7BFF,     # Mixed Forest
-                            51 : 0xBAA65CFF,     # Shrubland
-                            61 : 0x45511FFF,     # Orchards/Vineyards/Other
-                            71 : 0xD0CFAAFF,     # Grasslands/Herbaceous
-                            81 : 0xCCC82FFF,     # Pasture/Hay
-                            82 : 0x9D5D1DFF,     # Row Crops
-                            83 : 0xCD9747FF,     # Small Grains
-                            84 : 0xA7AB9FFF,     # Fallow
-                            85 : 0xE68A2AFF,     # Urban/Recreational Grasses
-                            91 : 0xB6D8F5FF,     # Woody Wetlands
-                            92 : 0xB6D8F5FF }    # Emergent Herbaceous Wetlands
+        """Returns a color map for NLCD tiles.
+
+        Args:
+            geopysc (GeoPyContext)
+
+        Returns:
+            [ColorMap]
+        """
         return ColorMap.from_break_map(geopysc, nlcd_color_map)
