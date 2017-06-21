@@ -3,6 +3,7 @@ import numpy as np
 import io
 
 from py4j.clientserver import ClientServer, JavaParameters, PythonParameters
+from geopyspark.geotrellis.rdd import Pyramid
 
 class TileRender(object):
     """A Python implementation of the Scala geopyspark.geotrellis.tms.TileRender
@@ -27,7 +28,7 @@ class TileRender(object):
         """A function to convert an array to an image.
 
         Args:
-            cells (bytes): A linear array of bytes representing the contents of 
+            cells (bytes): A linear array of bytes representing the contents of
                 a tile
             rows (int): The number of rows in the final array
             cols (int): The number of cols in the final array
@@ -62,7 +63,7 @@ class TMSServer(object):
         self.server.set_handshake(handshake)
         self.handshake = handshake
 
-def make_s3_tms(geopysc, bucket, root, catalog, colormap):
+def s3_catalog_tms_server(geopysc, bucket, root, catalog, colormap):
     """A function to create a TMS server for a catalog stored in an S3 bucket.
 
     Args:
@@ -81,9 +82,9 @@ def remote_tms_server(geopysc, pattern_url):
     """A function to create a TMS server delivering tiles from a remote TMS server
 
     Args:
-        pattern_url (string): A string giving the form of the URL where tiles 
-            are stored.  The pattern should contain the literals '{z}', '{x}', 
-            and '{y}' giving the zoom, x, and y keys of the desired tile, 
+        pattern_url (string): A string giving the form of the URL where tiles
+            are stored.  The pattern should contain the literals '{z}', '{x}',
+            and '{y}' giving the zoom, x, and y keys of the desired tile,
             respectively.
 
     Returns:
@@ -93,7 +94,9 @@ def remote_tms_server(geopysc, pattern_url):
     return TMSServer(geopysc, server)
 
 
-def make_rdd_tms(geopysc, levels, colormap):
-    levels_dict = dict([(lvl.zoom_level, lvl.srdd.rdd()) for lvl in levels])
-    server = geopysc._jvm.geopyspark.geotrellis.tms.TMSServer.serveSpatialRdd(levels_dict, colormap.cmap, 0)
+def rdd_tms_server(geopysc, pyramid, colormap):
+    if isinstance(pyramid, list):
+        pyramid = Pyramid(pyramid)
+    rdd_levels = {k: v.srdd.rdd() for k, v in pyramid.levels.items()}
+    server = geopysc._jvm.geopyspark.geotrellis.tms.TMSServer.serveSpatialRdd(rdd_levels, colormap.cmap, 0)
     return TMSServer(geopysc, server)
