@@ -31,7 +31,8 @@ from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                             )
 from geopyspark.geotrellis.neighborhoods import Neighborhood
 
-def rasterize(geopysc, geoms, crs, zoom, fill_value, cell_type='float64', options=None):
+
+def rasterize(geopysc, geoms, crs, zoom, fill_value, cell_type='float64', options=None, numPartitions=None):
     """Rasterizes a Shapely geometries.
 
     Args:
@@ -50,7 +51,7 @@ def rasterize(geopysc, geoms, crs, zoom, fill_value, cell_type='float64', option
         crs = str(crs)
 
     wkb_geoms = [shapely.wkb.dumps(g) for g in geoms]
-    srdd = geopysc._jvm.SpatialTiledRasterRDD.rasterizeGeometry(geopysc.sc, wkb_geoms, crs, zoom, float(fill_value), cell_type, options)
+    srdd = geopysc._jvm.SpatialTiledRasterRDD.rasterizeGeometry(geopysc.sc, wkb_geoms, crs, zoom, float(fill_value), cell_type, options, numPartitions)
     return TiledRasterRDD(geopysc, SPATIAL, srdd)
 
 def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_with):
