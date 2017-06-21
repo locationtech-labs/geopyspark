@@ -12,8 +12,9 @@ def deprecated(func):
 
     @functools.wraps(func)
     def new_func(*args, **kwargs):
-        warnings.simplefilter('always', DeprecationWarning) #turn off filter 
-        warnings.warn("Call to deprecated function {}.".format(func.__name__), category=DeprecationWarning, stacklevel=2)
+        warnings.simplefilter('always', DeprecationWarning) #turn off filter
+        warnings.warn("Call to deprecated function {}.".format(func.__name__),
+                      category=DeprecationWarning, stacklevel=2)
         warnings.simplefilter('default', DeprecationWarning) #reset filter
         return func(*args, **kwargs)
 
@@ -35,7 +36,6 @@ Tile = namedtuple("Tile", 'data no_data_value data_type')
     Returns:
         :obj:`~geopyspark.geotrellis.Tile`
 """
-
 
 
 class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
@@ -217,6 +217,7 @@ Returns:
     :obj:`~geopyspark.geotrellis.SpaceTimeKey`
 """
 
+
 RasterizerOptions = namedtuple("RasterizeOption", 'includePartial sampleType')
 """Represents options available to geometry rasterizer
 
@@ -225,6 +226,7 @@ Args:
     sampleType (str): 'PixelIsArea' or 'PixelIsPoint' (default: 'PixelIsPoint')
 """
 RasterizerOptions.__new__.__defaults__ = (True, 'PixelIsPoint')
+
 
 class Bounds(namedtuple("Bounds", 'minKey maxKey')):
     """
