@@ -88,9 +88,9 @@ def get_hex(geopysc, ramp_name, num_colors=None):
     """
 
     if num_colors:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(ramp_name, num_colors))
+        return list(geopysc._jvm.geopyspark.geotrellis.ColorRampUtils.getHex(ramp_name, num_colors))
     else:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(ramp_name))
+        return list(geopysc._jvm.geopyspark.geotrellis.ColorRampUtils.getHex(ramp_name))
 
 """A dict giving the color mapping from NLCD values to colors
 """
