@@ -91,3 +91,9 @@ def remote_tms_server(geopysc, pattern_url):
     """
     server = geopysc._jvm.geopyspark.geotrellis.tms.TMSServer.serveRemoteTMSLayer(pattern_url)
     return TMSServer(geopysc, server)
+
+
+def make_rdd_tms(geopysc, levels, colormap):
+    levels_dict = dict([(lvl.zoom_level, lvl.srdd.rdd()) for lvl in levels])
+    server = geopysc._jvm.geopyspark.geotrellis.tms.TMSServer.serveSpatialRdd(levels_dict, colormap.cmap, 0)
+    return TMSServer(geopysc, server)
