@@ -1152,8 +1152,12 @@ class Pyramid(CachableRDD):
 
         """
 
-        if isinstance(levels, list):
+        if isinstance(levels, dict):
+            levels = levels
+        elif isinstance(levels, list):
             levels = dict([(l.zoom_level, l) for l in levels])
+        else:
+            raise TypeError("levels are neither list or dictionary")
 
         self.levels = levels
         self.max_zoom = max(self.levels.keys())
@@ -1163,7 +1167,7 @@ class Pyramid(CachableRDD):
         self.histogram = None
 
     def wrapped_rdds(self):
-        return self.levels.values()
+        return [rdd.srdd for rdd in self.levels.values()]
 
     def get_histogram(self):
         if not self.histogram:
@@ -1180,27 +1184,48 @@ class Pyramid(CachableRDD):
 
     def __add__(self, value):
         if isinstance(value, Pyramid):
-            return Pyramid(dict([(k, l+r) for (k, l, r) in _common_entries(self.levels, value.levels)]))
+            return Pyramid({k: l.__add__(r) for k, l, r in _common_entries(self.levels, value.levels)})
         else:
-            return Pyramid([l.__add__(value) for l in self.levels])
+            return Pyramid({k: l.__add__(value) for k, l in self.levels.items()})
 
     def __radd__(self, value):
-        return Pyramid([l.__radd__(value) for l in self.levels])
+        if isinstance(value, Pyramid):
+            return Pyramid({k: l.__radd__(r) for k, l, r in _common_entries(self.levels, value.levels)})
+        else:
+            return Pyramid({k: l.__radd__(value) for k, l in self.levels.items()})
 
     def __sub__(self, value):
-        return Pyramid([l.__sub__(value) for l in self.levels])
+        if isinstance(value, Pyramid):
+            return Pyramid({k: l.__sub__(r) for k, l, r in _common_entries(self.levels, value.levels)})
+        else:
+            return Pyramid({k: l.__sub__(value) for k, l in self.levels.items()})
 
     def __rsub__(self, value):
-        return Pyramid([l.__rsub__(value) for l in self.levels])
+        if isinstance(value, Pyramid):
+            return Pyramid({k: l.__rsub__(r) for k, l, r in _common_entries(self.levels, value.levels)})
+        else:
+            return Pyramid({k: l.__rsub__(value) for k, l in self.levels.items()})
 
     def __mul__(self, value):
-        return Pyramid([l.__mul__(value) for l in self.levels])
+        if isinstance(value, Pyramid):
+            return Pyramid({k: l.__mul__(r) for k, l, r in _common_entries(self.levels, value.levels)})
+        else:
+            return Pyramid({k: l.__mul__(value) for k, l in self.levels.items()})
 
     def __rmul__(self, value):
-        return Pyramid([l.__rmul__(value) for l in self.levels])
+        if isinstance(value, Pyramid):
+            return Pyramid({k: l.__rmul__(r) for k, l, r in _common_entries(self.levels, value.levels)})
+        else:
+            return Pyramid({k: l.__rmul__(value) for k, l in self.levels.items()})
 
     def __truediv__(self, value):
-        return Pyramid([l.__truediv__(value) for l in self.levels])
+        if isinstance(value, Pyramid):
+            return Pyramid({k: l.__truediv__(r) for k, l, r in _common_entries(self.levels, value.levels)})
+        else:
+            return Pyramid({k: l.__truediv__(value) for k, l in self.levels.items()})
 
     def __rtruediv__(self, value):
-        return Pyramid([l.__rtruediv__(value) for l in self.levels])
+        if isinstance(value, Pyramid):
+            return Pyramid({k: l.__rtruediv__(r) for k, l, r in _common_entries(self.levels, value.levels)})
+        else:
+            return Pyramid({k: l.__rtruediv__(value) for k, l in self.levels.items()})
