@@ -244,6 +244,17 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
   def convertDataType(newType: String): TiledRasterRDD[_] =
     withRDD(rdd.convert(CellType.fromName(newType)))
 
+  def normalize(oldMin: Double, oldMax: Double, newMin: Double, newMax: Double): TiledRasterRDD[K] =
+    withRDD {
+      rdd.mapValues { tile =>
+        MultibandTile {
+          tile.bands.map { band =>
+            band.normalize(oldMin, oldMax, newMin, newMax)
+          }
+        }
+      }
+    }
+
   def singleTileLayerRDD: TileLayerRDD[K] = TileLayerRDD(
     rdd.mapValues({ v => v.band(0) }),
     rdd.metadata
@@ -417,25 +428,50 @@ class SpatialTiledRasterRDD(
     PythonTranslator.toPython[Tile, ProtoTile](contextRDD.stitch.tile)
   }
 
-  def save_stitched(path: String): Unit = {
-    val contextRDD = ContextRDD(
-      rdd.map({ case (k, v) => (k, v.band(0)) }),
-      rdd.metadata
-    )
-    val stitched: Raster[Tile] = contextRDD.stitch()
-    GeoTiff(stitched, contextRDD.metadata.crs).write(path)
-  }
+  def save_stitched(path: String): Unit =
+    _save_stitched(path, None, None)
 
-  def save_stitched(path: String, cropBounds: ArrayList[Double]): Unit = {
-    val bounds = cropBounds.asScala.toArray
-    val extent = Extent(bounds(0), bounds(1), bounds(2), bounds(3))
+  def save_stitched(path: String, cropBounds: ArrayList[Double]): Unit =
+    _save_stitched(path, Some(cropBounds), None)
+
+  def save_stitched(path: String, cropBounds: ArrayList[Double], cropDimensions: ArrayList[Int]): Unit =
+    _save_stitched(path, Some(cropBounds), Some(cropDimensions))
+
+  private def _save_stitched(path: String, cropBounds: Option[ArrayList[Double]], cropDimensions: Option[ArrayList[Int]]): Unit = {
+
     val contextRDD = ContextRDD(
       rdd.map({ case (k, v) => (k, v.band(0)) }),
       rdd.metadata
     )
     val stitched: Raster[Tile] = contextRDD.stitch()
-    val cropped = stitched.crop(extent)
-    GeoTiff(cropped, contextRDD.metadata.crs).write(path)
+
+    val adjusted = {
+      val cropExtent =
+        cropBounds.map { b =>
+          val bounds = b.asScala.toArray
+          Extent(bounds(0), bounds(1), bounds(2), bounds(3))
+        }
+
+      val cropped =
+        cropExtent match {
+          case Some(extent) =>
+            stitched.crop(extent)
+          case None =>
+            stitched
+        }
+
+      val resampled =
+        cropDimensions.map(_.asScala.toArray) match {
+          case Some(dimensions) =>
+            cropped.resample(dimensions(0), dimensions(1))
+          case None =>
+            cropped
+        }
+
+      resampled
+    }
+
+    GeoTiff(adjusted, contextRDD.metadata.crs).write(path)
   }
 
   def costDistance(
