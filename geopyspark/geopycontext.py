@@ -57,6 +57,9 @@ class GeoPyContext(object):
 
         self.sc = self.pysc._jsc.sc()
         self._jvm = self.pysc._gateway.jvm
+        self.pysc._gateway.start_callback_server()
+
+        java_import(self._jvm, 'geopyspark.geotrellis.SpatialTiledRasterRDD')
 
     @staticmethod
     def map_key_input(key_type, is_boundable):
