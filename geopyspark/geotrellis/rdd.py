@@ -58,12 +58,14 @@ def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_wi
     new_dict = {}
 
     for key, value in value_map.items():
-        if not isinstance(key, data_type):
+        if isinstance(key, data_type):
+            new_dict[key] = value
+        elif isinstance(key, (list, tuple)):
             val = value_map[key]
             for k in key:
                 new_dict[k] = val
         else:
-            new_dict[key] = value
+            raise TypeError("Expected", data_type, "list, or tuple for the key, but the type was", type(key))
 
     if data_type is int:
         if not replace_nodata_with:
