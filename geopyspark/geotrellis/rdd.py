@@ -759,7 +759,7 @@ class TiledRasterRDD(CachableRDD):
 
         result = self.srdd.pyramid(start_zoom, end_zoom, resample_method)
 
-        return [TiledRasterRDD(self.geopysc, self.rdd_type, srdd) for srdd in result]
+        return Pyramid([TiledRasterRDD(self.geopysc, self.rdd_type, srdd) for srdd in result])
 
     def focal(self, operation, neighborhood=None, param_1=None, param_2=None, param_3=None):
         """Performs the given focal operation on the layers contained in the RDD.
@@ -1135,3 +1135,72 @@ class TiledRasterRDD(CachableRDD):
 
     def __rtruediv__(self, value):
         return self._process_operation(value, self.srdd.reverseLocalDivide)
+
+
+def _common_entries(*dcts):
+    """Zip two dictionaries together by keys"""
+    for i in set(dcts[0]).intersection(*dcts[1:]):
+        yield (i,) + tuple(d[i] for d in dcts)
+
+# Keep it in non rendered form so we can do map algebra operations to it
+class Pyramid(CachableRDD):
+    def __init__(self, levels):
+        """List of TiledRasterRDDs into a coherent pyramid tile pyramid.
+
+        Args:
+            levels (list): A list of TiledRasterRDD.
+
+        """
+
+        if isinstance(levels, list):
+            levels = dict([(l.zoom_level, l) for l in levels])
+
+        self.levels = levels
+        self.max_zoom = max(self.levels.keys())
+        self.geopysc = levels[self.max_zoom].geopysc
+        self.rdd_type = levels[self.max_zoom].rdd_type
+        self.is_cached = False
+        self.histogram = None
+
+    def wrapped_rdds(self):
+        return self.levels.values()
+
+    def get_histogram(self):
+        if not self.histogram:
+            self.histogram = self.levels[self.max_zoom].get_histogram()
+        return self.histogram
+
+    def to_png_pyramid(self, color_ramp=None, color_map=None, num_breaks=10):
+        if not color_map and color_ramp:
+            hist = self.get_histogram()
+            breaks = hist.quantileBreaks(num_breaks)
+            color_map = self.geopysc._jvm.geopyspark.geotrellis.Coloring.makeColorMap(breaks, color_ramp)
+
+        return PngRDD(self.levels, color_map)
+
+    def __add__(self, value):
+        if isinstance(value, Pyramid):
+            return Pyramid(dict([(k, l+r) for (k, l, r) in _common_entries(self.levels, value.levels)]))
+        else:
+            return Pyramid([l.__add__(value) for l in self.levels])
+
+    def __radd__(self, value):
+        return Pyramid([l.__radd__(value) for l in self.levels])
+
+    def __sub__(self, value):
+        return Pyramid([l.__sub__(value) for l in self.levels])
+
+    def __rsub__(self, value):
+        return Pyramid([l.__rsub__(value) for l in self.levels])
+
+    def __mul__(self, value):
+        return Pyramid([l.__mul__(value) for l in self.levels])
+
+    def __rmul__(self, value):
+        return Pyramid([l.__rmul__(value) for l in self.levels])
+
+    def __truediv__(self, value):
+        return Pyramid([l.__truediv__(value) for l in self.levels])
+
+    def __rtruediv__(self, value):
+        return Pyramid([l.__rtruediv__(value) for l in self.levels])
