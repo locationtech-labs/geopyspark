@@ -63,9 +63,9 @@ def get_breaks(geopysc, ramp_name, num_colors=None):
     """
 
     if num_colors:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.get(ramp_name, num_colors))
+        return list(geopysc._jvm.geopyspark.geotrellis.ColorRampUtils.get(ramp_name, num_colors))
     else:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.get(ramp_name))
+        return list(geopysc._jvm.geopyspark.geotrellis.ColorRampUtils.get(ramp_name))
 
 def get_hex(geopysc, ramp_name, num_colors=None):
     """Returns a list of the hex values that represent the colors for the given color ramp.
@@ -126,64 +126,63 @@ class ColorMap(object):
     @classmethod
     def from_break_map(cls, geopysc, break_map, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
         """Converts a dictionary mapping from tile values to colors to a ColorMap.
-        
+
         Args:
             geopysc (GeoPyContext)
-            break_map (dict): A mapping from tile values to colors, the latter 
+            break_map (dict): A mapping from tile values to colors, the latter
                 represented as integers---e.g., 0xff000080 is red at half opacity.
             no_data_color(int, optional): A color to replace NODATA values with
-            fallback (int, optional): A color to replace cells that have no 
+            fallback (int, optional): A color to replace cells that have no
                 value in the mapping
-            class_boundary_type (string, optional): A string giving the strategy 
-                for converting tile values to colors.  E.g., if 
-                LESSTHANOREQUALTO is specified, and the break map is 
-                {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red, 
-                values from above 3 and up to and including 4 become green, and 
+            class_boundary_type (string, optional): A string giving the strategy
+                for converting tile values to colors.  E.g., if
+                LESSTHANOREQUALTO is specified, and the break map is
+                {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red,
+                values from above 3 and up to and including 4 become green, and
                 values over 4 become the fallback color.
 
         Returns:
             [ColorMap]
         """
         if all(isinstance(x, int) for x in break_map.keys()):
-            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromMap(break_map, no_data_color, fallback, class_boundary_type))
+            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMapUtils.fromMap(break_map, no_data_color, fallback, class_boundary_type))
         elif all(isinstance(x, float) for x in break_map.keys()):
-            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromMapDouble(break_map, no_data_color, fallback, class_boundary_type))
+            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMapUtils.fromMapDouble(break_map, no_data_color, fallback, class_boundary_type))
         else:
             raise TypeError("Break map keys must be either int or float.")
-    
+
     @classmethod
     def from_colors(cls, geopysc, breaks, color_list, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
         """Converts lists of values and colors to a ColorMap.
-        
+
         Args:
             geopysc (GeoPyContext)
-            breaks (list): The tile values that specify breaks in the color 
+            breaks (list): The tile values that specify breaks in the color
                 mapping
-            color_list (int list): The colors corresponding to the values in the 
-                breaks list, represented as integers---e.g., 0xff000080 is red 
+            color_list (int list): The colors corresponding to the values in the
+                breaks list, represented as integers---e.g., 0xff000080 is red
                 at half opacity.
             no_data_color(int, optional): A color to replace NODATA values with
-            fallback (int, optional): A color to replace cells that have no 
+            fallback (int, optional): A color to replace cells that have no
                 value in the mapping
-            class_boundary_type (string, optional): A string giving the strategy 
-                for converting tile values to colors.  E.g., if 
-                LESSTHANOREQUALTO is specified, and the break map is 
-                {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red, 
-                values from above 3 and up to and including 4 become green, and 
+            class_boundary_type (string, optional): A string giving the strategy
+                for converting tile values to colors.  E.g., if
+                LESSTHANOREQUALTO is specified, and the break map is
+                {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red,
+                values from above 3 and up to and including 4 become green, and
                 values over 4 become the fallback color.
 
         Returns:
             [ColorMap]
         """
         if all(isinstance(x, int) for x in breaks):
-            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromBreaks(breaks, color_list, no_data_color, fallback, class_boundary_type))
+            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaks(breaks, color_list, no_data_color, fallback, class_boundary_type))
         else:
-            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMap.fromBreaksDouble([float(br) for br in breaks], color_list, no_data_color, fallback, class_boundary_type))
+            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaksDouble([float(br) for br in breaks], color_list, no_data_color, fallback, class_boundary_type))
 
     @classmethod
     def from_histogram(cls, geopysc, histogram, color_list, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
-        # TODO: Implement this!
-        pass
+        return cls(geopysc._jvm.geopyspark.geotrellis.ColorMapUtils.fromHistogram(histogram, color_list, no_data_color, fallback, class_boundary_type))
 
     @staticmethod
     def nlcd_colormap(geopysc):
