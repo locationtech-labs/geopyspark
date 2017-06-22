@@ -12,6 +12,7 @@ from geopyspark.geotrellis.constants import TILE, ZORDER, SPATIAL
 
 from shapely.geometry import Polygon, MultiPolygon, Point
 from shapely.wkt import dumps
+import shapely.wkb
 
 
 _mapped_cached = {}
@@ -420,14 +421,13 @@ def query(geopysc,
         proj_query = "EPSG:" + str(proj_query)
 
     if numPartitions is None:
-        numPartitions  = geopysc.pysc.defaultMinPartitions
+        numPartitions = geopysc.pysc.defaultMinPartitions
 
-    if isinstance(intersects, Polygon) or isinstance(intersects, MultiPolygon) \
-       or isinstance(intersects, Point):
+    if isinstance(intersects, (Polygon, MultiPolygon, Point)):
         srdd = cached.reader.query(key,
                                    layer_name,
                                    layer_zoom,
-                                   dumps(intersects),
+                                   shapely.wkb.dumps(intersects),
                                    time_intervals,
                                    proj_query,
                                    numPartitions)
@@ -436,12 +436,12 @@ def query(geopysc,
         srdd = cached.reader.query(key,
                                    layer_name,
                                    layer_zoom,
-                                   dumps(intersects.to_poly),
+                                   shapely.wkb.dumps(intersects.to_poly),
                                    time_intervals,
                                    proj_query,
                                    numPartitions)
 
-    elif isinstance(intersects, str):
+    elif isinstance(intersects, bytes):
         srdd = cached.reader.query(key,
                                    layer_name,
                                    layer_zoom,
