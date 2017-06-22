@@ -35,7 +35,7 @@ def rasterize(geopysc, geoms, crs, zoom, fill_value, cell_type='float64', option
 
     Args:
         geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` instance.
-        geoms (shapely.geometry): List of geometries to rasterize.
+        geoms ([shapely.geometry]): List of shapely geometries to rasterize.
         crs (str or int): The CRS of the input geometry.
         zoom (int): The zoom level of the output raster.
         fill_value: Value to burn into pixels intersectiong geometry
@@ -880,8 +880,8 @@ class TiledRasterRDD(CachableRDD):
         be available.
 
         Args:
-            geometries (list):
-                A list of shapely geometries to use as masks.
+            geometries (shapely.geometry or [shapely.geometry]): Either a list of, or a single
+                shapely geometry/ies to use for the mask/s.
 
                 Note:
                     All geometries must be in the same CRS as the TileLayer.
@@ -999,8 +999,10 @@ class TiledRasterRDD(CachableRDD):
 
     @staticmethod
     def _process_polygonal_summary(geometry, operation):
-        if isinstance(geometry, Polygon) or isinstance(geometry, MultiPolygon):
+        if isinstance(geometry, (Polygon, MultiPolygon)):
             geometry = shapely.wkb.dumps(geometry)
+        if not isinstance(geometry, bytes):
+            raise TypeError("Expected geometry to be bytes but given this instead", type(geometry))
 
         return operation(geometry)
 
@@ -1008,9 +1010,9 @@ class TiledRasterRDD(CachableRDD):
         """Finds the min value that is contained within the given geometry.
 
         Args:
-            geometry (`shapely.geometry.Polygon` or `shapely.geometry.MultiPolygon` or str): A
+            geometry (shapely.geometry.Polygon or shapely.geometry.MultiPolygon or bytes): A
                 Shapely ``Polygon`` or ``MultiPolygon`` that represents the area where the summary
-                should be computed; or a WKT string representation of the geometry.
+                should be computed; or a WKB representation of the geometry.
             data_type (type): The type of the values within the rasters. Can either be ``int`` or
                 ``float``.
 
@@ -1032,9 +1034,9 @@ class TiledRasterRDD(CachableRDD):
         """Finds the max value that is contained within the given geometry.
 
         Args:
-            geometry (`shapely.geometry.Polygon` or `shapely.geometry.MultiPolygon` or str): A
+            geometry (shapely.geometry.Polygon or shapely.geometry.MultiPolygon or bytes): A
                 Shapely ``Polygon`` or ``MultiPolygon`` that represents the area where the summary
-                should be computed; or a WKT string representation of the geometry.
+                should be computed; or a WKB representation of the geometry.
             data_type (type): The type of the values within the rasters. Can either be ``int`` or
                 ``float``.
 
@@ -1056,9 +1058,9 @@ class TiledRasterRDD(CachableRDD):
         """Finds the sum of all of the values that are contained within the given geometry.
 
         Args:
-            geometry (`shapely.geometry.Polygon` or `shapely.geometry.MultiPolygon` or str): A
+            geometry (shapely.geometry.Polygon or shapely.geometry.MultiPolygon or bytes): A
                 Shapely ``Polygon`` or ``MultiPolygon`` that represents the area where the summary
-                should be computed; or a WKT string representation of the geometry.
+                should be computed; or a WKB representation of the geometry.
             data_type (type): The type of the values within the rasters. Can either be ``int`` or
                 ``float``.
 
@@ -1080,9 +1082,9 @@ class TiledRasterRDD(CachableRDD):
         """Finds the mean of all of the values that are contained within the given geometry.
 
         Args:
-            geometry (`shapely.geometry.Polygon` or `shapely.geometry.MultiPolygon` or str): A
+            geometry (shapely.geometry.Polygon or shapely.geometry.MultiPolygon or bytes): A
                 Shapely ``Polygon`` or ``MultiPolygon`` that represents the area where the summary
-                should be computed; or a WKT string representation of the geometry.
+                should be computed; or a WKB representation of the geometry.
 
         Returns:
             ``float``

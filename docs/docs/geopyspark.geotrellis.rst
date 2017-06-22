@@ -9,7 +9,7 @@ geopyspark.geotrellis package
 geopyspark.geotrellis.ProtoBufCodecs module
 ----------------------------------------------
 
-.. autoclass:: geopyspark.geotrellis.protobufcodecs
+.. autoclass:: geopyspark.geotrellis.protobuf
    :members:
 
 geopyspark.geotrellis.ProtoBufSerializer module
