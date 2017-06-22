@@ -233,28 +233,6 @@ FLOAT32 = "float32"
 """Representes Double Cells with constant NoData values."""
 FLOAT64 = "float64"
 
-"""Representes Byte Cells with user defined NoData values."""
-INT8UD = "int8ud"
-
-"""Representes UByte Cells with user defined NoData values."""
-UINT8UD = "uint8ud"
-
-"""Representes Short Cells with user defined NoData values."""
-INT16UD = "int16ud"
-
-"""Representes UShort Cells with user defined NoData values."""
-UINT16UD = "uint16ud"
-
-"""Representes Int Cells with user defined NoData values."""
-INT32UD = "int32ud"
-
-"""Representes Float Cells with user defined NoData values."""
-FLOAT32UD = "float32ud"
-
-"""Representes Double Cells with user defined NoData values."""
-FLOAT64UD = "float64ud"
-
-
 CELL_TYPES = [
     BOOLRAW,
     INT8RAW,
@@ -271,14 +249,7 @@ CELL_TYPES = [
     UINT16,
     INT32,
     FLOAT32,
-    FLOAT64,
-    INT8UD,
-    UINT8UD,
-    INT16UD,
-    UINT16UD,
-    INT32UD,
-    FLOAT32UD,
-    FLOAT64UD
+    FLOAT64
 ]
 
 

@@ -238,24 +238,38 @@ class RasterRDD(CachableRDD):
         return self.tile_to_layout(self.collect_metadata(extent, layout, crs, tile_size),
                                    resample_method)
 
-    def convert_data_type(self, new_type):
+    def convert_data_type(self, new_type, no_data_value=None):
         """Converts the underlying, raster values to a new ``CellType``.
 
         Args:
             new_type (str): The string representation of the ``CellType`` to convert to. It is
-                represented by a constant such as ``INT16``, ``FLOAT64UD``, etc.
+                represented by a constant such as ``INT16``, ``FLOAT64``, etc.
+            no_data_value (int or float, optional): The value that should be marked as NoData.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.RasterRDD`
 
         Raises:
             ValueError: When an unsupported cell type is entered.
+            ValueError: If ``no_data_value`` is set and the ``new_type`` contains raw values.
+            ValueError: If ``no_data_value`` is set and ``new_type`` is a boolean.
         """
 
         if new_type not in CELL_TYPES:
             raise ValueError(new_type, "Is not a know Cell Type")
 
-        return RasterRDD(self.geopysc, self.rdd_type, self.srdd.convertDataType(new_type))
+        if no_data_value:
+            if 'bool' in new_type:
+                raise ValueError("Cannot add user defined types to Bool")
+            elif 'raw' in new_type:
+                raise ValueError("Cannot add user defined types to raw values")
+
+            no_data_constant = new_type + "ud" + str(no_data_value)
+
+            return RasterRDD(self.geopysc, self.rdd_type,
+                             self.srdd.convertDataType(no_data_constant))
+        else:
+            return RasterRDD(self.geopysc, self.rdd_type, self.srdd.convertDataType(new_type))
 
     def collect_metadata(self, extent=None, layout=None, crs=None, tile_size=256):
         """Iterate over RDD records and generates layer metadata desribing the contained
@@ -593,16 +607,38 @@ class TiledRasterRDD(CachableRDD):
                                                    value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
 
-    def convert_data_type(self, new_type):
+    def convert_data_type(self, new_type, no_data_value=None):
         """Converts the underlying, raster values to a new ``CellType``.
 
         Args:
             new_type (str): The string representation of the ``CellType`` to convert to. It is
-                represented by a constant such as ``INT16``, ``FLOAT64UD``, etc.
+                represented by a constant such as ``INT16``, ``FLOAT64``, etc.
+            no_data_value (int or float, optional): The value that should be marked as NoData.
+
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+
+        Raises:
+            ValueError: When an unsupported cell type is entered.
+            ValueError: If ``no_data_value`` is set and the ``new_type`` contains raw values.
+            ValueError: If ``no_data_value`` is set and ``new_type`` is a boolean.
         """
-        return TiledRasterRDD(self.geopysc, self.rdd_type, self.srdd.convertDataType(new_type))
+
+        if new_type not in CELL_TYPES:
+            raise ValueError(new_type, "Is not a know Cell Type")
+
+        if no_data_value:
+            if 'bool' in new_type:
+                raise ValueError("Cannot add user defined types to Bool")
+            elif 'raw' in new_type:
+                raise ValueError("Cannot add user defined types to raw values")
+
+            no_data_constant = new_type + "ud" + str(no_data_value)
+
+            return TiledRasterRDD(self.geopysc, self.rdd_type,
+                                  self.srdd.convertDataType(no_data_constant))
+        else:
+            return TiledRasterRDD(self.geopysc, self.rdd_type, self.srdd.convertDataType(new_type))
 
     def reproject(self, target_crs, extent=None, layout=None, scheme=FLOAT, tile_size=256,
                   resolution_threshold=0.1, resample_method=NEARESTNEIGHBOR):
