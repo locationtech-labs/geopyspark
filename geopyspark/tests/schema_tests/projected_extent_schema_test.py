@@ -3,7 +3,11 @@ import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
-from geopyspark.avroserializer import AvroSerializer
+from geopyspark.geotrellis import Extent, ProjectedExtent
+from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
+from geopyspark.geotrellis.protobufcodecs import (projected_extent_decoder,
+                                                  projected_extent_encoder,
+                                                  to_pb_projected_extent)
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -16,12 +20,12 @@ class ProjectedExtentSchemaTest(BaseTestClass):
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
     ew = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.ProjectedExtentWrapper
 
-    tup = ew.testOut(sc)
-    java_rdd = tup._1()
-    ser = AvroSerializer(tup._2())
+    java_rdd = ew.testOut(sc)
+    ser = ProtoBufSerializer(projected_extent_decoder,
+                             projected_extent_encoder)
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
-    collected = rdd.collect()
+    collected = [pex._asdict() for pex in rdd.collect()]
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
@@ -33,10 +37,17 @@ class ProjectedExtentSchemaTest(BaseTestClass):
             self.assertDictEqual(actual, expected)
 
     def test_encoded_pextents(self):
-        encoded = self.rdd.map(lambda s: s)
-        actual_encoded = encoded.collect()
+        actual_encoded = [projected_extent_encoder(x) for x in self.rdd.collect()]
 
-        self.result_checker(actual_encoded, self.projected_extents)
+        for x in range(0, len(self.projected_extents)):
+            self.projected_extents[x]['extent'] = Extent(**self.projected_extents[x]['extent'])
+
+        expected_encoded = [
+            to_pb_projected_extent(ProjectedExtent(**ex)).SerializeToString() for ex in self.projected_extents
+        ]
+
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
 
     def test_decoded_pextents(self):
         self.result_checker(self.collected, self.projected_extents)

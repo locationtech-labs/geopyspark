@@ -3,17 +3,18 @@ import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
-from geopyspark.avroserializer import AvroSerializer
+from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
+from geopyspark.geotrellis.protobufcodecs import (extent_decoder,
+                                                   extent_encoder, to_pb_extent,
+                                                   from_pb_extent)
+from geopyspark.geotrellis import Extent
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
 class ExtentSchemaTest(BaseTestClass):
     ew = BaseTestClass.geopysc._jvm.geopyspark.geotrellis.tests.schemas.ExtentWrapper
-
-    tup = ew.testOut(BaseTestClass.geopysc.sc)
-    java_rdd = tup._1()
-    ser = AvroSerializer(tup._2())
-
+    java_rdd = ew.testOut(BaseTestClass.geopysc.sc)
+    ser = ProtoBufSerializer(extent_decoder, extent_encoder)
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
@@ -32,14 +33,15 @@ class ExtentSchemaTest(BaseTestClass):
         for actual, expected in zip(actual_result, expected_result):
             self.assertDictEqual(actual, expected)
 
-    def test_encoded_extents(self):
-        encoded = self.rdd.map(lambda s: s)
-        actual_encoded = encoded.collect()
-
-        self.result_checker(actual_encoded, self.expected_extents)
-
     def test_decoded_extents(self):
-        self.result_checker(self.collected, self.expected_extents)
+        actual_decoded = [from_pb_extent(ex)._asdict() for ex in self.collected]
+        self.result_checker(actual_decoded, self.expected_extents)
+
+    def test_encoded_extents(self):
+        expected_encoded = [to_pb_extent(Extent(**x)).SerializeToString() for x in self.expected_extents]
+        actual_encoded = [extent_encoder(x) for x in self.collected]
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
 
 
 if __name__ == "__main__":

@@ -4,86 +4,56 @@ check_environment()
 from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, COLOR_RAMPS
 from .rdd import CachableRDD
 from pyspark.storagelevel import StorageLevel
+import geopyspark.geotrellis.color as color
+from geopyspark.geotrellis import deprecated
 
+@deprecated
+def get_breaks_from_colors(colors):
+    """Deprecated in favor of geopyspark.geotrellis.color.get_breaks_from_colors
+    """
+    return color.get_breaks_from_colors(colors)
 
+@deprecated
+def get_breaks_from_matplot(ramp_name, num_colors):
+    """Deprecated in favor of geopyspark.geotrellis.color.get_breaks_from_matplot
+    """
+    return color.get_breaks_from_matplot(ramp_name, num_colors)
+
+@deprecated
 def get_breaks(geopysc, ramp_name, num_colors=None):
-    """Returns a list of values that represent the breaks in color for the given color ramp.
-
-    Args:
-        ramp_name (str): The name of a color ramp; options are hot, COOLWARM, MAGMA,
-            INFERNO, PLASMA, VIRIDIS, BLUETOORANGE, LIGHTYELLOWTOORANGE, BLUETORED,
-            GREENTOREDORANGE, LIGHTTODARKSUNSET, LIGHTTODARKGREEN, HEATMAPYELLOWTORED,
-            HEATMAPBLUETOYELLOWTOREDSPECTRUM, HEATMAPDARKREDTOYELLOWWHITE,
-            HEATMAPLIGHTPURPLETODARKPURPLETOWHITE, CLASSIFICATIONBOLDLANDUSE, and
-            CLASSIFICATIONMUTEDTERRAIN
-        num_colors (int, optional): How many colors should be represented in the range. Defaults
-            to ``None``. If not specified, then the full range of values will be returned.
-
-    Returns:
-        [int]
+    """Deprecated in favor of geopyspark.geotrellis.color.get_breaks
     """
+    return color.get_breaks(geopysc, ramp_name, num_colors=None)
 
-    if num_colors:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.get(ramp_name, num_colors))
-    else:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.get(ramp_name))
-
+@deprecated
 def get_hex(geopysc, ramp_name, num_colors=None):
-    """Returns a list of the hex values that represent the colors for the given color ramp.
-
-    Note:
-        The returning hex values contain an alpha value.
-
-    Args:
-        ramp_name (str): The name of a color ramp; options are HOT, COOLWARM, MAGMA,
-            INFERNO, PLASMA, VIRIDIS, BLUETOORANGE, LIGHTYELLOWTOORANGE, BLUETORED,
-            GREENTOREDORANGE, LIGHTTODARKSUNSET, LIGHTTODARKGREEN, HEATMAPYELLOWTORED,
-            HEATMAPBLUETOYELLOWTOREDSPECTRUM, HEATMAPDARKREDTOYELLOWWHITE,
-            HEATMAPLIGHTPURPLETODARKPURPLETOWHITE, CLASSIFICATIONBOLDLANDUSE, and
-            CLASSIFICATIONMUTEDTERRAIN
-        num_colors (int, optional): How many colors should be represented in the range. Defaults
-            to ``None``. If not specified, then the full range of values will be returned.
-
-    Returns:
-        [str]
+    """Deprecated in favor of geopyspark.geotrellis.color.get_hex
     """
-
-    if num_colors:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(ramp_name, num_colors))
-    else:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(ramp_name))
+    return color.get_hex(geopysc, ramp_name, num_colors=None)
 
 
+# What does this do? implements lookup method ... this is a wrapper, a delegator
 class PngRDD(CachableRDD):
+    __slots__ = ['geopysc', 'rdd_type', 'layer_metadata', 'max_zoom', 'pngpyramid', 'debug']
+
     def __init__(self, pyramid, ramp_name, debug=False):
         """Convert a pyramid of TiledRasterRDDs into a displayable structure of PNGs
 
         Args:
             pyramid (list): A pyramid of TiledRasterRDD resulting from calling the pyramid
                 method on an instance of that class
-            ramp_name (str): The name of a color ramp; This is represented by the following
-                constants; HOT, COOLWARM, MAGMA, INFERNO, PLASMA, VIRIDIS, BLUE_TO_ORANGE,
-                LIGHT_YELLOW_TO_ORANGE, BLUE_TO_RED, GREEN_TO_RED_ORANGE, LIGHT_TO_DARK_SUNSET,
-                LIGHT_TO_DARK_GREEN, HEATMAP_YELLOW_TO_RED, HEATMAP_BLUE_TO_YELLOW_TO_RED_SPECTRUM,
-                HEATMAP_DARK_RED_TO_YELLOW_WHITE, HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE,
-                CLASSIFICATION_BOLD_LAND_USE, and CLASSIFICATION_MUTED_TERRAIN
+            color_map (JavaObject): Mapping from cell values to cell colors
         """
-
-        __slots__ = ['geopysc', 'rdd_type', 'layer_metadata', 'max_zoom', 'pngpyramid', 'debug']
-
-        if ramp_name not in COLOR_RAMPS:
-            raise ValueError(ramp_name, "Is not a known color ramp")
 
         level0 = pyramid[0]
         self.geopysc = level0.geopysc
         self.rdd_type = level0.rdd_type
-        self.layer_metadata = list(map(lambda lev: lev.layer_metadata, pyramid))
+        self.layer_metadata = dict([(lev.zoom_level, lev.layer_metadata) for lev in pyramid])
         self.max_zoom = level0.zoom_level
-        histogram = level0.get_histogram()
         if level0.is_floating_point_layer():
-            self.pngpyramid = [self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asSingleband(layer.srdd, histogram, ramp_name) for layer in pyramid]
+            self.pngpyramid = dict([(layer.zoom_level, self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asSingleband(layer.srdd, color_map)) for layer in pyramid])
         else:
-            self.pngpyramid = [self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asIntSingleband(layer.srdd, histogram, ramp_name) for layer in pyramid]
+            self.pngpyramid = dict([(layer.zoom_level, self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asIntSingleband(layer.srdd, color_map)) for layer in pyramid])
         self.debug = debug
         self.is_cached = False
 
@@ -133,19 +103,15 @@ class PngRDD(CachableRDD):
 
         Returns: A list of bytes containing the resulting PNG images
         """
-        if not zoom:
-            idx = 0
-        else:
-            idx = self.max_zoom - zoom
 
-        pngrdd = self.pngpyramid[idx]
-        metadata = self.layer_metadata[idx]
+        pngrdd = self.pngpyramid[zoom]
+        metadata = self.layer_metadata[zoom]
 
         bounds = metadata.bounds
-        min_col = bounds.minKey['col']
-        min_row = bounds.minKey['row']
-        max_col = bounds.maxKey['col']
-        max_row = bounds.maxKey['row']
+        min_col = bounds.minKey.col
+        min_row = bounds.minKey.row
+        max_col = bounds.maxKey.col
+        max_row = bounds.maxKey.row
 
         if col < min_col or col > max_col:
             raise IndexError("column out of bounds")
@@ -157,5 +123,5 @@ class PngRDD(CachableRDD):
         return [bytes for bytes in result]
 
     def wrapped_rdds(self):
-        return self.pngpyramid
-
+        print(self.pngpyramid.values())
+        return iter(self.pngpyramid.values())

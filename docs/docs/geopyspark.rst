@@ -1,14 +1,13 @@
 geopyspark package
 ==================
 
-geopyspark
-----------
-
-.. autoclass:: geopyspark.geopycontext.AvroRegistry
+.. automodule:: geopyspark
    :members:
+   :undoc-members:
+   :inherited-members:
 
-.. autoclass:: geopyspark.geopycontext.AvroSerializer
-   :members:
+geopyspark.GeoPyContext
+------------------------
 
 .. autoclass:: geopyspark.geopycontext.GeoPyContext
    :members:

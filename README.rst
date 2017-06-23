@@ -6,6 +6,14 @@ GeoPySpark
 .. image:: https://readthedocs.org/projects/geopyspark/badge/?version=latest
    :target: https://geopyspark.readthedocs.io/en/latest/?badge=latest
 
+
+**NOTE**: GeoPySpark is currently going through some reworking right now. It is
+NOT reccomended that you install GeoPySpark from GitHub.  Rather, do so with
+``pip``. In addition, please refer to the
+`0.1.0 verson of the GeoPySpark ReadTheDocs page <http://geopyspark.readthedocs.io/en/v0.1.0>`_
+and the not the latest version.
+
+
 ``GeoPySpark`` provides Python bindings for working with geospatial data using `PySpark <http://spark.apache.org/docs/latest/api/python/pyspark.html>`_.
 It will provide interfaces into GeoTrellis and GeoMesa LocationTech frameworks.
 It is currently under development, and has just entered alpha.

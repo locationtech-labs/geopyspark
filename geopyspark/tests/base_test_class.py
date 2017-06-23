@@ -16,6 +16,7 @@ class BaseTestClass(unittest.TestCase):
         master_str = "local[2]"
     else:
         master_str = "local[*]"
+
     geopysc = GeoPyContext(master=master_str, appName="test")
 
     dir_path = geotiff_test_path("all-ones.tif")

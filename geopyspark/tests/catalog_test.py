@@ -32,7 +32,7 @@ class CatalogTest(BaseTestClass):
     def test_read(self):
         for x in range(11, 0, -1):
             actual_layer = read(BaseTestClass.geopysc, SPATIAL, self.uri, self.layer_name, x)
-            expected_layer = self.result[11-x]
+            expected_layer = self.result.levels[x]
 
             self.assertDictEqual(actual_layer.layer_metadata.to_dict(),
                                  expected_layer.layer_metadata.to_dict())

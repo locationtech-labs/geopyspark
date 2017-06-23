@@ -1,12 +1,14 @@
 """A wrapper for ``SparkContext`` that provides extra functionality for GeoPySpark."""
-from geopyspark.avroregistry import AvroRegistry
-from geopyspark.avroserializer import AvroSerializer
+from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geopyspark_utils import check_environment
+import geopyspark.geotrellis.converters
+
 check_environment()
 
 from pyspark import RDD, SparkContext
 from pyspark.serializers import AutoBatchedSerializer
 
+from py4j.java_gateway import java_import
 
 class GeoPyContext(object):
     """A wrapper of ``SparkContext``.
@@ -55,8 +57,9 @@ class GeoPyContext(object):
 
         self.sc = self.pysc._jsc.sc()
         self._jvm = self.pysc._gateway.jvm
+        self.pysc._gateway.start_callback_server()
 
-        self.avroregistry = AvroRegistry()
+        java_import(self._jvm, 'geopyspark.geotrellis.SpatialTiledRasterRDD')
 
     @staticmethod
     def map_key_input(key_type, is_boundable):
@@ -84,35 +87,6 @@ class GeoPyContext(object):
                 return "TemporalProjectedExtent"
             else:
                 raise Exception("Could not find key type that matches", key_type)
-
-    def create_schema(self, key_type):
-        """Creates an AvroSchema.
-
-        Args:
-            key_type (str): The type of the ``K`` in the tuple, ``(K, V)`` in the RDD.
-
-        Returns:
-            An AvroSchema for the types within the RDD.
-        """
-
-        return self._jvm.geopyspark.geotrellis.SchemaProducer.getSchema(key_type)
-
-    def create_tuple_serializer(self, schema, key_type, value_type):
-        decoder = \
-                self.avroregistry.create_partial_tuple_decoder(key_type=key_type,
-                                                               value_type=value_type)
-
-        encoder = \
-                self.avroregistry.create_partial_tuple_encoder(key_type=key_type,
-                                                               value_type=value_type)
-
-        return AutoBatchedSerializer(AvroSerializer(schema, decoder, encoder))
-
-    def create_value_serializer(self, schema, value_type):
-        decoder = self.avroregistry._get_decoder(value_type)
-        encoder = self.avroregistry._get_encoder(value_type)
-
-        return AvroSerializer(schema, decoder, encoder)
 
     def create_python_rdd(self, jrdd, serializer):
         """Creates a Python RDD from a RDD from Scala.

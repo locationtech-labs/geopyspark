@@ -10,6 +10,7 @@ branches:
     - io-refactor
     - master
     - refactor/performance-refactor
+    - milestone/mvp
 
 addons:
   apt:

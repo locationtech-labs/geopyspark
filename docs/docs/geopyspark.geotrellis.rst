@@ -6,9 +6,20 @@ geopyspark.geotrellis package
    :undoc-members:
    :inherited-members:
 
+geopyspark.geotrellis.ProtoBufCodecs module
+----------------------------------------------
+
+.. autoclass:: geopyspark.geotrellis.protobuf
+   :members:
+
+geopyspark.geotrellis.ProtoBufSerializer module
+------------------------------------------------
+
+.. autoclass:: geopyspark.geotrellis.protobufserializer.ProtoBufSerializer
+   :members:
+
 geopyspark.geotrellis.catalog module
 -------------------------------------
-
 
 .. automodule:: geopyspark.geotrellis.catalog
    :members:

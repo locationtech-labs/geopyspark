@@ -29,6 +29,8 @@ The fields used to represent rasters:
    represented by a variety of types depending on the value type of the raster.
  - **data** (nd.array): The raster data itself. It is contained within a NumPy
    array.
+ - **data_type** (str): The data type of the values within ``data`` if they were
+   in Scala.
 
 **Note**: All rasters in GeoPySpark are represented as having multiple bands,
 even if the original raster just contained one.
@@ -37,7 +39,7 @@ ProjectedExtent
 ---------------
 
 Describes both the area on Earth a raster represents in addition to its CRS.
-In GeoPySpark, this is represented by :cls:`geopyspark.geotrellis.ProjectedExtent`.
+In GeoPySpark, this is represented by :class:`geopyspark.geotrellis.ProjectedExtent`.
 
 Example:
 
@@ -58,7 +60,7 @@ TemporalProjectedExtent
 
 Describes the area on Earth the raster represents, its CRS, and the time the
 data was collected. In GeoPySpark, this is represented by
-:cls:`geopyspark.geotrellis.TemporalProjectedExtent`.
+:class:`geopyspark.geotrellis.TemporalProjectedExtent`.
 
 Example:
 
@@ -75,7 +77,7 @@ SpatialKey
 
 Represents the position of a raster within a grid. This grid is a 2D plane
 where raster positions are represented by a pair of coordinates. In GeoPySpark,
-this is represented by :cls:`geopyspark.geotrellis.SpatialKey`.
+this is represented by :class:`geopyspark.geotrellis.SpatialKey`.
 
 Example:
 
@@ -89,7 +91,7 @@ SpaceTimeKey
 Represents the position of a raster within a grid. This grid is a 3D plane
 where raster positions are represented by a pair of coordinates as well as a z
 value that represents time. In GeoPySpark, this is represented by
-:cls:`geopyspark.geotrellis.SpaceTimeKey`.
+:class:`geopyspark.geotrellis.SpaceTimeKey`.
 
 Example:
 

@@ -4,6 +4,7 @@ import pytest
 import rasterio
 import numpy as np
 
+from geopyspark.geotrellis import SpatialKey
 from shapely.geometry import Polygon
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.rdd import TiledRasterRDD
@@ -20,10 +21,10 @@ class MaskTest(BaseTestClass):
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0]]])
 
-    layer = [({'row': 0, 'col': 0}, {'no_data_value': -1.0, 'data': data}),
-             ({'row': 1, 'col': 0}, {'no_data_value': -1.0, 'data': data}),
-             ({'row': 0, 'col': 1}, {'no_data_value': -1.0, 'data': data}),
-             ({'row': 1, 'col': 1}, {'no_data_value': -1.0, 'data': data})]
+    layer = [(SpatialKey(0, 0), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'}),
+             (SpatialKey(0, 1), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'}),
+             (SpatialKey(1, 0), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'}),
+             (SpatialKey(1, 1), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'})]
     rdd = geopysc.pysc.parallelize(layer)
 
     extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 33.0, 'ymax': 33.0}

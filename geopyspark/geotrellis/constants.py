@@ -2,15 +2,15 @@
 
 """
 Indicates that the RDD contains ``(K, V)`` pairs, where the ``K`` has a spatial attribute,
-but no time value. Both :ref:`projected_extent` and :ref:`spatial-key`` are examples of this
-type of ``K``.
+but no time value. Both :class:`~geopyspark.geotrellis.ProjectedExtent` and
+:class:`~geopyspark.geotrellis.SpatialKey` are examples of this type of ``K``.
 """
 SPATIAL = 'spatial'
 
 """
 Indicates that the RDD contains ``(K, V)`` pairs, where the ``K`` has a spatial and
-time attribute. Both :ref:`temporal_extent` and :ref:`space-time-key` are examples
-of this type of ``K``.
+time attribute. Both :class:`~geopyspark.geotrellis.TemporalProjectedExtent`
+and :class:`~geopyspark.geotrellis.SpaceTimeKey` are examples of this type of ``K``.
 """
 SPACETIME = 'spacetime'
 
@@ -72,21 +72,21 @@ ZOOM = 'zoom'
 FLOAT = 'float'
 
 
-"""A key indexing method. Works for RDD that contain both :ref:`spatial-key` and
-:ref:`space-time-key`.
+"""A key indexing method. Works for RDD that contain both :class:`~geopyspark.geotrellis.SpatialKey`
+and :class:`~geopyspark.geotrellis.SpaceTimeKey`.
 """
 ZORDER = 'zorder'
 
 """
-A key indexing method. Works for RDDs that contain both :ref:`spatial-key` and
-:ref:`space-time-key`. Note, indexes are determined by the ``x``, ``y``, and if
-``SPACETIME``, the temporal resolutions of a point. This is expressed in bits, and
+A key indexing method. Works for RDDs that contain both :class:`~geopyspark.geotrellis.SpatialKey`
+and :class:`~geopyspark.geotrellis.SpaceTimeKey`. Note, indexes are determined by the ``x``,
+``y``, and if ``SPACETIME``, the temporal resolutions of a point. This is expressed in bits, and
 has a max value of 62. Thus if the sum of those resolutions are greater than 62,
 then the indexing will fail.
 """
 HILBERT = 'hilbert'
 
-"""A key indexing method. Works only for RDDs that contain :ref:`spatial-key`.
+"""A key indexing method. Works only for RDDs that contain :class:`~geopyspark.geotrellis.SpatialKey`.
 This method provides the fastest lookup of all the key indexing method, however, it does not give
 good locality guarantees. It is recommended then that this method should only be used when locality
 is not important for your analysis.

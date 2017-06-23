@@ -24,6 +24,11 @@ lazy val commonSettings = Seq(
   addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
 )
 
+resolvers ++= Seq(
+  "Location Tech GeoTrellis Snapshots" at "https://repo.locationtech.org/content/repositories/geotrellis-snapshots",
+  Resolver.mavenLocal
+)
+
 scalaVersion := Version.scala
 
 lazy val root = Project("root", file(".")).

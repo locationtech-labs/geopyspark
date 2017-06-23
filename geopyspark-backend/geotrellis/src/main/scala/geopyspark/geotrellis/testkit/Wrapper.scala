@@ -6,26 +6,15 @@ import geotrellis.spark.io.avro._
 
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.api.java.JavaRDD
 
 import scala.reflect.ClassTag
 
-abstract class Wrapper[T: AvroRecordCodec: ClassTag] {
-  def testOut(sc: SparkContext) = PythonTranslator.toPython(testRdd(sc))
+import com.trueaccord.scalapb.GeneratedMessage
 
-  def testIn(rdd: RDD[Array[Byte]], schema: String) =
-    PythonTranslator.fromPython[T](rdd, Some(schema))
 
+abstract class Wrapper2[T, M <: GeneratedMessage] {
+  def testOut(sc: SparkContext): JavaRDD[Array[Byte]]
+  def testIn(rdd: RDD[Array[Byte]])
   def testRdd(sc: SparkContext): RDD[T]
-
-  def encodeRdd(rdd: RDD[T]): RDD[Array[Byte]] = {
-    rdd.map { key => AvroEncoder.toBinary(key, deflate = false)
-    }
-  }
-
-  def encodeRddText(rdd: RDD[T]): RDD[String] = {
-      rdd.map { key => AvroEncoder.toBinary(key, deflate = false).mkString("")
-      }
-    }
-
-  def keySchema: String = implicitly[AvroRecordCodec[T]].schema.toString
 }

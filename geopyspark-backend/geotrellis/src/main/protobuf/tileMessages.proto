@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package protos;
+
+
+message ProtoCellType {
+  enum DataType {
+    BIT = 0;
+    BYTE = 1;
+    UBYTE = 2;
+    SHORT = 3;
+    USHORT = 4;
+    INT = 5;
+    FLOAT = 6;
+    DOUBLE = 7;
+  }
+
+  DataType dataType = 1;
+  double nd = 2;
+  bool hasNoData = 3;
+}
+
+message ProtoTile {
+  int32 cols = 1;
+  int32 rows = 2;
+  ProtoCellType cellType = 3;
+  repeated sint32 sint32Cells = 4 [packed = true];  // Int, Short, Byte
+  repeated uint32 uint32Cells = 5 [packed = true]; // UShot, UByte, Bit
+  repeated float floatCells = 6 [packed = true];   // Float
+  repeated double doubleCells = 7 [packed = true]; // Double
+}
+
+message ProtoMultibandTile {
+  repeated ProtoTile tiles = 1;
+}

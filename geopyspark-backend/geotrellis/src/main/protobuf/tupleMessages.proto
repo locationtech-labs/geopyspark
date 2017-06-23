@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package protos;
+
+import "extentMessages.proto";
+import "keyMessages.proto";
+import "tileMessages.proto";
+
+message ProtoTuple {
+  ProtoProjectedExtent projectedExtent = 1;
+  ProtoTemporalProjectedExtent temporalProjectedExtent = 2;
+  ProtoSpatialKey spatialKey = 3;
+  ProtoSpaceTimeKey spaceTimeKey = 4;
+  ProtoMultibandTile tiles = 5;
+}

@@ -4,7 +4,7 @@ import rasterio
 import numpy as np
 import pytest
 
-from geopyspark.geotrellis import Extent, TileLayout
+from geopyspark.geotrellis import Extent, ProjectedExtent, TileLayout
 from geopyspark.geotrellis.constants import SPATIAL, ZOOM
 from geopyspark.geotrellis.rdd import RasterRDD
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -22,8 +22,8 @@ class PyramidingTest(BaseTestClass):
         epsg_code = 3857
         extent = Extent(0.0, 0.0, 10.0, 10.0)
 
-        tile = {'data': arr, 'no_data_value': False}
-        projected_extent = {'extent': extent, 'epsg': epsg_code}
+        tile = {'data': arr, 'no_data_value': False, 'data_type': 'FLOAT'}
+        projected_extent = ProjectedExtent(extent, epsg_code)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
@@ -43,8 +43,8 @@ class PyramidingTest(BaseTestClass):
         epsg_code = 3857
         extent = Extent(0.0, 0.0, 10.0, 10.0)
 
-        tile = {'data': arr, 'no_data_value': False}
-        projected_extent = {'extent': extent, 'epsg': epsg_code}
+        tile = {'data': arr, 'no_data_value': False, 'data_type': 'FLOAT'}
+        projected_extent = ProjectedExtent(extent, epsg_code)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
@@ -65,8 +65,8 @@ class PyramidingTest(BaseTestClass):
         epsg_code = 3857
         extent = Extent(0.0, 0.0, 10.0, 10.0)
 
-        tile = {'data': arr, 'no_data_value': False}
-        projected_extent = {'extent': extent, 'epsg': epsg_code}
+        tile = {'data': arr, 'no_data_value': False, 'data_type': 'FLOAT'}
+        projected_extent = ProjectedExtent(extent, epsg_code)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
 
@@ -82,14 +82,14 @@ class PyramidingTest(BaseTestClass):
         previous_layout_cols = None
         previous_layout_rows = None
 
-        for x in result:
+        for x in result.levels.values():
             metadata = x.layer_metadata
             layout_cols = metadata.tile_layout.layoutCols
             layout_rows = metadata.tile_layout.layoutRows
 
             if previous_layout_cols and previous_layout_rows:
-                self.assertEqual(layout_cols*2, previous_layout_cols)
-                self.assertEqual(layout_rows*2, previous_layout_rows)
+                self.assertEqual(layout_cols, previous_layout_cols*2)
+                self.assertEqual(layout_rows, previous_layout_rows*2)
             else:
                 self.assertTrue(layout_cols % 2 == 0)
                 self.assertTrue(layout_rows % 2 == 0)

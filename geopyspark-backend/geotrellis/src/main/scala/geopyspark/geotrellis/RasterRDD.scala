@@ -13,7 +13,6 @@ import geotrellis.raster.histogram.Histogram
 import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.json._
-import geotrellis.spark.io.avro._
 import geotrellis.spark.tiling._
 
 import spray.json._
@@ -32,6 +31,8 @@ import scala.util._
 import scala.collection.JavaConverters._
 
 import java.util.Map
+
+import protos.tupleMessages._
 
 
 object TileRDD {
@@ -162,11 +163,11 @@ abstract class TileRDD[K: ClassTag] {
 /**
  * RDD of Rasters, untiled and unsorted
  */
-abstract class RasterRDD[K: AvroRecordCodec: ClassTag] extends TileRDD[K] {
+abstract class RasterRDD[K: ClassTag] extends TileRDD[K] {
   def rdd: RDD[(K, MultibandTile)]
 
   /** Encode RDD as Avro bytes and return it with avro schema used */
-  def toAvroRDD(): (JavaRDD[Array[Byte]], String) = PythonTranslator.toPython(rdd)
+  def toProtoRDD(): JavaRDD[Array[Byte]]
 
   def collectMetadata(
     extent: java.util.Map[String, Double],
@@ -239,6 +240,9 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
 
   def withRDD(result: RDD[(ProjectedExtent, MultibandTile)]): RasterRDD[ProjectedExtent] =
     ProjectedRasterRDD(result)
+
+  def toProtoRDD(): JavaRDD[Array[Byte]] =
+    PythonTranslator.toPython[(ProjectedExtent, MultibandTile), ProtoTuple](rdd)
 }
 
 
@@ -284,19 +288,29 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
 
   def withRDD(result: RDD[(TemporalProjectedExtent, MultibandTile)]): RasterRDD[TemporalProjectedExtent] =
     TemporalRasterRDD(result)
+
+  def toProtoRDD(): JavaRDD[Array[Byte]] =
+    PythonTranslator.toPython[(TemporalProjectedExtent, MultibandTile), ProtoTuple](rdd)
+
 }
 
 object ProjectedRasterRDD {
-  def fromAvroEncodedRDD(javaRDD: JavaRDD[Array[Byte]], schema: String): ProjectedRasterRDD =
-    ProjectedRasterRDD(PythonTranslator.fromPython(javaRDD, Some(schema)))
+  def fromProtoEncodedRDD(javaRDD: JavaRDD[Array[Byte]]): ProjectedRasterRDD =
+    ProjectedRasterRDD(
+      PythonTranslator.fromPython[
+        (ProjectedExtent, MultibandTile), ProtoTuple
+      ](javaRDD, ProtoTuple.parseFrom))
 
   def apply(rdd: RDD[(ProjectedExtent, MultibandTile)]): ProjectedRasterRDD =
     new ProjectedRasterRDD(rdd)
 }
 
 object TemporalRasterRDD {
-  def fromAvroEncodedRDD(javaRDD: JavaRDD[Array[Byte]], schema: String): TemporalRasterRDD =
-    TemporalRasterRDD(PythonTranslator.fromPython(javaRDD, Some(schema)))
+  def fromProtoEncodedRDD(javaRDD: JavaRDD[Array[Byte]]): TemporalRasterRDD =
+    TemporalRasterRDD(
+      PythonTranslator.fromPython[
+        (TemporalProjectedExtent, MultibandTile), ProtoTuple
+      ](javaRDD, ProtoTuple.parseFrom))
 
   def apply(rdd: RDD[(TemporalProjectedExtent, MultibandTile)]): TemporalRasterRDD =
     new TemporalRasterRDD(rdd)

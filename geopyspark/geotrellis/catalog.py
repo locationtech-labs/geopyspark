@@ -5,12 +5,14 @@ import json
 from collections import namedtuple
 from urllib.parse import urlparse
 
+from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
 from geopyspark.geotrellis import Metadata, Extent
 from geopyspark.geotrellis.rdd import TiledRasterRDD
 from geopyspark.geotrellis.constants import TILE, ZORDER, SPATIAL
 
 from shapely.geometry import Polygon, MultiPolygon, Point
 from shapely.wkt import dumps
+import shapely.wkb
 
 
 _mapped_cached = {}
@@ -144,7 +146,7 @@ def read_layer_metadata(geopysc,
     """Reads the metadata from a saved layer without reading in the whole layer.
 
     Args:
-        geopysc (:cls:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
@@ -187,7 +189,7 @@ def get_layer_ids(geopysc,
     name and zoom of a given layer.
 
     Args:
-        geopysc (:cls:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         options (dict, optional): Additional parameters for reading the layer for specific backends.
@@ -232,7 +234,7 @@ def read(geopysc,
         use :func:`query` instead.
 
     Args:
-        geopysc (:cls:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
@@ -289,7 +291,7 @@ def read_value(geopysc,
         When requesting a tile that does not exist, ``None`` will be returned.
 
     Args:
-        geopysc (:cls:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
@@ -321,7 +323,9 @@ def read_value(geopysc,
         else:
             options = {}
 
-        _construct_catalog(geopysc, uri, options)
+        if uri not in _mapped_cached:
+            _construct_catalog(geopysc, uri, options)
+
         cached = _mapped_cached[uri]
 
         if not zdt:
@@ -329,19 +333,14 @@ def read_value(geopysc,
 
         key = geopysc.map_key_input(rdd_type, True)
 
-        tup = cached.value_reader.readTile(key,
-                                           layer_name,
-                                           layer_zoom,
-                                           col,
-                                           row,
-                                           zdt)
+        values = cached.value_reader.readTile(key,
+                                              layer_name,
+                                              layer_zoom,
+                                              col,
+                                              row,
+                                              zdt)
 
-        ser = geopysc.create_value_serializer(tup._2(), TILE)
-
-        if uri not in _mapped_serializers:
-            _mapped_serializers[uri] = ser
-
-        return ser.loads(tup._1())[0]
+        return multibandtile_decoder(values)
 
 def query(geopysc,
           rdd_type,
@@ -364,7 +363,7 @@ def query(geopysc,
         been set, or if the querried region contains the entire layer.
 
     Args:
-        geopysc (:cls:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``. Note: All of the
             GeoTiffs must have the same saptial type.
@@ -372,19 +371,20 @@ def query(geopysc,
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be querried.
         layer_zoom (int): The zoom level of the layer that is to be querried.
-        intersects (str or Polygon or :class:`~geopyspark.geotrellis.data_structures.Extent`): The
-            desired spatial area to be returned. Can either be a string, a shapely Polygon, or an
-            instance of ``Extent``. If the value is a string, it must be the WKT string, geometry
-            format.
+        intersects (bytes or shapely.geometry or :class:`~geopyspark.geotrellis.data_structures.Extent`):
+            The desired spatial area to be returned. Can either be a string, a shapely geometry, or
+            instance of ``Extent``, or a WKB verson of the geometry.
 
-            The types of Polygons supported:
+            Note:
+                Not all shapely geometires are supported. The following is are the types that are
+                supported:
                 * Point
                 * Polygon
                 * MultiPolygon
 
             Note:
-                Only layers that were made from spatial, singleband GeoTiffs can query a Point.
-                All other types are restricted to Polygon and MulitPolygon.
+                Only layers that were made from spatial, singleband GeoTiffs can query a ``Point``.
+                All other types are restricted to ``Polygon`` and ``MulitPolygon``.
         time_intervals (list, optional): A list of strings that time intervals to query.
             The strings must be in a valid date-time format. This parameter is only used when
             querying spatial-temporal data. The default value is, None. If None, then only the
@@ -422,14 +422,13 @@ def query(geopysc,
         proj_query = "EPSG:" + str(proj_query)
 
     if numPartitions is None:
-        numPartitions  = geopysc.pysc.defaultMinPartitions
+        numPartitions = geopysc.pysc.defaultMinPartitions
 
-    if isinstance(intersects, Polygon) or isinstance(intersects, MultiPolygon) \
-       or isinstance(intersects, Point):
+    if isinstance(intersects, (Polygon, MultiPolygon, Point)):
         srdd = cached.reader.query(key,
                                    layer_name,
                                    layer_zoom,
-                                   dumps(intersects),
+                                   shapely.wkb.dumps(intersects),
                                    time_intervals,
                                    proj_query,
                                    numPartitions)
@@ -438,12 +437,12 @@ def query(geopysc,
         srdd = cached.reader.query(key,
                                    layer_name,
                                    layer_zoom,
-                                   dumps(intersects.to_poly),
+                                   shapely.wkb.dumps(intersects.to_poly),
                                    time_intervals,
                                    proj_query,
                                    numPartitions)
 
-    elif isinstance(intersects, str):
+    elif isinstance(intersects, bytes):
         srdd = cached.reader.query(key,
                                    layer_name,
                                    layer_zoom,

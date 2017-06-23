@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 import unittest
 
+from geopyspark.geotrellis import Extent, ProjectedExtent
 from geopyspark.geotrellis.rdd import RasterRDD
 from geopyspark.geotrellis.constants import SPATIAL, NODATAINT, LESSTHAN, GREATERTHAN
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -12,9 +13,8 @@ from geopyspark.tests.base_test_class import BaseTestClass
 
 class ReclassifyTest(BaseTestClass):
     epsg_code = 3857
-    extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 10.0, 'ymax': 10.0}
-
-    projected_extent = {'extent': extent, 'epsg': epsg_code}
+    extent = Extent(0.0, 0.0, 10.0, 10.0)
+    projected_extent = ProjectedExtent(extent, epsg_code)
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
@@ -23,7 +23,7 @@ class ReclassifyTest(BaseTestClass):
 
     def test_all_zeros(self):
         arr = np.zeros((1, 16, 16))
-        tile = {'data': arr, 'no_data_value': -500}
+        tile = {'data': arr, 'no_data_value': -500, 'data_type': 'FLOAT'}
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
@@ -39,7 +39,7 @@ class ReclassifyTest(BaseTestClass):
                          [2, 2, 2, 2],
                          [3, 3, 3, 3],
                          [4, 4, 4, 4]]], dtype=int)
-        tile = {'data': arr, 'no_data_value': -500}
+        tile = {'data': arr, 'no_data_value': -500, 'data_type': 'INT'}
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
@@ -60,7 +60,7 @@ class ReclassifyTest(BaseTestClass):
                          [2, 2, 2, 2],
                          [3, 3, 3, 3],
                          [4, 4, 4, 4]]], dtype=int)
-        tile = {'data': arr, 'no_data_value': -500}
+        tile = {'data': arr, 'no_data_value': -500, 'data_type': 'INT'}
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
@@ -81,7 +81,7 @@ class ReclassifyTest(BaseTestClass):
                         [[2, 2, 2, 2]],
                         [[3, 3, 3, 3]],
                         [[4, 4, 4, 4]]], dtype=int)
-        tile = {'data': arr, 'no_data_value': -500}
+        tile = {'data': arr, 'no_data_value': -500, 'data_type': 'INT'}
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
@@ -103,7 +103,7 @@ class ReclassifyTest(BaseTestClass):
                          [1.5, 1.5, 1.5, 1.5],
                          [2.0, 2.0, 2.0, 2.0]]], dtype=float)
 
-        tile = {'data': arr, 'no_data_value': float('nan')}
+        tile = {'data': arr, 'no_data_value': float('nan'), 'data_type': 'FLOAT'}
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
 
@@ -121,7 +121,7 @@ class ReclassifyTest(BaseTestClass):
 
     def test_no_data_ints(self):
         arr = np.zeros((1, 16, 16))
-        tile = {'data': arr, 'no_data_value': NODATAINT}
+        tile = {'data': arr, 'no_data_value': NODATAINT, 'data_type': 'FLOAT'}
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
@@ -137,7 +137,7 @@ class ReclassifyTest(BaseTestClass):
                          [0.0, 0.0, 0.0, 0.0],
                          [0.0, 0.0, 0.0, 0.0],
                          [0.0, 0.0, 0.0, 0.0]]], dtype=float)
-        tile = {'data': arr, 'no_data_value': float('nan')}
+        tile = {'data': arr, 'no_data_value': float('nan'), 'data_type': 'FLOAT'}
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
@@ -154,7 +154,7 @@ class ReclassifyTest(BaseTestClass):
     def test_ignore_no_data_ints(self):
         arr = np.ones((1, 16, 16), int)
         np.fill_diagonal(arr[0], NODATAINT)
-        tile = {'data': arr, 'no_data_value': NODATAINT}
+        tile = {'data': arr, 'no_data_value': NODATAINT, 'data_type': 'FLOAT'}
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
@@ -170,7 +170,7 @@ class ReclassifyTest(BaseTestClass):
     def test_ignore_no_data_floats(self):
         arr = np.ones((1, 4, 4))
         np.fill_diagonal(arr[0], float('nan'))
-        tile = {'data': arr, 'no_data_value': float('nan')}
+        tile = {'data': arr, 'no_data_value': float('nan'), 'data_type': 'FLOAT'}
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)

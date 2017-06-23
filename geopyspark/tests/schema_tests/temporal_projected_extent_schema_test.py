@@ -3,7 +3,11 @@ import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
-from geopyspark.avroserializer import AvroSerializer
+from geopyspark.geotrellis import Extent, TemporalProjectedExtent
+from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
+from geopyspark.geotrellis.protobufcodecs import (temporal_projected_extent_decoder,
+                                                  temporal_projected_extent_encoder,
+                                                  to_pb_temporal_projected_extent)
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -16,12 +20,12 @@ class TemporalProjectedExtentSchemaTest(BaseTestClass):
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
     ew = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.TemporalProjectedExtentWrapper
 
-    tup = ew.testOut(sc)
-    java_rdd = tup._1()
-    ser = AvroSerializer(tup._2())
+    java_rdd = ew.testOut(sc)
+    ser = ProtoBufSerializer(temporal_projected_extent_decoder,
+                             temporal_projected_extent_encoder)
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
-    collected = rdd.collect()
+    collected = [tpex._asdict() for tpex in rdd.collect()]
 
     @pytest.fixture(scope='class', autouse=True)
     def tearDown(self):
@@ -33,10 +37,18 @@ class TemporalProjectedExtentSchemaTest(BaseTestClass):
             self.assertDictEqual(actual, expected)
 
     def test_encoded_tpextents(self):
-        encoded = self.rdd.map(lambda s: s)
-        actual_encoded = encoded.collect()
+        actual_encoded = [temporal_projected_extent_encoder(x) for x in self.rdd.collect()]
 
-        self.result_checker(actual_encoded, self.expected_tpextents)
+        for x in range(0, len(self.expected_tpextents)):
+            self.expected_tpextents[x]['extent'] = Extent(**self.expected_tpextents[x]['extent'])
+
+        expected_encoded = [
+            to_pb_temporal_projected_extent(TemporalProjectedExtent(**ex)).SerializeToString() \
+            for ex in self.expected_tpextents
+        ]
+
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
 
     def test_decoded_tpextents(self):
         self.result_checker(self.collected, self.expected_tpextents)
