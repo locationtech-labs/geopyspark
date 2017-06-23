@@ -9,15 +9,18 @@ from pkg_resources import resource_filename
 from geopyspark.geopyspark_constants import JAR
 
 
-def check_environment():
-    jars = 'JARS' in os.environ
-    pyspark_args = 'PYSPARK_SUBMIT_ARGS' in os.environ # driver (YARN)
-    yarn = ('SPARK_YARN_MODE' in os.environ) and \
-            (os.environ['SPARK_YARN_MODE'] == 'true') # executor (YARN)
+# def check_environment():
+#     jars = 'JARS' in os.environ
+#     pyspark_args = 'PYSPARK_SUBMIT_ARGS' in os.environ # driver (YARN)
+#     yarn = ('SPARK_YARN_MODE' in os.environ) and \
+#             (os.environ['SPARK_YARN_MODE'] == 'true') # executor (YARN)
 
-    if not jars and not pyspark_args and not yarn:
-        setup_environment()
+#     if not jars and not pyspark_args and not yarn:
+#         setup_environment()
 
+def ensure_pyspark():
+    if not [p for p in sys.path if 'py4j' in p]:
+        add_pyspark_path()
 
 def add_pyspark_path():
     """Adds SPARK_HOME to environment variables.
@@ -43,59 +46,61 @@ def add_pyspark_path():
         raise ValueError("Could not find the py4j zip in", path.join(pyspark_home, 'python', 'lib'))
 
 
-def setup_environment():
-    """Sets up various environment variables that are needed to run GeoPySpark.
+# def setup_environment():
+#     """Sets up various environment variables that are needed to run GeoPySpark.
 
-    Note:
-        Specifying your own values for these environment variables will overwrite these.
-    """
+#     Note:
+#         Specifying your own values for these environment variables will overwrite these.
+#     """
 
-    add_pyspark_path()
+#     add_pyspark_path()
 
-    current_location = path.dirname(path.realpath(__file__))
-    cwd = os.getcwd()
+#     current_location = path.dirname(path.realpath(__file__))
+#     cwd = os.getcwd()
 
-    local_prefixes = [
-        path.abspath(path.join(current_location, 'jars')),
-        path.abspath(path.join(cwd, 'jars')),
-        path.abspath(path.join(cwd, '../geopyspark/jars'))
-    ]
-    possible_jars = [path.join(prefix, '*.jar') for prefix in local_prefixes]
-    configuration = path.join(current_location, 'command', 'geopyspark.conf')
+#     local_prefixes = [
+#         path.abspath(path.join(current_location, 'jars')),
+#         path.abspath(path.join(cwd, 'jars')),
+#         path.abspath(path.join(cwd, '../geopyspark/jars'))
+#     ]
+#     possible_jars = [path.join(prefix, '*.jar') for prefix in local_prefixes]
+#     configuration = path.join(current_location, 'command', 'geopyspark.conf')
 
-    if path.isfile(configuration):
-        with open(path.join(configuration)) as conf:
-            possible_jars.append(path.relpath(conf.read(), cwd))
+#     if path.isfile(configuration):
+#         with open(path.join(configuration)) as conf:
+#             possible_jars.append(path.relpath(conf.read(), cwd))
 
-    jar = path.abspath(resource_filename('geopyspark.jars', JAR))
-    jar_dir = os.path.dirname(jar)
-    if jar_dir not in local_prefixes:
-        possible_jars.append(jar)
+#     jar = path.abspath(resource_filename('geopyspark.jars', JAR))
+#     jar_dir = os.path.dirname(jar)
+#     if jar_dir not in local_prefixes:
+#         possible_jars.append(jar)
 
-    returned = [glob.glob(jar_files) for jar_files in possible_jars]
-    jars = [jar for sublist in returned for jar in sublist]
+#     returned = [glob.glob(jar_files) for jar_files in possible_jars]
+#     jars = [jar for sublist in returned for jar in sublist]
 
-    if len(jars) == 0:
-        raise IOError("Failed to find any jars. Looked at these paths {}".format(possible_jars))
+#     if len(jars) == 0:
+#         raise IOError("Failed to find any jars. Looked at these paths {}".format(possible_jars))
 
-    jar_string = str(jars[0])
+#     jar_string = str(jars[0])
 
-    os.environ['JARS'] = jar_string
-    os.environ["PYSPARK_PYTHON"] = "python3"
-    os.environ["PYSPARK_DRIVER_PYTHON"] = "python3"
-    if 'TRAVIS' in os.environ:
-        os.environ["PYSPARK_SUBMIT_ARGS"] = "--jars {} \
-            --conf spark.ui.enabled=false \
-            --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
-            --conf spark.kyro.registrator=geotrellis.spark.io.kyro.KryoRegistrator \
-            --driver-memory 2G \
-            --executor-memory 2G \
-            pyspark-shell".format(jar_string)
-    else:
-        os.environ["PYSPARK_SUBMIT_ARGS"] = "--jars {} \
-            --conf spark.ui.enabled=false \
-            --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
-            --conf spark.kyro.registrator=geotrellis.spark.io.kyro.KryoRegistrator \
-            --driver-memory 8G \
-            --executor-memory 8G \
-            pyspark-shell".format(jar_string)
+#     os.environ['JARS'] = jar_string
+#     os.environ["PYSPARK_PYTHON"] = "python3"
+#     os.environ["PYSPARK_DRIVER_PYTHON"] = "python3"
+#     if 'TRAVIS' in os.environ:
+#         os.environ["PYSPARK_SUBMIT_ARGS"] = "--jars {} \
+#             --conf spark.ui.enabled=false \
+#             --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
+#             --conf spark.kyro.registrator=geotrellis.spark.io.kyro.KryoRegistrator \
+#             --driver-memory 2G \
+#             --executor-memory 2G \
+#             pyspark-shell".format(jar_string)
+#     else:
+#         os.environ["PYSPARK_SUBMIT_ARGS"] = "--jars {} \
+#             --conf spark.ui.enabled=false \
+#             --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
+#             --conf spark.kyro.registrator=geotrellis.spark.io.kyro.KryoRegistrator \
+#             --driver-memory 8G \
+#             --executor-memory 8G \
+#             pyspark-shell".format(jar_string)
+
+

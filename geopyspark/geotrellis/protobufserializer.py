@@ -1,6 +1,6 @@
 """The class which serializes/deserializes values in a RDD to/from Python."""
-from geopyspark.geopyspark_utils import check_environment
-check_environment()
+from geopyspark.geopyspark_utils import ensure_pyspark
+ensure_pyspark()
 from geopyspark.geotrellis.protobufcodecs import (create_partial_tuple_decoder,
                                                   create_partial_tuple_encoder,
                                                   _get_encoder,
