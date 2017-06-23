@@ -29,26 +29,6 @@ from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                             )
 from geopyspark.geotrellis.neighborhoods import Neighborhood
 
-def rasterize(geopysc, geoms, crs, zoom, fill_value, cell_type='float64'):
-    """Rasterizes a Shapely geometries.
-
-    Args:
-        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` instance.
-        geoms (shapely.geometry): List of geometries to rasterize.
-        crs (str or int): The CRS of the input geometry.
-        zoom (int): The zoom level of the output raster.
-        fill_value: Value to burn into pixels intersectiong geometry
-        cell_type (str): The string representation of the ``CellType`` to convert to.
-
-    Returns:
-        :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
-    """
-    if isinstance(crs, int):
-        crs = str(crs)
-
-    wkb_geoms = [shapely.wkb.dumps(g) for g in geoms]
-    srdd = geopysc._jvm.SpatialTiledRasterRDD.rasterizeGeometry(geopysc.sc, wkb_geoms, crs, zoom, float(fill_value), cell_type)
-    return TiledRasterRDD(geopysc, SPATIAL, srdd)
 
 def rasterize(geopysc, geoms, crs, zoom, fill_value, cell_type='float64', options=None, numPartitions=None):
     """Rasterizes a Shapely geometries.

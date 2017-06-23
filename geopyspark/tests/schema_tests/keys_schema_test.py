@@ -104,8 +104,6 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
         for actual, expected in zip(actual_encoded, expected_encoded):
             self.assertEqual(actual, expected)
 
->>>>>>> Updated all Python tests
-
     def test_decoded_extents(self):
         self.result_checker(self.collected, self.expected_keys)
 

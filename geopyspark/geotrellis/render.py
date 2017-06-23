@@ -45,12 +45,6 @@ class PngRDD(CachableRDD):
             color_map (JavaObject): Mapping from cell values to cell colors
         """
 
-<<<<<<< 76f3f9862dc043587cfe1f0b88bb449af89bccfb
-=======
-        if ramp_name not in COLOR_RAMPS:
-            raise ValueError(ramp_name, "Is not a known color ramp")
-
->>>>>>> Updated docs
         level0 = pyramid[0]
         self.geopysc = level0.geopysc
         self.rdd_type = level0.rdd_type

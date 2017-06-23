@@ -1,5 +1,4 @@
 """Contains the various encoding/decoding methods to bring values to/from Python from Scala."""
-import array
 from functools import partial
 import numpy as np
 from geopyspark.geopyspark_utils import check_environment
@@ -8,13 +7,10 @@ check_environment()
 from geopyspark.geotrellis import (Extent, ProjectedExtent, TemporalProjectedExtent, SpatialKey,
                                    SpaceTimeKey, Tile)
 
-from geopyspark.protobuf.tileMessages_pb2 import ProtoTile, ProtoMultibandTile, ProtoCellType
-from geopyspark.protobuf.extentMessages_pb2 import (ProtoExtent, ProtoProjectedExtent,
-                                                ProtoTemporalProjectedExtent)
-from geopyspark.protobuf import keyMessages_pb2
-from geopyspark.protobuf import extentMessages_pb2
-from geopyspark.protobuf import tileMessages_pb2
-from geopyspark.protobuf import tupleMessages_pb2
+from geopyspark.geotrellis.protobuf.tileMessages_pb2 import ProtoTile, ProtoMultibandTile, ProtoCellType
+from geopyspark.geotrellis.protobuf import keyMessages_pb2
+from geopyspark.geotrellis.protobuf import extentMessages_pb2
+from geopyspark.geotrellis.protobuf import tupleMessages_pb2
 
 
 _mapped_data_types = {
@@ -70,10 +66,8 @@ def tile_decoder(proto_bytes):
 
     if tile.cellType.hasNoData:
         return Tile(arr, tile.cellType.nd, data_type)
-        #return {'data': arr, 'no_data_value': tile.cellType.nd, 'data_type': data_type}
     else:
         return Tile(arr, tile.cellType.nd, None)
-        #return {'data': arr, 'data_type': data_type}
 
 def from_pb_multibandtile(multibandtile):
     data_type = _mapped_data_types[multibandtile.tiles[0].cellType.dataType]
@@ -81,11 +75,8 @@ def from_pb_multibandtile(multibandtile):
 
     if multibandtile.tiles[0].cellType.hasNoData:
         return Tile(bands, multibandtile.tiles[0].cellType.nd, data_type)
-        #return {'data': bands, 'no_data_value': multibandtile.tiles[0].cellType.nd,
-                #'data_type': data_type}
     else:
         return Tile(bands, multibandtile.tiles[0].cellType.nd, None)
-        #return {'data': bands, 'data_type': data_type}
 
 def multibandtile_decoder(proto_bytes):
     """Decodes a ``TILE`` into Python.
@@ -122,7 +113,7 @@ def extent_decoder(proto_bytes):
         :class:`~geopyspark.geotrellis.Extent`
     """
 
-    pb_extent = ProtoExtent.FromString(proto_bytes)
+    pb_extent = extentMessages_pb2.ProtoExtent.FromString(proto_bytes)
     return from_pb_extent(pb_extent)
 
 def from_pb_projected_extent(pb_projected_extent):
@@ -153,7 +144,7 @@ def projected_extent_decoder(proto_bytes):
         :class:`~geopyspark.geotrellis.ProjectedExtent`
     """
 
-    pb_projected_extent = ProtoProjectedExtent.FromString(proto_bytes)
+    pb_projected_extent = extentMessages_pb2.ProtoProjectedExtent.FromString(proto_bytes)
     return from_pb_projected_extent(pb_projected_extent)
 
 def from_pb_temporal_projected_extent(pb_temporal_projected_extent):
@@ -186,7 +177,7 @@ def temporal_projected_extent_decoder(proto_bytes):
         :class:`~geopyspark.geotrellis.TemporalProjectedExtent`
     """
 
-    pb_temporal_projected_extent = ProtoTemporalProjectedExtent.FromString(proto_bytes)
+    pb_temporal_projected_extent = extentMessages_pb2.ProtoTemporalProjectedExtent.FromString(proto_bytes)
     return from_pb_temporal_projected_extent(pb_temporal_projected_extent)
 
 def from_pb_spatial_key(pb_spatial_key):

@@ -86,30 +86,6 @@ class SpatialRddRoute(
             bytes = time(s"Rendering tile @ $key (zoom=$zoom)"){ rf.render(tile) }
           } yield HttpEntity(`image/png`, bytes)
         }
-      }~
-      path("handshake") {
-        complete { server.handshake }
       }
     }
-  // def root =
-  //   pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
-  //     get {
-  //       val key = SpatialKey(x, y)
-  //       complete {
-  //         Future {
-  //           val reader = layers.getOrElseUpdate(zoom, valueReader.reader[SpatialKey, Tile](LayerId(catalog, zoom)))
-  //           val tile: Tile = reader(key)
-  //           val bytes: Array[Byte] = time(s"Rendering tile @ $key (zoom=$zoom)"){ rf.render(tile) }
-  //           HttpEntity(`image/png`, bytes)
-  //         }
-  //       }
-  //     }
-  //   }~
-  //   path("handshake") {
-  //     get {
-  //       complete { server.handshake }
-  //     }
-  //   }
 }
-
-
