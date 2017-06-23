@@ -46,7 +46,7 @@ class CatalogTest(BaseTestClass):
                            1450,
                            966)
 
-        self.assertEqual(tiled.data.shape, (1, 256, 256))
+        self.assertEqual(tiled.cells.shape, (1, 256, 256))
 
     def test_bad_read_value(self):
         tiled = read_value(BaseTestClass.geopysc,

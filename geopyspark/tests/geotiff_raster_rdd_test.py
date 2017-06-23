@@ -32,12 +32,12 @@ class GeoTiffIOTest(object):
         for f in paths:
             with rasterio.open(f) as src:
                 if not windowed:
-                    rasterio_tiles.append({'data': src.read(),
+                    rasterio_tiles.append({'cells': src.read(),
                                            'no_data_value': src.nodata})
                 else:
                     for window in windows:
                         rasterio_tiles.append(
-                            {'data': src.read(window=window),
+                            {'cells': src.read(window=window),
                              'no_data_value': src.nodata})
 
         return rasterio_tiles
@@ -54,7 +54,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
     def test_to_numpy_rdd(self, option=None):
         pyrdd = self.result.to_numpy_rdd()
         (key, tile) = pyrdd.first()
-        self.assertEqual(tile.data.shape, (2, 512, 512))
+        self.assertEqual(tile.cells.shape, (2, 512, 512))
 
     def test_collect_metadata(self, options=None):
         md = self.result.collect_metadata()
@@ -118,7 +118,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         extent = Extent(0.0, 0.0, 10.0, 10.0)
         projected_extent = ProjectedExtent(extent, epsg_code)
 
-        tile = Tile(arr, float('nan'), 'FLOAT')
+        tile = Tile(arr, 'FLOAT',float('nan'))
         rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
 

@@ -27,7 +27,7 @@ class BaseTestClass(unittest.TestCase):
     projected_extent = value[0]
     extent = projected_extent.extent
 
-    expected_tile = value[1].data
+    expected_tile = value[1].cells
     (_, rows, cols) = expected_tile.shape
 
     layout = TileLayout(1, 1, cols, rows)

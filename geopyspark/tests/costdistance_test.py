@@ -12,17 +12,17 @@ from geopyspark.geotrellis.constants import SPATIAL
 
 
 class CostDistanceTest(BaseTestClass):
-    data = np.array([[
+    cells = np.array([[
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 0.0]]])
 
-    layer = [(SpatialKey(0, 0), Tile(data, -1.0, 'FLOAT')),
-             (SpatialKey(1, 0), Tile(data, -1.0, 'FLOAT')),
-             (SpatialKey(0, 1), Tile(data, -1.0, 'FLOAT')),
-             (SpatialKey(1, 1), Tile(data, -1.0, 'FLOAT'))]
+    layer = [(SpatialKey(0, 0), Tile(cells, 'FLOAT', -1.0)),
+             (SpatialKey(1, 0), Tile(cells, 'FLOAT', -1.0,)),
+             (SpatialKey(0, 1), Tile(cells, 'FLOAT', -1.0,)),
+             (SpatialKey(1, 1), Tile(cells, 'FLOAT', -1.0,))]
 
     rdd = BaseTestClass.geopysc.pysc.parallelize(layer)
 
@@ -53,7 +53,7 @@ class CostDistanceTest(BaseTestClass):
         result = self.raster_rdd.cost_distance(geometries=[Point(13, 13)], max_distance=144000.0)
 
         tile = result.to_numpy_rdd().filter(zero_one).first()[1]
-        point_distance = tile.data[0][1][3]
+        point_distance = tile.cells[0][1][3]
         self.assertEqual(point_distance, 0.0)
 
     def test_costdistance_finite_int(self):
@@ -64,7 +64,7 @@ class CostDistanceTest(BaseTestClass):
         result = self.raster_rdd.cost_distance(geometries=[Point(13, 13)], max_distance=144000)
 
         tile = result.to_numpy_rdd().filter(zero_one).first()[1]
-        point_distance = tile.data[0][1][3]
+        point_distance = tile.cells[0][1][3]
         self.assertEqual(point_distance, 0.0)
 
     def test_costdistance_infinite(self):
@@ -75,7 +75,7 @@ class CostDistanceTest(BaseTestClass):
         result = self.raster_rdd.cost_distance(geometries=[Point(13, 13)], max_distance=float('inf'))
 
         tile = result.to_numpy_rdd().filter(zero_one).first()[1]
-        point_distance = tile.data[0][0][0]
+        point_distance = tile.cells[0][0][0]
         self.assertTrue(point_distance > 1250000)
 
 if __name__ == "__main__":

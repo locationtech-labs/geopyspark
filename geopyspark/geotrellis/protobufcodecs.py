@@ -32,23 +32,23 @@ def from_pb_tile(tile, data_type=None):
         data_type = _mapped_data_types[tile.cellType.dataType]
 
     if data_type == 'BIT':
-        arr = np.int8(tile.uint32Cells[:]).reshape(tile.rows, tile.cols)
+        cells = np.int8(tile.uint32Cells[:]).reshape(tile.rows, tile.cols)
     elif data_type == 'BYTE':
-        arr = np.int8(tile.sint32Cells[:]).reshape(tile.rows, tile.cols)
+        cells = np.int8(tile.sint32Cells[:]).reshape(tile.rows, tile.cols)
     elif data_type == 'UBYTE':
-        arr = np.uint8(tile.uint32Cells[:]).reshape(tile.rows, tile.cols)
+        cells = np.uint8(tile.uint32Cells[:]).reshape(tile.rows, tile.cols)
     elif data_type == 'SHORT':
-        arr = np.int16(tile.sint32Cells[:]).reshape(tile.rows, tile.cols)
+        cells = np.int16(tile.sint32Cells[:]).reshape(tile.rows, tile.cols)
     elif data_type == 'USHORT':
-        arr = np.uint16(tile.uint32Cells[:]).reshape(tile.rows, tile.cols)
+        cells = np.uint16(tile.uint32Cells[:]).reshape(tile.rows, tile.cols)
     elif data_type == 'INT':
-        arr = np.int32(tile.sint32Cells[:]).reshape(tile.rows, tile.cols)
+        cells = np.int32(tile.sint32Cells[:]).reshape(tile.rows, tile.cols)
     elif data_type == 'FLOAT':
-        arr = np.float32(tile.floatCells[:]).reshape(tile.rows, tile.cols)
+        cells = np.float32(tile.floatCells[:]).reshape(tile.rows, tile.cols)
     else:
-        arr = np.double(tile.doubleCells[:]).reshape(tile.rows, tile.cols)
+        cells = np.double(tile.doubleCells[:]).reshape(tile.rows, tile.cols)
 
-    return arr
+    return cells
 
 def tile_decoder(proto_bytes):
     """Decodes a ``TILE`` into Python.
@@ -61,22 +61,22 @@ def tile_decoder(proto_bytes):
     """
 
     tile = ProtoTile.FromString(proto_bytes)
-    data_type = _mapped_data_types[tile.cellType.dataType]
-    arr = np.array([from_pb_tile(tile, data_type)])
+    cell_type = _mapped_data_types[tile.cellType.dataType]
+    cells = np.array([from_pb_tile(tile, cell_type)])
 
     if tile.cellType.hasNoData:
-        return Tile(arr, tile.cellType.nd, data_type)
+        return Tile(cells, cell_type, tile.cellType.nd)
     else:
-        return Tile(arr, tile.cellType.nd, None)
+        return Tile(cells, cell_type, None)
 
 def from_pb_multibandtile(multibandtile):
-    data_type = _mapped_data_types[multibandtile.tiles[0].cellType.dataType]
-    bands = np.array([from_pb_tile(tile, data_type) for tile in multibandtile.tiles])
+    cell_type = _mapped_data_types[multibandtile.tiles[0].cellType.dataType]
+    bands = np.array([from_pb_tile(tile, cell_type) for tile in multibandtile.tiles])
 
     if multibandtile.tiles[0].cellType.hasNoData:
-        return Tile(bands, multibandtile.tiles[0].cellType.nd, data_type)
+        return Tile(bands, cell_type, multibandtile.tiles[0].cellType.nd)
     else:
-        return Tile(bands, multibandtile.tiles[0].cellType.nd, None)
+        return Tile(bands, None, multibandtile.tiles[0].cellType.nd)
 
 def multibandtile_decoder(proto_bytes):
     """Decodes a ``TILE`` into Python.
@@ -294,15 +294,13 @@ def _get_decoder(name):
 # ENCODERS
 
 def to_pb_tile(obj):
-    #arr = obj['data']
-    arr = obj.data
-    #data_type = obj['data_type']
-    data_type = obj.data_type
+    cells = obj.cells
+    data_type = obj.cell_type
 
-    if len(arr.shape) > 2:
-        (_, rows, cols) = arr.shape
+    if len(cells.shape) > 2:
+        (_, rows, cols) = cells.shape
     else:
-        (rows, cols) = arr.shape
+        (rows, cols) = cells.shape
 
     tile = ProtoTile()
     cell_type = tile.cellType
@@ -310,39 +308,37 @@ def to_pb_tile(obj):
     tile.cols = cols
     tile.rows = rows
 
-    #if obj.get('no_data_value'):
     if obj.no_data_value:
         cell_type.hasNoData = True
-        #cell_type.nd = obj['no_data_value']
         cell_type.nd = obj.no_data_value
     else:
         cell_type.hasNoData = False
 
     if data_type == "BIT":
         cell_type.dataType = ProtoCellType.BIT
-        tile.uint32Cells.extend(arr.flatten().tolist())
+        tile.uint32Cells.extend(cells.flatten().tolist())
     elif data_type == "BYTE":
         cell_type.dataType = ProtoCellType.BYTE
-        tile.sint32Cells.extend(arr.flatten().tolist())
+        tile.sint32Cells.extend(cells.flatten().tolist())
     elif data_type == "UBYTE":
         cell_type.dataType = ProtoCellType.UBYTE
-        tile.uint32Cells.extend(arr.flatten().tolist())
+        tile.uint32Cells.extend(cells.flatten().tolist())
     elif data_type == "SHORT":
         cell_type.dataType = ProtoCellType.SHORT
-        tile.sint32Cells.extend(arr.flatten().tolist())
+        tile.sint32Cells.extend(cells.flatten().tolist())
     elif data_type == "USHORT":
         cell_type.dataType = ProtoCellType.USHORT
-        tile.uint32Cells.extend(arr.flatten().tolist())
+        tile.uint32Cells.extend(cells.flatten().tolist())
     elif data_type == "INT":
         cell_type.dataType = ProtoCellType.INT
-        tile.sint32Cells.extend(arr.flatten().tolist())
+        tile.sint32Cells.extend(cells.flatten().tolist())
     elif data_type == "FLOAT":
         ctype = tile.cellType
         ctype.dataType = ProtoCellType.FLOAT
-        tile.floatCells.extend(arr.flatten().tolist())
+        tile.floatCells.extend(cells.flatten().tolist())
     else:
         cell_type.dataType = ProtoCellType.DOUBLE
-        tile.doubleCells.extend(arr.flatten().tolist())
+        tile.doubleCells.extend(cells.flatten().tolist())
 
     return tile
 
@@ -361,14 +357,14 @@ def tile_encoder(obj):
 
 
 def to_pb_multibandtile(obj):
-    data = obj.data
-    if data.ndim == 2:
-        data = np.expand_dims(data, 0)
+    cells = obj.cells
+    if cells.ndim == 2:
+        cells = np.expand_dims(cells, 0)
 
-    band_count = data.shape[0]
+    band_count = cells.shape[0]
 
     def create_tile(index):
-        return Tile(data[index, :, :], obj.no_data_value, obj.data_type)
+        return Tile(cells[index, :, :], obj.cell_type, obj.no_data_value)
 
     multibandtile = ProtoMultibandTile()
     multibandtile.tiles.extend([to_pb_tile(create_tile(x)) for x in range(band_count)])

@@ -14,17 +14,17 @@ from geopyspark.geotrellis.constants import SPATIAL
 class MaskTest(BaseTestClass):
     geopysc = BaseTestClass.geopysc
 
-    data = np.array([[
+    cells = np.array([[
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0]]])
 
-    layer = [(SpatialKey(0, 0), Tile(data, -1.0, 'FLOAT')),
-             (SpatialKey(1, 0), Tile(data, -1.0, 'FLOAT')),
-             (SpatialKey(0, 1), Tile(data, -1.0, 'FLOAT')),
-             (SpatialKey(1, 1), Tile(data, -1.0, 'FLOAT'))]
+    layer = [(SpatialKey(0, 0), Tile(cells, 'FLOAT', -1.0)),
+             (SpatialKey(1, 0), Tile(cells, 'FLOAT', -1.0,)),
+             (SpatialKey(0, 1), Tile(cells, 'FLOAT', -1.0,)),
+             (SpatialKey(1, 1), Tile(cells, 'FLOAT', -1.0,))]
 
     rdd = geopysc.pysc.parallelize(layer)
 
@@ -50,7 +50,7 @@ class MaskTest(BaseTestClass):
 
     def test_geotrellis_mask(self):
         result = self.raster_rdd.mask(geometries=self.geometries).to_numpy_rdd()
-        n = result.map(lambda kv: np.sum(kv[1].data)).reduce(lambda a,b: a + b)
+        n = result.map(lambda kv: np.sum(kv[1].cells)).reduce(lambda a,b: a + b)
         self.assertEqual(n, 25.0)
 
 if __name__ == "__main__":

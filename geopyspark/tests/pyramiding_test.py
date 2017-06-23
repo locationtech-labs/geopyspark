@@ -22,7 +22,7 @@ class PyramidingTest(BaseTestClass):
         epsg_code = 3857
         extent = Extent(0.0, 0.0, 10.0, 10.0)
 
-        tile = Tile(arr, False, 'FLOAT')
+        tile = Tile(arr, 'FLOAT', False)
         projected_extent = ProjectedExtent(extent, epsg_code)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
@@ -43,7 +43,7 @@ class PyramidingTest(BaseTestClass):
         epsg_code = 3857
         extent = Extent(0.0, 0.0, 10.0, 10.0)
 
-        tile = Tile(arr, False, 'FLOAT')
+        tile = Tile(arr, 'FLOAT', None)
         projected_extent = ProjectedExtent(extent, epsg_code)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
@@ -65,7 +65,7 @@ class PyramidingTest(BaseTestClass):
         epsg_code = 3857
         extent = Extent(0.0, 0.0, 10.0, 10.0)
 
-        tile = Tile(arr, False, 'FLOAT')
+        tile = Tile(arr, 'FLOAT', None)
         projected_extent = ProjectedExtent(extent, epsg_code)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])

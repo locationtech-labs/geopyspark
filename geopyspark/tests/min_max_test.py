@@ -22,7 +22,7 @@ class MinMaxTest(BaseTestClass):
 
     def test_all_zeros(self):
         arr = np.zeros((1, 16, 16)).astype('int')
-        tile = Tile(arr, -500, 'INT')
+        tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
@@ -35,7 +35,7 @@ class MinMaxTest(BaseTestClass):
                         [[2, 2, 2, 2]],
                         [[3, 3, 3, 3]],
                         [[4, 4, 4, 4]]], dtype=int)
-        tile = Tile(arr, -500, 'INT')
+        tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
@@ -49,7 +49,7 @@ class MinMaxTest(BaseTestClass):
                          [1.5, 1.5, 1.5, 1.5],
                          [2.0, 2.0, 2.0, 2.0]]], dtype=float)
 
-        tile = Tile(arr, float('nan'), 'FLOAT')
+        tile = Tile(arr, 'FLOAT', float('nan'))
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
         min_max = raster_rdd.get_min_max()

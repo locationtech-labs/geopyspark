@@ -11,17 +11,17 @@ from geopyspark.geotrellis.constants import SPATIAL
 
 
 class StitchTest(BaseTestClass):
-    data = np.array([[
+    cells = np.array([[
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 0.0]]])
 
-    layer = [(SpatialKey(0, 0), Tile(data, -1.0, 'FLOAT')),
-             (SpatialKey(1, 0), Tile(data, -1.0, 'FLOAT')),
-             (SpatialKey(0, 1), Tile(data, -1.0, 'FLOAT')),
-             (SpatialKey(1, 1), Tile(data, -1.0, 'FLOAT'))]
+    layer = [(SpatialKey(0, 0), Tile(cells, 'FLOAT', -1.0)),
+             (SpatialKey(1, 0), Tile(cells, 'FLOAT', -1.0,)),
+             (SpatialKey(0, 1), Tile(cells, 'FLOAT', -1.0,)),
+             (SpatialKey(1, 1), Tile(cells, 'FLOAT', -1.0,))]
     rdd = BaseTestClass.geopysc.pysc.parallelize(layer)
 
     extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 33.0, 'ymax': 33.0}
@@ -45,7 +45,7 @@ class StitchTest(BaseTestClass):
 
     def test_stitch(self):
         result = self.raster_rdd.stitch()
-        self.assertTrue(result.data.shape == (1, 10, 10))
+        self.assertTrue(result.cells.shape == (1, 10, 10))
 
 
 if __name__ == "__main__":

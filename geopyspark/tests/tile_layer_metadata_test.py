@@ -32,7 +32,7 @@ class TileLayerMetadataTest(BaseTestClass):
                         reason="Test causes memory errors on Travis")
     def test_collection_python_rdd(self):
         data = rasterio.open(self.dir_path)
-        tile_dict = Tile(data.read(), data.nodata, 'FLOAT')
+        tile_dict = Tile(data.read(), 'FLOAT', data.nodata)
 
         rasterio_rdd = self.geopysc.pysc.parallelize([(self.projected_extent, tile_dict)])
         raster_rdd = RasterRDD.from_numpy_rdd(self.geopysc, SPATIAL, rasterio_rdd)

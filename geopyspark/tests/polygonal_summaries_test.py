@@ -12,17 +12,17 @@ from geopyspark.geotrellis.constants import SPATIAL
 
 
 class CostDistanceTest(BaseTestClass):
-    data = np.array([[
+    cells = np.array([[
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 0.0]]])
 
-    layer = [(SpatialKey(0, 0), Tile(data, -1.0, 'FLOAT')),
-             (SpatialKey(1, 0), Tile(data, -1.0, 'FLOAT')),
-             (SpatialKey(0, 1), Tile(data, -1.0, 'FLOAT')),
-             (SpatialKey(1, 1), Tile(data, -1.0, 'FLOAT'))]
+    layer = [(SpatialKey(0, 0), Tile(cells, 'FLOAT', -1.0)),
+             (SpatialKey(1, 0), Tile(cells, 'FLOAT', -1.0,)),
+             (SpatialKey(0, 1), Tile(cells, 'FLOAT', -1.0,)),
+             (SpatialKey(1, 1), Tile(cells, 'FLOAT', -1.0,))]
 
     rdd = BaseTestClass.geopysc.pysc.parallelize(layer)
 

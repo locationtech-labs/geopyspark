@@ -12,17 +12,17 @@ from geopyspark.geotrellis.constants import SPATIAL
 
 
 class LookupTest(BaseTestClass):
-    data = np.array([[
+    cells = np.array([[
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 0.0]]])
 
-    layer = [(SpatialKey(0, 0), Tile(data + 0, -1.0, 'FLOAT')),
-             (SpatialKey(1, 0), Tile(data + 1, -1.0, 'FLOAT')),
-             (SpatialKey(0, 1), Tile(data + 2, -1.0, 'FLOAT')),
-             (SpatialKey(1, 1), Tile(data + 3, -1.0, 'FLOAT'))]
+    layer = [(SpatialKey(0, 0), Tile(cells + 0, 'FLOAT', -1.0)),
+             (SpatialKey(1, 0), Tile(cells + 1, 'FLOAT', -1.0,)),
+             (SpatialKey(0, 1), Tile(cells + 2, 'FLOAT', -1.0,)),
+             (SpatialKey(1, 1), Tile(cells + 3, 'FLOAT', -1.0,))]
 
     rdd = BaseTestClass.geopysc.pysc.parallelize(layer)
 
@@ -47,22 +47,22 @@ class LookupTest(BaseTestClass):
 
     def test_lookup_1(self):
         result = self.raster_rdd.lookup(0, 0)[0]
-        n = np.sum(result.data)
+        n = np.sum(result.cells)
         self.assertEqual(n, 24 + 0*25)
 
     def test_lookup_2(self):
         result = self.raster_rdd.lookup(0, 1)[0]
-        n = np.sum(result.data)
+        n = np.sum(result.cells)
         self.assertEqual(n, 24 + 2*25)
 
     def test_lookup_3(self):
         result = self.raster_rdd.lookup(1, 0)[0]
-        n = np.sum(result.data)
+        n = np.sum(result.cells)
         self.assertEqual(n, 24 + 1*25)
 
     def test_lookup_4(self):
         result = self.raster_rdd.lookup(1, 1)[0]
-        n = np.sum(result.data)
+        n = np.sum(result.cells)
         self.assertEqual(n, 24 + 3*25)
 
     def test_lookup_5(self):
