@@ -4,10 +4,10 @@ import numpy as np
 import pytest
 
 from geopyspark.geotrellis import SpatialKey, Extent, Tile
-from geopyspark.geotrellis.rdd import TiledRasterRDD
+from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.constants import SPATIAL, SUM, MIN, SQUARE, ANNULUS
-from geopyspark.geotrellis.neighborhoods import Square, Annulus
+from geopyspark.geotrellis.neighborhood import Square, Annulus
 
 
 class FocalTest(BaseTestClass):
@@ -36,7 +36,7 @@ class FocalTest(BaseTestClass):
                     'extent': extent,
                     'tileLayout': {'tileCols': 5, 'tileRows': 5, 'layoutCols': 2, 'layoutRows': 2}}}
 
-    raster_rdd = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, metadata)
+    raster_rdd = TiledRasterLayer.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, metadata)
 
     @pytest.fixture(autouse=True)
     def tearDown(self):

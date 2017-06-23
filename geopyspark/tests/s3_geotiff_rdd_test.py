@@ -5,7 +5,7 @@ import pytest
 
 from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.tests.python_test_utils import geotiff_test_path
-from geopyspark.geotrellis.geotiff_rdd import get
+from geopyspark.geotrellis.geotiff import get
 from geopyspark.tests.base_test_class import BaseTestClass
 
 

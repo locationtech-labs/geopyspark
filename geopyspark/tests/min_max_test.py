@@ -5,7 +5,7 @@ import pytest
 import unittest
 
 from geopyspark.geotrellis import Extent, ProjectedExtent, Tile
-from geopyspark.geotrellis.rdd import RasterRDD
+from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.tests.base_test_class import BaseTestClass
 
@@ -25,7 +25,7 @@ class MinMaxTest(BaseTestClass):
         tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
         min_max = raster_rdd.get_min_max()
 
         self.assertEqual((0.0, 0.0), min_max)
@@ -38,7 +38,7 @@ class MinMaxTest(BaseTestClass):
         tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
         min_max = raster_rdd.get_min_max()
 
         self.assertEqual((1.0, 4.0), min_max)
@@ -51,7 +51,7 @@ class MinMaxTest(BaseTestClass):
 
         tile = Tile(arr, 'FLOAT', float('nan'))
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
         min_max = raster_rdd.get_min_max()
 
         self.assertEqual((0.0, 2.0), min_max)

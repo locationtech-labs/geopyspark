@@ -6,7 +6,7 @@ import pytest
 
 from shapely.geometry import Point, MultiPoint, LineString
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis.rdd import TiledRasterRDD
+from geopyspark.geotrellis import euclidean_distance
 from geopyspark.geotrellis.constants import SPATIAL
 
 import pyproj
@@ -48,7 +48,7 @@ class EuclideanDistanceTest(BaseTestClass):
             x, y = gridToMap(layoutDefinition, spatialKey, px, py)
             return geom.distance(Point(x, y))
 
-        tiled = TiledRasterRDD.euclidean_distance(BaseTestClass.geopysc, self.pts_wm, 3857, 7)
+        tiled = euclidean_distance.euclidean_distance(BaseTestClass.geopysc, self.pts_wm, 3857, 7)
         result = tiled.stitch().cells[0]
 
         arr = np.zeros((256,256), dtype=float)

@@ -6,9 +6,9 @@ import numpy as np
 
 from geopyspark.geotrellis.constants import SPATIAL, INT32, BOOLRAW, UINT8
 from geopyspark.tests.python_test_utils import geotiff_test_path
-from geopyspark.geotrellis.geotiff_rdd import get
-from geopyspark.geotrellis.rdd import RasterRDD
 from geopyspark.geotrellis import Extent, ProjectedExtent, Tile
+from geopyspark.geotrellis.geotiff import get
+from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -120,7 +120,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
 
         tile = Tile(arr, 'FLOAT',float('nan'))
         rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
 
         converted = raster_rdd.convert_data_type(UINT8, no_data_value=-1)
         tile = converted.to_numpy_rdd().first()
