@@ -1,6 +1,6 @@
 '''
-This module contains the ``RasterRDD`` and the ``TiledRasterRDD`` classes. Both of these classes are
-wrappers of their Scala counterparts. These will be used in leau of actual PySpark RDDs
+This module contains the ``RasterLayer`` and the ``TiledRasterLayer`` classes. Both of these
+classes are wrappers of their Scala counterparts. These will be used in leau of actual PySpark RDDs
 when performing operations.
 '''
 import json
@@ -27,30 +27,11 @@ from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              NODATAINT,
                                              CELL_TYPES
                                             )
-from geopyspark.geotrellis.neighborhoods import Neighborhood
+from geopyspark.geotrellis.neighborhood import Neighborhood
 
 
-def rasterize(geopysc, geoms, crs, zoom, fill_value, cell_type='float64', options=None, numPartitions=None):
-    """Rasterizes a Shapely geometries.
+__all__ = ["RasterLayer", "TiledRasterLayer", "Pyramid"]
 
-    Args:
-        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` instance.
-        geoms ([shapely.geometry]): List of shapely geometries to rasterize.
-        crs (str or int): The CRS of the input geometry.
-        zoom (int): The zoom level of the output raster.
-        fill_value: Value to burn into pixels intersectiong geometry
-        cell_type (str): The string representation of the ``CellType`` to convert to.
-        options (:class:`~geopyspark.geotrellis.RasterizerOptions`): Pixel intersection options.
-
-    Returns:
-        :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
-    """
-    if isinstance(crs, int):
-        crs = str(crs)
-
-    wkb_geoms = [shapely.wkb.dumps(g) for g in geoms]
-    srdd = geopysc._jvm.SpatialTiledRasterRDD.rasterizeGeometry(geopysc.sc, wkb_geoms, crs, zoom, float(fill_value), cell_type, options, numPartitions)
-    return TiledRasterRDD(geopysc, SPATIAL, srdd)
 
 def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_with):
     new_dict = {}
@@ -77,7 +58,7 @@ def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_wi
             return srdd.reclassifyDouble(new_dict, boundary_strategy, replace_nodata_with)
 
 
-class CachableRDD(object):
+class CachableLayer(object):
     """
     Base class for class that wraps a Scala RDD instance through a py4j reference.
 
@@ -149,15 +130,15 @@ class CachableRDD(object):
         return self.rdd.rdd().count()
 
 
-class RasterRDD(CachableRDD):
+class RasterLayer(CachableLayer):
     """A wrapper of a RDD that contains GeoTrellis rasters.
 
-    Represents a RDD that contains ``(K, V)``. Where ``K`` is either
+    Represents a layer that wraps a RDD that contains ``(K, V)``. Where ``K`` is either
     :class:`~geopyspark.geotrellis.ProjectedExtent` or
     :class:`~geopyspark.geotrellis.TemporalProjectedExtent` depending on the ``rdd_type`` of the RDD,
     and ``V`` being a :ref:`raster`.
 
-    The data held within the RDD has not been tiled. Meaning the data has yet to be
+    The data held within this layer has not been tiled. Meaning the data has yet to be
     modified to fit a certain layout. See :ref:`raster_rdd` for more information.
 
     Args:
@@ -165,27 +146,27 @@ class RasterRDD(CachableRDD):
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
-            ``RasterRDD`` to access the various Scala methods.
+            ``RasterLayer`` to access the various Scala methods.
 
     Attributes:
         geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
-            ``RasterRDD`` to access the various Scala methods.
+            ``RasterLayer`` to access the various Scala methods.
     """
 
     __slots__ = ['geopysc', 'rdd_type', 'srdd']
 
     def __init__(self, geopysc, rdd_type, srdd):
-        CachableRDD.__init__(self)
+        CachableLayer.__init__(self)
         self.geopysc = geopysc
         self.rdd_type = rdd_type
         self.srdd = srdd
 
     @classmethod
     def from_numpy_rdd(cls, geopysc, rdd_type, numpy_rdd):
-        """Create a ``RasterRDD`` from a numpy RDD.
+        """Create a ``RasterLayer`` from a numpy RDD.
 
         Args:
             geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this
@@ -198,7 +179,7 @@ class RasterRDD(CachableRDD):
                 are represented by a numpy array.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.RasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
         """
 
         key = geopysc.map_key_input(rdd_type, False)
@@ -217,7 +198,7 @@ class RasterRDD(CachableRDD):
         return cls(geopysc, rdd_type, srdd)
 
     def to_numpy_rdd(self):
-        """Converts a ``RasterRDD`` to a numpy RDD.
+        """Converts a ``RasterLayer`` to a numpy RDD.
 
         Note:
             Depending on the size of the data stored within the RDD, this can be an exspensive
@@ -235,10 +216,10 @@ class RasterRDD(CachableRDD):
 
     def to_tiled_layer(self, extent=None, layout=None, crs=None, tile_size=256,
                        resample_method=NEARESTNEIGHBOR):
-        """Converts this ``RasterRDD`` to a ``TiledRasterRDD``.
+        """Converts this ``RasterLayer`` to a ``TiledRasterLayer``.
 
-        This method combines :meth:`~geopyspark.geotrellis.rdd.RasterRDD.collect_metadata` and
-        :meth:`~geopyspark.geotrellis.rdd.RasterRDD.tile_to_layout` into one step.
+        This method combines :meth:`~geopyspark.geotrellis.rdd.RasterLayer.collect_metadata` and
+        :meth:`~geopyspark.geotrellis.rdd.RasterLayer.tile_to_layout` into one step.
 
         Args:
             extent (:class:`~geopyspark.geotrellis.Extent`, optional): Specify layout extent,
@@ -256,7 +237,7 @@ class RasterRDD(CachableRDD):
             ``extent`` and ``layout`` must both be defined if they are to be used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
         return self.tile_to_layout(self.collect_metadata(extent, layout, crs, tile_size),
@@ -271,7 +252,7 @@ class RasterRDD(CachableRDD):
             no_data_value (int or float, optional): The value that should be marked as NoData.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.RasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
 
         Raises:
             ValueError: When an unsupported cell type is entered.
@@ -290,13 +271,13 @@ class RasterRDD(CachableRDD):
 
             no_data_constant = new_type + "ud" + str(no_data_value)
 
-            return RasterRDD(self.geopysc, self.rdd_type,
+            return RasterLayer(self.geopysc, self.rdd_type,
                              self.srdd.convertDataType(no_data_constant))
         else:
-            return RasterRDD(self.geopysc, self.rdd_type, self.srdd.convertDataType(new_type))
+            return RasterLayer(self.geopysc, self.rdd_type, self.srdd.convertDataType(new_type))
 
     def collect_metadata(self, extent=None, layout=None, crs=None, tile_size=256):
-        """Iterate over RDD records and generates layer metadata desribing the contained
+        """Iterate over the RDD records and generates layer metadata desribing the contained
         rasters.
 
         Args:
@@ -350,7 +331,7 @@ class RasterRDD(CachableRDD):
                 ``MIN``. If none is specified, then ``NEARESTNEIGHBOR`` is used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.RasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
         """
 
         if resample_method not in RESAMPLE_METHODS:
@@ -359,7 +340,7 @@ class RasterRDD(CachableRDD):
         if isinstance(target_crs, int):
             target_crs = str(target_crs)
 
-        return RasterRDD(self.geopysc, self.rdd_type,
+        return RasterLayer(self.geopysc, self.rdd_type,
                          self.srdd.reproject(target_crs, resample_method))
 
     def cut_tiles(self, layer_metadata, resample_method=NEARESTNEIGHBOR):
@@ -367,14 +348,14 @@ class RasterRDD(CachableRDD):
 
         Args:
             layer_metadata (:class:`~geopyspark.geotrellis.Metadata`): The
-                ``Metadata`` of the ``RasterRDD`` instance.
+                ``Metadata`` of the ``RasterLayer`` instance.
             resample_method (str, optional): The resample method to use for the reprojection.
                 This is represented by the following constants: ``NEARESTNEIGHBOR``, ``BILINEAR``,
                 ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
                 ``MIN``. If none is specified, then ``NEARESTNEIGHBOR`` is used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
         if resample_method not in RESAMPLE_METHODS:
@@ -384,21 +365,21 @@ class RasterRDD(CachableRDD):
             layer_metadata = layer_metadata.to_dict()
 
         srdd = self.srdd.cutTiles(json.dumps(layer_metadata), resample_method)
-        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.geopysc, self.rdd_type, srdd)
 
     def tile_to_layout(self, layer_metadata, resample_method=NEARESTNEIGHBOR):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
             layer_metadata (:class:`~geopyspark.geotrellis.Metadata`): The
-                ``Metadata`` of the ``RasterRDD`` instance.
+                ``Metadata`` of the ``RasterLayer`` instance.
             resample_method (str, optional): The resample method to use for the reprojection.
                 This is represented by the following constants: ``NEARESTNEIGHBOR``, ``BILINEAR``,
                 ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
                 ``MIN``. If none is specified, then ``NEARESTNEIGHBOR`` is used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
         if resample_method not in RESAMPLE_METHODS:
@@ -408,7 +389,7 @@ class RasterRDD(CachableRDD):
             layer_metadata = layer_metadata.to_dict()
 
         srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
-        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.geopysc, self.rdd_type, srdd)
 
     def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO,
                    replace_nodata_with=None):
@@ -435,15 +416,15 @@ class RasterRDD(CachableRDD):
             represent NoData.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.RasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
         """
 
         srdd = _reclassify(self.srdd, value_map, data_type, boundary_strategy, replace_nodata_with)
 
-        return RasterRDD(self.geopysc, self.rdd_type, srdd)
+        return RasterLayer(self.geopysc, self.rdd_type, srdd)
 
     def get_min_max(self):
-        """Returns the maximum and minimum values of all of the rasters in the RDD.
+        """Returns the maximum and minimum values of all of the rasters in the layer.
 
         Returns:
             (float, float)
@@ -451,14 +432,14 @@ class RasterRDD(CachableRDD):
         min_max = self.srdd.getMinMax()
         return (min_max._1(), min_max._2())
 
-class TiledRasterRDD(CachableRDD):
+class TiledRasterLayer(CachableLayer):
     """Wraps a RDD of tiled, GeoTrellis rasters.
 
     Represents a RDD that contains ``(K, V)``. Where ``K`` is either
     :class:`~geopyspark.geotrellis.SpatialKey` or :class:`~geopyspark.geotrellis.SpaceTimeKey`
     depending on the ``rdd_type`` of the RDD, and ``V`` being a :ref:`raster`.
 
-    The data held within the RDD is tiled. This means that the rasters have been modified to fit
+    The data held within the layer is tiled. This means that the rasters have been modified to fit
     a larger layout. For more information, see :ref:`tiled-raster-rdd`.
 
     Args:
@@ -466,20 +447,20 @@ class TiledRasterRDD(CachableRDD):
         rdd_type (str): What the spatial type of the geotiffs are. This is represented by the
             constants: ``SPATIAL`` and ``SPACETIME``.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
-            ``TiledRasterRDD`` to access the various Scala methods.
+            ``TiledRasterLayer`` to access the various Scala methods.
 
     Attributes:
         geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is represented by the
             constants: ``SPATIAL` and ``SPACETIME``.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
-            ``RasterRDD`` to access the various Scala methods.
+            ``RasterLayer`` to access the various Scala methods.
     """
 
     __slots__ = ['geopysc', 'rdd_type', 'srdd']
 
     def __init__(self, geopysc, rdd_type, srdd):
-        CachableRDD.__init__(self)
+        CachableLayer.__init__(self)
         self.geopysc = geopysc
         self.rdd_type = rdd_type
         self.srdd = srdd
@@ -491,12 +472,12 @@ class TiledRasterRDD(CachableRDD):
 
     @property
     def zoom_level(self):
-        """The zoom level of the RDD. Can be ``None``."""
+        """The zoom level of the Layer. Can be ``None``."""
         return self.srdd.getZoom()
 
     @classmethod
     def from_numpy_rdd(cls, geopysc, rdd_type, numpy_rdd, metadata):
-        """Create a ``TiledRasterRDD`` from a numpy RDD.
+        """Create a ``TiledRasterLayer`` from a numpy RDD.
 
         Args:
             geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this
@@ -508,10 +489,10 @@ class TiledRasterRDD(CachableRDD):
                 :class:`~geopyspark.geotrellis.SpaceTimeKey` and rasters that are represented by a
                 numpy array.
             metadata (:class:`~geopyspark.geotrellis.Metadata`): The ``Metadata`` of
-                the ``TiledRasterRDD`` instance.
+                the ``TiledRasterLayer`` instance.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
         key = geopysc.map_key_input(rdd_type, True)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
@@ -531,37 +512,8 @@ class TiledRasterRDD(CachableRDD):
 
         return cls(geopysc, rdd_type, srdd)
 
-    @classmethod
-    def euclidean_distance(cls, geopysc, geometry, source_crs, zoom, cellType='float64'):
-        """Calculates the Euclidean distance of a Shapely geometry.
-
-        Args:
-            geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this
-                session.
-            geometry (shapely.geometry): The input geometry to compute the Euclidean distance
-                for.
-            source_crs (str or int): The CRS of the input geometry.
-            zoom (int): The zoom level of the output raster.
-
-        Note:
-            This function may run very slowly for polygonal inputs if they cover many cells of
-            the output raster.
-
-        Returns:
-            :class:`~geopyspark.geotrellis.rdd.RDD`
-        """
-        if isinstance(source_crs, int):
-            source_crs = str(source_crs)
-
-        srdd = geopysc._jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.euclideanDistance(geopysc.sc,
-                                                                                          shapely.wkb.dumps(geometry),
-                                                                                          source_crs,
-                                                                                          cellType,
-                                                                                          zoom)
-        return cls(geopysc, SPATIAL, srdd)
-
     def to_numpy_rdd(self):
-        """Converts a ``TiledRasterRDD`` to a numpy RDD.
+        """Converts a ``TiledRasterLayer`` to a numpy RDD.
 
         Note:
             Depending on the size of the data stored within the RDD, this can be an exspensive
@@ -585,7 +537,7 @@ class TiledRasterRDD(CachableRDD):
             no_data_value (int or float, optional): The value that should be marked as NoData.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
 
         Raises:
             ValueError: When an unsupported cell type is entered.
@@ -604,14 +556,14 @@ class TiledRasterRDD(CachableRDD):
 
             no_data_constant = new_type + "ud" + str(no_data_value)
 
-            return TiledRasterRDD(self.geopysc, self.rdd_type,
+            return TiledRasterLayer(self.geopysc, self.rdd_type,
                                   self.srdd.convertDataType(no_data_constant))
         else:
-            return TiledRasterRDD(self.geopysc, self.rdd_type, self.srdd.convertDataType(new_type))
+            return TiledRasterLayer(self.geopysc, self.rdd_type, self.srdd.convertDataType(new_type))
 
     def reproject(self, target_crs, extent=None, layout=None, scheme=FLOAT, tile_size=256,
                   resolution_threshold=0.1, resample_method=NEARESTNEIGHBOR):
-        """Reproject RDD as tiled raster layer, samples surrounding tiles.
+        """Reproject Layer as tiled raster layer, samples surrounding tiles.
 
         Args:
             target_crs (str or int): The CRS to reproject to. Can either be the EPSG code,
@@ -635,7 +587,7 @@ class TiledRasterRDD(CachableRDD):
             ``extent`` and ``layout`` must both be defined if they are to be used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
 
         Raises:
             TypeError: If either ``extent`` or ``layout`` is defined but the other is not.
@@ -659,12 +611,12 @@ class TiledRasterRDD(CachableRDD):
             srdd = self.srdd.reproject(scheme, tile_size, resolution_threshold,
                                        target_crs, resample_method)
         else:
-            raise TypeError("Could not collect reproject RDD with {} and {}".format(extent, layout))
+            raise TypeError("Could not collect reproject Layer with {} and {}".format(extent, layout))
 
-        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.geopysc, self.rdd_type, srdd)
 
     def repartition(self, num_partitions):
-        return TiledRasterRDD(self.geopysc, self.rdd_type, self.srdd.repartition(num_partitions))
+        return TiledRasterLayer(self.geopysc, self.rdd_type, self.srdd.repartition(num_partitions))
 
     def lookup(self, col, row):
         """Return the value(s) in the image of a particular ``SpatialKey`` (given by col and row).
@@ -677,11 +629,11 @@ class TiledRasterRDD(CachableRDD):
             A list of numpy arrays (the tiles)
 
         Raises:
-            ValueError: If using lookup on a non ``SPATIAL`` ``TiledRasterRDD``.
-            IndexError: If col and row are not within the ``TiledRasterRDD``\'s bounds.
+            ValueError: If using lookup on a non ``SPATIAL`` ``TiledRasterLayer``.
+            IndexError: If col and row are not within the ``TiledRasterLayer``\'s bounds.
         """
         if self.rdd_type != SPATIAL:
-            raise ValueError("Only TiledRasterRDDs with a rdd_type of Spatial can use lookup()")
+            raise ValueError("Only TiledRasterLayers with a rdd_type of Spatial can use lookup()")
         bounds = self.layer_metadata.bounds
         min_col = bounds.minKey.col
         min_row = bounds.minKey.row
@@ -709,7 +661,7 @@ class TiledRasterRDD(CachableRDD):
                 ``MIN``. If none is specified, then ``NEARESTNEIGHBOR`` is used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
         if resample_method not in RESAMPLE_METHODS:
@@ -720,7 +672,7 @@ class TiledRasterRDD(CachableRDD):
 
         srdd = self.srdd.tileToLayout(layout, resample_method)
 
-        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.geopysc, self.rdd_type, srdd)
 
     def pyramid(self, end_zoom, start_zoom=None, resample_method=NEARESTNEIGHBOR):
         """Creates a pyramid of GeoTrellis layers where each layer reprsents a given zoom.
@@ -730,14 +682,14 @@ class TiledRasterRDD(CachableRDD):
                 the level that is most zoomed out.
             start_zoom (int, Optional): The zoom level where pyramiding should begin. Represents
                 the level that is most zoomed in. If None, then will use the zoom level from
-                :meth:`~geopyspark.geotrellis.rdd.TiledRasterRDD.zoom_level`.
+                :meth:`~geopyspark.geotrellis.rdd.TiledRasterLayer.zoom_level`.
             resample_method (str, optional): The resample method to use for the reprojection.
                 This is represented by the following constants: ``NEARESTNEIGHBOR``, ``BILINEAR``,
                 ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
                 ``MIN``. If none is specified, then ``NEARESTNEIGHBOR`` is used.
 
         Returns:
-            ``[TiledRasterRDDs]``.
+            ``[TiledRasterLayers]``.
 
         Raises:
             ValueError: If the given ``resample_method`` is not known.
@@ -762,16 +714,16 @@ class TiledRasterRDD(CachableRDD):
 
         result = self.srdd.pyramid(start_zoom, end_zoom, resample_method)
 
-        return Pyramid([TiledRasterRDD(self.geopysc, self.rdd_type, srdd) for srdd in result])
+        return Pyramid([TiledRasterLayer(self.geopysc, self.rdd_type, srdd) for srdd in result])
 
     def focal(self, operation, neighborhood=None, param_1=None, param_2=None, param_3=None):
-        """Performs the given focal operation on the layers contained in the RDD.
+        """Performs the given focal operation on the layers contained in the Layer.
 
         Args:
             operation (str): The focal operation. Represented by constants: ``SUM``, ``MIN``,
                 ``MAX``, ``MEAN``, ``MEDIAN``, ``MODE``, ``STANDARDDEVIATION``, ``ASPECT``, and
                 ``SLOPE``.
-            neighborhood (str or :class:`~geopyspark.geotrellis.neighborhoods.Neighborhood`, optional):
+            neighborhood (str or :class:`~geopyspark.geotrellis.neighborhood.Neighborhood`, optional):
                 The type of neighborhood to use in the focal operation. This can be represented by
                 either an instance of ``Neighborhood``, or by the constants: ``ANNULUS``, ``NEWS``,
                 ``SQUARE``, ``WEDGE``, and ``CIRCLE``. Defaults to ``None``.
@@ -790,7 +742,7 @@ class TiledRasterRDD(CachableRDD):
             ``ASPECT``.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
 
         Raises:
             ValueError: If ``operation`` is not a known operation.
@@ -826,27 +778,27 @@ class TiledRasterRDD(CachableRDD):
         else:
             raise ValueError("neighborhood must be set or the operation must be SLOPE or ASPECT")
 
-        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.geopysc, self.rdd_type, srdd)
 
     def stitch(self):
-        """Stitch all of the rasters within the RDD into one raster.
+        """Stitch all of the rasters within the Layer into one raster.
 
         Note:
-            This can only be used on ``SPATIAL`` ``TiledRasterRDDs``.
+            This can only be used on ``SPATIAL`` ``TiledRasterLayers``.
 
         Returns:
             :ref:`raster`
         """
 
         if self.rdd_type != SPATIAL:
-            raise ValueError("Only TiledRasterRDDs with a rdd_type of Spatial can use stitch()")
+            raise ValueError("Only TiledRasterLayers with a rdd_type of Spatial can use stitch()")
 
         value = self.srdd.stitch()
         ser = ProtoBufSerializer.create_value_serializer(TILE)
         return ser.loads(value)[0]
 
     def save_stitched(self, path, crop_bounds=None, crop_dimensions=None):
-        """Stitch all of the rasters within the RDD into one raster.
+        """Stitch all of the rasters within the Layer into one raster.
 
         Args:
             path: The path of the geotiff to save.
@@ -854,14 +806,14 @@ class TiledRasterRDD(CachableRDD):
             crop_dimensions: Optional cols and rows of the image to save
 
         Note:
-            This can only be used on `SPATIAL` TiledRasterRDDs.
+            This can only be used on `SPATIAL` TiledRasterLayers.
 
         Returns:
             None
         """
 
         if self.rdd_type != SPATIAL:
-            raise ValueError("Only TiledRasterRDDs with a rdd_type of Spatial can use stitch()")
+            raise ValueError("Only TiledRasterLayers with a rdd_type of Spatial can use stitch()")
 
         if crop_bounds:
             if crop_dimensions:
@@ -876,7 +828,7 @@ class TiledRasterRDD(CachableRDD):
         return None
 
     def mask(self, geometries):
-        """Masks the ``TiledRasterRDD`` so that only values that intersect the geometries will
+        """Masks the ``TiledRasterLayer`` so that only values that intersect the geometries will
         be available.
 
         Args:
@@ -887,7 +839,7 @@ class TiledRasterRDD(CachableRDD):
                     All geometries must be in the same CRS as the TileLayer.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
         if not isinstance(geometries, list):
@@ -895,51 +847,7 @@ class TiledRasterRDD(CachableRDD):
         wkbs = [shapely.wkb.dumps(g) for g in geometries]
         srdd = self.srdd.mask(wkbs)
 
-        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
-
-    def cost_distance(self, geometries, max_distance):
-        """Performs cost distance of a TileLayer.
-
-        Args:
-            geometries (list):
-                A list of shapely geometries to be used as a starting point.
-
-                Note:
-                    All geometries must be in the same CRS as the TileLayer.
-            max_distance (int, float): The maximum cost that a path may reach before the operation.
-                stops. This value can be an ``int`` or ``float``.
-
-        Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
-        """
-
-        wkbs = [shapely.wkb.dumps(g) for g in geometries]
-        srdd = self.srdd.costDistance(self.geopysc.sc, wkbs, float(max_distance))
-
-        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
-
-    def hillshade(self, band=0, azimuth=315.0, altitude=45.0, z_factor=1.0):
-        """Computes Hillshade (shaded relief) from a raster.
-
-        The resulting raster will be a shaded relief map (a hill shading) based
-        on the sun altitude, azimuth, and the z factor. The z factor is a
-        conversion factor from map units to elevation units.
-
-        Returns a raster of ShortConstantNoDataCellType.
-
-        For descriptions of parameters, please see Esri Desktop's
-        `description <http://goo.gl/DtVDQ>`_ of Hillshade.
-
-        Args:
-            band (int) [default = 0]: The band of the raster to base the
-                hillshade calculation on.
-            azimuth (float) [default = 315]
-            altitude (float) [default = 45]
-            z_factor (float) [default = 1.0]
-        """
-        srdd = self.srdd.hillshade(self.geopysc.sc, azimuth, altitude, z_factor, band)
-
-        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.geopysc, self.rdd_type, srdd)
 
     def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO,
                    replace_nodata_with=None):
@@ -966,15 +874,15 @@ class TiledRasterRDD(CachableRDD):
             represent NoData.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
         srdd = _reclassify(self.srdd, value_map, data_type, boundary_strategy, replace_nodata_with)
 
-        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.geopysc, self.rdd_type, srdd)
 
     def get_min_max(self):
-        """Returns the maximum and minimum values of all of the rasters in the RDD.
+        """Returns the maximum and minimum values of all of the rasters in the Layer.
 
         Returns:
             ``(float, float)``
@@ -991,11 +899,11 @@ class TiledRasterRDD(CachableRDD):
             new_min (float): New minimum to normalize to.
             new_max (float): New maximum to normalize to.
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
         srdd = self.srdd.normalize(old_min, old_max, new_min, new_max)
 
-        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.geopysc, self.rdd_type, srdd)
 
     @staticmethod
     def _process_polygonal_summary(geometry, operation):
@@ -1093,7 +1001,7 @@ class TiledRasterRDD(CachableRDD):
         return self._process_polygonal_summary(geometry, self.srdd.polygonalMean)
 
     def get_quantile_breaks(self, num_breaks):
-        """Returns quantile breaks for this RDD.
+        """Returns quantile breaks for this Layer.
 
         Args:
             num_breaks (int): The number of breaks to return.
@@ -1104,9 +1012,9 @@ class TiledRasterRDD(CachableRDD):
         return list(self.srdd.quantileBreaks(num_breaks))
 
     def get_quantile_breaks_exact_int(self, num_breaks):
-        """Returns quantile breaks for this RDD.
+        """Returns quantile breaks for this Layer.
         This version uses the ``FastMapHistogram``, which counts exact integer values.
-        If your RDD has too many values, this can cause memory errors.
+        If your layer has too many values, this can cause memory errors.
 
         Args:
             num_breaks (int): The number of breaks to return.
@@ -1117,7 +1025,7 @@ class TiledRasterRDD(CachableRDD):
         return list(self.srdd.quantileBreaksExactInt(num_breaks))
 
     def is_floating_point_layer(self):
-        """Determines whether the content of the TiledRasterRDD is of floating point type.
+        """Determines whether the content of the TiledRasterLayer is of floating point type.
 
         Args:
             None
@@ -1145,12 +1053,12 @@ class TiledRasterRDD(CachableRDD):
     def _process_operation(self, value, operation):
         if isinstance(value, int) or isinstance(value, float):
             srdd = operation(value)
-        elif isinstance(value, TiledRasterRDD):
+        elif isinstance(value, TiledRasterLayer):
             if self.rdd_type != value.rdd_type:
-                raise ValueError("Both TiledRasterRDDs need to have the same rdd_type")
+                raise ValueError("Both TiledRasterLayers need to have the same rdd_type")
 
             if self.layer_metadata.tile_layout != value.layer_metadata.tile_layout:
-                raise ValueError("Both TiledRasterRDDs need to have the same layout")
+                raise ValueError("Both TiledRasterLayers need to have the same layout")
 
             srdd = operation(value.srdd)
         elif isinstance(value, list):
@@ -1158,7 +1066,7 @@ class TiledRasterRDD(CachableRDD):
         else:
             raise TypeError("Local operation cannot be performed with", value)
 
-        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.geopysc, self.rdd_type, srdd)
 
     def __add__(self, value):
         return self._process_operation(value, self.srdd.localAdd)
@@ -1191,12 +1099,12 @@ def _common_entries(*dcts):
         yield (i,) + tuple(d[i] for d in dcts)
 
 # Keep it in non rendered form so we can do map algebra operations to it
-class Pyramid(CachableRDD):
+class Pyramid(CachableLayer):
     def __init__(self, levels):
-        """List of TiledRasterRDDs into a coherent pyramid tile pyramid.
+        """List of TiledRasterLayers into a coherent pyramid tile pyramid.
 
         Args:
-            levels (list): A list of TiledRasterRDD.
+            levels (list): A list of TiledRasterLayer.
 
         """
 
