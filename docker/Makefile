@@ -39,6 +39,15 @@ archives/$(GEONOTEBOOK).zip:
 archives/geonotebook.tar: archives/$(GEONOTEBOOK).zip
 	(cd archives; unzip $(GEONOTEBOOK).zip; mv geonotebook-$(GEONOTEBOOK) geonotebook ; tar cvf geonotebook.tar geonotebook/ ; rm -rf geonotebook/)
 
+archives/thredds:
+	(cd archives ; git clone 'https://github.com/Unidata/thredds.git' ; cd thredds ; git fetch origin 'feature/s3+hdfs:feature/s3+hdfs' ; git checkout 'feature/s3+hdfs')
+
+archives/thredds/build/libs/netcdfAll-5.0.0-SNAPSHOT.jar: archives/thredds
+	(pushd archives/thredds ; ./gradlew assemble ; popd ; cp archives/thredds/build/libs/netcdfAll-5.0.0-SNAPSHOT.jar .)
+
+archives/netcdfAll-5.0.0-SNAPSHOT.jar: archives/thredds/build/libs/netcdfAll-5.0.0-SNAPSHOT.jar
+	cp archives/thredds/build/libs/netcdfAll-5.0.0-SNAPSHOT.jar archives/
+
 blobs/%: archives/%
 	cp -f $< $@
 
@@ -58,7 +67,7 @@ $(PYTHON-BLOB): $(WHL) scripts/gather-libs.sh archives/gdal-and-friends.tar.gz
           -v $(shell pwd)/scripts:/scripts:ro \
           $(STAGE0) /scripts/gather-libs.sh $(shell id -u) $(shell id -g)
 
-stage1: Dockerfile.stage1 $(JAR) blobs/geonotebook.tar blobs/geotrellis-backend-assembly-0.1.0.jar blobs/gdal-and-friends.tar.gz blobs/geopyspark-and-friends.tar.gz
+stage1: Dockerfile.stage1 $(JAR) blobs/geonotebook.tar blobs/geotrellis-backend-assembly-0.1.0.jar blobs/gdal-and-friends.tar.gz blobs/geopyspark-and-friends.tar.gz blobs/netcdfAll-5.0.0-SNAPSHOT.jar
 	docker build -t $(STAGE1) -f Dockerfile.stage1 .
 
 run:
