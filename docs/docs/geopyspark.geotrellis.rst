@@ -32,23 +32,51 @@ geopyspark.geotrellis.constants module
    :members:
    :inherited-members:
 
-geopyspark.geotrellis.geotiff_rdd module
+geopyspark.geotrellis.geotiff module
 -----------------------------------------
 
-.. automodule:: geopyspark.geotrellis.geotiff_rdd
+.. automodule:: geopyspark.geotrellis.geotiff
    :members:
    :inherited-members:
 
-geopyspark.geotrellis.neighborhoods module
+geopyspark.geotrellis.neighborhood module
 --------------------------------------------
 
-.. automodule:: geopyspark.geotrellis.neighborhoods
+.. automodule:: geopyspark.geotrellis.neighborhood
    :members:
    :inherited-members:
 
-geopyspark.geotrellis.rdd module
----------------------------------
+geopyspark.geotrellis.layer module
+------------------------------------
 
-.. automodule:: geopyspark.geotrellis.rdd
+.. automodule:: geopyspark.geotrellis.layer
+   :members:
+   :inherited-members:
+
+geopyspark.geotrellis.cost_distance module
+-------------------------------------------
+
+.. automodule:: geopyspark.geotrellis.cost_distance
+   :members:
+   :inherited-members:
+
+geopyspark.geotrellis.euclidean_distance module
+------------------------------------------------
+
+.. automodule:: geopyspark.geotrellis.euclidean_distance
+   :members:
+   :inherited-members:
+
+geopyspark.geotrellis.hillshade module
+-------------------------------------------
+
+.. automodule:: geopyspark.geotrellis.hillshade
+   :members:
+   :inherited-members:
+
+geopyspark.geotrellis.rasterize module
+-------------------------------------------
+
+.. automodule:: geopyspark.geotrellis.rasterize
    :members:
    :inherited-members:
