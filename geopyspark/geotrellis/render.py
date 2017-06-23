@@ -2,7 +2,7 @@ from geopyspark.geopyspark_utils import check_environment
 check_environment()
 
 from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, COLOR_RAMPS
-from .rdd import CachableRDD
+from .layer import CachableLayer
 from pyspark.storagelevel import StorageLevel
 import geopyspark.geotrellis.color as color
 from geopyspark.geotrellis import deprecated
@@ -33,14 +33,14 @@ def get_hex(geopysc, ramp_name, num_colors=None):
 
 
 # What does this do? implements lookup method ... this is a wrapper, a delegator
-class PngRDD(CachableRDD):
+class PngRDD(CachableLayer):
     __slots__ = ['geopysc', 'rdd_type', 'layer_metadata', 'max_zoom', 'pngpyramid', 'debug']
 
     def __init__(self, pyramid, ramp_name, debug=False):
-        """Convert a pyramid of TiledRasterRDDs into a displayable structure of PNGs
+        """Convert a pyramid of TiledRasterLayers into a displayable structure of PNGs
 
         Args:
-            pyramid (list): A pyramid of TiledRasterRDD resulting from calling the pyramid
+            pyramid (list): A pyramid of TiledRasterLayer resulting from calling the pyramid
                 method on an instance of that class
             color_map (JavaObject): Mapping from cell values to cell colors
         """
@@ -59,10 +59,10 @@ class PngRDD(CachableRDD):
 
     @classmethod
     def makePyramid(cls, tiledrdd, ramp_name, start_zoom=None, end_zoom=0, resample_method=NEARESTNEIGHBOR, debug=False):
-        """Create a pyramided PngRDD from a TiledRasterRDD
+        """Create a pyramided PngRDD from a TiledRasterLayer
 
         Args:
-            tiledrdd (TiledRasterRDD): The TiledRasterRDD source
+            tiledrdd (TiledRasterLayer): The TiledRasterLayer source
             ramp_name (str): The name of a color ramp; This is represented by the following
                 constants; HOT, COOLWARM, MAGMA, INFERNO, PLASMA, VIRIDIS, BLUE_TO_ORANGE,
                 LIGHT_YELLOW_TO_ORANGE, BLUE_TO_RED, GREEN_TO_RED_ORANGE, LIGHT_TO_DARK_SUNSET,
