@@ -3,7 +3,7 @@ import numpy as np
 import io
 
 from py4j.clientserver import ClientServer, JavaParameters, PythonParameters
-from geopyspark.geotrellis.rdd import Pyramid
+from geopyspark.geotrellis.layer import Pyramid
 
 class TileRender(object):
     """A Python implementation of the Scala geopyspark.geotrellis.tms.TileRender

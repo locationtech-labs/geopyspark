@@ -8,7 +8,7 @@ import pytest
 from geopyspark.geotrellis import Extent
 from shapely.geometry import Polygon
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis.rdd import rasterize
+from geopyspark.geotrellis import rasterize
 from geopyspark.geotrellis.constants import SPATIAL
 
 
@@ -23,11 +23,11 @@ class RasterizeTest(BaseTestClass):
     def test_whole_area(self):
         polygon = Polygon([(0, 11), (11, 11), (11, 0), (0, 0)])
 
-        raster_rdd = rasterize(BaseTestClass.geopysc,
-                               [polygon],
-                               "EPSG:3857",
-                               11,
-                               1)
+        raster_rdd = rasterize.rasterize(BaseTestClass.geopysc,
+                                         [polygon],
+                                         "EPSG:3857",
+                                         11,
+                                         1)
 
         cells = raster_rdd.to_numpy_rdd().first()[1].cells
 

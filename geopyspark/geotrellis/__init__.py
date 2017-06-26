@@ -161,7 +161,7 @@ class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent inst
 
 TileLayout = namedtuple("TileLayout", 'layoutCols layoutRows tileCols tileRows')
 """
-Describes the grid in which the rasters within a RDD should be laid out.
+Describes the grid in which the rasters within a Layer should be laid out.
 
 Args:
     layoutCols (int): The number of columns of rasters that runs east to west.
@@ -176,12 +176,12 @@ Returns:
 
 LayoutDefinition = namedtuple("LayoutDefinition", 'extent tileLayout')
 """
-Describes the layout of the rasters within a RDD and how they are projected.
+Describes the layout of the rasters within a Layer and how they are projected.
 
 Args:
     extent (:class:`~geopyspark.geotrellis.Extent`): The ``Extent`` of the layout.
     tileLayout (:obj:`~geopyspark.geotrellis.TileLayout`): The ``TileLayout`` of
-        how the rasters within the RDD.
+        how the rasters within the Layer.
 
 Returns:
     :obj:`~geopyspark.geotrellis.LayoutDefinition`
@@ -230,7 +230,7 @@ RasterizerOptions.__new__.__defaults__ = (True, 'PixelIsPoint')
 
 class Bounds(namedtuple("Bounds", 'minKey maxKey')):
     """
-    Represents the grid that covers the area of the rasters in a RDD on a grid.
+    Represents the grid that covers the area of the rasters in a Layer on a grid.
 
     Args:
         minKey (:obj:`~geopyspark.geotrellis.SpatialKey` or :obj:`~geopyspark.geotrellis.SpaceTimeKey`):
@@ -259,7 +259,7 @@ class Bounds(namedtuple("Bounds", 'minKey maxKey')):
 
 
 class Metadata(object):
-    """Information of the values within a ``RasterRDD`` or ``TiledRasterRDD``.
+    """Information of the values within a ``RasterLayer`` or ``TiledRasterLayer``.
     This data pertains to the layout and other attributes of the data within the classes.
 
     Args:
@@ -299,7 +299,7 @@ class Metadata(object):
         """Creates ``Metadata`` from a dictionary.
 
         Args:
-            metadata_dict (dict): The ``Metadata`` of a ``RasterRDD`` or ``TiledRasterRDD``
+            metadata_dict (dict): The ``Metadata`` of a ``RasterLayer`` or ``TiledRasterLayer``
                 instance that is in ``dict`` form.
 
         Returns:
@@ -366,3 +366,7 @@ class Metadata(object):
                 "layoutDefinition={})").format(self.bounds, self.cell_type,
                                                self.crs, self.extent,
                                                self.tile_layout, self.layout_definition)
+
+
+__all__ = ["catalog", "geotiff", "layer", "cost_distance", "hillshade", "euclidean_distance",
+           "rasterize", "tms"]

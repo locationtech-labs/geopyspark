@@ -6,7 +6,7 @@ import pytest
 
 from geopyspark.geotrellis import Extent, ProjectedExtent, TileLayout, Tile
 from geopyspark.geotrellis.constants import SPATIAL, ZOOM
-from geopyspark.geotrellis.rdd import RasterRDD
+from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -26,7 +26,7 @@ class PyramidingTest(BaseTestClass):
         projected_extent = ProjectedExtent(extent, epsg_code)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
         tile_layout = TileLayout(32, 32, 16, 16)
         new_extent = Extent(-20037508.342789244, -20037508.342789244, 20037508.342789244,
                             20037508.342789244)
@@ -47,7 +47,7 @@ class PyramidingTest(BaseTestClass):
         projected_extent = ProjectedExtent(extent, epsg_code)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
         tile_layout = TileLayout(32, 32, 16, 16)
         new_extent = Extent(-20037508.342789244, -20037508.342789244, 20037508.342789244,
                             20037508.342789244)
@@ -70,7 +70,7 @@ class PyramidingTest(BaseTestClass):
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
 
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
 
         metadata = raster_rdd.collect_metadata(tile_size=250)
         laid_out = raster_rdd.tile_to_layout(metadata)

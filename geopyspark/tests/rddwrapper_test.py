@@ -5,12 +5,12 @@ import pytest
 import unittest
 
 from geopyspark.geotrellis import Tile
-from geopyspark.geotrellis.rdd import RasterRDD
+from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.tests.base_test_class import BaseTestClass
 from pyspark.storagelevel import StorageLevel
 
-class RDDWrapperTest(BaseTestClass):
+class LayerWrapperTest(BaseTestClass):
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
@@ -24,7 +24,7 @@ class RDDWrapperTest(BaseTestClass):
         tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
 
         self.assertEqual(raster_rdd.is_cached, False)
 

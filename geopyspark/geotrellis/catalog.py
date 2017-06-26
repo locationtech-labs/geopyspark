@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
 from geopyspark.geotrellis import Metadata, Extent
-from geopyspark.geotrellis.rdd import TiledRasterRDD
+from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.geotrellis.constants import TILE, ZORDER, SPATIAL
 
 from shapely.geometry import Polygon, MultiPolygon, Point
@@ -249,7 +249,7 @@ def read(geopysc,
             be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
-        :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+        :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
 
     """
     if options:
@@ -270,7 +270,7 @@ def read(geopysc,
 
     srdd = cached.reader.read(key, layer_name, layer_zoom, numPartitions)
 
-    return TiledRasterRDD(geopysc, rdd_type, srdd)
+    return TiledRasterLayer(geopysc, rdd_type, srdd)
 
 def read_value(geopysc,
                rdd_type,
@@ -284,7 +284,7 @@ def read_value(geopysc,
                **kwargs):
 
     """Reads a single tile from a GeoTrellis catalog.
-    Unlike other functions in this module, this will not return a ``TiledRasterRDD``, but rather a
+    Unlike other functions in this module, this will not return a ``TiledRasterLayer``, but rather a
     GeoPySpark formatted raster. This is the function to use when creating a tile server.
 
     Note:
@@ -397,7 +397,7 @@ def query(geopysc,
             be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
-        :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+        :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
 
     """
     if options:
@@ -452,7 +452,7 @@ def query(geopysc,
     else:
         raise TypeError("Could not query intersection", intersects)
 
-    return TiledRasterRDD(geopysc, rdd_type, srdd)
+    return TiledRasterLayer(geopysc, rdd_type, srdd)
 
 def write(uri,
           layer_name,
@@ -469,8 +469,8 @@ def write(uri,
             the tile layer to written to. The shape of this string varies depending on backend.
         layer_name (str): The name of the new, tile layer.
         layer_zoom (int): The zoom level the layer should be saved at.
-        tiled_raster_rdd (:class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`): The
-            ``TiledRasterRDD`` to be saved.
+        tiled_raster_rdd (:class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`): The
+            ``TiledRasterLayer`` to be saved.
         index_strategy (str): The method used to orginize the saved data. Depending on the type of
             data within the layer, only certain methods are available. The default method used is,
             ``ZORDER``.

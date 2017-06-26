@@ -1,7 +1,8 @@
-"""This module contains functions that create ``RasterRDD`` from files."""
+"""This module contains functions that create ``RasterLayer`` from files."""
 
-from geopyspark.geotrellis.rdd import RasterRDD
+from geopyspark.geotrellis.layer import RasterLayer
 from functools import reduce
+
 
 def get(geopysc,
         rdd_type,
@@ -9,7 +10,7 @@ def get(geopysc,
         options=None,
         **kwargs):
 
-    """Creates a ``RasterRDD`` from GeoTiffs that are located on the local file system, ``HDFS``,
+    """Creates a ``RasterLayer`` from GeoTiffs that are located on the local file system, ``HDFS``,
     or ``S3``.
 
     Args:
@@ -21,8 +22,8 @@ def get(geopysc,
                 All of the GeoTiffs must have the same saptial type.
         uri (str): The path to a given file/directory.
         options (dict, optional): A dictionary of different options that are used
-            when creating the RDD. This defaults to ``None``. If ``None``, then the
-            RDD will be created using the default options for the given backend
+            when creating the Layer. This defaults to ``None``. If ``None``, then the
+            Layer will be created using the default options for the given backend
             in GeoTrellis.
 
             Note:
@@ -40,7 +41,7 @@ def get(geopysc,
                     java.time.format.DateTimeFormatter to parse. If ``None``,
                     then the default value is: ``yyyy:MM:dd HH:mm:ss``.
                 * **maxTileSize** (int, optional): The max size of each tile in the
-                    resulting RDD. If the size is smaller than a read in tile,
+                    resulting Layer. If the size is smaller than a read in tile,
                     then that tile will be broken into tiles of the specified
                     size. If ``None``, then the whole tile will be read in.
                 * **numPartitions** (int, optional): The number of repartitions Spark
@@ -65,7 +66,7 @@ def get(geopysc,
         of ``options``.
 
     Returns:
-        :class:`~geopyspark.geotrellis.rdd.RasterRDD`
+        :class:`~geopyspark.geotrellis.rdd.RasterLayer`
     """
 
     geotiff_rdd = geopysc._jvm.geopyspark.geotrellis.io.geotiff.GeoTiffRDD
@@ -98,4 +99,4 @@ def get(geopysc,
                                    [uri],
                                    {})
 
-    return RasterRDD(geopysc, rdd_type, srdd)
+    return RasterLayer(geopysc, rdd_type, srdd)

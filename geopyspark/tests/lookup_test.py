@@ -7,7 +7,7 @@ import pytest
 from geopyspark.geotrellis import SpatialKey, Tile
 from geopyspark.geotrellis.constants import ZOOM
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis.rdd import TiledRasterRDD
+from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.geotrellis.constants import SPATIAL
 
 
@@ -38,7 +38,7 @@ class LookupTest(BaseTestClass):
                     'extent': extent,
                     'tileLayout': {'tileCols': 5, 'tileRows': 5, 'layoutCols': 2, 'layoutRows': 2}}}
 
-    raster_rdd = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, metadata)
+    raster_rdd = TiledRasterLayer.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, metadata)
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
