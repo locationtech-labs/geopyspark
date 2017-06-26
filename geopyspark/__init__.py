@@ -50,7 +50,23 @@ def create_python_rdd(pysc, jrdd, serializer):
     else:
         return RDD(jrdd, pysc, AutoBatchedSerializer(serializer))
 
-def initial_spark_conf(appName=None, master=None):
+def initial_spark_conf(appName=None, master=None, additional_jar_dirs=[]):
+    """Construct the base SparkConf for use with GeoPySpark.  This configuration
+    object may be used as is , or may be adjusted according to the user's needs.
+
+    Args:
+        appName (string): The name of the application, as seen in the Spark 
+            console
+        master (string): The master URL to connect to, such as "local" to run 
+            locally with one thread, "local[4]" to run locally with 4 cores, or 
+            "spark://master:7077" to run on a Spark standalone cluster.
+        additional_jar_dirs (optional, list): A list of directory locations that
+            might contain JAR files needed by the current script.  Already 
+            includes $(cwd)/jars and /opt/jars.
+
+    Returns:
+        [SparkConf]
+    """
     conf = SparkConf()
 
     if not appName:
@@ -73,7 +89,8 @@ def initial_spark_conf(appName=None, master=None):
     local_prefixes = [
         os.path.abspath(os.path.join(current_location, 'jars')),
         os.path.abspath(os.path.join(cwd, 'jars')),
-        os.path.abspath(os.path.join(cwd, '../geopyspark/jars'))
+        os.path.abspath(os.path.join(cwd, '../geopyspark/jars')),
+        '/opt/jars'
     ]
     possible_jars = [os.path.join(prefix, '*.jar') for prefix in local_prefixes]
     configuration = os.path.join(current_location, 'command', 'geopyspark.conf')
