@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import unittest
 
+from geopyspark.geotrellis import Tile
 from geopyspark.geotrellis.rdd import RasterRDD
 from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -20,7 +21,7 @@ class RDDWrapperTest(BaseTestClass):
                         [[2, 2, 2, 2]],
                         [[3, 3, 3, 3]],
                         [[4, 4, 4, 4]]], dtype=int)
-        tile = {'data': arr, 'no_data_value': -500, 'data_type': 'INT'}
+        tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
         raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)

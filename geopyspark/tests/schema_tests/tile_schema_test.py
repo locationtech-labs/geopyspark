@@ -4,6 +4,7 @@ import numpy as np
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
+from geopyspark.geotrellis import Tile
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geotrellis.protobufcodecs import tile_decoder, tile_encoder, to_pb_tile
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -23,9 +24,9 @@ mapped_data_types = {
 
 class ShortTileSchemaTest(BaseTestClass):
     tiles = [
-        {'data': np.int16([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -32768, 'data_type': 'SHORT'},
-        {'data': np.int16([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': -32768, 'data_type': 'SHORT'},
-        {'data': np.int16([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -32768, 'data_type': 'SHORT'}
+        Tile(np.int16([0, 0, 1, 1]).reshape(2, 2), 'SHORT', -32768),
+        Tile(np.int16([1, 2, 3, 4]).reshape(2, 2), 'SHORT', -32768),
+        Tile(np.int16([5, 6, 7, 8]).reshape(2, 2), 'SHORT', -32768)
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
@@ -41,26 +42,26 @@ class ShortTileSchemaTest(BaseTestClass):
         expected_encoded = [to_pb_tile(x) for x in self.collected]
 
         for actual, expected in zip(self.tiles, expected_encoded):
-            data = actual['data']
-            rows, cols = data.shape
+            cells = actual.cells
+            rows, cols = cells.shape
 
             self.assertEqual(expected.cols, cols)
             self.assertEqual(expected.rows, rows)
-            self.assertEqual(expected.cellType.nd, actual['no_data_value'])
-            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual['data_type']])
+            self.assertEqual(expected.cellType.nd, actual.no_data_value)
+            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual.cell_type])
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
-            self.assertTrue((actual['data'] == expected['data']).all())
-            self.assertTrue(actual['data'].dtype == expected['data'].dtype)
-            self.assertEqual(actual['data'].shape, actual['data'].shape)
+            self.assertTrue((actual.cells == expected.cells).all())
+            self.assertTrue(actual.cells.dtype == expected.cells.dtype)
+            self.assertEqual(actual.cells.shape, actual.cells.shape)
 
 
 class UShortTileSchemaTest(BaseTestClass):
     tiles = [
-        {'data': np.uint16([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': 0, 'data_type': 'USHORT'},
-        {'data': np.uint16([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': 0, 'data_type': 'USHORT'},
-        {'data': np.uint16([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': 0, 'data_type': 'USHORT'}
+        Tile(np.uint16([0, 0, 1, 1]).reshape(2, 2), 'USHORT', 0),
+        Tile(np.uint16([1, 2, 3, 4]).reshape(2, 2), 'USHORT', 0),
+        Tile(np.uint16([5, 6, 7, 8]).reshape(2, 2), 'USHORT', 0)
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
@@ -76,26 +77,27 @@ class UShortTileSchemaTest(BaseTestClass):
         expected_encoded = [to_pb_tile(x) for x in self.collected]
 
         for actual, expected in zip(self.tiles, expected_encoded):
-            data = actual['data']
-            rows, cols = data.shape
+            cells = actual.cells
+            rows, cols = cells.shape
 
             self.assertEqual(expected.cols, cols)
             self.assertEqual(expected.rows, rows)
-            self.assertEqual(expected.cellType.nd, actual['no_data_value'])
-            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual['data_type']])
+            self.assertEqual(expected.cellType.nd, actual.no_data_value)
+            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual.cell_type])
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
-            self.assertTrue((actual['data'] == expected['data']).all())
-            self.assertTrue(actual['data'].dtype == expected['data'].dtype)
-            self.assertEqual(actual['data'].shape, actual['data'].shape)
+            print(actual.cells.dtype, expected.cells.dtype)
+            self.assertTrue((actual.cells == expected.cells).all())
+            self.assertTrue(actual.cells.dtype == expected.cells.dtype)
+            self.assertEqual(actual.cells.shape, actual.cells.shape)
 
 
 class ByteTileSchemaTest(BaseTestClass):
     tiles = [
-        {'data': np.int8([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -128, 'data_type': 'BYTE'},
-        {'data': np.int8([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': -128, 'data_type': 'BYTE'},
-        {'data': np.int8([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -128, 'data_type': 'BYTE'}
+        Tile(np.int8([0, 0, 1, 1]).reshape(2, 2), 'BYTE', -128),
+        Tile(np.int8([1, 2, 3, 4]).reshape(2, 2), 'BYTE', -128),
+        Tile(np.int8([5, 6, 7, 8]).reshape(2, 2), 'BYTE', -128)
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
@@ -111,26 +113,26 @@ class ByteTileSchemaTest(BaseTestClass):
         expected_encoded = [to_pb_tile(x) for x in self.collected]
 
         for actual, expected in zip(self.tiles, expected_encoded):
-            data = actual['data']
-            rows, cols = data.shape
+            cells = actual.cells
+            rows, cols = cells.shape
 
             self.assertEqual(expected.cols, cols)
             self.assertEqual(expected.rows, rows)
-            self.assertEqual(expected.cellType.nd, actual['no_data_value'])
-            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual['data_type']])
+            self.assertEqual(expected.cellType.nd, actual.no_data_value)
+            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual.cell_type])
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
-            self.assertTrue((actual['data'] == expected['data']).all())
-            self.assertTrue(actual['data'].dtype == expected['data'].dtype)
-            self.assertEqual(actual['data'].shape, actual['data'].shape)
+            self.assertTrue((actual.cells == expected.cells).all())
+            self.assertTrue(actual.cells.dtype == expected.cells.dtype)
+            self.assertEqual(actual.cells.shape, actual.cells.shape)
 
 
 class UByteTileSchemaTest(BaseTestClass):
     tiles = [
-        {'data': np.uint8([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': 0, 'data_type': 'UBYTE'},
-        {'data': np.uint8([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': 0, 'data_type': 'UBYTE'},
-        {'data': np.uint8([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': 0, 'data_type': 'UBYTE'}
+        Tile(np.uint8([0, 0, 1, 1]).reshape(2, 2), 'UBYTE', 0),
+        Tile(np.uint8([1, 2, 3, 4]).reshape(2, 2), 'UBYTE', 0),
+        Tile(np.uint8([5, 6, 7, 8]).reshape(2, 2), 'UBYTE', 0)
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
@@ -146,26 +148,26 @@ class UByteTileSchemaTest(BaseTestClass):
         expected_encoded = [to_pb_tile(x) for x in self.collected]
 
         for actual, expected in zip(self.tiles, expected_encoded):
-            data = actual['data']
-            rows, cols = data.shape
+            cells = actual.cells
+            rows, cols = cells.shape
 
             self.assertEqual(expected.cols, cols)
             self.assertEqual(expected.rows, rows)
-            self.assertEqual(expected.cellType.nd, actual['no_data_value'])
-            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual['data_type']])
+            self.assertEqual(expected.cellType.nd, actual.no_data_value)
+            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual.cell_type])
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
-            self.assertTrue((actual['data'] == expected['data']).all())
-            self.assertTrue(actual['data'].dtype == expected['data'].dtype)
-            self.assertEqual(actual['data'].shape, actual['data'].shape)
+            self.assertTrue((actual.cells == expected.cells).all())
+            self.assertTrue(actual.cells.dtype == expected.cells.dtype)
+            self.assertEqual(actual.cells.shape, actual.cells.shape)
 
 
 class IntTileSchemaTest(BaseTestClass):
     tiles = [
-        {'data': np.int32([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': -2147483648, 'data_type': 'INT'},
-        {'data': np.int32([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': -2147483648, 'data_type': 'INT'},
-        {'data': np.int32([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': -2147483648, 'data_type': 'INT'}
+        Tile(np.int32([0, 0, 1, 1]).reshape(2, 2), 'INT', -2147483648),
+        Tile(np.int32([1, 2, 3, 4]).reshape(2, 2), 'INT', -2147483648),
+        Tile(np.int32([5, 6, 7, 8]).reshape(2, 2), 'INT', -2147483648)
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
@@ -181,26 +183,26 @@ class IntTileSchemaTest(BaseTestClass):
         expected_encoded = [to_pb_tile(x) for x in self.collected]
 
         for actual, expected in zip(self.tiles, expected_encoded):
-            data = actual['data']
-            rows, cols = data.shape
+            cells = actual.cells
+            rows, cols = cells.shape
 
             self.assertEqual(expected.cols, cols)
             self.assertEqual(expected.rows, rows)
-            self.assertEqual(expected.cellType.nd, actual['no_data_value'])
-            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual['data_type']])
+            self.assertEqual(expected.cellType.nd, actual.no_data_value)
+            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual.cell_type])
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
-            self.assertTrue((actual['data'] == expected['data']).all())
-            self.assertTrue(actual['data'].dtype == expected['data'].dtype)
-            self.assertEqual(actual['data'].shape, actual['data'].shape)
+            self.assertTrue((actual.cells == expected.cells).all())
+            self.assertTrue(actual.cells.dtype == expected.cells.dtype)
+            self.assertEqual(actual.cells.shape, actual.cells.shape)
 
 
 class DoubleTileSchemaTest(BaseTestClass):
     tiles = [
-        {'data': np.double([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': True, 'data_type': 'DOUBLE'},
-        {'data': np.double([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': True, 'data_type': 'DOUBLE'},
-        {'data': np.double([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': True, 'data_type': 'DOUBLE'}
+        Tile(np.double([0, 0, 1, 1]).reshape(2, 2), 'DOUBLE', True),
+        Tile(np.double([1, 2, 3, 4]).reshape(2, 2), 'DOUBLE', True),
+        Tile(np.double([5, 6, 7, 8]).reshape(2, 2), 'DOUBLE', True)
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
@@ -216,26 +218,25 @@ class DoubleTileSchemaTest(BaseTestClass):
         expected_encoded = [to_pb_tile(x) for x in self.collected]
 
         for actual, expected in zip(self.tiles, expected_encoded):
-            data = actual['data']
-            rows, cols = data.shape
+            cells = actual.cells
+            rows, cols = cells.shape
 
             self.assertEqual(expected.cols, cols)
             self.assertEqual(expected.rows, rows)
-            self.assertTrue(math.isnan(expected.cellType.nd))
-            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual['data_type']])
+            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual.cell_type])
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
-            self.assertTrue((actual['data'] == expected['data']).all())
-            self.assertTrue(actual['data'].dtype == expected['data'].dtype)
-            self.assertEqual(actual['data'].shape, actual['data'].shape)
+            self.assertTrue((actual.cells == expected.cells).all())
+            self.assertTrue(actual.cells.dtype == expected.cells.dtype)
+            self.assertEqual(actual.cells.shape, actual.cells.shape)
 
 
 class FloatTileSchemaTest(BaseTestClass):
     tiles = [
-        {'data': np.float32([0, 0, 1, 1]).reshape(2, 2), 'no_data_value': True, 'data_type': 'FLOAT'},
-        {'data': np.float32([1, 2, 3, 4]).reshape(2, 2), 'no_data_value': True, 'data_type': 'FLOAT'},
-        {'data': np.float32([5, 6, 7, 8]).reshape(2, 2), 'no_data_value': True, 'data_type': 'FLOAT'}
+        Tile(np.float32([0, 0, 1, 1]).reshape(2, 2), 'FLOAT', True),
+        Tile(np.float32([1, 2, 3, 4]).reshape(2, 2), 'FLOAT', True),
+        Tile(np.float32([5, 6, 7, 8]).reshape(2, 2), 'FLOAT', True)
     ]
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
@@ -251,19 +252,18 @@ class FloatTileSchemaTest(BaseTestClass):
         expected_encoded = [to_pb_tile(x) for x in self.collected]
 
         for actual, expected in zip(self.tiles, expected_encoded):
-            data = actual['data']
-            rows, cols = data.shape
+            cells = actual.cells
+            rows, cols = cells.shape
 
             self.assertEqual(expected.cols, cols)
             self.assertEqual(expected.rows, rows)
-            self.assertTrue(math.isnan(expected.cellType.nd))
-            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual['data_type']])
+            self.assertEqual(expected.cellType.dataType, mapped_data_types[actual.cell_type])
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
-            self.assertTrue((actual['data'] == expected['data']).all())
-            self.assertTrue(actual['data'].dtype == expected['data'].dtype)
-            self.assertEqual(actual['data'].shape, actual['data'].shape)
+            self.assertTrue((actual.cells == expected.cells).all())
+            self.assertTrue(actual.cells.dtype == expected.cells.dtype)
+            self.assertEqual(actual.cells.shape, actual.cells.shape)
 
 
 if __name__ == "__main__":

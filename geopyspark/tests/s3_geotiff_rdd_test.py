@@ -29,12 +29,12 @@ class S3GeoTiffIOTest(object):
         for f in paths:
             with rasterio.open(f) as src:
                 if not windowed:
-                    rasterio_tiles.append({'data': src.read(),
+                    rasterio_tiles.append({'cells': src.read(),
                                            'no_data_value': src.nodata})
                 else:
                     for window in windows:
                         rasterio_tiles.append(
-                            {'data': src.read(window=window),
+                            {'cells': src.read(window=window),
                              'no_data_value': src.nodata})
 
         return rasterio_tiles
@@ -52,7 +52,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
     options = {"s3Client": "mock"}
 
     in_file = open(file_path, "rb")
-    data = in_file.read()
+    cells = in_file.read()
     in_file.close()
 
     @pytest.fixture(scope='class', autouse=True)
@@ -61,7 +61,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
         BaseTestClass.geopysc.pysc._gateway.close()
 
     def read_multiband_geotrellis(self, opt=options):
-        self.client.putObject(self.bucket, self.key, self.data)
+        self.client.putObject(self.bucket, self.key, self.cells)
         result = get(BaseTestClass.geopysc,
                      SPATIAL,
                      self.uri,
@@ -74,7 +74,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
         rasterio_tiles = self.read_geotiff_rasterio([self.file_path], False)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x['data'] == y['data']).all())
+            self.assertTrue((x.cells == y['cells']).all())
 
     def windowed_result_checker(self, windowed_tiles):
         self.assertEqual(len(windowed_tiles), 4)
@@ -86,7 +86,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
         self.windowed_result_checker(geotrellis_tiles)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x['data'] == y['data']).all())
+            self.assertTrue((x.cells == y['cells']).all())
 
 
 if __name__ == "__main__":

@@ -29,9 +29,9 @@ class RasterizeTest(BaseTestClass):
                                11,
                                1)
 
-        data = raster_rdd.to_numpy_rdd().first()[1]['data']
+        cells = raster_rdd.to_numpy_rdd().first()[1].cells
 
-        for x in data.flatten().tolist():
+        for x in cells.flatten().tolist():
             self.assertTrue(math.isnan(x))
 
 

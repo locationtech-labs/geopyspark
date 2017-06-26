@@ -89,7 +89,20 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
 
         for actual, expected in zip(actual_encoded, expected_encoded):
             self.assertEqual(actual, expected)
+        expected_encoded = [space_time_key_encoder(x) for x in self.rdd.collect()]
+        actual_encoded = []
 
+        for x in self.expected_keys:
+            proto_space_time_key = keyMessages_pb2.ProtoSpaceTimeKey()
+
+            proto_space_time_key.col = x['col']
+            proto_space_time_key.row = x['row']
+            proto_space_time_key.instant = x['instant']
+
+            actual_encoded.append(proto_space_time_key.SerializeToString())
+
+        for actual, expected in zip(actual_encoded, expected_encoded):
+            self.assertEqual(actual, expected)
 
     def test_decoded_extents(self):
         self.result_checker(self.collected, self.expected_keys)

@@ -4,7 +4,7 @@ import numpy as np
 
 import pytest
 
-from geopyspark.geotrellis import SpatialKey
+from geopyspark.geotrellis import SpatialKey, Tile
 from geopyspark.geotrellis.constants import ZOOM
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.rdd import TiledRasterRDD
@@ -12,17 +12,18 @@ from geopyspark.geotrellis.constants import SPATIAL
 
 
 class LookupTest(BaseTestClass):
-    data = np.array([[
+    cells = np.array([[
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 0.0]]])
 
-    layer = [(SpatialKey(0, 0), {'no_data_value': -1.0, 'data': data + 0, 'data_type': 'FLOAT'}),
-             (SpatialKey(1, 0), {'no_data_value': -1.0, 'data': data + 1, 'data_type': 'FLOAT'}),
-             (SpatialKey(0, 1), {'no_data_value': -1.0, 'data': data + 2, 'data_type': 'FLOAT'}),
-             (SpatialKey(1, 1), {'no_data_value': -1.0, 'data': data + 3, 'data_type': 'FLOAT'})]
+    layer = [(SpatialKey(0, 0), Tile(cells + 0, 'FLOAT', -1.0)),
+             (SpatialKey(1, 0), Tile(cells + 1, 'FLOAT', -1.0,)),
+             (SpatialKey(0, 1), Tile(cells + 2, 'FLOAT', -1.0,)),
+             (SpatialKey(1, 1), Tile(cells + 3, 'FLOAT', -1.0,))]
+
     rdd = BaseTestClass.geopysc.pysc.parallelize(layer)
 
     extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 33.0, 'ymax': 33.0}
@@ -46,27 +47,28 @@ class LookupTest(BaseTestClass):
 
     def test_lookup_1(self):
         result = self.raster_rdd.lookup(0, 0)[0]
-        n = np.sum(result['data'])
+        n = np.sum(result.cells)
         self.assertEqual(n, 24 + 0*25)
 
     def test_lookup_2(self):
         result = self.raster_rdd.lookup(0, 1)[0]
-        n = np.sum(result['data'])
+        n = np.sum(result.cells)
         self.assertEqual(n, 24 + 2*25)
 
     def test_lookup_3(self):
         result = self.raster_rdd.lookup(1, 0)[0]
-        n = np.sum(result['data'])
+        n = np.sum(result.cells)
         self.assertEqual(n, 24 + 1*25)
 
     def test_lookup_4(self):
         result = self.raster_rdd.lookup(1, 1)[0]
-        n = np.sum(result['data'])
+        n = np.sum(result.cells)
         self.assertEqual(n, 24 + 3*25)
 
     def test_lookup_5(self):
         with pytest.raises(IndexError):
             result = self.raster_rdd.lookup(13, 33)
+
 
 
 if __name__ == "__main__":

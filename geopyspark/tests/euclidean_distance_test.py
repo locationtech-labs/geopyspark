@@ -49,7 +49,7 @@ class EuclideanDistanceTest(BaseTestClass):
             return geom.distance(Point(x, y))
 
         tiled = TiledRasterRDD.euclidean_distance(BaseTestClass.geopysc, self.pts_wm, 3857, 7)
-        result = tiled.stitch()['data'][0]
+        result = tiled.stitch().cells[0]
 
         arr = np.zeros((256,256), dtype=float)
         it = np.nditer(arr, flags=['multi_index'])

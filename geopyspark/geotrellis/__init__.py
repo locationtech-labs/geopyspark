@@ -1,10 +1,9 @@
 """This subpackage contains the code that reads, writes, and processes data using GeoTrellis."""
 from collections import namedtuple
 from shapely.geometry import box
-
-
 import warnings
 import functools
+
 
 def deprecated(func):
     """This is a decorator which can be used to mark functions
@@ -13,12 +12,30 @@ def deprecated(func):
 
     @functools.wraps(func)
     def new_func(*args, **kwargs):
-        warnings.simplefilter('always', DeprecationWarning) #turn off filter 
-        warnings.warn("Call to deprecated function {}.".format(func.__name__), category=DeprecationWarning, stacklevel=2)
+        warnings.simplefilter('always', DeprecationWarning) #turn off filter
+        warnings.warn("Call to deprecated function {}.".format(func.__name__),
+                      category=DeprecationWarning, stacklevel=2)
         warnings.simplefilter('default', DeprecationWarning) #reset filter
         return func(*args, **kwargs)
 
     return new_func
+
+
+Tile = namedtuple("Tile", 'cells cell_type no_data_value')
+"""Represents a raster in GeoPySpark.
+
+    Note: All rasters in GeoPySpark are represented as having multiple bands,
+    even if the original raster just contained one.
+
+    Args:
+        cells (nd.array): The raster data itself. It is contained within a NumPy array.
+        data_type (str): The data type of the values within ``data`` if they were in Scala.
+        no_data_value: The value that represents no data in raster. This can be
+            represented by a variety of types depending on the value type of the raster.
+
+    Returns:
+        :obj:`~geopyspark.geotrellis.Tile`
+"""
 
 
 class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
@@ -200,6 +217,7 @@ Returns:
     :obj:`~geopyspark.geotrellis.SpaceTimeKey`
 """
 
+
 RasterizerOptions = namedtuple("RasterizeOption", 'includePartial sampleType')
 """Represents options available to geometry rasterizer
 
@@ -208,6 +226,7 @@ Args:
     sampleType (str): 'PixelIsArea' or 'PixelIsPoint' (default: 'PixelIsPoint')
 """
 RasterizerOptions.__new__.__defaults__ = (True, 'PixelIsPoint')
+
 
 class Bounds(namedtuple("Bounds", 'minKey maxKey')):
     """

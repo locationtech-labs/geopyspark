@@ -4,7 +4,7 @@ import numpy as np
 
 import pytest
 
-from geopyspark.geotrellis import SpatialKey
+from geopyspark.geotrellis import SpatialKey, Tile
 from shapely.geometry import Polygon, MultiPolygon
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.rdd import TiledRasterRDD
@@ -12,17 +12,18 @@ from geopyspark.geotrellis.constants import SPATIAL
 
 
 class CostDistanceTest(BaseTestClass):
-    data = np.array([[
+    cells = np.array([[
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 0.0]]])
 
-    layer = [(SpatialKey(0, 0), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'}),
-             (SpatialKey(0, 1), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'}),
-             (SpatialKey(1, 0), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'}),
-             (SpatialKey(1, 1), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'})]
+    layer = [(SpatialKey(0, 0), Tile(cells, 'FLOAT', -1.0)),
+             (SpatialKey(1, 0), Tile(cells, 'FLOAT', -1.0,)),
+             (SpatialKey(0, 1), Tile(cells, 'FLOAT', -1.0,)),
+             (SpatialKey(1, 1), Tile(cells, 'FLOAT', -1.0,))]
+
     rdd = BaseTestClass.geopysc.pysc.parallelize(layer)
 
     extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 33.0, 'ymax': 33.0}

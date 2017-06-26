@@ -4,7 +4,7 @@ import pytest
 import rasterio
 import numpy as np
 
-from geopyspark.geotrellis import SpatialKey
+from geopyspark.geotrellis import SpatialKey, Tile
 from shapely.geometry import Polygon
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.rdd import TiledRasterRDD
@@ -14,17 +14,18 @@ from geopyspark.geotrellis.constants import SPATIAL
 class MaskTest(BaseTestClass):
     geopysc = BaseTestClass.geopysc
 
-    data = np.array([[
+    cells = np.array([[
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0]]])
 
-    layer = [(SpatialKey(0, 0), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'}),
-             (SpatialKey(0, 1), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'}),
-             (SpatialKey(1, 0), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'}),
-             (SpatialKey(1, 1), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'})]
+    layer = [(SpatialKey(0, 0), Tile(cells, 'FLOAT', -1.0)),
+             (SpatialKey(1, 0), Tile(cells, 'FLOAT', -1.0,)),
+             (SpatialKey(0, 1), Tile(cells, 'FLOAT', -1.0,)),
+             (SpatialKey(1, 1), Tile(cells, 'FLOAT', -1.0,))]
+
     rdd = geopysc.pysc.parallelize(layer)
 
     extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 33.0, 'ymax': 33.0}
@@ -49,7 +50,7 @@ class MaskTest(BaseTestClass):
 
     def test_geotrellis_mask(self):
         result = self.raster_rdd.mask(geometries=self.geometries).to_numpy_rdd()
-        n = result.map(lambda kv: np.sum(kv[1]['data'])).reduce(lambda a,b: a + b)
+        n = result.map(lambda kv: np.sum(kv[1].cells)).reduce(lambda a,b: a + b)
         self.assertEqual(n, 25.0)
 
 if __name__ == "__main__":

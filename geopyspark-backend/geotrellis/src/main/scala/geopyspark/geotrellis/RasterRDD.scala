@@ -166,7 +166,6 @@ abstract class TileRDD[K: ClassTag] {
 abstract class RasterRDD[K: ClassTag] extends TileRDD[K] {
   def rdd: RDD[(K, MultibandTile)]
 
-  /** Encode RDD as Avro bytes and return it with avro schema used */
   def toProtoRDD(): JavaRDD[Array[Byte]]
 
   def collectMetadata(

@@ -5,7 +5,7 @@ import numpy as np
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
-from geopyspark.geotrellis import Extent, ProjectedExtent
+from geopyspark.geotrellis import Extent, ProjectedExtent, Tile
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geotrellis.protobufcodecs import (create_partial_tuple_decoder,
                                                   create_partial_tuple_encoder,
@@ -27,7 +27,7 @@ class TupleSchemaTest(BaseTestClass):
     arr = np.int8([0, 0, 1, 1]).reshape(2, 2)
     bands = [arr, arr, arr]
     multiband_tile = np.array(bands)
-    multiband_dict = {'data': multiband_tile, 'no_data_value': -128, 'data_type': 'BYTE'}
+    multiband_dict = Tile(multiband_tile, 'BYTE', -128)
 
     sc = BaseTestClass.geopysc.pysc._jsc.sc()
     ew = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.TupleWrapper
@@ -70,7 +70,7 @@ class TupleSchemaTest(BaseTestClass):
             (actual_extent, actual_tile) = actual
             (expected_extent, expected_tile) = expected
 
-            self.assertTrue((actual_tile['data'] == expected_tile['data']).all())
+            self.assertTrue((actual_tile.cells == expected_tile.cells).all())
             self.assertDictEqual(actual_extent._asdict(), expected_extent)
 
 
