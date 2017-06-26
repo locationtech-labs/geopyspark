@@ -4,6 +4,7 @@ FROM quay.io/geodocker/jupyter:4
 COPY blobs/gdal-and-friends.tar.gz /blobs/
 COPY blobs/geopyspark-and-friends.tar.gz /blobs/
 COPY blobs/geotrellis-backend-assembly-0.1.0.jar /blobs/
+COPY blobs/netcdfAll-5.0.0-SNAPSHOT.jar /blobs/
 COPY scripts/install-blobs.sh /scripts/
 COPY kernels/local/kernel.json /usr/local/share/jupyter/kernels/pyspark/
 COPY kernels/yarn/kernel.json /usr/local/share/jupyter/kernels/pysparkyarn/
