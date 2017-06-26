@@ -373,7 +373,7 @@ To run the container, type:
 
 .. code:: console
 
-   docker run -it --rm -p 8000:8000 quay.io/geodocker/jupyter-geopyspark:6
+   docker run -it --rm -p 8000:8000 quay.io/geodocker/jupyter-geopyspark:10
 
 Uninstalling
 ------------
