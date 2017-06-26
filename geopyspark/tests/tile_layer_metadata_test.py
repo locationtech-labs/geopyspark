@@ -19,7 +19,7 @@ class TileLayerMetadataTest(BaseTestClass):
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def test_collection_avro_rdd(self):
         result = self.rdd.collect_metadata(self.extent, self.layout)
@@ -34,8 +34,8 @@ class TileLayerMetadataTest(BaseTestClass):
         data = rasterio.open(self.dir_path)
         tile_dict = Tile(data.read(), 'FLOAT', data.nodata)
 
-        rasterio_rdd = self.geopysc.pysc.parallelize([(self.projected_extent, tile_dict)])
-        raster_rdd = RasterLayer.from_numpy_rdd(self.geopysc, SPATIAL, rasterio_rdd)
+        rasterio_rdd = self.pysc.parallelize([(self.projected_extent, tile_dict)])
+        raster_rdd = RasterLayer.from_numpy_rdd(self.pysc, SPATIAL, rasterio_rdd)
 
         result = raster_rdd.collect_metadata(extent=self.extent, layout=self.layout)
 

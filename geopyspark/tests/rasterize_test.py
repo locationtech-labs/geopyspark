@@ -18,12 +18,12 @@ class RasterizeTest(BaseTestClass):
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def test_whole_area(self):
         polygon = Polygon([(0, 11), (11, 11), (11, 0), (0, 0)])
 
-        raster_rdd = rasterize.rasterize(BaseTestClass.geopysc,
+        raster_rdd = rasterize.rasterize(BaseTestClass.pysc,
                                          [polygon],
                                          "EPSG:3857",
                                          11,

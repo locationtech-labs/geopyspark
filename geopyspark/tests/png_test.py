@@ -16,7 +16,7 @@ class PngRddTest(BaseTestClass):
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def test_if_working(self):
         '''
@@ -27,8 +27,8 @@ class PngRddTest(BaseTestClass):
 
         tile = Tile(arr, False, 'FLOAT')
 
-        rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd)
 
         laid_out = raster_rdd.to_tiled_layer()
 

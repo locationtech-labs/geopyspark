@@ -19,7 +19,7 @@ def cost_distance(tiled_raster_layer, geometries, max_distance):
     """
 
     wkbs = [shapely.wkb.dumps(g) for g in geometries]
-    srdd = tiled_raster_layer.srdd.costDistance(tiled_raster_layer.geopysc.sc, wkbs,
+    srdd = tiled_raster_layer.srdd.costDistance(tiled_raster_layer.pysc._jsc.sc(), wkbs,
                                                 float(max_distance))
 
-    return TiledRasterLayer(tiled_raster_layer.geopysc, tiled_raster_layer.rdd_type, srdd)
+    return TiledRasterLayer(tiled_raster_layer.pysc, tiled_raster_layer.rdd_type, srdd)
