@@ -14,17 +14,14 @@ from geopyspark import map_key_input, create_python_rdd
 from pyspark.storagelevel import StorageLevel
 from shapely.geometry import Polygon, MultiPolygon
 from geopyspark.geotrellis import Metadata
-from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
-                                             OPERATIONS,
-                                             Operations,
-                                             Neighborhoods,
-                                             NEIGHBORHOODS,
+from geopyspark.geotrellis.constants import (Operation,
+                                             Neighborhood as nb,
                                              ResampleMethods,
+                                             ClassificationStrategies,
+                                             CellTypes,
                                              FLOAT,
                                              SPATIAL,
-                                             ClassificationStrategies,
                                              NODATAINT,
-                                             CELL_TYPES
                                             )
 from geopyspark.geotrellis.neighborhood import Neighborhood
 
@@ -258,7 +255,7 @@ class RasterLayer(CachableLayer):
             ValueError: If ``no_data_value`` is set and ``new_type`` is a boolean.
         """
 
-        if new_type not in CELL_TYPES:
+        if new_type not in CellTypes.CELL_TYPES:
             raise ValueError(new_type, "Is not a know Cell Type")
 
         if no_data_value:
@@ -332,7 +329,7 @@ class RasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.RasterLayer`
         """
 
-        if resample_method not in RESAMPLE_METHODS:
+        if resample_method not in ResampleMethods.RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
 
         if isinstance(target_crs, int):
@@ -356,7 +353,7 @@ class RasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        if resample_method not in RESAMPLE_METHODS:
+        if resample_method not in ResampleMethods.RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
 
         if isinstance(layer_metadata, Metadata):
@@ -380,7 +377,7 @@ class RasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        if resample_method not in RESAMPLE_METHODS:
+        if resample_method not in ResampleMethods.RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
 
         if isinstance(layer_metadata, Metadata):
@@ -543,7 +540,7 @@ class TiledRasterLayer(CachableLayer):
             ValueError: If ``no_data_value`` is set and ``new_type`` is a boolean.
         """
 
-        if new_type not in CELL_TYPES:
+        if new_type not in CellTypes.CELL_TYPES:
             raise ValueError(new_type, "Is not a know Cell Type")
 
         if no_data_value:
@@ -591,7 +588,7 @@ class TiledRasterLayer(CachableLayer):
             TypeError: If either ``extent`` or ``layout`` is defined but the other is not.
         """
 
-        if resample_method not in RESAMPLE_METHODS:
+        if resample_method not in ResampleMethods.RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
 
         if extent and not isinstance(extent, dict):
@@ -662,7 +659,7 @@ class TiledRasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        if resample_method not in RESAMPLE_METHODS:
+        if resample_method not in ResampleMethods.RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
 
         if not isinstance(layout, dict):
@@ -694,7 +691,7 @@ class TiledRasterLayer(CachableLayer):
             ValueError: If the col and row count is not a power of 2.
         """
 
-        if resample_method not in RESAMPLE_METHODS:
+        if resample_method not in ResampleMethods.RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
 
         num_cols = self.layer_metadata.tile_layout.tileCols
@@ -749,7 +746,7 @@ class TiledRasterLayer(CachableLayer):
                 ``ASPECT``.
         """
 
-        if operation not in OPERATIONS:
+        if operation not in Operation.OPERATIONS:
             raise ValueError(operation, "Is not a known operation.")
 
         if isinstance(neighborhood, Neighborhood):
@@ -757,7 +754,7 @@ class TiledRasterLayer(CachableLayer):
                                    neighborhood.param_2, neighborhood.param_3)
 
         elif isinstance(neighborhood, str):
-            if neighborhood not in NEIGHBORHOODS:
+            if neighborhood not in nb.NEIGHBORHOODS:
                 raise ValueError(neighborhood, "is not a known neighborhood.")
 
             if param_1 is None:
@@ -770,8 +767,8 @@ class TiledRasterLayer(CachableLayer):
             srdd = self.srdd.focal(operation, neighborhood, float(param_1), float(param_2),
                                    float(param_3))
 
-        elif not neighborhood and operation == Operations.SLOPE or operation == Operations.ASPECT:
-            srdd = self.srdd.focal(operation, Neighborhoods.SQUARE, 1.0, 0.0, 0.0)
+        elif not neighborhood and operation == Operation.SLOPE or operation == Operation.ASPECT:
+            srdd = self.srdd.focal(operation, nb.SQUARE, 1.0, 0.0, 0.0)
 
         else:
             raise ValueError("neighborhood must be set or the operation must be SLOPE or ASPECT")

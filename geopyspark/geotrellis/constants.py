@@ -60,18 +60,17 @@ class ResampleMethods(object):
     MAX = 'Max'
     MIN = 'Min'
 
-
-RESAMPLE_METHODS = [
-    ResampleMethods.NEARESTNEIGHBOR,
-    ResampleMethods.BILINEAR,
-    ResampleMethods.CUBICCONVOLUTION,
-    ResampleMethods.LANCZOS,
-    ResampleMethods.AVERAGE,
-    ResampleMethods.MODE,
-    ResampleMethods.MEDIAN,
-    ResampleMethods.MAX,
-    ResampleMethods.MIN
-]
+    RESAMPLE_METHODS = [
+        NEARESTNEIGHBOR,
+        BILINEAR,
+        CUBICCONVOLUTION,
+        LANCZOS,
+        AVERAGE,
+        MODE,
+        MEDIAN,
+        MAX,
+        MIN
+    ]
 
 
 class TimeUnits(object):
@@ -85,19 +84,18 @@ class TimeUnits(object):
     MONTHS = 'months'
     YEARS = 'years'
 
+    TIME_UNITS = [
+        MILLISECONDS,
+        SECONDS,
+        MINUTES,
+        HOURS,
+        DAYS,
+        MONTHS,
+        YEARS
+    ]
 
-TIME_UNITS = [
-    TimeUnits.MILLISECONDS,
-    TimeUnits.SECONDS,
-    TimeUnits.MINUTES,
-    TimeUnits.HOURS,
-    TimeUnits.DAYS,
-    TimeUnits.MONTHS,
-    TimeUnits.YEARS
-]
 
-
-class Operations(object):
+class Operation(object):
     """Focal opertions."""
 
     SUM = 'Sum'
@@ -110,21 +108,20 @@ class Operations(object):
     SLOPE = 'Slope'
     STANDARDDEVIATION = 'StandardDeviation'
 
+    OPERATIONS = [
+        SUM,
+        MIN,
+        MAX,
+        MEAN,
+        MEDIAN,
+        MODE,
+        STANDARDDEVIATION,
+        ASPECT,
+        SLOPE
+    ]
 
-OPERATIONS = [
-    Operations.SUM,
-    Operations.MIN,
-    Operations.MAX,
-    Operations.MEAN,
-    Operations.MEDIAN,
-    Operations.MODE,
-    Operations.STANDARDDEVIATION,
-    Operations.ASPECT,
-    Operations.SLOPE
-]
 
-
-class Neighborhoods(object):
+class Neighborhood(object):
     """Neighborhood types."""
 
     ANNULUS = 'annulus'
@@ -133,14 +130,13 @@ class Neighborhoods(object):
     WEDGE = 'wedge'
     CIRCLE = "circle"
 
-
-NEIGHBORHOODS = [
-    Neighborhoods.ANNULUS,
-    Neighborhoods.NESW,
-    Neighborhoods.SQUARE,
-    Neighborhoods.WEDGE,
-    Neighborhoods.CIRCLE
-]
+    NEIGHBORHOODS = [
+        ANNULUS,
+        NESW,
+        SQUARE,
+        WEDGE,
+        CIRCLE
+    ]
 
 
 class ClassificationStrategies(object):
@@ -152,14 +148,13 @@ class ClassificationStrategies(object):
     LESSTHANOREQUALTO = "LessThanOrEqualTo"
     EXACT = "Exact"
 
-
-CLASSIFCATION_STRATEGIES = [
-    ClassificationStrategies.GREATERTHAN,
-    ClassificationStrategies.GREATERTHANOREQUALTO,
-    ClassificationStrategies.LESSTHAN,
-    ClassificationStrategies.LESSTHANOREQUALTO,
-    ClassificationStrategies.EXACT
-]
+    CLASSIFCATION_STRATEGIES = [
+        GREATERTHAN,
+        GREATERTHANOREQUALTO,
+        LESSTHAN,
+        LESSTHANOREQUALTO,
+        EXACT
+    ]
 
 
 class CellTypes(object):
@@ -182,25 +177,24 @@ class CellTypes(object):
     FLOAT32 = "float32"
     FLOAT64 = "float64"
 
-
-CELL_TYPES = [
-    CellTypes.BOOLRAW,
-    CellTypes.INT8RAW,
-    CellTypes.UINT8RAW,
-    CellTypes.INT16RAW,
-    CellTypes.UINT16RAW,
-    CellTypes.INT32RAW,
-    CellTypes.FLOAT32RAW,
-    CellTypes.FLOAT64RAW,
-    CellTypes.BOOL,
-    CellTypes.INT8,
-    CellTypes.UINT8,
-    CellTypes.INT16,
-    CellTypes.UINT16,
-    CellTypes.INT32,
-    CellTypes.FLOAT32,
-    CellTypes.FLOAT64
-]
+    CELL_TYPES = [
+        BOOLRAW,
+        INT8RAW,
+        UINT8RAW,
+        INT16RAW,
+        UINT16RAW,
+        INT32RAW,
+        FLOAT32RAW,
+        FLOAT64RAW,
+        BOOL,
+        INT8,
+        UINT8,
+        INT16,
+        UINT16,
+        INT32,
+        FLOAT32,
+        FLOAT64
+    ]
 
 
 class ColorRamps(object):
@@ -225,24 +219,23 @@ class ColorRamps(object):
     CLASSIFICATION_BOLD_LAND_USE = "ClassificationBoldLandUse"
     CLASSIFICATION_MUTED_TERRAIN = "ClassificationMutedTerrain"
 
-
-COLOR_RAMPS = [
-    ColorRamps.HOT,
-    ColorRamps.COOLWARM,
-    ColorRamps.MAGMA,
-    ColorRamps.INFERNO,
-    ColorRamps.PLASMA,
-    ColorRamps.VIRIDIS,
-    ColorRamps.BLUE_TO_ORANGE,
-    ColorRamps.LIGHT_YELLOW_TO_ORANGE,
-    ColorRamps.BLUE_TO_RED,
-    ColorRamps.GREEN_TO_RED_ORANGE,
-    ColorRamps.LIGHT_TO_DARK_SUNSET,
-    ColorRamps.LIGHT_TO_DARK_GREEN,
-    ColorRamps.HEATMAP_YELLOW_TO_RED,
-    ColorRamps.HEATMAP_BLUE_TO_YELLOW_TO_RED_SPECTRUM,
-    ColorRamps.HEATMAP_DARK_RED_TO_YELLOW_WHITE,
-    ColorRamps.HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE,
-    ColorRamps.CLASSIFICATION_BOLD_LAND_USE,
-    ColorRamps.CLASSIFICATION_MUTED_TERRAIN
-]
+    COLOR_RAMPS = [
+        HOT,
+        COOLWARM,
+        MAGMA,
+        INFERNO,
+        PLASMA,
+        VIRIDIS,
+        BLUE_TO_ORANGE,
+        LIGHT_YELLOW_TO_ORANGE,
+        BLUE_TO_RED,
+        GREEN_TO_RED_ORANGE,
+        LIGHT_TO_DARK_SUNSET,
+        LIGHT_TO_DARK_GREEN,
+        HEATMAP_YELLOW_TO_RED,
+        HEATMAP_BLUE_TO_YELLOW_TO_RED_SPECTRUM,
+        HEATMAP_DARK_RED_TO_YELLOW_WHITE,
+        HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE,
+        CLASSIFICATION_BOLD_LAND_USE,
+        CLASSIFICATION_MUTED_TERRAIN
+    ]
