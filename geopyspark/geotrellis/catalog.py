@@ -309,9 +309,9 @@ def query(pysc,
           uri,
           layer_name,
           layer_zoom,
-          intersects=None,
+          query_geom=None,
           time_intervals=None,
-          proj_query=None,
+          query_proj=None,
           options=None,
           numPartitions=None,
           **kwargs):
@@ -333,7 +333,7 @@ def query(pysc,
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be querried.
         layer_zoom (int): The zoom level of the layer that is to be querried.
-        intersects (bytes or shapely.geometry or :class:`~geopyspark.geotrellis.data_structures.Extent`, Optional):
+        query_geom (bytes or shapely.geometry or :class:`~geopyspark.geotrellis.data_structures.Extent`, Optional):
             The desired spatial area to be returned. Can either be a string, a shapely geometry, or
             instance of ``Extent``, or a WKB verson of the geometry.
 
@@ -380,7 +380,7 @@ def query(pysc,
     if numPartitions is None:
         numPartitions = pysc.defaultMinPartitions
 
-    if not intersects:
+    if not query_geom:
         srdd = cached.reader.read(key, layer_name, layer_zoom, numPartitions)
         return TiledRasterLayer(pysc, rdd_type, srdd)
 
@@ -388,38 +388,39 @@ def query(pysc,
         if time_intervals is None:
             time_intervals = []
 
-        if proj_query is None:
-            proj_query = ""
-        if isinstance(proj_query, int):
-            proj_query = "EPSG:" + str(proj_query)
+        if query_proj is None:
+            query_proj = ""
+        if isinstance(query_proj, int):
+            query_proj = "EPSG:" + str(query_proj)
 
-        if isinstance(intersects, (Polygon, MultiPolygon, Point)):
+        if isinstance(query_geom, (Polygon, MultiPolygon, Point)):
             srdd = cached.reader.query(key,
                                        layer_name,
                                        layer_zoom,
-                                       shapely.wkb.dumps(intersects),
+                                       shapely.wkb.dumps(query_geom),
                                        time_intervals,
-                                       proj_query,
+                                       query_proj,
                                        numPartitions)
 
-        elif isinstance(intersects, Extent):
+        elif isinstance(query_geom, Extent):
             srdd = cached.reader.query(key,
                                        layer_name,
                                        layer_zoom,
-                                       shapely.wkb.dumps(intersects.to_poly),
+                                       shapely.wkb.dumps(query_geom.to_poly),
                                        time_intervals,
-                                       proj_query,
+                                       query_proj,
                                        numPartitions)
 
-        elif isinstance(intersects, bytes):
+        elif isinstance(query_geom, bytes):
             srdd = cached.reader.query(key,
                                        layer_name,
                                        layer_zoom,
-                                       intersects,
+                                       query_geom,
                                        time_intervals,
-                                       proj_query)
+                                       query_proj,
+                                       numPartitions)
         else:
-            raise TypeError("Could not query intersection", intersects)
+            raise TypeError("Could not query intersection", query_geom)
 
         return TiledRasterLayer(pysc, rdd_type, srdd)
 
