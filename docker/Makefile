@@ -1,14 +1,16 @@
 .PHONY: stage0 stage1 all
 
 SRC := archives/gdal-2.1.3.tar.gz archives/geos-3.6.1.tar.bz2 archives/lcms2-2.8.tar.gz archives/libpng-1.6.28.tar.gz archives/proj-4.9.3.tar.gz archives/openjpeg-v2.1.2.tar.gz archives/zlib-1.2.11.tar.gz
-WHL := archives/geopyspark-0.1.0-py3-none-any.whl
-JAR := archives/geotrellis-backend-assembly-0.1.0.jar
+GEOPYSPARK-WHEEL := geopyspark-0.1.0-py3-none-any.whl
+GEOPYSPARK-JAR := geotrellis-backend-assembly-0.1.0.jar
+NETCDF-JAR := netcdfAll-5.0.0-SNAPSHOT.jar
 GDAL-BLOB := archives/gdal-and-friends.tar.gz
 PYTHON-BLOB := archives/geopyspark-and-friends.tar.gz
+GEONOTEBOOK := 178bde1679ae3bc084c044ca3eeb915a137f689f
 VERSION := 8
 STAGE0 := jamesmcclain/jupyter-geopyspark:stage0
 STAGE1 := quay.io/geodocker/jupyter-geopyspark:$(VERSION)
-GEONOTEBOOK := 178bde1679ae3bc084c044ca3eeb915a137f689f
+
 
 all: stage0 stage1
 
@@ -39,14 +41,17 @@ archives/$(GEONOTEBOOK).zip:
 archives/geonotebook.tar: archives/$(GEONOTEBOOK).zip
 	(cd archives; unzip $(GEONOTEBOOK).zip; mv geonotebook-$(GEONOTEBOOK) geonotebook ; tar cvf geonotebook.tar geonotebook/ ; rm -rf geonotebook/)
 
-archives/thredds:
-	(cd archives ; git clone 'https://github.com/Unidata/thredds.git' ; cd thredds ; git fetch origin 'feature/s3+hdfs:feature/s3+hdfs' ; git checkout 'feature/s3+hdfs')
+archives/s3+hdfs.zip:
+	(cd archives ; curl -L -O "https://github.com/Unidata/thredds/archive/feature/s3+hdfs.zip")
 
-archives/thredds/build/libs/netcdfAll-5.0.0-SNAPSHOT.jar: archives/thredds
-	(pushd archives/thredds ; ./gradlew assemble ; popd ; cp archives/thredds/build/libs/netcdfAll-5.0.0-SNAPSHOT.jar .)
-
-archives/netcdfAll-5.0.0-SNAPSHOT.jar: archives/thredds/build/libs/netcdfAll-5.0.0-SNAPSHOT.jar
-	cp archives/thredds/build/libs/netcdfAll-5.0.0-SNAPSHOT.jar archives/
+archives/$(NETCDF-JAR): scripts/netcdf.sh archives/s3+hdfs.zip
+	docker run -it --rm \
+	   -v $(shell pwd)/archives:/archives:rw \
+	   -v $(shell pwd)/thredds-feature-s3-hdfs:/thredds:rw \
+	   -v $(shell pwd)/scripts:/scripts:ro \
+           -v $(HOME)/.m2:/root/.m2:rw \
+           -v $(HOME)/.gradle:/root/.gradle:rw \
+           openjdk:8-jdk /scripts/netcdf.sh $(shell id -u) $(shell id -g) $(NETCDF-JAR)
 
 blobs/%: archives/%
 	cp -f $< $@
@@ -60,14 +65,14 @@ $(GDAL-BLOB): $(SRC) scripts/build-blobs.sh archives/gdal-2.1.3.tar.gz archives/
            -v $(shell pwd)/scripts:/scripts:ro \
            $(STAGE0) /scripts/build-blobs.sh $(shell id -u) $(shell id -g)
 
-$(PYTHON-BLOB): $(WHL) scripts/gather-libs.sh archives/gdal-and-friends.tar.gz
+$(PYTHON-BLOB): archives/$(GEOPYSPARK-WHEEL) scripts/gather-libs.sh archives/gdal-and-friends.tar.gz
 	docker run -it --rm \
           -v $(shell pwd)/archives:/archives:rw \
           -v $(shell pwd)/archives/pip-cache:/root/.cache/pip:rw \
           -v $(shell pwd)/scripts:/scripts:ro \
           $(STAGE0) /scripts/gather-libs.sh $(shell id -u) $(shell id -g)
 
-stage1: Dockerfile.stage1 $(JAR) blobs/geonotebook.tar blobs/geotrellis-backend-assembly-0.1.0.jar blobs/gdal-and-friends.tar.gz blobs/geopyspark-and-friends.tar.gz blobs/netcdfAll-5.0.0-SNAPSHOT.jar
+stage1: Dockerfile.stage1 blobs/$(GEOPYSPARK-JAR) blobs/$(NETCDF-JAR) blobs/geonotebook.tar blobs/geotrellis-backend-assembly-0.1.0.jar blobs/gdal-and-friends.tar.gz blobs/geopyspark-and-friends.tar.gz
 	docker build -t $(STAGE1) -f Dockerfile.stage1 .
 
 run:
@@ -109,7 +114,7 @@ shell:
 	docker exec -it geopyspark bash
 
 clean:
-	rm -f $(WHL) $(JAR)
+	rm -f archives/$(GEOPYSPARK-WHEEL) archives/$(GEOPYSPARK-JAR) archives/$(NETCDF-JAR)
 
 cleaner: clean
 	rm -f $(GDAL-BLOB) $(PYTHON-BLOB) blobs/*
