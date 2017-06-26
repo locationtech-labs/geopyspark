@@ -14,57 +14,6 @@ and :class:`~geopyspark.geotrellis.SpaceTimeKey` are examples of this type of ``
 """
 SPACETIME = 'spacetime'
 
-
-"""
-Indicates the type value that needs to be serialized/deserialized. Both singleband
-and multiband GeoTiffs are referred to as this.
-"""
-TILE = 'Tile'
-
-
-"""A resampling method."""
-NEARESTNEIGHBOR = 'NearestNeighbor'
-
-"""A resampling method."""
-BILINEAR = 'Bilinear'
-
-"""A resampling method."""
-CUBICCONVOLUTION = 'CubicConvolution'
-
-"""A resampling method."""
-CUBICSPLINE = 'CubicSpline'
-
-"""A resampling method."""
-LANCZOS = 'Lanczos'
-
-"""A resampling method."""
-AVERAGE = 'Average'
-
-"""A resampling method."""
-MODE = 'Mode'
-
-"""A resampling method."""
-MEDIAN = 'Median'
-
-"""A resampling method."""
-MAX = 'Max'
-
-"""A resampling method."""
-MIN = 'Min'
-
-RESAMPLE_METHODS = [
-    NEARESTNEIGHBOR,
-    BILINEAR,
-    CUBICCONVOLUTION,
-    LANCZOS,
-    AVERAGE,
-    MODE,
-    MEDIAN,
-    MAX,
-    MIN
-]
-
-
 """Layout scheme to match resolution of the closest level of TMS pyramid."""
 ZOOM = 'zoom'
 
@@ -93,237 +42,194 @@ is not important for your analysis.
 """
 ROWMAJOR = 'rowmajor'
 
-
-"""A time unit used with ZORDER."""
-MILLISECONDS = 'millis'
-
-"""A time unit used with ZORDER."""
-SECONDS = 'seconds'
-
-"""A time unit used with ZORDER."""
-MINUTES = 'minutes'
-
-"""A time unit used with ZORDER."""
-HOURS = 'hours'
-
-"""A time unit used with ZORDER."""
-DAYS = 'days'
-
-"""A time unit used with ZORDER."""
-MONTHS = 'months'
-
-"""A time unit used with ZORDER."""
-YEARS = 'years'
-
-
-"""Neighborhood type."""
-ANNULUS = 'annulus'
-
-"""Neighborhood type."""
-NESW = 'nesw'
-
-"""Neighborhood type."""
-SQUARE = 'square'
-
-"""Neighborhood type."""
-WEDGE = 'wedge'
-
-"""Neighborhood type."""
-CIRCLE = "circle"
-
-"""Focal operation type."""
-SUM = 'Sum'
-
-"""Focal operation type."""
-MEAN = 'Mean'
-
-"""Focal operation type"""
-ASPECT = 'Aspect'
-
-"""Focal operation type."""
-SLOPE = 'Slope'
-
-"""Focal operation type."""
-STANDARDDEVIATION = 'StandardDeviation'
-
-OPERATIONS = [
-    SUM,
-    MIN,
-    MAX,
-    MEAN,
-    MEDIAN,
-    MODE,
-    STANDARDDEVIATION,
-    ASPECT,
-    SLOPE
-]
-
-NEIGHBORHOODS = [
-    ANNULUS,
-    NESW,
-    SQUARE,
-    WEDGE,
-    CIRCLE
-]
-
 """The NoData value for ints in GeoTrellis."""
 NODATAINT = -2147483648
 
-"""A classification strategy."""
-GREATERTHAN = "GreaterThan"
 
-"""A classification strategy."""
-GREATERTHANOREQUALTO = "GreaterThanOrEqualTo"
-
-"""A classification strategy."""
-LESSTHAN = "LessThan"
-
-"""A classification strategy."""
-LESSTHANOREQUALTO = "LessThanOrEqualTo"
-
-"""A classification strategy."""
-EXACT = "Exact"
+class ResampleMethods(object):
+    NEARESTNEIGHBOR = 'NearestNeighbor'
+    BILINEAR = 'Bilinear'
+    CUBICCONVOLUTION = 'CubicConvolution'
+    CUBICSPLINE = 'CubicSpline'
+    LANCZOS = 'Lanczos'
+    AVERAGE = 'Average'
+    MODE = 'Mode'
+    MEDIAN = 'Median'
+    MAX = 'Max'
+    MIN = 'Min'
 
 
-"""Representes Bit Cells."""
-BOOLRAW = "boolraw"
-
-"""Representes Byte Cells."""
-INT8RAW = "int8raw"
-
-"""Representes UByte Cells."""
-UINT8RAW = "uint8raw"
-
-"""Representes Short Cells."""
-INT16RAW = "int16raw"
-
-"""Representes UShort Cells."""
-UINT16RAW = "uint16raw"
-
-"""Representes Int Cells."""
-INT32RAW = "int32raw"
-
-"""Representes Float Cells."""
-FLOAT32RAW = "float32raw"
-
-"""Representes Double Cells."""
-FLOAT64RAW = "float64raw"
-
-"""Representes Bit Cells."""
-BOOL = "bool"
-
-"""Representes Byte Cells with constant NoData values."""
-INT8 = "int8"
-
-"""Representes UByte Cells with constant NoData values."""
-UINT8 = "uint8"
-
-"""Representes Short Cells with constant NoData values."""
-INT16 = "int16"
-
-"""Representes UShort Cells with constant NoData values."""
-UINT16 = "uint16"
-
-"""Representes Int Cells with constant NoData values."""
-INT32 = "int32"
-
-"""Representes Float Cells with constant NoData values."""
-FLOAT32 = "float32"
-
-"""Representes Double Cells with constant NoData values."""
-FLOAT64 = "float64"
-
-CELL_TYPES = [
-    BOOLRAW,
-    INT8RAW,
-    UINT8RAW,
-    INT16RAW,
-    UINT16RAW,
-    INT32RAW,
-    FLOAT32RAW,
-    FLOAT64RAW,
-    BOOL,
-    INT8,
-    UINT8,
-    INT16,
-    UINT16,
-    INT32,
-    FLOAT32,
-    FLOAT64
+RESAMPLE_METHODS = [
+    ResampleMethods.NEARESTNEIGHBOR,
+    ResampleMethods.BILINEAR,
+    ResampleMethods.CUBICCONVOLUTION,
+    ResampleMethods.LANCZOS,
+    ResampleMethods.AVERAGE,
+    ResampleMethods.MODE,
+    ResampleMethods.MEDIAN,
+    ResampleMethods.MAX,
+    ResampleMethods.MIN
 ]
 
 
-"""A ColorRamp."""
-HOT = "hot"
+class TimeUnits(object):
+    MILLISECONDS = 'millis'
+    SECONDS = 'seconds'
+    MINUTES = 'minutes'
+    HOURS = 'hours'
+    DAYS = 'days'
+    MONTHS = 'months'
+    YEARS = 'years'
 
-"""A ColorRamp."""
-COOLWARM = "coolwarm"
 
-"""A ColorRamp."""
-MAGMA = "magma"
+TIME_UNITS = [
+    TimeUnits.MILLISECONDS,
+    TimeUnits.SECONDS,
+    TimeUnits.MINUTES,
+    TimeUnits.HOURS,
+    TimeUnits.DAYS,
+    TimeUnits.MONTHS,
+    TimeUnits.YEARS
+]
 
-"""A ColorRamp."""
-INFERNO = "inferno"
 
-"""A ColorRamp."""
-PLASMA = "plasma"
+class Operations(object):
+    SUM = 'Sum'
+    MEAN = 'Mean'
+    MODE = 'Mode'
+    MEDIAN = 'Median'
+    MAX = 'Max'
+    MIN = 'Min'
+    ASPECT = 'Aspect'
+    SLOPE = 'Slope'
+    STANDARDDEVIATION = 'StandardDeviation'
 
-"""A ColorRamp."""
-VIRIDIS = "viridis"
 
-"""A ColorRamp."""
-BLUE_TO_ORANGE = "BlueToOrange"
+OPERATIONS = [
+    Operations.SUM,
+    Operations.MIN,
+    Operations.MAX,
+    Operations.MEAN,
+    Operations.MEDIAN,
+    Operations.MODE,
+    Operations.STANDARDDEVIATION,
+    Operations.ASPECT,
+    Operations.SLOPE
+]
 
-"""A ColorRamp."""
-LIGHT_YELLOW_TO_ORANGE = "LightYellowToOrange"
 
-"""A ColorRamp."""
-BLUE_TO_RED = "BlueToRed"
+class Neighborhoods(object):
+    ANNULUS = 'annulus'
+    NESW = 'nesw'
+    SQUARE = 'square'
+    WEDGE = 'wedge'
+    CIRCLE = "circle"
 
-"""A ColorRamp."""
-GREEN_TO_RED_ORANGE = "GreenToRedOrange"
 
-"""A ColorRamp."""
-LIGHT_TO_DARK_SUNSET = "LightToDarkSunset"
+NEIGHBORHOODS = [
+    Neighborhoods.ANNULUS,
+    Neighborhoods.NESW,
+    Neighborhoods.SQUARE,
+    Neighborhoods.WEDGE,
+    Neighborhoods.CIRCLE
+]
 
-"""A ColorRamp."""
-LIGHT_TO_DARK_GREEN = "LightToDarkGreen"
 
-"""A ColorRamp."""
-HEATMAP_YELLOW_TO_RED = "HeatmapYellowToRed"
 
-"""A ColorRamp."""
-HEATMAP_BLUE_TO_YELLOW_TO_RED_SPECTRUM = "HeatmapBlueToYellowToRedSpectrum"
+class ClassificationStrategies(object):
+    GREATERTHAN = "GreaterThan"
+    GREATERTHANOREQUALTO = "GreaterThanOrEqualTo"
+    LESSTHAN = "LessThan"
+    LESSTHANOREQUALTO = "LessThanOrEqualTo"
+    EXACT = "Exact"
 
-"""A ColorRamp."""
-HEATMAP_DARK_RED_TO_YELLOW_WHITE = "HeatmapDarkRedToYellowWhite"
 
-"""A ColorRamp."""
-HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE = "HeatmapLightPurpleToDarkPurpleToWhite"
+CLASSIFCATION_STRATEGIES = [
+    ClassificationStrategies.GREATERTHAN,
+    ClassificationStrategies.GREATERTHANOREQUALTO,
+    ClassificationStrategies.LESSTHAN,
+    ClassificationStrategies.LESSTHANOREQUALTO,
+    ClassificationStrategies.EXACT
+]
 
-"""A ColorRamp."""
-CLASSIFICATION_BOLD_LAND_USE = "ClassificationBoldLandUse"
 
-"""A ColorRamp."""
-CLASSIFICATION_MUTED_TERRAIN = "ClassificationMutedTerrain"
+class CellTypes(object):
+    BOOLRAW = "boolraw"
+    INT8RAW = "int8raw"
+    UINT8RAW = "uint8raw"
+    INT16RAW = "int16raw"
+    UINT16RAW = "uint16raw"
+    INT32RAW = "int32raw"
+    FLOAT32RAW = "float32raw"
+    FLOAT64RAW = "float64raw"
+    BOOL = "bool"
+    INT8 = "int8"
+    UINT8 = "uint8"
+    INT16 = "int16"
+    UINT16 = "uint16"
+    INT32 = "int32"
+    FLOAT32 = "float32"
+    FLOAT64 = "float64"
+
+
+CELL_TYPES = [
+    CellTypes.BOOLRAW,
+    CellTypes.INT8RAW,
+    CellTypes.UINT8RAW,
+    CellTypes.INT16RAW,
+    CellTypes.UINT16RAW,
+    CellTypes.INT32RAW,
+    CellTypes.FLOAT32RAW,
+    CellTypes.FLOAT64RAW,
+    CellTypes.BOOL,
+    CellTypes.INT8,
+    CellTypes.UINT8,
+    CellTypes.INT16,
+    CellTypes.UINT16,
+    CellTypes.INT32,
+    CellTypes.FLOAT32,
+    CellTypes.FLOAT64
+]
+
+
+class ColorRamps(object):
+    HOT = "hot"
+    COOLWARM = "coolwarm"
+    MAGMA = "magma"
+    INFERNO = "inferno"
+    PLASMA = "plasma"
+    VIRIDIS = "viridis"
+    BLUE_TO_ORANGE = "BlueToOrange"
+    LIGHT_YELLOW_TO_ORANGE = "LightYellowToOrange"
+    BLUE_TO_RED = "BlueToRed"
+    GREEN_TO_RED_ORANGE = "GreenToRedOrange"
+    LIGHT_TO_DARK_SUNSET = "LightToDarkSunset"
+    LIGHT_TO_DARK_GREEN = "LightToDarkGreen"
+    HEATMAP_YELLOW_TO_RED = "HeatmapYellowToRed"
+    HEATMAP_BLUE_TO_YELLOW_TO_RED_SPECTRUM = "HeatmapBlueToYellowToRedSpectrum"
+    HEATMAP_DARK_RED_TO_YELLOW_WHITE = "HeatmapDarkRedToYellowWhite"
+    HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE = "HeatmapLightPurpleToDarkPurpleToWhite"
+    CLASSIFICATION_BOLD_LAND_USE = "ClassificationBoldLandUse"
+    CLASSIFICATION_MUTED_TERRAIN = "ClassificationMutedTerrain"
+
 
 COLOR_RAMPS = [
-    HOT,
-    COOLWARM,
-    MAGMA,
-    INFERNO,
-    PLASMA,
-    VIRIDIS,
-    BLUE_TO_ORANGE,
-    LIGHT_YELLOW_TO_ORANGE,
-    BLUE_TO_RED,
-    GREEN_TO_RED_ORANGE,
-    LIGHT_TO_DARK_SUNSET,
-    LIGHT_TO_DARK_GREEN,
-    HEATMAP_YELLOW_TO_RED,
-    HEATMAP_BLUE_TO_YELLOW_TO_RED_SPECTRUM,
-    HEATMAP_DARK_RED_TO_YELLOW_WHITE,
-    HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE,
-    CLASSIFICATION_BOLD_LAND_USE,
-    CLASSIFICATION_MUTED_TERRAIN
+    ColorRamps.HOT,
+    ColorRamps.COOLWARM,
+    ColorRamps.MAGMA,
+    ColorRamps.INFERNO,
+    ColorRamps.PLASMA,
+    ColorRamps.VIRIDIS,
+    ColorRamps.BLUE_TO_ORANGE,
+    ColorRamps.LIGHT_YELLOW_TO_ORANGE,
+    ColorRamps.BLUE_TO_RED,
+    ColorRamps.GREEN_TO_RED_ORANGE,
+    ColorRamps.LIGHT_TO_DARK_SUNSET,
+    ColorRamps.LIGHT_TO_DARK_GREEN,
+    ColorRamps.HEATMAP_YELLOW_TO_RED,
+    ColorRamps.HEATMAP_BLUE_TO_YELLOW_TO_RED_SPECTRUM,
+    ColorRamps.HEATMAP_DARK_RED_TO_YELLOW_WHITE,
+    ColorRamps.HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE,
+    ColorRamps.CLASSIFICATION_BOLD_LAND_USE,
+    ColorRamps.CLASSIFICATION_MUTED_TERRAIN
 ]

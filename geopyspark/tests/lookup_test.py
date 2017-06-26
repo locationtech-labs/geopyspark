@@ -5,10 +5,9 @@ import numpy as np
 import pytest
 
 from geopyspark.geotrellis import SpatialKey, Tile
-from geopyspark.geotrellis.constants import ZOOM
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.layer import TiledRasterLayer
-from geopyspark.geotrellis.constants import SPATIAL
+from geopyspark.geotrellis.constants import SPATIAL, ZOOM
 
 
 class LookupTest(BaseTestClass):

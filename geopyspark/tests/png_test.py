@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from geopyspark.geotrellis import Extent, ProjectedExtent, Tile
-from geopyspark.geotrellis.constants import SPATIAL, HOT
+#from geopyspark.geotrellis.constants import SPATIAL, HOT
 from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.geotrellis.render import PngRDD
 from geopyspark.tests.base_test_class import BaseTestClass

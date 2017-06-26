@@ -16,15 +16,13 @@ from shapely.geometry import Polygon, MultiPolygon
 from geopyspark.geotrellis import Metadata
 from geopyspark.geotrellis.constants import (RESAMPLE_METHODS,
                                              OPERATIONS,
-                                             SLOPE,
-                                             ASPECT,
-                                             SQUARE,
+                                             Operations,
+                                             Neighborhoods,
                                              NEIGHBORHOODS,
-                                             NEARESTNEIGHBOR,
+                                             ResampleMethods,
                                              FLOAT,
-                                             TILE,
                                              SPATIAL,
-                                             LESSTHANOREQUALTO,
+                                             ClassificationStrategies,
                                              NODATAINT,
                                              CELL_TYPES
                                             )
@@ -215,7 +213,7 @@ class RasterLayer(CachableLayer):
         return create_python_rdd(self.pysc, result, ser)
 
     def to_tiled_layer(self, extent=None, layout=None, crs=None, tile_size=256,
-                       resample_method=NEARESTNEIGHBOR):
+                       resample_method=ResampleMethods.NEARESTNEIGHBOR):
         """Converts this ``RasterLayer`` to a ``TiledRasterLayer``.
 
         This method combines :meth:`~geopyspark.geotrellis.rdd.RasterLayer.collect_metadata` and
@@ -229,9 +227,9 @@ class RasterLayer(CachableLayer):
             crs (str or int, optional): Ignore CRS from records and use given one instead.
             tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by the following constants: ``NEARESTNEIGHBOR``, ``BILINEAR``,
+                This is represented by the following constants: ``ResampleMethods.NEARESTNEIGHBOR``, ``BILINEAR``,
                 ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
-                ``MIN``. If none is specified, then ``NEARESTNEIGHBOR`` is used.
+                ``MIN``. If none is specified, then ``ResampleMethods.NEARESTNEIGHBOR`` is used.
 
         Note:
             ``extent`` and ``layout`` must both be defined if they are to be used.
@@ -319,7 +317,7 @@ class RasterLayer(CachableLayer):
 
         return Metadata.from_dict(json.loads(json_metadata))
 
-    def reproject(self, target_crs, resample_method=NEARESTNEIGHBOR):
+    def reproject(self, target_crs, resample_method=ResampleMethods.NEARESTNEIGHBOR):
         """Reproject every individual raster to ``target_crs``, does not sample past tile boundary
 
         Args:
@@ -343,7 +341,7 @@ class RasterLayer(CachableLayer):
         return RasterLayer(self.pysc, self.rdd_type,
                          self.srdd.reproject(target_crs, resample_method))
 
-    def cut_tiles(self, layer_metadata, resample_method=NEARESTNEIGHBOR):
+    def cut_tiles(self, layer_metadata, resample_method=ResampleMethods.NEARESTNEIGHBOR):
         """Cut tiles to layout. May result in duplicate keys.
 
         Args:
@@ -367,7 +365,7 @@ class RasterLayer(CachableLayer):
         srdd = self.srdd.cutTiles(json.dumps(layer_metadata), resample_method)
         return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
 
-    def tile_to_layout(self, layer_metadata, resample_method=NEARESTNEIGHBOR):
+    def tile_to_layout(self, layer_metadata, resample_method=ResampleMethods.NEARESTNEIGHBOR):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
@@ -391,7 +389,8 @@ class RasterLayer(CachableLayer):
         srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
         return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
 
-    def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO,
+    def reclassify(self, value_map, data_type,
+                   boundary_strategy=ClassificationStrategies.LESSTHANOREQUALTO,
                    replace_nodata_with=None):
         """Changes the cell values of a raster based on how the data is broken up.
 
@@ -561,7 +560,7 @@ class TiledRasterLayer(CachableLayer):
             return TiledRasterLayer(self.pysc, self.rdd_type, self.srdd.convertDataType(new_type))
 
     def reproject(self, target_crs, extent=None, layout=None, scheme=FLOAT, tile_size=256,
-                  resolution_threshold=0.1, resample_method=NEARESTNEIGHBOR):
+                  resolution_threshold=0.1, resample_method=ResampleMethods.NEARESTNEIGHBOR):
         """Reproject Layer as tiled raster layer, samples surrounding tiles.
 
         Args:
@@ -648,7 +647,7 @@ class TiledRasterLayer(CachableLayer):
 
         return [multibandtile_decoder(tile) for tile in array_of_tiles]
 
-    def tile_to_layout(self, layout, resample_method=NEARESTNEIGHBOR):
+    def tile_to_layout(self, layout, resample_method=ResampleMethods.NEARESTNEIGHBOR):
         """Cut tiles to a given layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
@@ -673,7 +672,7 @@ class TiledRasterLayer(CachableLayer):
 
         return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
 
-    def pyramid(self, end_zoom, start_zoom=None, resample_method=NEARESTNEIGHBOR):
+    def pyramid(self, end_zoom, start_zoom=None, resample_method=ResampleMethods.NEARESTNEIGHBOR):
         """Creates a pyramid of GeoTrellis layers where each layer reprsents a given zoom.
 
         Args:
@@ -771,8 +770,8 @@ class TiledRasterLayer(CachableLayer):
             srdd = self.srdd.focal(operation, neighborhood, float(param_1), float(param_2),
                                    float(param_3))
 
-        elif not neighborhood and operation == SLOPE or operation == ASPECT:
-            srdd = self.srdd.focal(operation, SQUARE, 1.0, 0.0, 0.0)
+        elif not neighborhood and operation == Operations.SLOPE or operation == Operations.ASPECT:
+            srdd = self.srdd.focal(operation, Neighborhoods.SQUARE, 1.0, 0.0, 0.0)
 
         else:
             raise ValueError("neighborhood must be set or the operation must be SLOPE or ASPECT")
@@ -793,7 +792,7 @@ class TiledRasterLayer(CachableLayer):
             raise ValueError("Only TiledRasterLayers with a rdd_type of Spatial can use stitch()")
 
         value = self.srdd.stitch()
-        ser = ProtoBufSerializer.create_value_serializer(TILE)
+        ser = ProtoBufSerializer.create_value_serializer("Tile")
         return ser.loads(value)[0]
 
     def save_stitched(self, path, crop_bounds=None, crop_dimensions=None):
@@ -848,7 +847,8 @@ class TiledRasterLayer(CachableLayer):
 
         return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
 
-    def reclassify(self, value_map, data_type, boundary_strategy=LESSTHANOREQUALTO,
+    def reclassify(self, value_map, data_type,
+                   boundary_strategy=ClassificationStrategies.LESSTHANOREQUALTO,
                    replace_nodata_with=None):
         """Changes the cell values of a raster based on how the data is broken up.
 

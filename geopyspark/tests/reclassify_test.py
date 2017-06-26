@@ -7,7 +7,7 @@ import unittest
 
 from geopyspark.geotrellis import Extent, ProjectedExtent, Tile
 from geopyspark.geotrellis.layer import RasterLayer
-from geopyspark.geotrellis.constants import SPATIAL, NODATAINT, LESSTHAN, GREATERTHAN
+from geopyspark.geotrellis.constants import SPATIAL, NODATAINT, ClassificationStrategies
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -67,7 +67,8 @@ class ReclassifyTest(BaseTestClass):
 
         value_map = {2: 20}
 
-        result = raster_rdd.reclassify(value_map, int, GREATERTHAN).to_numpy_rdd().first()[1].cells
+        result = raster_rdd.reclassify(value_map, int,
+                                       ClassificationStrategies.GREATERTHAN).to_numpy_rdd().first()[1].cells
 
         expected = np.array([[[-500, -500, -500, -500],
                               [-500, -500, -500, -500],
@@ -109,7 +110,8 @@ class ReclassifyTest(BaseTestClass):
 
         value_map = {2.0: 5.0}
 
-        result = raster_rdd.reclassify(value_map, float, LESSTHAN).to_numpy_rdd().first()[1].cells
+        result = raster_rdd.reclassify(value_map, float,
+                                       ClassificationStrategies.LESSTHAN).to_numpy_rdd().first()[1].cells
 
         expected = np.array([[[5.0, 5.0, 5.0, 5.0],
                               [5.0, 5.0, 5.0, 5.0],

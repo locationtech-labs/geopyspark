@@ -9,7 +9,7 @@ from geopyspark import map_key_input
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
 from geopyspark.geotrellis import Metadata, Extent, deprecated
 from geopyspark.geotrellis.layer import TiledRasterLayer
-from geopyspark.geotrellis.constants import TILE, ZORDER, SPATIAL
+from geopyspark.geotrellis.constants import ZORDER, SPATIAL
 
 from shapely.geometry import Polygon, MultiPolygon, Point
 from shapely.wkt import dumps

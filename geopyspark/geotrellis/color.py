@@ -1,7 +1,7 @@
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
-from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, COLOR_RAMPS, LESSTHANOREQUALTO
+from geopyspark.geotrellis.constants import ClassificationStrategies
 
 import struct
 
@@ -124,7 +124,8 @@ class ColorMap(object):
         self.cmap = cmap
 
     @classmethod
-    def from_break_map(cls, pysc, break_map, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+    def from_break_map(cls, pysc, break_map, no_data_color=0x00000000, fallback=0x00000000,
+                       class_boundary_type=ClassificationStrategies.LESSTHANOREQUALTO):
         """Converts a dictionary mapping from tile values to colors to a ColorMap.
 
         Args:
@@ -152,7 +153,8 @@ class ColorMap(object):
             raise TypeError("Break map keys must be either int or float.")
 
     @classmethod
-    def from_colors(cls, pysc, breaks, color_list, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+    def from_colors(cls, pysc, breaks, color_list, no_data_color=0x00000000,
+                    fallback=0x00000000, class_boundary_type=ClassificationStrategies.LESSTHANOREQUALTO):
         """Converts lists of values and colors to a ColorMap.
 
         Args:
@@ -181,7 +183,8 @@ class ColorMap(object):
             return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaksDouble([float(br) for br in breaks], color_list, no_data_color, fallback, class_boundary_type))
 
     @classmethod
-    def from_histogram(cls, pysc, histogram, color_list, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+    def from_histogram(cls, pysc, histogram, color_list, no_data_color=0x00000000,
+                       fallback=0x00000000, class_boundary_type=ClassificationStrategies.LESSTHANOREQUALTO):
         return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromHistogram(histogram, color_list, no_data_color, fallback, class_boundary_type))
 
     @staticmethod

@@ -6,7 +6,7 @@ import pytest
 from geopyspark.geotrellis import SpatialKey, Extent, Tile
 from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis.constants import SPATIAL, SUM, MIN, SQUARE, ANNULUS
+from geopyspark.geotrellis.constants import SPATIAL, Operations, Neighborhoods
 from geopyspark.geotrellis.neighborhood import Square, Annulus
 
 
@@ -45,16 +45,16 @@ class FocalTest(BaseTestClass):
 
     def test_focal_sum(self):
         result = self.raster_rdd.focal(
-            operation=SUM,
-            neighborhood=SQUARE,
+            operation=Operations.SUM,
+            neighborhood=Neighborhoods.SQUARE,
             param_1=1.0)
 
         self.assertTrue(result.to_numpy_rdd().first()[1].cells[0][1][0] >= 6)
 
     def test_focal_sum_int(self):
         result = self.raster_rdd.focal(
-            operation=SUM,
-            neighborhood=SQUARE,
+            operation=Operations.SUM,
+            neighborhood=Neighborhoods.SQUARE,
             param_1=1)
 
         self.assertTrue(result.to_numpy_rdd().first()[1].cells[0][1][0] >= 6)
@@ -62,24 +62,26 @@ class FocalTest(BaseTestClass):
     def test_focal_sum_square(self):
         square = Square(extent=1.0)
         result = self.raster_rdd.focal(
-            operation=SUM,
+            operation=Operations.SUM,
             neighborhood=square)
 
         self.assertTrue(result.to_numpy_rdd().first()[1].cells[0][1][0] >= 6)
 
     def test_focal_min(self):
-        result = self.raster_rdd.focal(operation=MIN, neighborhood=ANNULUS, param_1=2.0, param_2=1.0)
+        result = self.raster_rdd.focal(operation=Operations.MIN, neighborhood=Neighborhoods.ANNULUS,
+                                       param_1=2.0, param_2=1.0)
 
         self.assertEqual(result.to_numpy_rdd().first()[1].cells[0][0][0], -1)
 
     def test_focal_min_annulus(self):
         annulus = Annulus(inner_radius=2.0, outer_radius=1.0)
-        result = self.raster_rdd.focal(operation=MIN, neighborhood=annulus)
+        result = self.raster_rdd.focal(operation=Operations.MIN, neighborhood=annulus)
 
         self.assertEqual(result.to_numpy_rdd().first()[1].cells[0][0][0], -1)
 
     def test_focal_min_int(self):
-        result = self.raster_rdd.focal(operation=MIN, neighborhood=ANNULUS, param_1=2, param_2=1)
+        result = self.raster_rdd.focal(operation=Operations.MIN, neighborhood=Neighborhoods.ANNULUS,
+                                       param_1=2, param_2=1)
 
         self.assertEqual(result.to_numpy_rdd().first()[1].cells[0][0][0], -1)
 
