@@ -12,7 +12,7 @@ from geopyspark.geotrellis.constants import SPATIAL
 
 
 class MaskTest(BaseTestClass):
-    geopysc = BaseTestClass.geopysc
+    pysc = BaseTestClass.pysc
 
     cells = np.array([[
         [1.0, 1.0, 1.0, 1.0, 1.0],
@@ -26,7 +26,7 @@ class MaskTest(BaseTestClass):
              (SpatialKey(0, 1), Tile(cells, 'FLOAT', -1.0,)),
              (SpatialKey(1, 1), Tile(cells, 'FLOAT', -1.0,))]
 
-    rdd = geopysc.pysc.parallelize(layer)
+    rdd = pysc.parallelize(layer)
 
     extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 33.0, 'ymax': 33.0}
     layout = {'layoutCols': 2, 'layoutRows': 2, 'tileCols': 5, 'tileRows': 5}
@@ -41,12 +41,12 @@ class MaskTest(BaseTestClass):
                     'tileLayout': layout}}
 
     geometries = Polygon([(17, 17), (42, 17), (42, 42), (17, 42)])
-    raster_rdd = TiledRasterLayer.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, metadata)
+    raster_rdd = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd, metadata)
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def test_geotrellis_mask(self):
         result = self.raster_rdd.mask(geometries=self.geometries).to_numpy_rdd()

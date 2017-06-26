@@ -14,7 +14,7 @@ class LayerWrapperTest(BaseTestClass):
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def test_persist(self):
         arr = np.array([[[1, 1, 1, 1]],
@@ -23,8 +23,8 @@ class LayerWrapperTest(BaseTestClass):
                         [[4, 4, 4, 4]]], dtype=int)
         tile = Tile(arr, 'INT', -500)
 
-        rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd)
 
         self.assertEqual(raster_rdd.is_cached, False)
 

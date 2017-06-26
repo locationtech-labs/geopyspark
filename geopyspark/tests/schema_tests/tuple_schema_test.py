@@ -29,8 +29,8 @@ class TupleSchemaTest(BaseTestClass):
     multiband_tile = np.array(bands)
     multiband_dict = Tile(multiband_tile, 'BYTE', -128)
 
-    sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    ew = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.TupleWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    ew = BaseTestClass.pysc._jvm.geopyspark.geotrellis.tests.schemas.TupleWrapper
 
     java_rdd = ew.testOut(sc)
 
@@ -38,7 +38,7 @@ class TupleSchemaTest(BaseTestClass):
     encoder = create_partial_tuple_encoder(key_type="ProjectedExtent")
 
     ser = ProtoBufSerializer(decoder, encoder)
-    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     @pytest.mark.skipif('TRAVIS' in os.environ,

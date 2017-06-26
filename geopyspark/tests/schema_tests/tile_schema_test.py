@@ -29,13 +29,13 @@ class ShortTileSchemaTest(BaseTestClass):
         Tile(np.int16([5, 6, 7, 8]).reshape(2, 2), 'SHORT', -32768)
     ]
 
-    sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.ShortArrayTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    tw = BaseTestClass.pysc._jvm.geopyspark.geotrellis.tests.schemas.ShortArrayTileWrapper
 
     java_rdd = tw.testOut(sc)
     ser = ProtoBufSerializer(tile_decoder, tile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
@@ -64,13 +64,13 @@ class UShortTileSchemaTest(BaseTestClass):
         Tile(np.uint16([5, 6, 7, 8]).reshape(2, 2), 'USHORT', 0)
     ]
 
-    sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.UShortArrayTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    tw = BaseTestClass.pysc._jvm.geopyspark.geotrellis.tests.schemas.UShortArrayTileWrapper
 
     java_rdd = tw.testOut(sc)
     ser = ProtoBufSerializer(tile_decoder, tile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
@@ -100,13 +100,13 @@ class ByteTileSchemaTest(BaseTestClass):
         Tile(np.int8([5, 6, 7, 8]).reshape(2, 2), 'BYTE', -128)
     ]
 
-    sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.ByteArrayTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    tw = BaseTestClass.pysc._jvm.geopyspark.geotrellis.tests.schemas.ByteArrayTileWrapper
 
     java_rdd = tw.testOut(sc)
     ser = ProtoBufSerializer(tile_decoder, tile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
@@ -135,13 +135,13 @@ class UByteTileSchemaTest(BaseTestClass):
         Tile(np.uint8([5, 6, 7, 8]).reshape(2, 2), 'UBYTE', 0)
     ]
 
-    sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.UByteArrayTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    tw = BaseTestClass.pysc._jvm.geopyspark.geotrellis.tests.schemas.UByteArrayTileWrapper
 
     java_rdd = tw.testOut(sc)
     ser = ProtoBufSerializer(tile_decoder, tile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
@@ -170,13 +170,13 @@ class IntTileSchemaTest(BaseTestClass):
         Tile(np.int32([5, 6, 7, 8]).reshape(2, 2), 'INT', -2147483648)
     ]
 
-    sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.IntArrayTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    tw = BaseTestClass.pysc._jvm.geopyspark.geotrellis.tests.schemas.IntArrayTileWrapper
 
     java_rdd = tw.testOut(sc)
     ser = ProtoBufSerializer(tile_decoder, tile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
@@ -205,13 +205,13 @@ class DoubleTileSchemaTest(BaseTestClass):
         Tile(np.double([5, 6, 7, 8]).reshape(2, 2), 'DOUBLE', True)
     ]
 
-    sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.DoubleArrayTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    tw = BaseTestClass.pysc._jvm.geopyspark.geotrellis.tests.schemas.DoubleArrayTileWrapper
 
     java_rdd = tw.testOut(sc)
     ser = ProtoBufSerializer(tile_decoder, tile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
@@ -239,13 +239,13 @@ class FloatTileSchemaTest(BaseTestClass):
         Tile(np.float32([5, 6, 7, 8]).reshape(2, 2), 'FLOAT', True)
     ]
 
-    sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    tw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.FloatArrayTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    tw = BaseTestClass.pysc._jvm.geopyspark.geotrellis.tests.schemas.FloatArrayTileWrapper
 
     java_rdd = tw.testOut(sc)
     ser = ProtoBufSerializer(tile_decoder, tile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     def test_encoded_tiles(self):
