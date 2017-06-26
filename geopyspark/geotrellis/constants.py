@@ -47,6 +47,8 @@ NODATAINT = -2147483648
 
 
 class ResampleMethods(object):
+    """Resampling Methods."""
+
     NEARESTNEIGHBOR = 'NearestNeighbor'
     BILINEAR = 'Bilinear'
     CUBICCONVOLUTION = 'CubicConvolution'
@@ -73,6 +75,8 @@ RESAMPLE_METHODS = [
 
 
 class TimeUnits(object):
+    """ZORDER time units."""
+
     MILLISECONDS = 'millis'
     SECONDS = 'seconds'
     MINUTES = 'minutes'
@@ -94,6 +98,8 @@ TIME_UNITS = [
 
 
 class Operations(object):
+    """Focal opertions."""
+
     SUM = 'Sum'
     MEAN = 'Mean'
     MODE = 'Mode'
@@ -119,6 +125,8 @@ OPERATIONS = [
 
 
 class Neighborhoods(object):
+    """Neighborhood types."""
+
     ANNULUS = 'annulus'
     NESW = 'nesw'
     SQUARE = 'square'
@@ -135,8 +143,9 @@ NEIGHBORHOODS = [
 ]
 
 
-
 class ClassificationStrategies(object):
+    """Classification strategies for color mapping."""
+
     GREATERTHAN = "GreaterThan"
     GREATERTHANOREQUALTO = "GreaterThanOrEqualTo"
     LESSTHAN = "LessThan"
@@ -154,6 +163,8 @@ CLASSIFCATION_STRATEGIES = [
 
 
 class CellTypes(object):
+    """Cell types."""
+
     BOOLRAW = "boolraw"
     INT8RAW = "int8raw"
     UINT8RAW = "uint8raw"
@@ -193,6 +204,8 @@ CELL_TYPES = [
 
 
 class ColorRamps(object):
+    """ColorRamp names."""
+
     HOT = "hot"
     COOLWARM = "coolwarm"
     MAGMA = "magma"
