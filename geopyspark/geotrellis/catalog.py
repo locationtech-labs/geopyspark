@@ -147,7 +147,7 @@ def read_layer_metadata(pysc,
     """Reads the metadata from a saved layer without reading in the whole layer.
 
     Args:
-        pysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
@@ -190,7 +190,7 @@ def get_layer_ids(pysc,
     name and zoom of a given layer.
 
     Args:
-        pysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         options (dict, optional): Additional parameters for reading the layer for specific backends.
@@ -235,7 +235,7 @@ def read(pysc,
         use :func:`query` instead.
 
     Args:
-        pysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
@@ -292,7 +292,7 @@ def read_value(pysc,
         When requesting a tile that does not exist, ``None`` will be returned.
 
     Args:
-        pysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
@@ -364,7 +364,7 @@ def query(pysc,
         been set, or if the querried region contains the entire layer.
 
     Args:
-        pysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``. Note: All of the
             GeoTiffs must have the same saptial type.

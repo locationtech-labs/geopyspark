@@ -64,7 +64,7 @@ class CachableLayer(object):
     Base class for class that wraps a Scala RDD instance through a py4j reference.
 
     Attributes:
-        pysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala RDD class.
     """
 
@@ -143,14 +143,14 @@ class RasterLayer(CachableLayer):
     modified to fit a certain layout. See :ref:`raster_rdd` for more information.
 
     Args:
-        pysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
             ``RasterLayer`` to access the various Scala methods.
 
     Attributes:
-        pysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
@@ -170,8 +170,7 @@ class RasterLayer(CachableLayer):
         """Create a ``RasterLayer`` from a numpy RDD.
 
         Args:
-            pysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this
-                session.
+            pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
             rdd_type (str): What the spatial type of the geotiffs are. This is
                 represented by the constants: ``SPATIAL`` and ``SPACETIME``.
             numpy_rdd (pyspark.RDD): A PySpark RDD that contains tuples of either
@@ -444,14 +443,14 @@ class TiledRasterLayer(CachableLayer):
     a larger layout. For more information, see :ref:`tiled-raster-rdd`.
 
     Args:
-        pysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is represented by the
             constants: ``SPATIAL`` and ``SPACETIME``.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
             ``TiledRasterLayer`` to access the various Scala methods.
 
     Attributes:
-        pysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is represented by the
             constants: ``SPATIAL` and ``SPACETIME``.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
@@ -481,8 +480,7 @@ class TiledRasterLayer(CachableLayer):
         """Create a ``TiledRasterLayer`` from a numpy RDD.
 
         Args:
-            pysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this
-                session.
+            pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
             rdd_type (str): What the spatial type of the geotiffs are. This is represented by the
                 constants: ``SPATIAL`` and ``SPACETIME``.
             numpy_rdd (pyspark.RDD): A PySpark RDD that contains tuples of either

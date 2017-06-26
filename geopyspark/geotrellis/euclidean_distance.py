@@ -7,8 +7,7 @@ def euclidean_distance(pysc, geometry, source_crs, zoom, cellType='float64'):
     """Calculates the Euclidean distance of a Shapely geometry.
 
     Args:
-        pysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this
-            session.
+        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         geometry (shapely.geometry): The input geometry to compute the Euclidean distance
             for.
         source_crs (str or int): The CRS of the input geometry.
