@@ -50,7 +50,7 @@ def create_python_rdd(pysc, jrdd, serializer):
     else:
         return RDD(jrdd, pysc, AutoBatchedSerializer(serializer))
 
-def initial_spark_conf(appName=None, master=None, additional_jar_dirs=[]):
+def geopyspark_conf(appName=None, master=None, additional_jar_dirs=[]):
     """Construct the base SparkConf for use with GeoPySpark.  This configuration
     object may be used as is , or may be adjusted according to the user's needs.
 
