@@ -1,7 +1,7 @@
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
-from geopyspark.geotrellis.constants import ClassificationStrategies
+from geopyspark.geotrellis.constants import ClassificationStrategy
 
 import struct
 
@@ -32,7 +32,7 @@ def get_breaks_from_matplot(ramp_name, num_colors):
             'Pastel1', 'Pastel2', 'Paired', 'Accent', 'Dark2', 'Set1', 'Set2',
             'Set3', 'tab10', 'tab20', 'tab20b', 'tab20c', 'flag', 'prism',
             'ocean', 'gist_earth', 'terrain', 'gist_stern', 'gnuplot',
-            'gnuplot2', 'CMRmap', 'cubehelix', 'brg', 'hsv', 'gist_rainbow',
+            'gnuplot2', 'CMRmap', 'cubehelix', 'brg', 'hsv', 'gist_rainy
             'rainbow', 'jet', 'nipy_spectral', 'gist_ncar'.  See the matplotlib
             documentation for details on each color ramp.
         num_colors (int): The number of color breaks to derive from the named map.
@@ -125,7 +125,7 @@ class ColorMap(object):
 
     @classmethod
     def from_break_map(cls, pysc, break_map, no_data_color=0x00000000, fallback=0x00000000,
-                       class_boundary_type=ClassificationStrategies.LESSTHANOREQUALTO):
+                       class_boundary_type=ClassificationStrategy.LESSTHANOREQUALTO):
         """Converts a dictionary mapping from tile values to colors to a ColorMap.
 
         Args:
@@ -145,6 +145,11 @@ class ColorMap(object):
         Returns:
             [ColorMap]
         """
+        if isinstance(class_boundary_type, ClassificationStrategy):
+            class_boundary_type = class_boundary_type.value
+        elif class_boundary_type not in ClassificationStrategy.CLASSIFICATION_STRATEGIES.values:
+            raise ValueError(class_boundary_type, " Is not a known classification strategy.")
+
         if all(isinstance(x, int) for x in break_map.keys()):
             return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMap(break_map, no_data_color, fallback, class_boundary_type))
         elif all(isinstance(x, float) for x in break_map.keys()):
@@ -154,7 +159,7 @@ class ColorMap(object):
 
     @classmethod
     def from_colors(cls, pysc, breaks, color_list, no_data_color=0x00000000,
-                    fallback=0x00000000, class_boundary_type=ClassificationStrategies.LESSTHANOREQUALTO):
+                    fallback=0x00000000, class_boundary_type=ClassificationStrategy.LESSTHANOREQUALTO):
         """Converts lists of values and colors to a ColorMap.
 
         Args:
@@ -177,6 +182,11 @@ class ColorMap(object):
         Returns:
             [ColorMap]
         """
+        if isinstance(class_boundary_type, ClassificationStrategy):
+            class_boundary_type = class_boundary_type.value
+        elif class_boundary_type not in ClassificationStrategy.CLASSIFICATION_STRATEGIES.values:
+            raise ValueError(class_boundary_type, " Is not a known classification strategy.")
+
         if all(isinstance(x, int) for x in breaks):
             return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaks(breaks, color_list, no_data_color, fallback, class_boundary_type))
         else:
@@ -184,7 +194,13 @@ class ColorMap(object):
 
     @classmethod
     def from_histogram(cls, pysc, histogram, color_list, no_data_color=0x00000000,
-                       fallback=0x00000000, class_boundary_type=ClassificationStrategies.LESSTHANOREQUALTO):
+                       fallback=0x00000000, class_boundary_type=ClassificationStrategy.LESSTHANOREQUALTO):
+
+        if isinstance(class_boundary_type, ClassificationStrategy):
+            class_boundary_type = class_boundary_type.value
+        elif class_boundary_type not in ClassificationStrategy.CLASSIFICATION_STRATEGIES.values:
+            raise ValueError(class_boundary_type, " Is not a known classification strategy.")
+
         return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromHistogram(histogram, color_list, no_data_color, fallback, class_boundary_type))
 
     @staticmethod

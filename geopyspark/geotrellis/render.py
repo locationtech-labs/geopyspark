@@ -1,7 +1,7 @@
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
-from geopyspark.geotrellis.constants import ResampleMethods, ZOOM
+from geopyspark.geotrellis.constants import ResampleMethod, ZOOM
 from .layer import CachableLayer
 from pyspark.storagelevel import StorageLevel
 import geopyspark.geotrellis.color as color
@@ -59,7 +59,7 @@ class PngRDD(CachableLayer):
 
     @classmethod
     def makePyramid(cls, tiledrdd, ramp_name, start_zoom=None, end_zoom=0,
-                    resample_method=ResampleMethods.NEARESTNEIGHBOR, debug=False):
+                    resample_method=ResampleMethod.NEARESTNEIGHBOR, debug=False):
         """Create a pyramided PngRDD from a TiledRasterLayer
 
         Args:

@@ -1,4 +1,6 @@
 """Constants that are used by ``geopyspark.geotrellis`` classes, methods, and functions."""
+from enum import Enum
+
 
 """
 Indicates that the RDD contains ``(K, V)`` pairs, where the ``K`` has a spatial attribute,
@@ -46,7 +48,7 @@ ROWMAJOR = 'rowmajor'
 NODATAINT = -2147483648
 
 
-class ResampleMethods(object):
+class ResampleMethod(Enum):
     """Resampling Methods."""
 
     NEARESTNEIGHBOR = 'NearestNeighbor'
@@ -61,19 +63,19 @@ class ResampleMethods(object):
     MIN = 'Min'
 
     RESAMPLE_METHODS = [
-        NEARESTNEIGHBOR,
-        BILINEAR,
-        CUBICCONVOLUTION,
-        LANCZOS,
-        AVERAGE,
-        MODE,
-        MEDIAN,
-        MAX,
-        MIN
+        'NearestNeighbor',
+        'Bilinear',
+        'CubicConvolution',
+        'Lanczos',
+        'Average',
+        'Mode',
+        'Median',
+        'Max',
+        'Min'
     ]
 
 
-class TimeUnits(object):
+class TimeUnit(Enum):
     """ZORDER time units."""
 
     MILLISECONDS = 'millis'
@@ -85,17 +87,17 @@ class TimeUnits(object):
     YEARS = 'years'
 
     TIME_UNITS = [
-        MILLISECONDS,
-        SECONDS,
-        MINUTES,
-        HOURS,
-        DAYS,
-        MONTHS,
-        YEARS
+        'milliseconds',
+        'seconds',
+        'minutes',
+        'hours',
+        'days',
+        'months',
+        'years'
     ]
 
 
-class Operation(object):
+class Operation(Enum):
     """Focal opertions."""
 
     SUM = 'Sum'
@@ -109,19 +111,19 @@ class Operation(object):
     STANDARDDEVIATION = 'StandardDeviation'
 
     OPERATIONS = [
-        SUM,
-        MIN,
-        MAX,
-        MEAN,
-        MEDIAN,
-        MODE,
-        STANDARDDEVIATION,
-        ASPECT,
-        SLOPE
+        'Sum',
+        'Min',
+        'Max',
+        'Mean',
+        'Median',
+        'Mode',
+        'StandardDeviation',
+        'Aspect',
+        'Slope'
     ]
 
 
-class Neighborhood(object):
+class Neighborhood(Enum):
     """Neighborhood types."""
 
     ANNULUS = 'annulus'
@@ -131,15 +133,15 @@ class Neighborhood(object):
     CIRCLE = "circle"
 
     NEIGHBORHOODS = [
-        ANNULUS,
-        NESW,
-        SQUARE,
-        WEDGE,
-        CIRCLE
+        'annulus',
+        'nesw',
+        'square',
+        'wedge',
+        'circle'
     ]
 
 
-class ClassificationStrategies(object):
+class ClassificationStrategy(Enum):
     """Classification strategies for color mapping."""
 
     GREATERTHAN = "GreaterThan"
@@ -148,16 +150,16 @@ class ClassificationStrategies(object):
     LESSTHANOREQUALTO = "LessThanOrEqualTo"
     EXACT = "Exact"
 
-    CLASSIFCATION_STRATEGIES = [
-        GREATERTHAN,
-        GREATERTHANOREQUALTO,
-        LESSTHAN,
-        LESSTHANOREQUALTO,
-        EXACT
+    CLASSIFICATION_STRATEGIES = [
+        'GreaterThan',
+        'GreaterThanOrEqualTo',
+        'LessThan',
+        'LessThanOrEqualTo',
+        'Exact'
     ]
 
 
-class CellTypes(object):
+class CellType(Enum):
     """Cell types."""
 
     BOOLRAW = "boolraw"
@@ -178,26 +180,26 @@ class CellTypes(object):
     FLOAT64 = "float64"
 
     CELL_TYPES = [
-        BOOLRAW,
-        INT8RAW,
-        UINT8RAW,
-        INT16RAW,
-        UINT16RAW,
-        INT32RAW,
-        FLOAT32RAW,
-        FLOAT64RAW,
-        BOOL,
-        INT8,
-        UINT8,
-        INT16,
-        UINT16,
-        INT32,
-        FLOAT32,
-        FLOAT64
+        'boolraw',
+        'int8raw',
+        'uint8raw',
+        'int16raw',
+        'uint16raw',
+        'int32raw',
+        'float32raw',
+        'float64raw',
+        'bool',
+        'int8',
+        'uint8',
+        'int16',
+        'uint16',
+        'int32',
+        'float32',
+        'float64'
     ]
 
 
-class ColorRamps(object):
+class ColorRamp(Enum):
     """ColorRamp names."""
 
     HOT = "hot"
@@ -220,22 +222,22 @@ class ColorRamps(object):
     CLASSIFICATION_MUTED_TERRAIN = "ClassificationMutedTerrain"
 
     COLOR_RAMPS = [
-        HOT,
-        COOLWARM,
-        MAGMA,
-        INFERNO,
-        PLASMA,
-        VIRIDIS,
-        BLUE_TO_ORANGE,
-        LIGHT_YELLOW_TO_ORANGE,
-        BLUE_TO_RED,
-        GREEN_TO_RED_ORANGE,
-        LIGHT_TO_DARK_SUNSET,
-        LIGHT_TO_DARK_GREEN,
-        HEATMAP_YELLOW_TO_RED,
-        HEATMAP_BLUE_TO_YELLOW_TO_RED_SPECTRUM,
-        HEATMAP_DARK_RED_TO_YELLOW_WHITE,
-        HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE,
-        CLASSIFICATION_BOLD_LAND_USE,
-        CLASSIFICATION_MUTED_TERRAIN
+        'hot',
+        'coolwarm',
+        'magma',
+        'inferno',
+        'plasma',
+        'viridis',
+        'BlueToOrange',
+        'LightYellowToOrange',
+        'BlueToRed',
+        'GreenToRedOrange',
+        'LightToDarkSunset',
+        'LightToDarkGreen',
+        'HeatmapYellowToRed',
+        'HeatmapBlueToYellowToRedSpectrum',
+        'HeatmapDarkRedToYellowWhite',
+        'HeatmapLightPurpleToDarkPurpleToWhite',
+        'ClassificationBoldLandUse',
+        'ClassificationMutedTerrain'
     ]

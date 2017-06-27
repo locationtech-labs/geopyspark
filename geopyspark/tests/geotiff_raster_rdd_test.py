@@ -4,7 +4,7 @@ import rasterio
 import pytest
 import numpy as np
 
-from geopyspark.geotrellis.constants import SPATIAL, CellTypes
+from geopyspark.geotrellis.constants import SPATIAL, CellType
 from geopyspark.tests.python_test_utils import geotiff_test_path
 from geopyspark.geotrellis import Extent, ProjectedExtent, Tile
 from geopyspark.geotrellis.geotiff import get
@@ -122,7 +122,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
         raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd)
 
-        converted = raster_rdd.convert_data_type(CellTypes.UINT8, no_data_value=-1)
+        converted = raster_rdd.convert_data_type(CellType.UINT8, no_data_value=-1)
         tile = converted.to_numpy_rdd().first()
         no_data = tile[1].no_data_value
 
