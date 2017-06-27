@@ -1,8 +1,8 @@
 """Contains the various encoding/decoding methods to bring values to/from Python from Scala."""
 from functools import partial
 import numpy as np
-from geopyspark.geopyspark_utils import ensure_pyspark
-ensure_pyspark()
+from geopyspark.geopyspark_utils import check_environment
+check_environment()
 
 from geopyspark.geotrellis import (Extent, ProjectedExtent, TemporalProjectedExtent, SpatialKey,
                                    SpaceTimeKey, Tile)

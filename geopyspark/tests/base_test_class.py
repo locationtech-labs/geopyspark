@@ -1,7 +1,6 @@
 import unittest
 import os
 
-from geopyspark import geopyspark_conf
 from geopyspark.geotrellis import Extent, TileLayout
 from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.geotrellis.geotiff import get
@@ -19,8 +18,7 @@ class BaseTestClass(unittest.TestCase):
     else:
         master_str = "local[*]"
 
-    conf = geopyspark_conf(master=master_str, appName="test")
-    pysc = SparkContext(conf=conf)
+    pysc = SparkContext(master=master_str, appName="test")
 
     dir_path = geotiff_test_path("all-ones.tif")
 
