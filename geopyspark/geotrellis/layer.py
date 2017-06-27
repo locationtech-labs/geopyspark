@@ -1023,7 +1023,7 @@ class TiledRasterLayer(CachableLayer):
             None
 
         Returns:
-            An array of Java objects containing the histograms of each band
+            :class:`~geopyspark.geotrellis.histogram.Histogram`
         """
         if self.is_floating_point_layer:
             histogram = self.srdd.getDoubleHistograms()
