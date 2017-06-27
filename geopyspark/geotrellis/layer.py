@@ -1017,18 +1017,17 @@ class TiledRasterLayer(CachableLayer):
         return self.srdd.isFloatingPointLayer()
 
     def get_histogram(self):
-        """Returns an array of Java histogram objects, one for each band of the raster.
-
-        Args:
-            None
+        """Creates a ``Histogram`` from the values within this layer.
 
         Returns:
             :class:`~geopyspark.geotrellis.histogram.Histogram`
         """
+
         if self.is_floating_point_layer:
             histogram = self.srdd.getDoubleHistograms()
         else:
             histogram = self.srdd.getIntHistograms()
+
         return Histogram(histogram)
 
     def _process_operation(self, value, operation):

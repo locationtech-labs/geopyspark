@@ -135,14 +135,17 @@ class Histogram(object):
 
         return self.scala_histogram.bucketCount()
 
-    def quantile_breaks(self):
+    def quantile_breaks(self, num_breaks):
         """Returns quantile breaks for this Layer.
 
         Args:
             num_breaks (int): The number of breaks to return.
+
+        Returns:
+            ``[int]``
         """
 
-        return list(self.scala_histogram.quantileBreaks())
+        return list(self.scala_histogram.quantileBreaks(num_breaks))
 
     def merge(self, other_histogram):
         """Merges this instance of ``Histogram`` with another. The resulting ``Histogram``
