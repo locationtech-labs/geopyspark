@@ -7,7 +7,7 @@ NETCDF-JAR := netcdfAll-5.0.0-SNAPSHOT.jar
 GDAL-BLOB := archives/gdal-and-friends.tar.gz
 PYTHON-BLOB := archives/geopyspark-and-friends.tar.gz
 GEONOTEBOOK := 178bde1679ae3bc084c044ca3eeb915a137f689f
-VERSION := 8
+VERSION := 9
 STAGE0 := jamesmcclain/jupyter-geopyspark:stage0
 STAGE1 := quay.io/geodocker/jupyter-geopyspark:$(VERSION)
 
