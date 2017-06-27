@@ -25,7 +25,7 @@ RUN mkdir /home/hadoop/notebooks && \
     jupyter serverextension enable --py geonotebook && \
     jupyter nbextension enable --py geonotebook
 COPY config/geonotebook.ini /home/hadoop/.local/etc/geonotebook.ini
-COPY kernels/geonotebook-local/kernel.json /home/hadoop/.local/share/jupyter/kernels/geonotebook3/kernel.json
+COPY kernels/geonotebook/kernel.json /home/hadoop/.local/share/jupyter/kernels/geonotebook3/kernel.json
 
 WORKDIR /tmp
 CMD ["jupyterhub", "--no-ssl", "--Spawner.notebook_dir=/home/hadoop/notebooks"]
