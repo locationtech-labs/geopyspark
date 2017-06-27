@@ -27,6 +27,7 @@ ${BUILD-ASSEMBLY}: $(call rwildcard, geopyspark-backend/, *.scala)
 	(cd geopyspark-backend && ./sbt "project geotrellis-backend" assembly)
 
 ${WHEEL}: ${DIST-ASSEMBLY} $(call rwildcard, geopyspark, *.py) setup.py
+	rm -rf build/
 	${PYTHON} setup.py bdist_wheel
 
 wheel: ${WHEEL}
@@ -60,11 +61,10 @@ docker-run:
 clean:
 	rm -f ${WHEEL} ${DIST-ASSEMBLY}
 	(cd geopyspark-backend && ./sbt "project geotrellis-backend" clean)
-	(cd docker && make clean)
+	make -C docker clean
 
 cleaner: clean
-	rm -f `find ./build ./geopyspark | grep "\.pyc"`
-	(cd docker && make cleaner)
+	make -C docker cleaner
 
 cleanest: cleaner
-	(cd docker && make cleanest)
+	make -C docker cleanest
