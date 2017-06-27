@@ -59,7 +59,7 @@ class PngRDD(CachableLayer):
 
     @classmethod
     def makePyramid(cls, tiledrdd, ramp_name, start_zoom=None, end_zoom=0,
-                    resample_method=ResampleMethod.NEARESTNEIGHBOR, debug=False):
+                    resample_method=ResampleMethod.NearestNeighbor, debug=False):
         """Create a pyramided PngRDD from a TiledRasterLayer
 
         Args:
@@ -75,7 +75,7 @@ class PngRDD(CachableLayer):
             end_zoom (int, optional): The final (lowest resolution) zoom level for the
                 pyramid.  Defaults to 0.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by a constant. If none is specified, then NEARESTNEIGHBOR
+                This is represented by a constant. If none is specified, then NearestNeighbor
                 is used.
 
         Returns: A PngRDD object

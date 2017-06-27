@@ -51,16 +51,16 @@ NODATAINT = -2147483648
 class ResampleMethod(Enum):
     """Resampling Methods."""
 
-    NEARESTNEIGHBOR = 'NearestNeighbor'
-    BILINEAR = 'Bilinear'
-    CUBICCONVOLUTION = 'CubicConvolution'
-    CUBICSPLINE = 'CubicSpline'
-    LANCZOS = 'Lanczos'
-    AVERAGE = 'Average'
-    MODE = 'Mode'
-    MEDIAN = 'Median'
-    MAX = 'Max'
-    MIN = 'Min'
+    NearestNeighbor = 'NearestNeighbor'
+    Bilinear = 'Bilinear'
+    CubicConvolution = 'CubicConvolution'
+    CubicSpline = 'CubicSpline'
+    Lanczos = 'Lanczos'
+    Average = 'Average'
+    Mode = 'Mode'
+    Median = 'Median'
+    Max = 'Max'
+    Min = 'Min'
 
     RESAMPLE_METHODS = [
         'NearestNeighbor',
@@ -78,16 +78,16 @@ class ResampleMethod(Enum):
 class TimeUnit(Enum):
     """ZORDER time units."""
 
-    MILLISECONDS = 'millis'
-    SECONDS = 'seconds'
-    MINUTES = 'minutes'
-    HOURS = 'hours'
-    DAYS = 'days'
-    MONTHS = 'months'
-    YEARS = 'years'
+    millis = 'millis'
+    seconds = 'seconds'
+    minutes = 'minutes'
+    hours = 'hours'
+    days = 'days'
+    months = 'months'
+    years = 'years'
 
-    TIME_UNITS = [
-        'milliseconds',
+    time_units = [
+        'millis',
         'seconds',
         'minutes',
         'hours',
@@ -100,15 +100,15 @@ class TimeUnit(Enum):
 class Operation(Enum):
     """Focal opertions."""
 
-    SUM = 'Sum'
-    MEAN = 'Mean'
-    MODE = 'Mode'
-    MEDIAN = 'Median'
-    MAX = 'Max'
-    MIN = 'Min'
-    ASPECT = 'Aspect'
-    SLOPE = 'Slope'
-    STANDARDDEVIATION = 'StandardDeviation'
+    Sum = 'Sum'
+    Mean = 'Mean'
+    Mode = 'Mode'
+    Median = 'Median'
+    Max = 'Max'
+    Min = 'Min'
+    Aspect = 'Aspect'
+    Slope = 'Slope'
+    StandardDeviation = 'StandardDeviation'
 
     OPERATIONS = [
         'Sum',
@@ -126,29 +126,29 @@ class Operation(Enum):
 class Neighborhood(Enum):
     """Neighborhood types."""
 
-    ANNULUS = 'annulus'
-    NESW = 'nesw'
-    SQUARE = 'square'
-    WEDGE = 'wedge'
-    CIRCLE = "circle"
+    Annulus = 'Annulus'
+    Nesw = 'Nesw'
+    Square = 'Square'
+    Wedge = 'Wedge'
+    Circle = "Circle"
 
     NEIGHBORHOODS = [
-        'annulus',
-        'nesw',
-        'square',
-        'wedge',
-        'circle'
+        'Annulus',
+        'Nesw',
+        'Square',
+        'Wedge',
+        'Circle'
     ]
 
 
 class ClassificationStrategy(Enum):
     """Classification strategies for color mapping."""
 
-    GREATERTHAN = "GreaterThan"
-    GREATERTHANOREQUALTO = "GreaterThanOrEqualTo"
-    LESSTHAN = "LessThan"
-    LESSTHANOREQUALTO = "LessThanOrEqualTo"
-    EXACT = "Exact"
+    GreaterThan = "GreaterThan"
+    GreaterThanOrEqualTo = "GreaterThanOrEqualTo"
+    LessThan = "LessThan"
+    LessThanOrEqualTo = "LessThanOrEqualTo"
+    Exact = "Exact"
 
     CLASSIFICATION_STRATEGIES = [
         'GreaterThan',
@@ -202,32 +202,32 @@ class CellType(Enum):
 class ColorRamp(Enum):
     """ColorRamp names."""
 
-    HOT = "hot"
-    COOLWARM = "coolwarm"
-    MAGMA = "magma"
-    INFERNO = "inferno"
-    PLASMA = "plasma"
-    VIRIDIS = "viridis"
-    BLUE_TO_ORANGE = "BlueToOrange"
-    LIGHT_YELLOW_TO_ORANGE = "LightYellowToOrange"
-    BLUE_TO_RED = "BlueToRed"
-    GREEN_TO_RED_ORANGE = "GreenToRedOrange"
-    LIGHT_TO_DARK_SUNSET = "LightToDarkSunset"
-    LIGHT_TO_DARK_GREEN = "LightToDarkGreen"
-    HEATMAP_YELLOW_TO_RED = "HeatmapYellowToRed"
-    HEATMAP_BLUE_TO_YELLOW_TO_RED_SPECTRUM = "HeatmapBlueToYellowToRedSpectrum"
-    HEATMAP_DARK_RED_TO_YELLOW_WHITE = "HeatmapDarkRedToYellowWhite"
-    HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE = "HeatmapLightPurpleToDarkPurpleToWhite"
-    CLASSIFICATION_BOLD_LAND_USE = "ClassificationBoldLandUse"
-    CLASSIFICATION_MUTED_TERRAIN = "ClassificationMutedTerrain"
+    Hot = "Hot"
+    CoolWarm = "CoolWarm"
+    Magma = "Magma"
+    Inferno = "Inferno"
+    Plasma = "Plasma"
+    Viridis = "Viridis"
+    BlueToOrange = "BlueToOrange"
+    LightYellowToOrange = "LightYellowToOrange"
+    BlueToRed = "BlueToRed"
+    GreenToRedOrange = "GreenToRedOrange"
+    LightToDarkSunset = "LightToDarkSunset"
+    LightToDarkGreen = "LightToDarkGreen"
+    HeatmapYellowToRED = "HeatmapYellowToRed"
+    HeatmapBlueToYellowToRedSpectrum = "HeatmapBlueToYellowToRedSpectrum"
+    HeatmapDarkRedToYellowWhite = "HeatmapDarkRedToYellowWhite"
+    HeatmapLightPurpleToDarkPurpleToWhite = "HeatmapLightPurpleToDarkPurpleToWhite"
+    ClassificationBoldLandUse = "ClassificationBoldLandUse"
+    ClassificationMutedTerrain = "ClassificationMutedTerrain"
 
     COLOR_RAMPS = [
-        'hot',
-        'coolwarm',
-        'magma',
-        'inferno',
-        'plasma',
-        'viridis',
+        'Hot',
+        'CoolWarm',
+        'Magma',
+        'Inferno',
+        'Plasma',
+        'Viridis',
         'BlueToOrange',
         'LightYellowToOrange',
         'BlueToRed',

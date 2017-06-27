@@ -68,7 +68,7 @@ class ReclassifyTest(BaseTestClass):
         value_map = {2: 20}
 
         result = raster_rdd.reclassify(value_map, int,
-                                       ClassificationStrategy.GREATERTHAN).to_numpy_rdd().first()[1].cells
+                                       ClassificationStrategy.GreaterThan).to_numpy_rdd().first()[1].cells
 
         expected = np.array([[[-500, -500, -500, -500],
                               [-500, -500, -500, -500],
@@ -111,7 +111,7 @@ class ReclassifyTest(BaseTestClass):
         value_map = {2.0: 5.0}
 
         result = raster_rdd.reclassify(value_map, float,
-                                       ClassificationStrategy.LESSTHAN).to_numpy_rdd().first()[1].cells
+                                       ClassificationStrategy.LessThan).to_numpy_rdd().first()[1].cells
 
         expected = np.array([[[5.0, 5.0, 5.0, 5.0],
                               [5.0, 5.0, 5.0, 5.0],

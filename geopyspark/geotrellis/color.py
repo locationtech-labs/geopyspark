@@ -125,7 +125,7 @@ class ColorMap(object):
 
     @classmethod
     def from_break_map(cls, pysc, break_map, no_data_color=0x00000000, fallback=0x00000000,
-                       class_boundary_type=ClassificationStrategy.LESSTHANOREQUALTO):
+                       class_boundary_type=ClassificationStrategy.LessThanOrEqualTo):
         """Converts a dictionary mapping from tile values to colors to a ColorMap.
 
         Args:
@@ -137,7 +137,7 @@ class ColorMap(object):
                 value in the mapping
             class_boundary_type (string, optional): A string giving the strategy
                 for converting tile values to colors.  E.g., if
-                LESSTHANOREQUALTO is specified, and the break map is
+                LessThanOrEqualTo is specified, and the break map is
                 {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red,
                 values from above 3 and up to and including 4 become green, and
                 values over 4 become the fallback color.
@@ -159,7 +159,7 @@ class ColorMap(object):
 
     @classmethod
     def from_colors(cls, pysc, breaks, color_list, no_data_color=0x00000000,
-                    fallback=0x00000000, class_boundary_type=ClassificationStrategy.LESSTHANOREQUALTO):
+                    fallback=0x00000000, class_boundary_type=ClassificationStrategy.LessThanOrEqualTo):
         """Converts lists of values and colors to a ColorMap.
 
         Args:
@@ -174,7 +174,7 @@ class ColorMap(object):
                 value in the mapping
             class_boundary_type (string, optional): A string giving the strategy
                 for converting tile values to colors.  E.g., if
-                LESSTHANOREQUALTO is specified, and the break map is
+                LessThanOrEqualTo is specified, and the break map is
                 {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red,
                 values from above 3 and up to and including 4 become green, and
                 values over 4 become the fallback color.
@@ -194,7 +194,7 @@ class ColorMap(object):
 
     @classmethod
     def from_histogram(cls, pysc, histogram, color_list, no_data_color=0x00000000,
-                       fallback=0x00000000, class_boundary_type=ClassificationStrategy.LESSTHANOREQUALTO):
+                       fallback=0x00000000, class_boundary_type=ClassificationStrategy.LessThanOrEqualTo):
 
         if isinstance(class_boundary_type, ClassificationStrategy):
             class_boundary_type = class_boundary_type.value

@@ -7,12 +7,12 @@ import geotrellis.raster.render._
 object Coloring {
   def getColorRamp(name: String): ColorRamp = {
     name match {
-      case "hot" => ColorRamps.HeatmapDarkRedToYellowWhite
-      case "coolwarm" => ColorRamps.BlueToRed
-      case "magma" => ColorRamps.Magma
-      case "inferno" => ColorRamps.Inferno
-      case "plasma" => ColorRamps.Plasma
-      case "viridis" => ColorRamps.Viridis
+      case "Hot" => ColorRamps.HeatmapDarkRedToYellowWhite
+      case "CoolWarm" => ColorRamps.BlueToRed
+      case "Magma" => ColorRamps.Magma
+      case "Inferno" => ColorRamps.Inferno
+      case "Plasma" => ColorRamps.Plasma
+      case "Viridis" => ColorRamps.Viridis
 
       case "BlueToOrange" => ColorRamps.BlueToOrange
       case "LightYellowToOrange" => ColorRamps.LightYellowToOrange
