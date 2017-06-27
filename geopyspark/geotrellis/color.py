@@ -1,5 +1,5 @@
-from geopyspark.geopyspark_utils import ensure_pyspark
-ensure_pyspark()
+from geopyspark.geopyspark_utils import check_environment
+check_environment()
 
 from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, COLOR_RAMPS, LESSTHANOREQUALTO
 
