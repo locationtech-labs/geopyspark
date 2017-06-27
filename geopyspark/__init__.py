@@ -79,9 +79,7 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
     else:
         conf.setAppName(appName)
 
-    if not master:
-        conf.setMaster("local[*]")
-    else:
+    if master:
         conf.setMaster(master)
 
     conf.set(key='spark.ui.enabled', value='false')
