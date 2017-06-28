@@ -4,7 +4,7 @@ from shapely.geometry import box
 import warnings
 import functools
 
-from geopyspark.geotrellis import constants
+from geopyspark.geotrellis.constants import CellType, NO_DATA_INT
 
 
 def deprecated(func):
@@ -308,14 +308,14 @@ class Metadata(object):
             else:
                 self.no_data_value = int(value)
         else:
-            if self.cell_type == constants.INT8:
+            if self.cell_type == CellType.INT8.value:
                 self.no_data_value = -128
-            elif self.cell_type == constants.UINT8 or self.cell_type == constants.UINT16:
+            elif self.cell_type == CellType.UINT8.value or self.cell_type == CellType.UINT16.value:
                 self.no_data_value = 0
-            elif self.cell_type == constants.INT16:
+            elif self.cell_type == CellType.INT16.value:
                 self.no_data_value = -32768
-            elif self.cell_type == constants.INT32:
-                self.no_data_value = constants.NODATAINT
+            elif self.cell_type == CellType.INT32.value:
+                self.no_data_value = NO_DATA_INT
             else:
                 self.no_data_value = float('nan')
 

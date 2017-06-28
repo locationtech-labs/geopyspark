@@ -60,7 +60,7 @@ def get(pysc,
 
     geotiff_rdd = pysc._gateway.jvm.geopyspark.geotrellis.io.geotiff.GeoTiffRDD
 
-    key = map_key_input(LayerType(rdd_type), False)
+    key = map_key_input(LayerType(rdd_type).value, False)
 
     options = {}
 

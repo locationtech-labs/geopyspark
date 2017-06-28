@@ -26,10 +26,6 @@ object Coloring {
       case "HeatmapLightPurpleToDarkPurpleToWhite" => ColorRamps.HeatmapLightPurpleToDarkPurpleToWhite
       case "ClassificationBoldLandUse" => ColorRamps.ClassificationBoldLandUse
       case "ClassificationMutedTerrain" => ColorRamps.ClassificationMutedTerrain
-      case "Magma" => ColorRamps.Magma
-      case "Inferno" => ColorRamps.Inferno
-      case "Plasma" => ColorRamps.Plasma
-      case "Viridis" => ColorRamps.Viridis
     }
   }
 

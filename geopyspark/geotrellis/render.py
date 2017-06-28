@@ -1,7 +1,7 @@
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
-from geopyspark.geotrellis.constants import ResampleMethod, ZOOM
+from geopyspark.geotrellis.constants import ResampleMethod, LayoutScheme
 from .layer import CachableLayer
 from pyspark.storagelevel import StorageLevel
 import geopyspark.geotrellis.color as color
@@ -83,7 +83,7 @@ class PngRDD(CachableLayer):
         if resample_method not in ResampleMethod.RESAMPLE_METHODS:
             raise ValueError(resample_method, " Is not a known resample method.")
 
-        reprojected = tiledrdd.reproject("EPSG:3857", scheme=ZOOM)
+        reprojected = tiledrdd.reproject("EPSG:3857", scheme=LayoutScheme.ZOOM)
 
         if not start_zoom:
             if reprojected.zoom_level:

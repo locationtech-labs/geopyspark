@@ -181,7 +181,7 @@ class RasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.RasterLayer`
         """
 
-        key = map_key_input(LayerType(rdd_type), False)
+        key = map_key_input(LayerType(rdd_type).value, False)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
@@ -208,7 +208,7 @@ class RasterLayer(CachableLayer):
         """
 
         result = self.srdd.toProtoRDD()
-        key = map_key_input(self.rdd_type, False)
+        key = map_key_input(LayerType(self.rdd_type).value, False)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
 
         return create_python_rdd(self.pysc, result, ser)
@@ -259,6 +259,8 @@ class RasterLayer(CachableLayer):
             ValueError: If ``no_data_value`` is set and ``new_type`` is a boolean.
         """
 
+        new_type = CellType(new_type).value
+
         if no_data_value:
             if 'bool' in new_type:
                 raise ValueError("Cannot add user defined types to Bool")
@@ -268,10 +270,10 @@ class RasterLayer(CachableLayer):
             no_data_constant = new_type + "ud" + str(no_data_value)
 
             return RasterLayer(self.pysc, self.rdd_type,
-                               self.srdd.convertDataType(CellType(new_type).value))
+                               self.srdd.convertDataType(no_data_constant))
         else:
             return RasterLayer(self.pysc, self.rdd_type,
-                               self.srdd.convertDataType(CellType(new_type).value))
+                               self.srdd.convertDataType(new_type))
 
     def collect_metadata(self, extent=None, layout=None, crs=None, tile_size=256):
         """Iterate over the RDD records and generates layer metadata desribing the contained
@@ -484,7 +486,7 @@ class TiledRasterLayer(CachableLayer):
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
-        key = map_key_input(LayerType(rdd_type), True)
+        key = map_key_input(LayerType(rdd_type).value, True)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
@@ -513,7 +515,7 @@ class TiledRasterLayer(CachableLayer):
             ``pyspark.RDD``
         """
         result = self.srdd.toProtoRDD()
-        key = map_key_input(self.rdd_type, True)
+        key = map_key_input(LayerType(self.rdd_type).value, True)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
 
         return create_python_rdd(self.pysc, result, ser)
@@ -541,7 +543,7 @@ class TiledRasterLayer(CachableLayer):
             elif 'raw' in new_type:
                 raise ValueError("Cannot add user defined types to raw values")
 
-            no_data_constant = new_type + "ud" + str(no_data_value)
+            no_data_constant = CellType(new_type).value + "ud" + str(no_data_value)
 
             return TiledRasterLayer(self.pysc, self.rdd_type,
                                   self.srdd.convertDataType(no_data_constant))
@@ -731,11 +733,13 @@ class TiledRasterLayer(CachableLayer):
                 ``ASPECT``.
         """
 
+        operation = Operation(operation).value
+
         if isinstance(neighborhood, Neighborhood):
             srdd = self.srdd.focal(operation, neighborhood.name, neighborhood.param_1,
                                    neighborhood.param_2, neighborhood.param_3)
 
-        elif isinstance(neighborhood, str):
+        elif isinstance(neighborhood, (str, nb)):
             if param_1 is None:
                 param_1 = 0.0
             if param_2 is None:
@@ -743,13 +747,11 @@ class TiledRasterLayer(CachableLayer):
             if param_3 is None:
                 param_3 = 0.0
 
-            operation = Operation(operation)
-
-            srdd = self.srdd.focal(operation.value, nb(neighborhood).value,
+            srdd = self.srdd.focal(operation, nb(neighborhood).value,
                                    float(param_1), float(param_2), float(param_3))
 
-        elif not neighborhood and operation == Operation.SLOPE or operation == Operation.ASPECT:
-            srdd = self.srdd.focal(operation.value, nb.SQUARE.value, 1.0, 0.0, 0.0)
+        elif not neighborhood and operation == Operation.SLOPE.value or operation == Operation.ASPECT.value:
+            srdd = self.srdd.focal(operation, nb.SQUARE.value, 1.0, 0.0, 0.0)
 
         else:
             raise ValueError("neighborhood must be set or the operation must be SLOPE or ASPECT")

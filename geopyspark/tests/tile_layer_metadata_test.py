@@ -4,7 +4,7 @@ import rasterio
 import pytest
 
 from geopyspark.geotrellis import Tile
-from geopyspark.geotrellis.constants import SPATIAL
+from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
 

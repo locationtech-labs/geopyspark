@@ -125,7 +125,7 @@ class ColorMap(object):
 
     @classmethod
     def from_break_map(cls, pysc, break_map, no_data_color=0x00000000, fallback=0x00000000,
-                       class_boundary_type=ClassificationStrategy.LessThanOrEqualTo):
+                       class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
         """Converts a dictionary mapping from tile values to colors to a ColorMap.
 
         Args:
@@ -145,21 +145,23 @@ class ColorMap(object):
         Returns:
             [ColorMap]
         """
-        if isinstance(class_boundary_type, ClassificationStrategy):
-            class_boundary_type = class_boundary_type.value
-        elif class_boundary_type not in ClassificationStrategy.CLASSIFICATION_STRATEGIES.values:
-            raise ValueError(class_boundary_type, " Is not a known classification strategy.")
 
         if all(isinstance(x, int) for x in break_map.keys()):
-            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMap(break_map, no_data_color, fallback, class_boundary_type))
+            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMap(break_map,
+                                                                                     no_data_color,
+                                                                                     fallback,
+                                                                                     ClassificationStrategy(class_boundary_type).value))
         elif all(isinstance(x, float) for x in break_map.keys()):
-            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMapDouble(break_map, no_data_color, fallback, class_boundary_type))
+            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMapDouble(break_map,
+                                                                                           no_data_color,
+                                                                                           fallback,
+                                                                                           ClassificationStrategy(class_boundary_type).value))
         else:
             raise TypeError("Break map keys must be either int or float.")
 
     @classmethod
     def from_colors(cls, pysc, breaks, color_list, no_data_color=0x00000000,
-                    fallback=0x00000000, class_boundary_type=ClassificationStrategy.LessThanOrEqualTo):
+                    fallback=0x00000000, class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
         """Converts lists of values and colors to a ColorMap.
 
         Args:
@@ -182,26 +184,29 @@ class ColorMap(object):
         Returns:
             [ColorMap]
         """
-        if isinstance(class_boundary_type, ClassificationStrategy):
-            class_boundary_type = class_boundary_type.value
-        elif class_boundary_type not in ClassificationStrategy.CLASSIFICATION_STRATEGIES.values:
-            raise ValueError(class_boundary_type, " Is not a known classification strategy.")
 
         if all(isinstance(x, int) for x in breaks):
-            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaks(breaks, color_list, no_data_color, fallback, class_boundary_type))
+            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaks(breaks,
+                                                                                        color_list,
+                                                                                        no_data_color,
+                                                                                        fallback,
+                                                                                        ClassificationStrategy(class_boundary_type).value))
         else:
-            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaksDouble([float(br) for br in breaks], color_list, no_data_color, fallback, class_boundary_type))
+            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaksDouble([float(br) for br in breaks],
+                                                                                              color_list,
+                                                                                              no_data_color,
+                                                                                              fallback,
+                                                                                              ClassificationStrategy(class_boundary_type).value))
 
     @classmethod
     def from_histogram(cls, pysc, histogram, color_list, no_data_color=0x00000000,
-                       fallback=0x00000000, class_boundary_type=ClassificationStrategy.LessThanOrEqualTo):
+                       fallback=0x00000000, class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
 
-        if isinstance(class_boundary_type, ClassificationStrategy):
-            class_boundary_type = class_boundary_type.value
-        elif class_boundary_type not in ClassificationStrategy.CLASSIFICATION_STRATEGIES.values:
-            raise ValueError(class_boundary_type, " Is not a known classification strategy.")
-
-        return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromHistogram(histogram, color_list, no_data_color, fallback, class_boundary_type))
+        return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromHistogram(histogram,
+                                                                                       color_list,
+                                                                                       no_data_color,
+                                                                                       fallback,
+                                                                                       ClassificationStrategy(class_boundary_type).value))
 
     @staticmethod
     def nlcd_colormap(pysc):

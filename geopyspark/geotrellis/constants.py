@@ -116,7 +116,7 @@ class Neighborhood(Enum):
 class ClassificationStrategy(Enum):
     """Classification strategies for color mapping."""
 
-    GREATERTHAN = "GreaterThan"
+    GREATER_THAN = "GreaterThan"
     GREATER_THAN_OR_EQUAL_TO = "GreaterThanOrEqualTo"
     LESS_THAN = "LessThan"
     LESS_THAN_OR_EQUAL_TO = "LessThanOrEqualTo"

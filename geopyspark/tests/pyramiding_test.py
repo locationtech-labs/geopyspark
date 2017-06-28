@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from geopyspark.geotrellis import Extent, ProjectedExtent, TileLayout, Tile
-from geopyspark.geotrellis.constants import LayerType
+from geopyspark.geotrellis.constants import LayerType, LayoutScheme
 from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
 
@@ -54,7 +54,7 @@ class PyramidingTest(BaseTestClass):
 
         metadata = raster_rdd.collect_metadata(extent=new_extent, layout=tile_layout)
         laid_out = raster_rdd.tile_to_layout(metadata)
-        reprojected = laid_out.reproject(3857, scheme=ZOOM)
+        reprojected = laid_out.reproject(3857, scheme=LayoutScheme.ZOOM)
 
         result = reprojected.pyramid(end_zoom=1)
 
