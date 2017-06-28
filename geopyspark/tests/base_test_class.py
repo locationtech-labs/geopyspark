@@ -1,6 +1,7 @@
 import unittest
 import os
 
+from geopyspark import geopyspark_conf
 from geopyspark.geotrellis import Extent, TileLayout
 from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.geotrellis.geotiff import get
@@ -18,7 +19,13 @@ class BaseTestClass(unittest.TestCase):
     else:
         master_str = "local[*]"
 
-    pysc = SparkContext(master=master_str, appName="test")
+    conf = geopyspark_conf(master=master_str, appName="test")
+
+    if 'TRAVIS' in os.environ:
+        conf.set(key='spark.driver.memory', value='2G')
+        conf.set(key='spark.executor.memory', value='2G')
+
+    pysc = SparkContext(conf=conf)
 
     dir_path = geotiff_test_path("all-ones.tif")
 

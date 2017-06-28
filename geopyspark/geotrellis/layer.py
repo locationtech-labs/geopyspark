@@ -7,8 +7,8 @@ import json
 import shapely.wkb
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
-from geopyspark.geopyspark_utils import check_environment
-check_environment()
+from geopyspark.geopyspark_utils import ensure_pyspark
+ensure_pyspark()
 
 from geopyspark import map_key_input, create_python_rdd
 from pyspark.storagelevel import StorageLevel
