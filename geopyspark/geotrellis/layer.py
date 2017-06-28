@@ -129,7 +129,7 @@ class CachableLayer(object):
             Int: The number of elements in the RDD.
         """
 
-        return self.rdd.rdd().count()
+        return self.srdd.rdd().count()
 
 
 class RasterLayer(CachableLayer):
