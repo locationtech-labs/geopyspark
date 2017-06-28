@@ -1110,14 +1110,6 @@ class Pyramid(CachableLayer):
             self.histogram = self.levels[self.max_zoom].get_histogram()
         return self.histogram
 
-    def to_png_pyramid(self, color_ramp=None, color_map=None, num_breaks=10):
-        if not color_map and color_ramp:
-            hist = self.get_histogram()
-            breaks = hist.quantileBreaks(num_breaks)
-            color_map = self.pysc._gateway.jvm.geopyspark.geotrellis.Coloring.makeColorMap(breaks, color_ramp)
-
-        return PngRDD(self.levels, color_map)
-
     def __add__(self, value):
         if isinstance(value, Pyramid):
             return Pyramid({k: l.__add__(r) for k, l, r in _common_entries(self.levels, value.levels)})
