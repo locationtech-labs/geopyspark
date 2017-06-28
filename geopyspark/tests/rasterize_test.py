@@ -9,7 +9,6 @@ from geopyspark.geotrellis import Extent
 from shapely.geometry import Polygon
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis import rasterize
-from geopyspark.geotrellis.constants import SPATIAL
 
 
 class RasterizeTest(BaseTestClass):

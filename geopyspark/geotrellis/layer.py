@@ -19,9 +19,9 @@ from geopyspark.geotrellis.constants import (Operation,
                                              ResampleMethod,
                                              ClassificationStrategy,
                                              CellType,
-                                             FLOAT,
-                                             SPATIAL,
-                                             NODATAINT,
+                                             LayoutScheme,
+                                             LayerType,
+                                             NO_DATA_INT,
                                             )
 from geopyspark.geotrellis.neighborhood import Neighborhood
 
@@ -31,11 +31,6 @@ __all__ = ["RasterLayer", "TiledRasterLayer", "Pyramid"]
 
 def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_with):
     new_dict = {}
-
-    if isinstance(boundary_strategy, ClassificationStrategy):
-        boundary_strategy = boundary_strategy.value
-    elif boundary_strategy not in ClassificationStrategy.CLASSIFICATION_STRATEGIES.values:
-        raise ValueError(boundary_strategy, " Is not a known classification strategy.")
 
     for key, value in value_map.items():
         if isinstance(key, data_type):
@@ -49,14 +44,18 @@ def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_wi
 
     if data_type is int:
         if not replace_nodata_with:
-            return srdd.reclassify(new_dict, boundary_strategy, NODATAINT)
+            return srdd.reclassify(new_dict, ClassificationStrategy(boundary_strategy).value,
+                                   NO_DATA_INT)
         else:
-            return srdd.reclassify(new_dict, boundary_strategy, replace_nodata_with)
+            return srdd.reclassify(new_dict, ClassificationStrategy(boundary_strategy).value,
+                                   replace_nodata_with)
     else:
         if not replace_nodata_with:
-            return srdd.reclassifyDouble(new_dict, boundary_strategy, float('nan'))
+            return srdd.reclassifyDouble(new_dict, ClassificationStrategy(boundary_strategy).value,
+                                         float('nan'))
         else:
-            return srdd.reclassifyDouble(new_dict, boundary_strategy, replace_nodata_with)
+            return srdd.reclassifyDouble(new_dict, ClassificationStrategy(boundary_strategy).value,
+                                         replace_nodata_with)
 
 
 class CachableLayer(object):
@@ -182,11 +181,11 @@ class RasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.RasterLayer`
         """
 
-        key = map_key_input(rdd_type, False)
+        key = map_key_input(LayerType(rdd_type), False)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
-        if rdd_type == SPATIAL:
+        if rdd_type == LayerType.SPATIAL:
             srdd = \
                     pysc._gateway.jvm.geopyspark.geotrellis.ProjectedRasterRDD.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd)
@@ -215,7 +214,7 @@ class RasterLayer(CachableLayer):
         return create_python_rdd(self.pysc, result, ser)
 
     def to_tiled_layer(self, extent=None, layout=None, crs=None, tile_size=256,
-                       resample_method=ResampleMethod.NearestNeighbor):
+                       resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Converts this ``RasterLayer`` to a ``TiledRasterLayer``.
 
         This method combines :meth:`~geopyspark.geotrellis.rdd.RasterLayer.collect_metadata` and
@@ -229,9 +228,9 @@ class RasterLayer(CachableLayer):
             crs (str or int, optional): Ignore CRS from records and use given one instead.
             tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by the following constants: ``ResampleMethods.NearestNeighbor``, ``BILINEAR``,
+                This is represented by the following constants: ``ResampleMethods.NEAREST_NEIGHBOR``, ``BILINEAR``,
                 ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
-                ``MIN``. If none is specified, then ``ResampleMethods.NearestNeighbor`` is used.
+                ``MIN``. If none is specified, then ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
 
         Note:
             ``extent`` and ``layout`` must both be defined if they are to be used.
@@ -260,11 +259,6 @@ class RasterLayer(CachableLayer):
             ValueError: If ``no_data_value`` is set and ``new_type`` is a boolean.
         """
 
-        if isinstance(new_type, CellType):
-            new_type = new_type.value
-        elif new_type not in CellType.CELL_TYPES.values:
-            raise ValueError(new_type, "Is not a know Cell Type")
-
         if no_data_value:
             if 'bool' in new_type:
                 raise ValueError("Cannot add user defined types to Bool")
@@ -274,9 +268,10 @@ class RasterLayer(CachableLayer):
             no_data_constant = new_type + "ud" + str(no_data_value)
 
             return RasterLayer(self.pysc, self.rdd_type,
-                             self.srdd.convertDataType(no_data_constant))
+                               self.srdd.convertDataType(CellType(new_type).value))
         else:
-            return RasterLayer(self.pysc, self.rdd_type, self.srdd.convertDataType(new_type))
+            return RasterLayer(self.pysc, self.rdd_type,
+                               self.srdd.convertDataType(CellType(new_type).value))
 
     def collect_metadata(self, extent=None, layout=None, crs=None, tile_size=256):
         """Iterate over the RDD records and generates layer metadata desribing the contained
@@ -321,86 +316,72 @@ class RasterLayer(CachableLayer):
 
         return Metadata.from_dict(json.loads(json_metadata))
 
-    def reproject(self, target_crs, resample_method=ResampleMethod.NearestNeighbor):
+    def reproject(self, target_crs, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Reproject every individual raster to ``target_crs``, does not sample past tile boundary
 
         Args:
             target_crs (str or int): The CRS to reproject to. Can either be the EPSG code,
                 well-known name, or a PROJ.4 projection string.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by the following constants: ``NearestNeighbor``, ``BILINEAR``,
+                This is represented by the following constants: ``NEAREST_NEIGHBOR``, ``BILINEAR``,
                 ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
-                ``MIN``. If none is specified, then ``NearestNeighbor`` is used.
+                ``MIN``. If none is specified, then ``NEAREST_NEIGHBOR`` is used.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.RasterLayer`
         """
 
-        if isinstance(resample_method, ResampleMethod):
-            resample_method = resample_method.value
-        elif resample_method not in ResampleMethod.RESAMPLE_METHODS.values:
-            raise ValueError(resample_method, " Is not a known resample method.")
-
         if isinstance(target_crs, int):
             target_crs = str(target_crs)
 
         return RasterLayer(self.pysc, self.rdd_type,
-                         self.srdd.reproject(target_crs, resample_method))
+                         self.srdd.reproject(target_crs, ResampleMethod(resample_method).value))
 
-    def cut_tiles(self, layer_metadata, resample_method=ResampleMethod.NearestNeighbor):
+    def cut_tiles(self, layer_metadata, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to layout. May result in duplicate keys.
 
         Args:
             layer_metadata (:class:`~geopyspark.geotrellis.Metadata`): The
                 ``Metadata`` of the ``RasterLayer`` instance.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by the following constants: ``NearestNeighbor``, ``BILINEAR``,
+                This is represented by the following constants: ``NEAREST_NEIGHBOR``, ``BILINEAR``,
                 ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
-                ``MIN``. If none is specified, then ``NearestNeighbor`` is used.
+                ``MIN``. If none is specified, then ``NEAREST_NEIGHBOR`` is used.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        if isinstance(resample_method, ResampleMethod):
-            resample_method = resample_method.value
-        elif resample_method not in ResampleMethod.RESAMPLE_METHODS.values:
-            raise ValueError(resample_method, " Is not a known resample method.")
-
         if isinstance(layer_metadata, Metadata):
             layer_metadata = layer_metadata.to_dict()
 
-        srdd = self.srdd.cutTiles(json.dumps(layer_metadata), resample_method)
+        srdd = self.srdd.cutTiles(json.dumps(layer_metadata), ResampleMethod(resample_method).value)
         return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
 
-    def tile_to_layout(self, layer_metadata, resample_method=ResampleMethod.NearestNeighbor):
+    def tile_to_layout(self, layer_metadata, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
             layer_metadata (:class:`~geopyspark.geotrellis.Metadata`): The
                 ``Metadata`` of the ``RasterLayer`` instance.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by the following constants: ``NearestNeighbor``, ``BILINEAR``,
+                This is represented by the following constants: ``NEAREST_NEIGHBOR``, ``BILINEAR``,
                 ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
-                ``MIN``. If none is specified, then ``NearestNeighbor`` is used.
+                ``MIN``. If none is specified, then ``NEAREST_NEIGHBOR`` is used.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        if isinstance(resample_method, ResampleMethod):
-            resample_method = resample_method.value
-        elif resample_method not in ResampleMethod.RESAMPLE_METHODS.values:
-            raise ValueError(resample_method, " Is not a known resample method.")
-
         if isinstance(layer_metadata, Metadata):
             layer_metadata = layer_metadata.to_dict()
 
-        srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
+        srdd = self.srdd.tileToLayout(json.dumps(layer_metadata),
+                                      ResampleMethod(resample_method).value)
         return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
 
     def reclassify(self, value_map, data_type,
-                   boundary_strategy=ClassificationStrategy.LessThanOrEqualTo,
+                   boundary_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO,
                    replace_nodata_with=None):
         """Changes the cell values of a raster based on how the data is broken up.
 
@@ -420,7 +401,7 @@ class RasterLayer(CachableLayer):
 
         NOTE:
             NoData symbolizes a different value depending on if ``data_type`` is ``int`` or
-            ``float``. For ``int``, the constant ``NODATAINT`` can be used which represents the
+            ``float``. For ``int``, the constant ``NO_DATA_INT`` can be used which represents the
             NoData value for ``int`` in GeoTrellis. For ``float``, ``float('nan')`` is used to
             represent NoData.
 
@@ -440,6 +421,7 @@ class RasterLayer(CachableLayer):
         """
         min_max = self.srdd.getMinMax()
         return (min_max._1(), min_max._2())
+
 
 class TiledRasterLayer(CachableLayer):
     """Wraps a RDD of tiled, GeoTrellis rasters.
@@ -502,14 +484,14 @@ class TiledRasterLayer(CachableLayer):
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
-        key = map_key_input(rdd_type, True)
+        key = map_key_input(LayerType(rdd_type), True)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
         if isinstance(metadata, Metadata):
             metadata = metadata.to_dict()
 
-        if rdd_type == SPATIAL:
+        if rdd_type == LayerType.SPATIAL:
             srdd = \
                     pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd, json.dumps(metadata))
@@ -553,11 +535,6 @@ class TiledRasterLayer(CachableLayer):
             ValueError: If ``no_data_value`` is set and ``new_type`` is a boolean.
         """
 
-        if isinstance(new_type, CellType):
-            new_type = new_type.value
-        elif new_type not in CellType.CELL_TYPES.values:
-            raise ValueError(new_type, "Is not a know Cell Type")
-
         if no_data_value:
             if 'bool' in new_type:
                 raise ValueError("Cannot add user defined types to Bool")
@@ -569,10 +546,11 @@ class TiledRasterLayer(CachableLayer):
             return TiledRasterLayer(self.pysc, self.rdd_type,
                                   self.srdd.convertDataType(no_data_constant))
         else:
-            return TiledRasterLayer(self.pysc, self.rdd_type, self.srdd.convertDataType(new_type))
+            return TiledRasterLayer(self.pysc, self.rdd_type,
+                                    self.srdd.convertDataType(CellType(new_type).value))
 
-    def reproject(self, target_crs, extent=None, layout=None, scheme=FLOAT, tile_size=256,
-                  resolution_threshold=0.1, resample_method=ResampleMethod.NearestNeighbor):
+    def reproject(self, target_crs, extent=None, layout=None, scheme=LayoutScheme.FLOAT, tile_size=256,
+                  resolution_threshold=0.1, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Reproject Layer as tiled raster layer, samples surrounding tiles.
 
         Args:
@@ -589,9 +567,9 @@ class TiledRasterLayer(CachableLayer):
                 and a zoom level along with the resolution difference between the zoom level and
                 the next one that is tolerated to snap to the lower-resolution zoom.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by the following constants: ``NearestNeighbor``, ``BILINEAR``,
+                This is represented by the following constants: ``NEAREST_NEIGHBOR``, ``BILINEAR``,
                 ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
-                ``MIN``. If none is specified, then ``NearestNeighbor`` is used.
+                ``MIN``. If none is specified, then ``NEAREST_NEIGHBOR`` is used.
 
         Note:
             ``extent`` and ``layout`` must both be defined if they are to be used.
@@ -603,11 +581,6 @@ class TiledRasterLayer(CachableLayer):
             TypeError: If either ``extent`` or ``layout`` is defined but the other is not.
         """
 
-        if isinstance(resample_method, ResampleMethod):
-            resample_method = resample_method.value
-        elif resample_method not in ResampleMethod.RESAMPLE_METHODS.values:
-            raise ValueError(resample_method, " Is not a known resample method.")
-
         if extent and not isinstance(extent, dict):
             extent = extent._asdict()
 
@@ -618,10 +591,11 @@ class TiledRasterLayer(CachableLayer):
             target_crs = str(target_crs)
 
         if extent and layout:
-            srdd = self.srdd.reproject(extent, layout, target_crs, resample_method)
+            srdd = self.srdd.reproject(extent, layout, target_crs,
+                                       ResampleMethod(resample_method).value)
         elif not extent and not layout:
-            srdd = self.srdd.reproject(scheme, tile_size, resolution_threshold,
-                                       target_crs, resample_method)
+            srdd = self.srdd.reproject(LayoutScheme(scheme).value, tile_size, resolution_threshold,
+                                       target_crs, ResampleMethod(resample_method).value)
         else:
             raise TypeError("Could not collect reproject Layer with {} and {}".format(extent, layout))
 
@@ -644,7 +618,7 @@ class TiledRasterLayer(CachableLayer):
             ValueError: If using lookup on a non ``SPATIAL`` ``TiledRasterLayer``.
             IndexError: If col and row are not within the ``TiledRasterLayer``\'s bounds.
         """
-        if self.rdd_type != SPATIAL:
+        if self.rdd_type != LayerType.SPATIAL:
             raise ValueError("Only TiledRasterLayers with a rdd_type of Spatial can use lookup()")
         bounds = self.layer_metadata.bounds
         min_col = bounds.minKey.col
@@ -661,34 +635,29 @@ class TiledRasterLayer(CachableLayer):
 
         return [multibandtile_decoder(tile) for tile in array_of_tiles]
 
-    def tile_to_layout(self, layout, resample_method=ResampleMethod.NearestNeighbor):
+    def tile_to_layout(self, layout, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to a given layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
             layout (:obj:`~geopyspark.geotrellis.TileLayout`): Specify the ``TileLayout`` to cut
                 to.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by the following constants: ``NearestNeighbor``, ``BILINEAR``,
+                This is represented by the following constants: ``NEAREST_NEIGHBOR``, ``BILINEAR``,
                 ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
-                ``MIN``. If none is specified, then ``NearestNeighbor`` is used.
+                ``MIN``. If none is specified, then ``NEAREST_NEIGHBOR`` is used.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        if isinstance(resample_method, ResampleMethod):
-            resample_method = resample_method.value
-        elif resample_method not in ResampleMethod.RESAMPLE_METHODS.values:
-            raise ValueError(resample_method, " Is not a known resample method.")
-
         if not isinstance(layout, dict):
             layout = layout._asdict()
 
-        srdd = self.srdd.tileToLayout(layout, resample_method)
+        srdd = self.srdd.tileToLayout(layout, ResampleMethod(resample_method).value)
 
         return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
 
-    def pyramid(self, end_zoom, start_zoom=None, resample_method=ResampleMethod.NearestNeighbor):
+    def pyramid(self, end_zoom, start_zoom=None, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Creates a pyramid of GeoTrellis layers where each layer reprsents a given zoom.
 
         Args:
@@ -698,9 +667,9 @@ class TiledRasterLayer(CachableLayer):
                 the level that is most zoomed in. If None, then will use the zoom level from
                 :meth:`~geopyspark.geotrellis.rdd.TiledRasterLayer.zoom_level`.
             resample_method (str, optional): The resample method to use for the reprojection.
-                This is represented by the following constants: ``NearestNeighbor``, ``BILINEAR``,
+                This is represented by the following constants: ``NEAREST_NEIGHBOR``, ``BILINEAR``,
                 ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
-                ``MIN``. If none is specified, then ``NearestNeighbor`` is used.
+                ``MIN``. If none is specified, then ``NEAREST_NEIGHBOR`` is used.
 
         Returns:
             ``[TiledRasterLayers]``.
@@ -709,11 +678,6 @@ class TiledRasterLayer(CachableLayer):
             ValueError: If the given ``resample_method`` is not known.
             ValueError: If the col and row count is not a power of 2.
         """
-
-        if isinstance(resample_method, ResampleMethod):
-            resample_method = resample_method.value
-        elif resample_method not in ResampleMethod.RESAMPLE_METHODS.values:
-            raise ValueError(resample_method, " Is not a known resample method.")
 
         num_cols = self.layer_metadata.tile_layout.tileCols
         num_rows = self.layer_metadata.tile_layout.tileRows
@@ -728,7 +692,7 @@ class TiledRasterLayer(CachableLayer):
         else:
             raise ValueError("No start_zoom given.")
 
-        result = self.srdd.pyramid(start_zoom, end_zoom, resample_method)
+        result = self.srdd.pyramid(start_zoom, end_zoom, ResampleMethod(resample_method).value)
 
         return Pyramid([TiledRasterLayer(self.pysc, self.rdd_type, srdd) for srdd in result])
 
@@ -767,16 +731,6 @@ class TiledRasterLayer(CachableLayer):
                 ``ASPECT``.
         """
 
-        if isinstance(operation, Operation):
-            operation = operation.value
-        elif operation not in Operation.OPERATIONS.values:
-            raise ValueError(operation, "Is not a known operation.")
-
-        if isinstance(neighborhood, nb):
-            neighborhood = neighborhood.value
-        elif isinstance(neighborhood, str) and neighborhood not in nb.NEIGHBORHOODS.values:
-            raise ValueError(neighborhood, "is not a known neighborhood.")
-
         if isinstance(neighborhood, Neighborhood):
             srdd = self.srdd.focal(operation, neighborhood.name, neighborhood.param_1,
                                    neighborhood.param_2, neighborhood.param_3)
@@ -789,11 +743,13 @@ class TiledRasterLayer(CachableLayer):
             if param_3 is None:
                 param_3 = 0.0
 
-            srdd = self.srdd.focal(operation, neighborhood, float(param_1), float(param_2),
-                                   float(param_3))
+            operation = Operation(operation)
 
-        elif not neighborhood and operation == Operation.Slope or operation == Operation.Aspect:
-            srdd = self.srdd.focal(operation, nb.Square, 1.0, 0.0, 0.0)
+            srdd = self.srdd.focal(operation.value, nb(neighborhood).value,
+                                   float(param_1), float(param_2), float(param_3))
+
+        elif not neighborhood and operation == Operation.SLOPE or operation == Operation.ASPECT:
+            srdd = self.srdd.focal(operation.value, nb.SQUARE.value, 1.0, 0.0, 0.0)
 
         else:
             raise ValueError("neighborhood must be set or the operation must be SLOPE or ASPECT")
@@ -810,7 +766,7 @@ class TiledRasterLayer(CachableLayer):
             :ref:`raster`
         """
 
-        if self.rdd_type != SPATIAL:
+        if self.rdd_type != LayerType.SPATIAL:
             raise ValueError("Only TiledRasterLayers with a rdd_type of Spatial can use stitch()")
 
         value = self.srdd.stitch()
@@ -832,7 +788,7 @@ class TiledRasterLayer(CachableLayer):
             None
         """
 
-        if self.rdd_type != SPATIAL:
+        if self.rdd_type != LayerType.SPATIAL:
             raise ValueError("Only TiledRasterLayers with a rdd_type of Spatial can use stitch()")
 
         if crop_bounds:
@@ -870,7 +826,7 @@ class TiledRasterLayer(CachableLayer):
         return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
 
     def reclassify(self, value_map, data_type,
-                   boundary_strategy=ClassificationStrategy.LessThanOrEqualTo,
+                   boundary_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO,
                    replace_nodata_with=None):
         """Changes the cell values of a raster based on how the data is broken up.
 
@@ -890,7 +846,7 @@ class TiledRasterLayer(CachableLayer):
 
         NOTE:
             NoData symbolizes a different value depending on if ``data_type`` is ``int`` or
-            ``float``. For ``int``, the constant ``NODATAINT`` can be used which represents the
+            ``float``. For ``int``, the constant ``NO_DATA_INT`` can be used which represents the
             NoData value for ``int`` in GeoTrellis. For ``float``, ``float('nan')`` is used to
             represent NoData.
 
@@ -898,7 +854,8 @@ class TiledRasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        srdd = _reclassify(self.srdd, value_map, data_type, boundary_strategy, replace_nodata_with)
+        srdd = _reclassify(self.srdd, value_map, data_type,
+                           ClassificationStrategy(boundary_strategy).value, replace_nodata_with)
 
         return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
 

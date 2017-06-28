@@ -1,5 +1,5 @@
 import shapely.wkb
-from geopyspark.geotrellis.constants import SPATIAL
+from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
@@ -28,5 +28,4 @@ def rasterize(pysc, geoms, crs, zoom, fill_value, cell_type='float64', options=N
                                                                                            zoom, float(fill_value),
                                                                                            cell_type, options,
                                                                                            numPartitions)
-    return TiledRasterLayer(pysc, SPATIAL, srdd)
-
+    return TiledRasterLayer(pysc, LayerType.SPATIAL, srdd)

@@ -4,7 +4,7 @@ import rasterio
 import pytest
 import numpy as np
 
-from geopyspark.geotrellis.constants import SPATIAL, CellType
+from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.tests.python_test_utils import geotiff_test_path
 from geopyspark.geotrellis import Extent, ProjectedExtent, Tile
 from geopyspark.geotrellis.geotiff import get
@@ -44,7 +44,7 @@ class GeoTiffIOTest(object):
 
 class Multiband(GeoTiffIOTest, BaseTestClass):
     dir_path = geotiff_test_path("one-month-tiles-multiband/")
-    result = get(BaseTestClass.pysc, SPATIAL, dir_path)
+    result = get(BaseTestClass.pysc, LayerType.SPATIAL, dir_path)
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
@@ -96,7 +96,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
 
         tile = {'data': arr, 'no_data_value': float('nan')}
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd)
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
 
         converted = raster_rdd.convert_data_type(INT32)
         arr = converted.to_numpy_rdd().first()[1]['data']
@@ -120,7 +120,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
 
         tile = Tile(arr, 'FLOAT',float('nan'))
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
 
         converted = raster_rdd.convert_data_type(CellType.UINT8, no_data_value=-1)
         tile = converted.to_numpy_rdd().first()

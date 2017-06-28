@@ -6,7 +6,7 @@ import unittest
 
 from geopyspark.geotrellis import Tile
 from geopyspark.geotrellis.layer import RasterLayer
-from geopyspark.geotrellis.constants import SPATIAL
+from geopyspark.geotrellis.constants import LayerType
 from geopyspark.tests.base_test_class import BaseTestClass
 from pyspark.storagelevel import StorageLevel
 
@@ -24,7 +24,7 @@ class LayerWrapperTest(BaseTestClass):
         tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
 
         self.assertEqual(raster_rdd.is_cached, False)
 

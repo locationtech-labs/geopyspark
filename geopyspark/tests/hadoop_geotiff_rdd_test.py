@@ -3,7 +3,7 @@ from os import walk, path
 import rasterio
 import pytest
 
-from geopyspark.geotrellis.constants import SPATIAL
+from geopyspark.geotrellis.constants import LayerType
 from geopyspark.tests.python_test_utils import geotiff_test_path
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -51,11 +51,11 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
     def read_singleband_geotrellis(self, options=None):
         if options is None:
             result = get(BaseTestClass.pysc,
-                         SPATIAL,
+                         LayerType.SPATIAL,
                          self.dir_path)
         else:
             result = get(BaseTestClass.pysc,
-                         SPATIAL,
+                         LayerType.SPATIAL,
                          self.dir_path,
                          max_tile_size=256)
 

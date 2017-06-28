@@ -6,18 +6,18 @@ from shapely.geometry import box
 
 from geopyspark.geotrellis import SpatialKey
 from geopyspark.geotrellis.catalog import read, read_value, query, read_layer_metadata, get_layer_ids
-from geopyspark.geotrellis.constants import SPATIAL, ZOOM
+from geopyspark.geotrellis.constants import LayerType, LayoutScheme
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.tests.python_test_utils import geotiff_test_path
 
 
 class CatalogTest(BaseTestClass):
-    rdd = get(BaseTestClass.pysc, SPATIAL, geotiff_test_path("srtm_52_11.tif"))
+    rdd = get(BaseTestClass.pysc, LayerType.SPATIAL, geotiff_test_path("srtm_52_11.tif"))
 
     metadata = rdd.collect_metadata()
     laid_out = rdd.tile_to_layout(metadata)
-    reprojected = laid_out.reproject(target_crs="EPSG:3857", scheme=ZOOM)
+    reprojected = laid_out.reproject(target_crs="EPSG:3857", scheme=LayoutScheme.ZOOM)
     result = reprojected.pyramid(start_zoom=11, end_zoom=1)
 
     dir_path = geotiff_test_path("catalog/")
@@ -31,7 +31,7 @@ class CatalogTest(BaseTestClass):
 
     def test_read(self):
         for x in range(11, 0, -1):
-            actual_layer = read(BaseTestClass.pysc, SPATIAL, self.uri, self.layer_name, x)
+            actual_layer = read(BaseTestClass.pysc, LayerType.SPATIAL, self.uri, self.layer_name, x)
             expected_layer = self.result.levels[x]
 
             self.assertDictEqual(actual_layer.layer_metadata.to_dict(),
@@ -39,7 +39,7 @@ class CatalogTest(BaseTestClass):
 
     def test_read_value(self):
         tiled = read_value(BaseTestClass.pysc,
-                           SPATIAL,
+                           LayerType.SPATIAL,
                            self.uri,
                            self.layer_name,
                            11,
@@ -50,7 +50,7 @@ class CatalogTest(BaseTestClass):
 
     def test_bad_read_value(self):
         tiled = read_value(BaseTestClass.pysc,
-                           SPATIAL,
+                           LayerType.SPATIAL,
                            self.uri,
                            self.layer_name,
                            11,
@@ -61,28 +61,28 @@ class CatalogTest(BaseTestClass):
 
     def test_query(self):
         intersection = box(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520)
-        queried = query(BaseTestClass.pysc, SPATIAL, self.uri, self.layer_name, 11, intersection)
+        queried = query(BaseTestClass.pysc, LayerType.SPATIAL, self.uri, self.layer_name, 11, intersection)
 
         self.assertEqual(queried.to_numpy_rdd().first()[0], SpatialKey(1450, 996))
 
     def test_query_partitions(self):
         intersection = box(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520)
-        queried = query(BaseTestClass.pysc, SPATIAL, self.uri, self.layer_name, 11, intersection,
+        queried = query(BaseTestClass.pysc, LayerType.SPATIAL, self.uri, self.layer_name, 11, intersection,
                         numPartitions=2)
         self.assertEqual(queried.to_numpy_rdd().first()[0], SpatialKey(1450, 996))
 
     def test_query_crs(self):
         intersection = box(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520)
-        queried = query(BaseTestClass.pysc, SPATIAL, self.uri, self.layer_name, 11, intersection,
+        queried = query(BaseTestClass.pysc, LayerType.SPATIAL, self.uri, self.layer_name, 11, intersection,
                         proj_query=3857)
 
         self.assertEqual(queried.to_numpy_rdd().first()[0], SpatialKey(1450, 996))
 
     def test_read_metadata(self):
-        layer = read(BaseTestClass.pysc, SPATIAL, self.uri, self.layer_name, 5)
+        layer = read(BaseTestClass.pysc, LayerType.SPATIAL, self.uri, self.layer_name, 5)
         actual_metadata = layer.layer_metadata
 
-        expected_metadata = read_layer_metadata(BaseTestClass.pysc, SPATIAL, self.uri,
+        expected_metadata = read_layer_metadata(BaseTestClass.pysc, LayerType.SPATIAL, self.uri,
                                                 self.layer_name, 5)
 
         self.assertEqual(actual_metadata.to_dict(), expected_metadata.to_dict())
