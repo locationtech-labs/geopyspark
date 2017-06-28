@@ -31,8 +31,8 @@ resolvers ++= Seq(
 
 scalaVersion := Version.scala
 
-lazy val root = Project("root", file(".")).
-  dependsOn(geotrellisProject)
+lazy val root = Project("root", file("."))
 
-lazy val geotrellisProject = Project("geotrellis-backend", file("geotrellis")).
-  settings(commonSettings: _*)
+lazy val geotrellisProject = Project("geotrellis-backend", file("geotrellis"))
+  .settings(commonSettings: _*)
+  .dependsOn(root)
