@@ -6,8 +6,8 @@ GEOPYSPARK-JAR := geotrellis-backend-assembly-0.1.0.jar
 NETCDF-JAR := netcdfAll-5.0.0-SNAPSHOT.jar
 GDAL-BLOB := archives/gdal-and-friends.tar.gz
 PYTHON-BLOB := archives/geopyspark-and-friends.tar.gz
-GEONOTEBOOK := eeb1ee9e2dfb9df84eec24306c4b05b7008865ec
-VERSION := 9
+GEONOTEBOOK := f002a87c12442781fbef89130e348e8a3def8162
+VERSION := 10
 STAGE0 := jamesmcclain/jupyter-geopyspark:stage0
 STAGE1 := quay.io/geodocker/jupyter-geopyspark:$(VERSION)
 
