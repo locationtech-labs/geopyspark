@@ -202,7 +202,7 @@ class ColorMap(object):
     def from_histogram(cls, pysc, histogram, color_list, no_data_color=0x00000000,
                        fallback=0x00000000, class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
 
-        return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromHistogram(histogram,
+        return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromHistogram(histogram.scala_histogram,
                                                                                        color_list,
                                                                                        no_data_color,
                                                                                        fallback,

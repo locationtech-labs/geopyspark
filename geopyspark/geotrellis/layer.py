@@ -14,6 +14,7 @@ from geopyspark import map_key_input, create_python_rdd
 from pyspark.storagelevel import StorageLevel
 from shapely.geometry import Polygon, MultiPolygon
 from geopyspark.geotrellis import Metadata
+from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
                                              Neighborhood as nb,
                                              ResampleMethod,
@@ -21,7 +22,7 @@ from geopyspark.geotrellis.constants import (Operation,
                                              CellType,
                                              LayoutScheme,
                                              LayerType,
-                                             NO_DATA_INT,
+                                             NO_DATA_INT
                                             )
 from geopyspark.geotrellis.neighborhood import Neighborhood
 
@@ -1016,19 +1017,18 @@ class TiledRasterLayer(CachableLayer):
         return self.srdd.isFloatingPointLayer()
 
     def get_histogram(self):
-        """Returns an array of Java histogram objects, one for each band of the raster.
-
-        Args:
-            None
+        """Creates a ``Histogram`` from the values within this layer.
 
         Returns:
-            An array of Java objects containing the histograms of each band
+            :class:`~geopyspark.geotrellis.histogram.Histogram`
         """
+
         if self.is_floating_point_layer:
             histogram = self.srdd.getDoubleHistograms()
         else:
             histogram = self.srdd.getIntHistograms()
-        return histogram
+
+        return Histogram(histogram)
 
     def _process_operation(self, value, operation):
         if isinstance(value, int) or isinstance(value, float):
