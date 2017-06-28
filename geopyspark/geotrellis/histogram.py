@@ -21,20 +21,6 @@ class Histogram(object):
     def __init__(self, scala_histogram):
         self.scala_histogram = scala_histogram
 
-    @classmethod
-    def from_tiled_layer(cls, tiled_layer):
-        """Creates an instance of ``Histogram`` from a ``TiledRasterLayer``.
-
-        Args:
-            tiled_layer (:class:`~geopyspark.geotrellis.layer.TiledRasterLayer`): The tiled layer
-                from which the histogram should be derived from.
-
-        Returns:
-            :class:`~geopyspark.geotrellis.histogram.Histogram`
-        """
-
-        return cls(tiled_layer.get_histogram())
-
     def min(self):
         """The smallest value of the histogram.
 

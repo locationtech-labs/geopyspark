@@ -63,9 +63,9 @@ class HistogramTest(BaseTestClass):
     def test_merge(self):
 
         arr2 = np.array([[[1.0, 1.0, 1.0, 1.0],
-                         [1.0, 1.0, 1.0, 1.0],
-                         [1.0, 1.0, 1.0, 1.0],
-                         [1.0, 1.0, 1.0, 1.0]]], dtype=float)
+                          [1.0, 1.0, 1.0, 1.0],
+                          [1.0, 1.0, 1.0, 1.0],
+                          [1.0, 1.0, 1.0, 1.0]]], dtype=float)
 
         tile2 = Tile(arr2, 'FLOAT', -500)
         rdd2 = BaseTestClass.pysc.parallelize([(self.spatial_key, tile2)])
