@@ -6,10 +6,10 @@ from collections import namedtuple
 from urllib.parse import urlparse
 
 from geopyspark import map_key_input
+from geopyspark.geotrellis.constants import LayerType, IndexingMethod
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
 from geopyspark.geotrellis import Metadata, Extent, deprecated
 from geopyspark.geotrellis.layer import TiledRasterLayer
-from geopyspark.geotrellis.constants import TILE, ZORDER, SPATIAL
 
 from shapely.geometry import Polygon, MultiPolygon, Point
 from shapely.wkt import dumps
@@ -175,7 +175,7 @@ def read_layer_metadata(pysc,
     _construct_catalog(pysc, uri, options)
     cached = _mapped_cached[uri]
 
-    if rdd_type == SPATIAL:
+    if rdd_type == LayerType.SPATIAL:
         metadata = cached.store.metadataSpatial(layer_name, layer_zoom)
     else:
         metadata = cached.store.metadataSpaceTime(layer_name, layer_zoom)
@@ -293,7 +293,7 @@ def read_value(pysc,
         if not zdt:
             zdt = ""
 
-        key = map_key_input(rdd_type, True)
+        key = map_key_input(LayerType(rdd_type).value, True)
 
         values = cached.value_reader.readTile(key,
                                               layer_name,
@@ -375,7 +375,7 @@ def query(pysc,
 
     cached = _mapped_cached[uri]
 
-    key = map_key_input(rdd_type, True)
+    key = map_key_input(LayerType(rdd_type).value, True)
 
     if numPartitions is None:
         numPartitions = pysc.defaultMinPartitions
@@ -427,7 +427,7 @@ def query(pysc,
 def write(uri,
           layer_name,
           tiled_raster_rdd,
-          index_strategy=ZORDER,
+          index_strategy=IndexingMethod.ZORDER,
           time_unit=None,
           options=None,
           **kwargs):
@@ -468,7 +468,7 @@ def write(uri,
     if not time_unit:
         time_unit = ""
 
-    if tiled_raster_rdd.rdd_type == SPATIAL:
+    if tiled_raster_rdd.rdd_type == LayerType.SPATIAL:
         cached.writer.writeSpatial(layer_name,
                                    tiled_raster_rdd.srdd,
                                    index_strategy)

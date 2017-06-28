@@ -7,9 +7,9 @@ import pytest
 from shapely.geometry import Point, MultiPoint, LineString
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis import euclidean_distance
-from geopyspark.geotrellis.constants import SPATIAL
 
 import pyproj
+
 
 class EuclideanDistanceTest(BaseTestClass):
     @pytest.fixture(autouse=True)

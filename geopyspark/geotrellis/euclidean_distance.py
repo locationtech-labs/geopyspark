@@ -1,5 +1,5 @@
 import shapely.wkb
-from geopyspark.geotrellis.constants import SPATIAL
+from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
@@ -29,4 +29,4 @@ def euclidean_distance(pysc, geometry, source_crs, zoom, cellType='float64'):
                                                                                       source_crs,
                                                                                       cellType,
                                                                                       zoom)
-    return TiledRasterLayer(pysc, SPATIAL, srdd)
+    return TiledRasterLayer(pysc, LayerType.SPATIAL, srdd)
