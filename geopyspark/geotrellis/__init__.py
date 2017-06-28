@@ -4,6 +4,9 @@ from shapely.geometry import box
 import warnings
 import functools
 
+from geopyspark.geotrellis import constants
+
+
 def deprecated(func):
     """This is a decorator which can be used to mark functions
     as deprecated. It will result in a warning being emmitted
@@ -277,6 +280,8 @@ class Metadata(object):
         crs (str or int): The CRS of the data. Can either be the EPSG code, well-known name, or
             a PROJ.4 projection string.
         cell_type (str): The data type of the cells of the rasters.
+        no_data_value (int or float or None): The noData value of the rasters within the layer.
+            This can either be ``None``, an ``int``, or a ``float`` depending on the ``cell_type``.
         extent (:class:`~geopyspark.geotrellis.Extent`): The ``Extent`` that covers
             the all of the rasters.
         tile_layout (:obj:`~geopyspark.geotrellis.TileLayout`): The ``TileLayout``
@@ -292,6 +297,28 @@ class Metadata(object):
         self.extent = extent
         self.tile_layout = layout_definition.tileLayout
         self.layout_definition = layout_definition
+
+        if 'raw' in self.cell_type or 'bool' in self.cell_type:
+            self.no_data_value = None
+        elif 'ud' in self.cell_type:
+            value = self.cell_type.split("ud")[1]
+
+            if "float" in self.cell_type:
+                self.no_data_value = float(value)
+            else:
+                self.no_data_value = int(value)
+        else:
+            if self.cell_type == constants.INT8:
+                self.no_data_value = -128
+            elif self.cell_type == constants.UINT8 or self.cell_type == constants.UINT16:
+                self.no_data_value = 0
+            elif self.cell_type == constants.INT16:
+                self.no_data_value = -32768
+            elif self.cell_type == constants.INT32:
+                self.no_data_value = constants.NODATAINT
+            else:
+                self.no_data_value = float('nan')
+
 
     @classmethod
     def from_dict(cls, metadata_dict):
@@ -350,20 +377,22 @@ class Metadata(object):
         return self._metadata_dict
 
     def __repr__(self):
-        return "Metadata({}, {}, {}, {}, {}, {})".format(self.bounds, self.cell_type,
-                                                         self.crs, self.extent,
-                                                         self.tile_layout, self.layout_definition)
+        return "Metadata({}, {}, {}, {}, {}, {}, {})".format(self.bounds, self.cell_type,
+                                                             self.no_data_value, self.crs,
+                                                             self.extent, self.tile_layout,
+                                                             self.layout_definition)
 
 
     def __str__(self):
         return ("Metadata("
                 "bounds={}"
                 "cellType={}"
+                "noDataValue={}"
                 "crs={}"
                 "extent={}"
                 "tileLayout={}"
                 "layoutDefinition={})").format(self.bounds, self.cell_type,
-                                               self.crs, self.extent,
+                                               self.no_data_value, self.crs, self.extent,
                                                self.tile_layout, self.layout_definition)
 
 
