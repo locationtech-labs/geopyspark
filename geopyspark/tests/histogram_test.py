@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 
 from geopyspark.geotrellis import SpatialKey, Tile
-from geopyspark.geotrellis.constants import SPATIAL
+from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
 
@@ -30,7 +30,7 @@ class HistogramTest(BaseTestClass):
 
     tile = Tile(arr, 'FLOAT', -500)
     rdd = BaseTestClass.pysc.parallelize([(spatial_key, tile)])
-    tiled = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd, metadata)
+    tiled = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, metadata)
 
     hist = tiled.get_histogram()
 
@@ -69,7 +69,8 @@ class HistogramTest(BaseTestClass):
 
         tile2 = Tile(arr2, 'FLOAT', -500)
         rdd2 = BaseTestClass.pysc.parallelize([(self.spatial_key, tile2)])
-        tiled2 = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd2, self.metadata)
+        tiled2 = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd2,
+                                                 self.metadata)
 
         hist2 = tiled2.get_histogram()
 
