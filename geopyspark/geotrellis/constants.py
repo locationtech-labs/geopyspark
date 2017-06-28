@@ -143,6 +143,16 @@ class CellType(Enum):
     FLOAT32 = "float32"
     FLOAT64 = "float64"
 
+    def create_user_defined_celltype(self, cell_type, no_data_value):
+        cell_type = CellType(cell_type).value
+
+        if 'bool' in cell_type:
+            raise ValueError("Cannot add user defined types to Bool")
+        elif 'raw' in cell_type:
+            raise ValueError("Cannot add user defined types to raw values")
+
+        return "{}{}{}".format(cell_type, "ud", no_data_value)
+
 
 class ColorRamp(Enum):
     """ColorRamp names."""
