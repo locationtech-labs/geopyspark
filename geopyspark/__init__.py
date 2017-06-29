@@ -1,9 +1,9 @@
-from geopyspark.geopyspark_utils import ensure_pyspark
-ensure_pyspark()
-
 import os
 import glob
 from pkg_resources import resource_filename
+
+from geopyspark.geopyspark_utils import ensure_pyspark
+ensure_pyspark()
 
 from geopyspark.geopyspark_constants import JAR
 
@@ -55,21 +55,21 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
     object may be used as is , or may be adjusted according to the user's needs.
 
     Args:
-        master (string): The master URL to connect to, such as "local" to run 
-            locally with one thread, "local[4]" to run locally with 4 cores, or 
+        master (string): The master URL to connect to, such as "local" to run
+            locally with one thread, "local[4]" to run locally with 4 cores, or
             "spark://master:7077" to run on a Spark standalone cluster.
-        appName (string): The name of the application, as seen in the Spark 
+        appName (string): The name of the application, as seen in the Spark
             console
         additional_jar_dirs (optional, list): A list of directory locations that
-            might contain JAR files needed by the current script.  Already 
+            might contain JAR files needed by the current script.  Already
             includes $(cwd)/jars.
 
     Returns:
         [SparkConf]
 
     Note:
-        The GEOPYSPARK_JARS_DIR environment variable may contain a colon-separated 
-        list of directories to search for JAR files to make available via the 
+        The GEOPYSPARK_JARS_DIR environment variable may contain a colon-separated
+        list of directories to search for JAR files to make available via the
         SparkConf.
     """
     conf = SparkConf()
@@ -90,10 +90,10 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
     cwd = os.getcwd()
 
     if 'GEOPYSPARK_JARS_PATH' in os.environ:
-        additional_jar_dirs=os.environ['GEOPYSPARK_JARS_PATH'].split(':')
+        additional_jar_dirs = os.environ['GEOPYSPARK_JARS_PATH'].split(':')
     else:
-        additional_jar_dirs=[]
-    
+        additional_jar_dirs = []
+
     local_prefixes = [
         os.path.abspath(os.path.join(current_location, 'jars')),
         os.path.abspath(os.path.join(cwd, 'jars')),
@@ -114,7 +114,7 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
     returned = [glob.glob(jar_files) for jar_files in possible_jars]
     jars = [jar for sublist in returned for jar in sublist]
 
-    if len(jars) == 0:
+    if not jars:
         raise IOError("Failed to find any jars. Looked at these paths {}".format(possible_jars))
 
     jar_string = ",".join(jars)

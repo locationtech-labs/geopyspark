@@ -25,8 +25,8 @@ def euclidean_distance(pysc, geometry, source_crs, zoom, cellType='float64'):
         source_crs = str(source_crs)
 
     srdd = pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.euclideanDistance(pysc._jsc.sc(),
-                                                                                      shapely.wkb.dumps(geometry),
-                                                                                      source_crs,
-                                                                                      cellType,
-                                                                                      zoom)
+                                                                                           shapely.wkb.dumps(geometry),
+                                                                                           source_crs,
+                                                                                           cellType,
+                                                                                           zoom)
     return TiledRasterLayer(pysc, LayerType.SPATIAL, srdd)

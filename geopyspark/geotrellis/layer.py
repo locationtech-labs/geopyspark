@@ -5,14 +5,15 @@ when performing operations.
 '''
 import json
 import shapely.wkb
+from shapely.geometry import Polygon, MultiPolygon
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
-from geopyspark import map_key_input, create_python_rdd
 from pyspark.storagelevel import StorageLevel
-from shapely.geometry import Polygon, MultiPolygon
+
+from geopyspark import map_key_input, create_python_rdd
 from geopyspark.geotrellis import Metadata
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
@@ -338,7 +339,7 @@ class RasterLayer(CachableLayer):
             target_crs = str(target_crs)
 
         return RasterLayer(self.pysc, self.rdd_type,
-                         self.srdd.reproject(target_crs, ResampleMethod(resample_method).value))
+                           self.srdd.reproject(target_crs, ResampleMethod(resample_method).value))
 
     def cut_tiles(self, layer_metadata, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to layout. May result in duplicate keys.
@@ -547,7 +548,7 @@ class TiledRasterLayer(CachableLayer):
             no_data_constant = CellType(new_type).value + "ud" + str(no_data_value)
 
             return TiledRasterLayer(self.pysc, self.rdd_type,
-                                  self.srdd.convertDataType(no_data_constant))
+                                    self.srdd.convertDataType(no_data_constant))
         else:
             return TiledRasterLayer(self.pysc, self.rdd_type,
                                     self.srdd.convertDataType(CellType(new_type).value))

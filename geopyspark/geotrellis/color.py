@@ -1,9 +1,9 @@
+import struct
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
 from geopyspark.geotrellis.constants import ClassificationStrategy
 
-import struct
 
 def get_breaks_from_colors(colors):
     """Returns a list of integer colors from a list of Color objects from the
@@ -43,7 +43,7 @@ def get_breaks_from_matplot(ramp_name, num_colors):
     import colortools
     import matplotlib.cm as mpc
     ramp = mpc.get_cmap(ramp_name)
-    return  [ struct.unpack('>L', bytes(map(lambda x: int(x*255), ramp(x / (num_colors - 1)))))[0] for x in range(0, num_colors)]
+    return  [struct.unpack('>L', bytes(map(lambda x: int(x*255), ramp(x / (num_colors - 1)))))[0] for x in range(0, num_colors)]
 
 def get_breaks(pysc, ramp_name, num_colors=None):
     """Returns a list of values that represent the breaks in color for the given color ramp.
@@ -94,28 +94,29 @@ def get_hex(pysc, ramp_name, num_colors=None):
 
 """A dict giving the color mapping from NLCD values to colors
 """
-nlcd_color_map =  { 0  : 0x00000000,
-                    11 : 0x526095FF,     # Open Water
-                    12 : 0xFFFFFFFF,     # Perennial Ice/Snow
-                    21 : 0xD28170FF,     # Low Intensity Residential
-                    22 : 0xEE0006FF,     # High Intensity Residential
-                    23 : 0x990009FF,     # Commercial/Industrial/Transportation
-                    31 : 0xBFB8B1FF,     # Bare Rock/Sand/Clay
-                    32 : 0x969798FF,     # Quarries/Strip Mines/Gravel Pits
-                    33 : 0x382959FF,     # Transitional
-                    41 : 0x579D57FF,     # Deciduous Forest
-                    42 : 0x2A6B3DFF,     # Evergreen Forest
-                    43 : 0xA6BF7BFF,     # Mixed Forest
-                    51 : 0xBAA65CFF,     # Shrubland
-                    61 : 0x45511FFF,     # Orchards/Vineyards/Other
-                    71 : 0xD0CFAAFF,     # Grasslands/Herbaceous
-                    81 : 0xCCC82FFF,     # Pasture/Hay
-                    82 : 0x9D5D1DFF,     # Row Crops
-                    83 : 0xCD9747FF,     # Small Grains
-                    84 : 0xA7AB9FFF,     # Fallow
-                    85 : 0xE68A2AFF,     # Urban/Recreational Grasses
-                    91 : 0xB6D8F5FF,     # Woody Wetlands
-                    92 : 0xB6D8F5FF }    # Emergent Herbaceous Wetlands
+nlcd_color_map = {
+    0  : 0x00000000,
+    11 : 0x526095FF,     # Open Water
+    12 : 0xFFFFFFFF,     # Perennial Ice/Snow
+    21 : 0xD28170FF,     # Low Intensity Residential
+    22 : 0xEE0006FF,     # High Intensity Residential
+    23 : 0x990009FF,     # Commercial/Industrial/Transportation
+    31 : 0xBFB8B1FF,     # Bare Rock/Sand/Clay
+    32 : 0x969798FF,     # Quarries/Strip Mines/Gravel Pits
+    33 : 0x382959FF,     # Transitional
+    41 : 0x579D57FF,     # Deciduous Forest
+    42 : 0x2A6B3DFF,     # Evergreen Forest
+    43 : 0xA6BF7BFF,     # Mixed Forest
+    51 : 0xBAA65CFF,     # Shrubland
+    61 : 0x45511FFF,     # Orchards/Vineyards/Other
+    71 : 0xD0CFAAFF,     # Grasslands/Herbaceous
+    81 : 0xCCC82FFF,     # Pasture/Hay
+    82 : 0x9D5D1DFF,     # Row Crops
+    83 : 0xCD9747FF,     # Small Grains
+    84 : 0xA7AB9FFF,     # Fallow
+    85 : 0xE68A2AFF,     # Urban/Recreational Grasses
+    91 : 0xB6D8F5FF,     # Woody Wetlands
+    92 : 0xB6D8F5FF}    # Emergent Herbaceous Wetlands
 
 class ColorMap(object):
     """A class to represent a color map

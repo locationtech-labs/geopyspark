@@ -25,7 +25,7 @@ class ProtoBufSerializer(FramedSerializer):
     __slots__ = ['decoding_method', 'encoding_method']
 
     def __init__(self, decoding_method, encoding_method):
-        super().__init__()
+        FramedSerializer.__init__()
 
         self.decoding_method = decoding_method
         self.encoding_method = encoding_method

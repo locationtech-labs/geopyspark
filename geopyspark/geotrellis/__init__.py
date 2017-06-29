@@ -1,10 +1,11 @@
 """This subpackage contains the code that reads, writes, and processes data using GeoTrellis."""
 from collections import namedtuple
-from shapely.geometry import box
 import warnings
 import functools
+from shapely.geometry import box
 
 from geopyspark.geotrellis.constants import CellType, NO_DATA_INT
+from . import converters
 
 
 def deprecated(func):
@@ -398,5 +399,3 @@ class Metadata(object):
 
 __all__ = ["catalog", "geotiff", "layer", "cost_distance", "hillshade", "euclidean_distance",
            "rasterize", "tms"]
-
-from . import converters

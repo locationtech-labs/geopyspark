@@ -53,7 +53,7 @@ class Square(Neighborhood):
             name (str): The name of the neighborhood which is, "square".
         """
 
-        super().__init__(name="Square", param_1=extent)
+        Neighborhood.__init__(name="Square", param_1=extent)
         self.extent = extent
 
 
@@ -77,7 +77,7 @@ class Circle(Neighborhood):
     """
 
     def __init__(self, radius):
-        super().__init__(name="Circle", param_1=radius)
+        Neighborhood.__init__(name="Circle", param_1=radius)
         self.radius = radius
 
 
@@ -98,7 +98,7 @@ class Nesw(Neighborhood):
     """
 
     def __init__(self, extent):
-        super().__init__(name="Nesw", param_1=extent)
+        Neighborhood.__init__(name="Nesw", param_1=extent)
         self.extent = extent
 
 
@@ -121,7 +121,7 @@ class Wedge(Neighborhood):
     """
 
     def __init__(self, radius, start_angle, end_angle):
-        super().__init__(name="Wedge", param_1=radius, param_2=start_angle, param_3=end_angle)
+        Neighborhood.__init__(name="Wedge", param_1=radius, param_2=start_angle, param_3=end_angle)
         self.radius = radius
         self.start_angle = start_angle
         self.end_angle = end_angle
@@ -144,6 +144,6 @@ class Annulus(Neighborhood):
     """
 
     def __init__(self, inner_radius, outer_radius):
-        super().__init__(name="Annulus", param_1=inner_radius, param_2=outer_radius)
+        Neighborhood.__init__(name="Annulus", param_1=inner_radius, param_2=outer_radius)
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
