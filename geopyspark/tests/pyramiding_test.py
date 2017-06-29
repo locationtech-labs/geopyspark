@@ -82,14 +82,16 @@ class PyramidingTest(BaseTestClass):
         previous_layout_cols = None
         previous_layout_rows = None
 
-        for x in result.levels.values():
-            metadata = x.layer_metadata
+        values = sorted(list(result.levels.items()), reverse=True, key=lambda tup: tup[0])
+
+        for x in values:
+            metadata = x[1].layer_metadata
             layout_cols = metadata.tile_layout.layoutCols
             layout_rows = metadata.tile_layout.layoutRows
 
             if previous_layout_cols and previous_layout_rows:
-                self.assertEqual(layout_cols, previous_layout_cols*2)
-                self.assertEqual(layout_rows, previous_layout_rows*2)
+                self.assertEqual(layout_cols*2, previous_layout_cols)
+                self.assertEqual(layout_rows*2, previous_layout_rows)
             else:
                 self.assertTrue(layout_cols % 2 == 0)
                 self.assertTrue(layout_rows % 2 == 0)
