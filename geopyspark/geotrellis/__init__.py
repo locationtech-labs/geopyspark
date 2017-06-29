@@ -5,7 +5,6 @@ import functools
 from shapely.geometry import box
 
 from geopyspark.geotrellis.constants import CellType, NO_DATA_INT
-from . import converters
 
 
 def deprecated(func):
@@ -399,3 +398,5 @@ class Metadata(object):
 
 __all__ = ["catalog", "geotiff", "layer", "cost_distance", "hillshade", "euclidean_distance",
            "rasterize", "tms"]
+
+from . import converters
