@@ -1,9 +1,6 @@
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
-from geopyspark.geotrellis.constants import ResampleMethod, LayoutScheme
-from .layer import CachableLayer
-from pyspark.storagelevel import StorageLevel
 import geopyspark.geotrellis.color as color
 from geopyspark.geotrellis import deprecated
 

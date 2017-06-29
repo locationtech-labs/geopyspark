@@ -218,7 +218,7 @@ def from_pb_space_time_key(pb_space_time_key):
     """
 
     return SpaceTimeKey(col=pb_space_time_key.col, row=pb_space_time_key.row,
-                       instant=pb_space_time_key.instant)
+                        instant=pb_space_time_key.instant)
 
 def space_time_key_decoder(proto_bytes):
     """Decodes a ``SpaceTimeKey`` into Python.

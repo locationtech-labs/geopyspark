@@ -5,15 +5,15 @@ import json
 from collections import namedtuple
 from urllib.parse import urlparse
 
+from shapely.geometry import Polygon, MultiPolygon, Point
+from shapely.wkt import dumps
+import shapely.wkb
+
 from geopyspark import map_key_input
 from geopyspark.geotrellis.constants import LayerType, IndexingMethod
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
 from geopyspark.geotrellis import Metadata, Extent, deprecated
 from geopyspark.geotrellis.layer import TiledRasterLayer
-
-from shapely.geometry import Polygon, MultiPolygon, Point
-from shapely.wkt import dumps
-import shapely.wkb
 
 
 _mapped_cached = {}
