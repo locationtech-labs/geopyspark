@@ -4,7 +4,7 @@ import rasterio
 import pytest
 
 from geopyspark.geotrellis import Tile
-from geopyspark.geotrellis.constants import SPATIAL
+from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
 
@@ -35,7 +35,7 @@ class TileLayerMetadataTest(BaseTestClass):
         tile_dict = Tile(data.read(), 'FLOAT', data.nodata)
 
         rasterio_rdd = self.pysc.parallelize([(self.projected_extent, tile_dict)])
-        raster_rdd = RasterLayer.from_numpy_rdd(self.pysc, SPATIAL, rasterio_rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(self.pysc, LayerType.SPATIAL, rasterio_rdd)
 
         result = raster_rdd.collect_metadata(extent=self.extent, layout=self.layout)
 

@@ -8,7 +8,7 @@ from geopyspark.geotrellis import SpatialKey, Tile
 from shapely.geometry import Polygon
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.layer import TiledRasterLayer
-from geopyspark.geotrellis.constants import SPATIAL
+from geopyspark.geotrellis.constants import LayerType
 
 
 class MaskTest(BaseTestClass):
@@ -41,7 +41,7 @@ class MaskTest(BaseTestClass):
                     'tileLayout': layout}}
 
     geometries = Polygon([(17, 17), (42, 17), (42, 42), (17, 42)])
-    raster_rdd = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd, metadata)
+    raster_rdd = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, metadata)
 
     @pytest.fixture(autouse=True)
     def tearDown(self):

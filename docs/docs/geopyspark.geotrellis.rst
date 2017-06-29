@@ -30,6 +30,7 @@ geopyspark.geotrellis.constants module
 
 .. automodule:: geopyspark.geotrellis.constants
    :members:
+   :undoc-members:
    :inherited-members:
 
 geopyspark.geotrellis.geotiff module
@@ -80,3 +81,11 @@ geopyspark.geotrellis.rasterize module
 .. automodule:: geopyspark.geotrellis.rasterize
    :members:
    :inherited-members:
+
+geopyspark.geotrellis.histogram module
+-------------------------------------------
+
+.. automodule:: geopyspark.geotrellis.histogram
+   :members:
+   :inherited-members:
+

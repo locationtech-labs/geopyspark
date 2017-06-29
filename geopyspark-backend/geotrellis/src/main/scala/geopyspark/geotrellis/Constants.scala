@@ -29,11 +29,11 @@ object Constants {
   final val SLOPE = "Slope"
   final val ASPECT = "Aspect"
 
-  final val ANNULUS = "annulus"
-  final val NESW = "nesw"
-  final val SQUARE = "square"
-  final val WEDGE = "wedge"
-  final val CIRCLE = "circle"
+  final val ANNULUS = "Annulus"
+  final val NESW = "Nesw"
+  final val SQUARE = "Square"
+  final val WEDGE = "Wedge"
+  final val CIRCLE = "Circle"
 
   final val GREATERTHAN = "GreaterThan"
   final val GREATERTHANOREQUALTO = "GreaterThanOrEqualTo"

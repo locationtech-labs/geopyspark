@@ -3,7 +3,7 @@ import unittest
 import rasterio
 import pytest
 
-from geopyspark.geotrellis.constants import SPATIAL
+from geopyspark.geotrellis.constants import LayerType
 from geopyspark.tests.python_test_utils import geotiff_test_path
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -63,7 +63,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
     def read_multiband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.cells)
         result = get(BaseTestClass.pysc,
-                     SPATIAL,
+                     LayerType.SPATIAL,
                      self.uri,
                      s3_client=opt['s3Client'],
                      max_tile_size=opt.get('maxTileSize'))

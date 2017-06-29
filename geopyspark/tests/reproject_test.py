@@ -3,7 +3,7 @@ import unittest
 import pytest
 
 from geopyspark.geotrellis import LayoutDefinition
-from geopyspark.geotrellis.constants import ZOOM
+from geopyspark.geotrellis.constants import LayoutScheme
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -31,7 +31,7 @@ class ReprojectTest(BaseTestClass):
 
     def test_same_crs_zoom(self):
         result = self.laid_out_rdd.reproject("EPSG:4326",
-                                             scheme=ZOOM,
+                                             scheme=LayoutScheme.ZOOM,
                                              tile_size=self.cols)
         new_metadata = result.layer_metadata
 
@@ -45,7 +45,7 @@ class ReprojectTest(BaseTestClass):
 
     def test_different_crs_zoom(self):
         result = self.laid_out_rdd.reproject("EPSG:4324",
-                                             scheme=ZOOM,
+                                             scheme=LayoutScheme.ZOOM,
                                              tile_size=self.cols)
         new_metadata = result.layer_metadata
 
