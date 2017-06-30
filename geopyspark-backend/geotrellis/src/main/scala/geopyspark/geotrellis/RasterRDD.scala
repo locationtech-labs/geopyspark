@@ -33,6 +33,7 @@ import scala.collection.JavaConverters._
 import java.util.Map
 
 import protos.tupleMessages._
+import protos.extentMessages._
 
 
 object TileRDD {
@@ -64,6 +65,11 @@ abstract class TileRDD[K: ClassTag] {
   def rdd: RDD[(K, MultibandTile)]
   def keyClass: Class[_] = classTag[K].runtimeClass
   def keyClassName: String = keyClass.getName
+
+  def toPngRDD(cm: ColorMap): JavaRDD[Array[Byte]] =
+    toPngRDD(rdd.mapValues { v => v.bands(0).renderPng(cm).bytes })
+
+  def toPngRDD(pngRDD: RDD[(K, Array[Byte])]): JavaRDD[Array[Byte]]
 
   def reclassify(
     intMap: java.util.Map[Int, Int],
@@ -242,6 +248,9 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
 
   def toProtoRDD(): JavaRDD[Array[Byte]] =
     PythonTranslator.toPython[(ProjectedExtent, MultibandTile), ProtoTuple](rdd)
+
+  def toPngRDD(pngRDD: RDD[(ProjectedExtent, Array[Byte])]): JavaRDD[Array[Byte]] =
+    PythonTranslator.toPython[(ProjectedExtent, Array[Byte]), ProtoTuple](pngRDD)
 }
 
 
@@ -291,7 +300,10 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
   def toProtoRDD(): JavaRDD[Array[Byte]] =
     PythonTranslator.toPython[(TemporalProjectedExtent, MultibandTile), ProtoTuple](rdd)
 
+  def toPngRDD(pngRDD: RDD[(TemporalProjectedExtent, Array[Byte])]): JavaRDD[Array[Byte]] =
+    PythonTranslator.toPython[(TemporalProjectedExtent, Array[Byte]), ProtoTuple](pngRDD)
 }
+
 
 object ProjectedRasterRDD {
   def fromProtoEncodedRDD(javaRDD: JavaRDD[Array[Byte]]): ProjectedRasterRDD =

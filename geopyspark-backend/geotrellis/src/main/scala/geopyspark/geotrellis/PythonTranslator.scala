@@ -1,5 +1,7 @@
 package geopyspark.geotrellis
 
+import geotrellis.raster._
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.api.java.JavaRDD
 
