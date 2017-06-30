@@ -1,4 +1,5 @@
 """Contains the various encoding/decoding methods to bring values to/from Python from Scala."""
+import pickle
 from functools import partial
 import numpy as np
 from geopyspark.geopyspark_utils import ensure_pyspark
@@ -273,6 +274,21 @@ def create_partial_tuple_decoder(key_type):
 
     return partial(tuple_decoder, key_decoder=key_type)
 
+def image_rdd_decoder(proto_bytes, key_decoder):
+    tup = tupleMessages_pb2.ProtoTuple.FromString(proto_bytes)
+    image_bytes = tup.imageBytes
+
+    if key_decoder == "ProjectedExtent":
+        return (from_pb_projected_extent(tup.projectedExtent), image_bytes)
+    elif key_decoder == "TemporalProjectedExtent":
+        return (from_pb_temporal_projected_extent(tup.temporalProjectedExtent), image_bytes)
+    elif key_decoder == "SpatialKey":
+        return (from_pb_spatial_key(tup.spatialKey), image_bytes)
+    else:
+        return (from_pb_space_time_key(tup.spaceTimeKey), image_bytes)
+
+def create_partial_image_rdd_decoder(key_type):
+    return partial(image_rdd_decoder, key_decoder=key_type)
 
 def _get_decoder(name):
     if name == "Tile":

@@ -3,6 +3,7 @@ from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 from geopyspark.geotrellis.protobufcodecs import (create_partial_tuple_decoder,
                                                   create_partial_tuple_encoder,
+                                                  create_partial_image_rdd_decoder,
                                                   _get_encoder,
                                                   _get_decoder)
 
@@ -41,6 +42,11 @@ class ProtoBufSerializer(FramedSerializer):
     def create_value_serializer(cls, value_type):
         decoder = _get_decoder(value_type)
         encoder = _get_encoder(value_type)
+
+    @classmethod
+    def create_image_rdd_serializer(cls, key_type):
+        decoder = create_partial_image_rdd_decoder(key_type=key_type)
+        encoder = None
 
         return cls(decoder, encoder)
 
