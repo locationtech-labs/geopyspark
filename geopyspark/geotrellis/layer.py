@@ -215,6 +215,13 @@ class RasterLayer(CachableLayer):
 
         return create_python_rdd(self.pysc, result, ser)
 
+    def to_png_rdd(self, color_map):
+        result = self.srdd.toPngRDD(color_map.cmap)
+        key = map_key_input(LayerType(self.rdd_type).value, False)
+        ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
+
+        return create_python_rdd(self.pysc, result, ser)
+
     def to_tiled_layer(self, extent=None, layout=None, crs=None, tile_size=256,
                        resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Converts this ``RasterLayer`` to a ``TiledRasterLayer``.
@@ -519,6 +526,13 @@ class TiledRasterLayer(CachableLayer):
         result = self.srdd.toProtoRDD()
         key = map_key_input(LayerType(self.rdd_type).value, True)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
+
+        return create_python_rdd(self.pysc, result, ser)
+
+    def to_png_rdd(self, color_map):
+        result = self.srdd.toPngRDD(color_map.cmap)
+        key = map_key_input(LayerType(self.rdd_type).value, True)
+        ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
         return create_python_rdd(self.pysc, result, ser)
 
