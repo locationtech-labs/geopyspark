@@ -43,6 +43,8 @@ class ProtoBufSerializer(FramedSerializer):
         decoder = _get_decoder(value_type)
         encoder = _get_encoder(value_type)
 
+        return cls(decoder, encoder)
+
     @classmethod
     def create_image_rdd_serializer(cls, key_type):
         decoder = create_partial_image_rdd_decoder(key_type=key_type)

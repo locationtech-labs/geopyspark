@@ -1,5 +1,4 @@
 """Contains the various encoding/decoding methods to bring values to/from Python from Scala."""
-import pickle
 from functools import partial
 import numpy as np
 from geopyspark.geopyspark_utils import ensure_pyspark
