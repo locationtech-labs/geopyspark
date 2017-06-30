@@ -275,6 +275,17 @@ def create_partial_tuple_decoder(key_type):
     return partial(tuple_decoder, key_decoder=key_type)
 
 def image_rdd_decoder(proto_bytes, key_decoder):
+    """Decodes tuple of ``(K, bytes)`` where the bytes are the PNG bytes of the raster and
+    the ``K`` is the raster's corresponding key.
+
+    Args:
+        proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
+        key_decoder (str): The name of the key type of the tuple.
+
+    Returns:
+        tuple
+    """
+
     tup = tupleMessages_pb2.ProtoTuple.FromString(proto_bytes)
     image_bytes = tup.imageBytes
 
@@ -288,6 +299,16 @@ def image_rdd_decoder(proto_bytes, key_decoder):
         return (from_pb_space_time_key(tup.spaceTimeKey), image_bytes)
 
 def create_partial_image_rdd_decoder(key_type):
+    """Creates a partial, tuple decoder function.
+
+    Args:
+        value_type (str): The type of the value in the tuple.
+
+    Returns:
+        A partial :meth:`~geopyspark.protobufregistry.ProtoBufRegistry.image_rdd_decoder`
+        function that requires ``proto_bytes`` to execute.
+    """
+
     return partial(image_rdd_decoder, key_decoder=key_type)
 
 def _get_decoder(name):
