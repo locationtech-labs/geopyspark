@@ -39,32 +39,6 @@ pyspark: ${DIST-ASSEMBLY}
 		--conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
 		--conf spark.kyro.registrator=geotrellis.spark.io.kyro.KryoRegistrator
 
-notebook: ${DIST-ASSEMBLY}
-	@echo "PYSPARK_PYTHON: $${PYSPARK_PYTHON}"
-	@echo "SPARK_HOME: $${SPARK_HOME}"
-	@echo "PYTHONPATH: $${PYTHONPATH}"
-	@echo "PYSPARK_SUBMIT_ARGS: $${PYSPARK_SUBMIT_ARGS}"
-	jupyter notebook --port 8000 --notebook-dir docker/notebooks/
-
-docker/archives/${ASSEMBLYNAME}: ${DIST-ASSEMBLY}
-	cp -f ${DIST-ASSEMBLY} docker/archives/${ASSEMBLYNAME}
-
-docker/archives/${WHEELNAME}: ${WHEEL}
-	cp -f ${WHEEL} docker/archives/${WHEELNAME}
-
-docker-build: docker/archives/${ASSEMBLYNAME} docker/archives/${WHEELNAME}
-	(cd docker && make)
-
-docker-run:
-	(cd docker && make run)
-
 clean:
 	rm -f ${WHEEL} ${DIST-ASSEMBLY}
 	(cd geopyspark-backend && ./sbt "project geotrellis-backend" clean)
-	make -C docker clean
-
-cleaner: clean
-	make -C docker cleaner
-
-cleanest: cleaner
-	make -C docker cleanest
