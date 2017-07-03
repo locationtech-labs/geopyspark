@@ -66,6 +66,12 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
   /** Encode RDD as Avro bytes and return it with avro schema used */
   def toProtoRDD(): JavaRDD[Array[Byte]]
 
+  def resample_to_power_of_two(
+    col_power: Int,
+    row_power: Int,
+    resampleMethod: String
+  ): TiledRasterRDD[K]
+
   def layerMetadata: String = rdd.metadata.toJson.prettyPrint
 
   def mask(wkbs: java.util.ArrayList[Array[Byte]]): TiledRasterRDD[K] = {
@@ -316,6 +322,36 @@ class SpatialTiledRasterRDD(
   val rdd: RDD[(SpatialKey, MultibandTile)] with Metadata[TileLayerMetadata[SpatialKey]]
 ) extends TiledRasterRDD[SpatialKey] {
 
+  def resample_to_power_of_two(
+    col_power: Int,
+    row_power: Int,
+    resampleMethod: String
+  ): TiledRasterRDD[SpatialKey] = {
+    val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
+    val cols = 1<<col_power
+    val rows = 1<<row_power
+    val rdd2 = rdd.mapValues({ tile => tile.resample(cols, rows, method) })
+
+    val metadata = rdd.metadata
+    val metadata2 = TileLayerMetadata(
+      metadata.cellType,
+      LayoutDefinition(
+        metadata.extent,
+        TileLayout(
+          metadata.layout.tileLayout.layoutCols,
+          metadata.layout.tileLayout.layoutRows,
+          cols,
+          rows
+        )
+      ),
+      metadata.extent,
+      metadata.crs,
+      metadata.bounds
+    )
+
+    SpatialTiledRasterRDD(None, ContextRDD(rdd2, metadata2))
+  }
+
   def lookup(
     col: Int,
     row: Int
@@ -540,6 +576,36 @@ class TemporalTiledRasterRDD(
   val zoomLevel: Option[Int],
   val rdd: RDD[(SpaceTimeKey, MultibandTile)] with Metadata[TileLayerMetadata[SpaceTimeKey]]
 ) extends TiledRasterRDD[SpaceTimeKey] {
+
+  def resample_to_power_of_two(
+    col_power: Int,
+    row_power: Int,
+    resampleMethod: String
+  ): TiledRasterRDD[SpaceTimeKey] = {
+    val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
+    val cols = 1<<col_power
+    val rows = 1<<row_power
+    val rdd2 = rdd.mapValues({ tile => tile.resample(cols, rows, method) })
+
+    val metadata = rdd.metadata
+    val metadata2 = TileLayerMetadata(
+      metadata.cellType,
+      LayoutDefinition(
+        metadata.extent,
+        TileLayout(
+          metadata.layout.tileLayout.layoutCols,
+          metadata.layout.tileLayout.layoutRows,
+          cols,
+          rows
+        )
+      ),
+      metadata.extent,
+      metadata.crs,
+      metadata.bounds
+    )
+
+    TemporalTiledRasterRDD(None, ContextRDD(rdd2, metadata2))
+  }
 
   def mask(geometries: Seq[MultiPolygon]): TiledRasterRDD[SpaceTimeKey] = {
     val options = Mask.Options.DEFAULT
