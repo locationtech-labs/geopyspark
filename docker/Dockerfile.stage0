@@ -1,6 +1,0 @@
-FROM amazonlinux:2016.09.1.20161221
-MAINTAINER James McClain <james.mcclain@gmail.com>
-
-RUN yum -y groupinstall "Development Tools" || echo
-RUN yum -y install python34-devel cmake less nano && yum clean all
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3.4
