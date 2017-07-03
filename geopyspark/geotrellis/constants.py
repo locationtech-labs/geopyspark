@@ -143,7 +143,8 @@ class CellType(Enum):
     FLOAT32 = "float32"
     FLOAT64 = "float64"
 
-    def create_user_defined_celltype(self, cell_type, no_data_value):
+    @staticmethod
+    def create_user_defined_celltype(cell_type, no_data_value):
         cell_type = CellType(cell_type).value
 
         if 'bool' in cell_type:

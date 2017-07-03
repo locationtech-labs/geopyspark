@@ -4,9 +4,6 @@ import sys
 
 import os
 from os import path
-from pkg_resources import resource_filename
-
-from geopyspark.geopyspark_constants import JAR
 
 
 def ensure_pyspark():

@@ -1,7 +1,6 @@
-from py4j.java_gateway import JavaObject, JavaMember, get_method, JavaClass
-from py4j.protocol import (
-    Py4JError, get_command_part, get_return_value, register_input_converter,
-    register_output_converter)
+# pylint: skip-file
+from py4j.java_gateway import JavaClass
+from py4j.protocol import register_input_converter
 
 from geopyspark.geotrellis import RasterizerOptions
 

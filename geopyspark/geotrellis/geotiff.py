@@ -1,9 +1,9 @@
 """This module contains functions that create ``RasterLayer`` from files."""
 
+from functools import reduce
 from geopyspark import map_key_input
 from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.layer import RasterLayer
-from functools import reduce
 
 
 def get(pysc,

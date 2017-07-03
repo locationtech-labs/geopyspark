@@ -1,9 +1,8 @@
-from PIL import Image
-import numpy as np
 import io
+import numpy as np
 
-from py4j.clientserver import ClientServer, JavaParameters, PythonParameters
 from geopyspark.geotrellis.layer import Pyramid
+
 
 class TileRender(object):
     """A Python implementation of the Scala geopyspark.geotrellis.tms.TileRender
@@ -41,7 +40,7 @@ class TileRender(object):
             print("Reshaping to {}x{} matrix".format(rows, cols))
             tile = np.reshape(np.frombuffer(cells, dtype="uint8"), (1, rows, cols)) # turn tile to array with bands
             print("Rendering tile")
-            image=self.render_function(tile)
+            image = self.render_function(tile)
             print("Saving result")
             bio = io.BytesIO()
             image.save(bio, 'PNG')
@@ -50,7 +49,7 @@ class TileRender(object):
             from traceback import print_exc
             print_exc()
 
-    class Java:
+    class Java(object):
         implements = ["geopyspark.geotrellis.tms.TileRender"]
 
 class TMSServer(object):

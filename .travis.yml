@@ -34,6 +34,7 @@ before_install:
 install:
   - pip3 install -r requirements.txt
   - pip3 install pyproj
+  - pip3 install pylint
   - pip3 install .
 
 cache:
@@ -49,3 +50,4 @@ script:
   - "export JAVA_HOME=/usr/lib/jvm/java-8-oracle"
   - pytest -k "schema" geopyspark/tests/schema_tests/
   - pytest -k "not schema" geopyspark/tests/*test.py
+  - pylint geopyspark
