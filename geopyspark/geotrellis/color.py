@@ -1,4 +1,5 @@
 import struct
+from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
@@ -40,8 +41,12 @@ def get_breaks_from_matplot(ramp_name, num_colors):
     Returns:
         [int]
     """
-    import colortools
-    import matplotlib.cm as mpc
+    try:
+        import colortools
+        import matplotlib.cm as mpc
+    except:
+       raise Exception('matplotlib>=2.0.0 and colortools>=0.1.2 required')
+
     ramp = mpc.get_cmap(ramp_name)
     return  [struct.unpack('>L', bytes(map(lambda x: int(x*255), ramp(x / (num_colors - 1)))))[0] for x in range(0, num_colors)]
 
@@ -78,14 +83,16 @@ class ColorMap(object):
         self.cmap = cmap
 
     @classmethod
-    def from_break_map(cls, pysc, break_map, no_data_color=0x00000000, fallback=0x00000000,
+    def from_break_map(cls, pysc, break_map,
+                       no_data_color=0x00000000, fallback=0x00000000,
                        class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
         """Converts a dictionary mapping from tile values to colors to a ColorMap.
 
         Args:
             pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-            break_map (dict): A mapping from tile values to colors, the latter
-                represented as integers---e.g., 0xff000080 is red at half opacity.
+            break_map (dict): A mapping from tile values to colors.  A color is
+                represented as four 1-byte values (RGBA) packed into an integer---e.g.,
+                0xff000080 is red at half opacity.
             no_data_color(int, optional): A color to replace NODATA values with
             fallback (int, optional): A color to replace cells that have no
                 value in the mapping
@@ -101,30 +108,29 @@ class ColorMap(object):
         """
 
         if all(isinstance(x, int) for x in break_map.keys()):
-            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMap(break_map,
-                                                                                     no_data_color,
-                                                                                     fallback,
-                                                                                     ClassificationStrategy(class_boundary_type).value))
+            fn = pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMap
+            strat = ClassificationStrategy(class_boundary_type).value
+            return cls(fn(break_map, no_data_color, fallback, strat))
         elif all(isinstance(x, float) for x in break_map.keys()):
-            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMapDouble(break_map,
-                                                                                           no_data_color,
-                                                                                           fallback,
-                                                                                           ClassificationStrategy(class_boundary_type).value))
+            fn = pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMapDouble
+            strat = ClassificationStrategy(class_boundary_type).value
+            return cls(fn(break_map, no_data_color, fallback, strat))
         else:
             raise TypeError("Break map keys must be either int or float.")
 
     @classmethod
-    def from_colors(cls, pysc, breaks, color_list, no_data_color=0x00000000,
-                    fallback=0x00000000, class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
+    def from_colors(cls, pysc, breaks, color_list,
+                    no_data_color=0x00000000, fallback=0x00000000,
+                    class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
         """Converts lists of values and colors to a ColorMap.
 
         Args:
             pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
             breaks (list): The tile values that specify breaks in the color
                 mapping
-            color_list (int list): The colors corresponding to the values in the
-                breaks list, represented as integers---e.g., 0xff000080 is red
-                at half opacity.
+            break_map (dict): A mapping from tile values to colors.  A color is
+                represented as four 1-byte values (RGBA) packed into an integer---e.g.,
+                0xff000080 is red at half opacity.
             no_data_color(int, optional): A color to replace NODATA values with
             fallback (int, optional): A color to replace cells that have no
                 value in the mapping
@@ -140,27 +146,45 @@ class ColorMap(object):
         """
 
         if all(isinstance(x, int) for x in breaks):
-            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaks(breaks,
-                                                                                        color_list,
-                                                                                        no_data_color,
-                                                                                        fallback,
-                                                                                        ClassificationStrategy(class_boundary_type).value))
+            fn = pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaks
+            strat = ClassificationStrategy(class_boundary_type).value
+            return cls(fn(breaks, color_list, no_data_color, fallback, strat))
         else:
-            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaksDouble([float(br) for br in breaks],
-                                                                                              color_list,
-                                                                                              no_data_color,
-                                                                                              fallback,
-                                                                                              ClassificationStrategy(class_boundary_type).value))
+            fn = pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaksDouble
+            arr = [float(br) for br in breaks]
+            strat = ClassificationStrategy(class_boundary_type).value
+            return cls(fn(arr, color_list, no_data_color, fallback, strat))
 
     @classmethod
-    def from_histogram(cls, pysc, histogram, color_list, no_data_color=0x00000000,
-                       fallback=0x00000000, class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
+    def from_histogram(cls, pysc, histogram, color_list,
+                       no_data_color=0x00000000, fallback=0x00000000,
+                       class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
 
-        return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromHistogram(histogram.scala_histogram,
-                                                                                       color_list,
-                                                                                       no_data_color,
-                                                                                       fallback,
-                                                                                       ClassificationStrategy(class_boundary_type).value))
+        """Converts a wrapped GeoTrellis histogram into a ColorMap.
+
+        Args:
+            pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
+            histogram (Histogram): A wrapped GeoTrellis histogram object
+            break_map (dict): A mapping from tile values to colors.  A color is
+                represented as four 1-byte values (RGBA) packed into an integer---e.g.,
+                0xff000080 is red at half opacity.
+            no_data_color(int, optional): A color to replace NODATA values with
+            fallback (int, optional): A color to replace cells that have no
+                value in the mapping
+            class_boundary_type (string, optional): A string giving the strategy
+                for converting tile values to colors.  E.g., if
+                LessThanOrEqualTo is specified, and the break map is
+                {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red,
+                values from above 3 and up to and including 4 become green, and
+                values over 4 become the fallback color.
+
+        Returns:
+            [ColorMap]
+        """
+
+        fn = pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromHistogram
+        strat = ClassificationStrategy(class_boundary_type).value
+        return cls(fn(histogram.scala_histogram, color_list, no_data_color, fallback, strat))
 
     @staticmethod
     def nlcd_colormap(pysc):
