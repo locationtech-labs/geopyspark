@@ -6,7 +6,7 @@ ensure_pyspark()
 from geopyspark.geotrellis.constants import ClassificationStrategy
 
 
-def get_breaks_from_colors(colors):
+def get_colors_from_colors(colors):
     """Returns a list of integer colors from a list of Color objects from the
     colortools package.
 
@@ -18,7 +18,7 @@ def get_breaks_from_colors(colors):
     """
     return [struct.unpack(">L", bytes(c.rgba))[0] for c in colors]
 
-def get_breaks_from_matplot(ramp_name, num_colors):
+def get_colors_from_matplotlib(ramp_name, num_colors=1<<8):
     """Returns a list of color breaks from the color ramps defined by Matplotlib.
 
     Args:
@@ -36,7 +36,7 @@ def get_breaks_from_matplot(ramp_name, num_colors):
             'gnuplot2', 'CMRmap', 'cubehelix', 'brg', 'hsv', 'gist_rainy
             'rainbow', 'jet', 'nipy_spectral', 'gist_ncar'.  See the matplotlib
             documentation for details on each color ramp.
-        num_colors (int): The number of color breaks to derive from the named map.
+        num_colors (int, optional): The number of color breaks to derive from the named map.
 
     Returns:
         [int]
@@ -83,6 +83,57 @@ class ColorMap(object):
         self.cmap = cmap
 
     @classmethod
+    def build(cls, pysc, breaks=None, colors=None,
+              no_data_color=0x00000000, fallback=0x00000000,
+              class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
+
+        """Given breaks and colors, build a ColorMap object.
+
+        Args:
+            pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
+            breaks (dict, list, Histogram): If a ``dict`` then a mapping from tile values
+                to colors, the latter represented as integers---e.g., 0xff000080 is red at
+                half opacity.  If a ``list`` then tile values that specify breaks in the
+                color mapping.  If a ``Histogram`` then a histogram from which breaks can
+                be derived.
+            colors (str, list):  If a ``str`` then the name of a matplotlib color ramp.
+                If a ``list`` then either a list of colortools ``Color`` objects or a list
+                of integers containing packed RGBA values.
+            no_data_color(int, optional): A color to replace NODATA values with
+            fallback (int, optional): A color to replace cells that have no
+                value in the mapping
+            class_boundary_type (string, optional): A string giving the strategy
+                for converting tile values to colors.  E.g., if
+                LessThanOrEqualTo is specified, and the break map is
+                {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red,
+                values from above 3 and up to and including 4 become green, and
+                values over 4 become the fallback color.
+
+        Returns:
+            [ColorMap]
+        """
+        if isinstance(colors, str):
+            color_list = get_colors_from_matplotlib(colors)
+        elif isinstance(colors, list) and all(isinstance(c, int) for c in colors):
+            color_list = colors
+        else:
+            try:
+                from colortools import Color
+                if isinstance(colors, list) and all(isinstance(c, Color) for c in colors):
+                    color_list = get_colors_from_colors(colors)
+                else:
+                    color_list = None
+            except:
+                color_list = None
+
+        if isinstance(breaks, dict):
+            return ColorMap.from_break_map(pysc, breaks, no_data_color, fallback, class_boundary_type)
+        elif isinstance(breaks, list) and isinstance(color_list, list):
+            return ColorMap.from_colors(pysc, breaks, color_list, no_data_color, fallback, class_boundary_type)
+        elif isinstance(breaks, Histogram) and isinstance(color_list, list):
+            return ColorMap.from_histogram(pysc, breaks, color_list, no_data_color, fallback, class_boundary_type)
+
+    @classmethod
     def from_break_map(cls, pysc, break_map,
                        no_data_color=0x00000000, fallback=0x00000000,
                        class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
@@ -90,9 +141,8 @@ class ColorMap(object):
 
         Args:
             pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-            break_map (dict): A mapping from tile values to colors.  A color is
-                represented as four 1-byte values (RGBA) packed into an integer---e.g.,
-                0xff000080 is red at half opacity.
+            break_map (dict): A mapping from tile values to colors, the latter
+                represented as integers---e.g., 0xff000080 is red at half opacity.
             no_data_color(int, optional): A color to replace NODATA values with
             fallback (int, optional): A color to replace cells that have no
                 value in the mapping
@@ -128,9 +178,9 @@ class ColorMap(object):
             pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
             breaks (list): The tile values that specify breaks in the color
                 mapping
-            break_map (dict): A mapping from tile values to colors.  A color is
-                represented as four 1-byte values (RGBA) packed into an integer---e.g.,
-                0xff000080 is red at half opacity.
+            color_list (int list): The colors corresponding to the values in the
+                breaks list, represented as integers---e.g., 0xff000080 is red
+                at half opacity.
             no_data_color(int, optional): A color to replace NODATA values with
             fallback (int, optional): A color to replace cells that have no
                 value in the mapping
@@ -164,10 +214,10 @@ class ColorMap(object):
 
         Args:
             pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-            histogram (Histogram): A wrapped GeoTrellis histogram object
-            break_map (dict): A mapping from tile values to colors.  A color is
-                represented as four 1-byte values (RGBA) packed into an integer---e.g.,
-                0xff000080 is red at half opacity.
+            histogram (Histogram): A wrapped GeoTrellis histogram object; specifies breaks
+            color_list (int list): The colors corresponding to the values in the
+                breaks list, represented as integers---e.g., 0xff000080 is red
+                at half opacity.
             no_data_color(int, optional): A color to replace NODATA values with
             fallback (int, optional): A color to replace cells that have no
                 value in the mapping
