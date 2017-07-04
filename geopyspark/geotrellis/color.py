@@ -45,53 +45,6 @@ def get_breaks_from_matplot(ramp_name, num_colors):
     ramp = mpc.get_cmap(ramp_name)
     return  [struct.unpack('>L', bytes(map(lambda x: int(x*255), ramp(x / (num_colors - 1)))))[0] for x in range(0, num_colors)]
 
-def get_breaks(pysc, ramp_name, num_colors=None):
-    """Returns a list of values that represent the breaks in color for the given color ramp.
-
-    Args:
-        ramp_name (str): The name of a color ramp; options are hot, COOLWARM, MAGMA,
-            INFERNO, PLASMA, VIRIDIS, BLUETOORANGE, LIGHTYELLOWTOORANGE, BLUETORED,
-            GREENTOREDORANGE, LIGHTTODARKSUNSET, LIGHTTODARKGREEN, HEATMAPYELLOWTORED,
-            HEATMAPBLUETOYELLOWTOREDSPECTRUM, HEATMAPDARKREDTOYELLOWWHITE,
-            HEATMAPLIGHTPURPLETODARKPURPLETOWHITE, CLASSIFICATIONBOLDLANDUSE, and
-            CLASSIFICATIONMUTEDTERRAIN
-        num_colors (int, optional): How many colors should be represented in the range. Defaults
-            to ``None``. If not specified, then the full range of values will be returned.
-
-    Returns:
-        [int]
-    """
-
-    if num_colors:
-        return list(pysc._gateway.jvm.geopyspark.geotrellis.ColorRampUtils.get(ramp_name, num_colors))
-    else:
-        return list(pysc._gateway.jvm.geopyspark.geotrellis.ColorRampUtils.get(ramp_name))
-
-def get_hex(pysc, ramp_name, num_colors=None):
-    """Returns a list of the hex values that represent the colors for the given color ramp.
-
-    Note:
-        The returning hex values contain an alpha value.
-
-    Args:
-        ramp_name (str): The name of a color ramp; options are HOT, COOLWARM, MAGMA,
-            INFERNO, PLASMA, VIRIDIS, BLUETOORANGE, LIGHTYELLOWTOORANGE, BLUETORED,
-            GREENTOREDORANGE, LIGHTTODARKSUNSET, LIGHTTODARKGREEN, HEATMAPYELLOWTORED,
-            HEATMAPBLUETOYELLOWTOREDSPECTRUM, HEATMAPDARKREDTOYELLOWWHITE,
-            HEATMAPLIGHTPURPLETODARKPURPLETOWHITE, CLASSIFICATIONBOLDLANDUSE, and
-            CLASSIFICATIONMUTEDTERRAIN
-        num_colors (int, optional): How many colors should be represented in the range. Defaults
-            to ``None``. If not specified, then the full range of values will be returned.
-
-    Returns:
-        [str]
-    """
-
-    if num_colors:
-        return list(pysc._gateway.jvm.geopyspark.geotrellis.ColorRampUtils.getHex(ramp_name, num_colors))
-    else:
-        return list(pysc._gateway.jvm.geopyspark.geotrellis.ColorRampUtils.getHex(ramp_name))
-
 """A dict giving the color mapping from NLCD values to colors
 """
 nlcd_color_map = {
