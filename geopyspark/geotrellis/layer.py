@@ -687,7 +687,7 @@ class TiledRasterLayer(CachableLayer):
         num_rows = self.layer_metadata.tile_layout.tileRows
 
         if (num_cols & (num_cols - 1)) != 0 or (num_rows & (num_rows - 1)) != 0:
-            raise ValueError("Tiles must have a col and row count that is a power of 2")
+            raise ValueError("Tiles dimensions must powers of 2.  Consider `pyramid_non_power_of_two`.")
 
         if start_zoom:
             start_zoom = start_zoom
@@ -699,6 +699,35 @@ class TiledRasterLayer(CachableLayer):
         result = self.srdd.pyramid(start_zoom, end_zoom, ResampleMethod(resample_method).value)
 
         return Pyramid([TiledRasterLayer(self.pysc, self.rdd_type, srdd) for srdd in result])
+
+    def pyramid_non_power_of_two(self, col_power, row_power, end_zoom, start_zoom=None, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
+        """Creates a pyramid of GeoTrellis layers where each layer reprsents a given zoom.
+
+        Args:
+            col_power (int): The number of tile columns will be two to the power of this number
+            row_power (int): The number of tile columns will be two to the power of this number
+            end_zoom (int): The zoom level where pyramiding should end. Represents
+                the level that is most zoomed out.
+            start_zoom (int, Optional): The zoom level where pyramiding should begin. Represents
+                the level that is most zoomed in. If None, then will use the zoom level from
+                :meth:`~geopyspark.geotrellis.rdd.TiledRasterLayer.zoom_level`.
+            resample_method (str, optional): The resample method to use for the reprojection.
+                This is represented by the following constants: ``NEAREST_NEIGHBOR``, ``BILINEAR``,
+                ``CUBICCONVOLUTION``, ``LANCZOS``, ``AVERAGE``, ``MODE``, ``MEDIAN``, ``MAX``, and
+                ``MIN``. If none is specified, then ``NEAREST_NEIGHBOR`` is used.
+
+        Returns:
+            ``[TiledRasterLayers]``.
+
+        Raises:
+            ValueError: If the given ``resample_method`` is not known.
+        """
+
+        method = ResampleMethod(resample_method).value
+        new_srdd = self.srdd.resample_to_power_of_two(col_power, row_power, method)
+        new_layer = TiledRasterLayer(self.pysc, self.rdd_type, new_srdd)
+
+        return new_layer.pyramid(end_zoom=end_zoom, start_zoom=start_zoom, resample_method=resample_method)
 
     def focal(self, operation, neighborhood=None, param_1=None, param_2=None, param_3=None):
         """Performs the given focal operation on the layers contained in the Layer.
