@@ -1,11 +1,12 @@
 import struct
+from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
 from geopyspark.geotrellis.constants import ClassificationStrategy
 
 
-def get_breaks_from_colors(colors):
+def get_colors_from_colors(colors):
     """Returns a list of integer colors from a list of Color objects from the
     colortools package.
 
@@ -17,7 +18,7 @@ def get_breaks_from_colors(colors):
     """
     return [struct.unpack(">L", bytes(c.rgba))[0] for c in colors]
 
-def get_breaks_from_matplot(ramp_name, num_colors):
+def get_colors_from_matplotlib(ramp_name, num_colors=1<<8):
     """Returns a list of color breaks from the color ramps defined by Matplotlib.
 
     Args:
@@ -35,62 +36,19 @@ def get_breaks_from_matplot(ramp_name, num_colors):
             'gnuplot2', 'CMRmap', 'cubehelix', 'brg', 'hsv', 'gist_rainy
             'rainbow', 'jet', 'nipy_spectral', 'gist_ncar'.  See the matplotlib
             documentation for details on each color ramp.
-        num_colors (int): The number of color breaks to derive from the named map.
+        num_colors (int, optional): The number of color breaks to derive from the named map.
 
     Returns:
         [int]
     """
-    import colortools
-    import matplotlib.cm as mpc
+    try:
+        import colortools
+        import matplotlib.cm as mpc
+    except:
+       raise Exception('matplotlib>=2.0.0 and colortools>=0.1.2 required')
+
     ramp = mpc.get_cmap(ramp_name)
     return  [struct.unpack('>L', bytes(map(lambda x: int(x*255), ramp(x / (num_colors - 1)))))[0] for x in range(0, num_colors)]
-
-def get_breaks(pysc, ramp_name, num_colors=None):
-    """Returns a list of values that represent the breaks in color for the given color ramp.
-
-    Args:
-        ramp_name (str): The name of a color ramp; options are hot, COOLWARM, MAGMA,
-            INFERNO, PLASMA, VIRIDIS, BLUETOORANGE, LIGHTYELLOWTOORANGE, BLUETORED,
-            GREENTOREDORANGE, LIGHTTODARKSUNSET, LIGHTTODARKGREEN, HEATMAPYELLOWTORED,
-            HEATMAPBLUETOYELLOWTOREDSPECTRUM, HEATMAPDARKREDTOYELLOWWHITE,
-            HEATMAPLIGHTPURPLETODARKPURPLETOWHITE, CLASSIFICATIONBOLDLANDUSE, and
-            CLASSIFICATIONMUTEDTERRAIN
-        num_colors (int, optional): How many colors should be represented in the range. Defaults
-            to ``None``. If not specified, then the full range of values will be returned.
-
-    Returns:
-        [int]
-    """
-
-    if num_colors:
-        return list(pysc._gateway.jvm.geopyspark.geotrellis.ColorRampUtils.get(ramp_name, num_colors))
-    else:
-        return list(pysc._gateway.jvm.geopyspark.geotrellis.ColorRampUtils.get(ramp_name))
-
-def get_hex(pysc, ramp_name, num_colors=None):
-    """Returns a list of the hex values that represent the colors for the given color ramp.
-
-    Note:
-        The returning hex values contain an alpha value.
-
-    Args:
-        ramp_name (str): The name of a color ramp; options are HOT, COOLWARM, MAGMA,
-            INFERNO, PLASMA, VIRIDIS, BLUETOORANGE, LIGHTYELLOWTOORANGE, BLUETORED,
-            GREENTOREDORANGE, LIGHTTODARKSUNSET, LIGHTTODARKGREEN, HEATMAPYELLOWTORED,
-            HEATMAPBLUETOYELLOWTOREDSPECTRUM, HEATMAPDARKREDTOYELLOWWHITE,
-            HEATMAPLIGHTPURPLETODARKPURPLETOWHITE, CLASSIFICATIONBOLDLANDUSE, and
-            CLASSIFICATIONMUTEDTERRAIN
-        num_colors (int, optional): How many colors should be represented in the range. Defaults
-            to ``None``. If not specified, then the full range of values will be returned.
-
-    Returns:
-        [str]
-    """
-
-    if num_colors:
-        return list(pysc._gateway.jvm.geopyspark.geotrellis.ColorRampUtils.getHex(ramp_name, num_colors))
-    else:
-        return list(pysc._gateway.jvm.geopyspark.geotrellis.ColorRampUtils.getHex(ramp_name))
 
 """A dict giving the color mapping from NLCD values to colors
 """
@@ -125,7 +83,59 @@ class ColorMap(object):
         self.cmap = cmap
 
     @classmethod
-    def from_break_map(cls, pysc, break_map, no_data_color=0x00000000, fallback=0x00000000,
+    def build(cls, pysc, breaks=None, colors=None,
+              no_data_color=0x00000000, fallback=0x00000000,
+              class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
+
+        """Given breaks and colors, build a ColorMap object.
+
+        Args:
+            pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
+            breaks (dict, list, Histogram): If a ``dict`` then a mapping from tile values
+                to colors, the latter represented as integers---e.g., 0xff000080 is red at
+                half opacity.  If a ``list`` then tile values that specify breaks in the
+                color mapping.  If a ``Histogram`` then a histogram from which breaks can
+                be derived.
+            colors (str, list):  If a ``str`` then the name of a matplotlib color ramp.
+                If a ``list`` then either a list of colortools ``Color`` objects or a list
+                of integers containing packed RGBA values.
+            no_data_color(int, optional): A color to replace NODATA values with
+            fallback (int, optional): A color to replace cells that have no
+                value in the mapping
+            class_boundary_type (string, optional): A string giving the strategy
+                for converting tile values to colors.  E.g., if
+                LessThanOrEqualTo is specified, and the break map is
+                {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red,
+                values from above 3 and up to and including 4 become green, and
+                values over 4 become the fallback color.
+
+        Returns:
+            [ColorMap]
+        """
+        if isinstance(colors, str):
+            color_list = get_colors_from_matplotlib(colors)
+        elif isinstance(colors, list) and all(isinstance(c, int) for c in colors):
+            color_list = colors
+        else:
+            try:
+                from colortools import Color
+                if isinstance(colors, list) and all(isinstance(c, Color) for c in colors):
+                    color_list = get_colors_from_colors(colors)
+                else:
+                    color_list = None
+            except:
+                color_list = None
+
+        if isinstance(breaks, dict):
+            return ColorMap.from_break_map(pysc, breaks, no_data_color, fallback, class_boundary_type)
+        elif isinstance(breaks, list) and isinstance(color_list, list):
+            return ColorMap.from_colors(pysc, breaks, color_list, no_data_color, fallback, class_boundary_type)
+        elif isinstance(breaks, Histogram) and isinstance(color_list, list):
+            return ColorMap.from_histogram(pysc, breaks, color_list, no_data_color, fallback, class_boundary_type)
+
+    @classmethod
+    def from_break_map(cls, pysc, break_map,
+                       no_data_color=0x00000000, fallback=0x00000000,
                        class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
         """Converts a dictionary mapping from tile values to colors to a ColorMap.
 
@@ -148,21 +158,20 @@ class ColorMap(object):
         """
 
         if all(isinstance(x, int) for x in break_map.keys()):
-            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMap(break_map,
-                                                                                     no_data_color,
-                                                                                     fallback,
-                                                                                     ClassificationStrategy(class_boundary_type).value))
+            fn = pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMap
+            strat = ClassificationStrategy(class_boundary_type).value
+            return cls(fn(break_map, no_data_color, fallback, strat))
         elif all(isinstance(x, float) for x in break_map.keys()):
-            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMapDouble(break_map,
-                                                                                           no_data_color,
-                                                                                           fallback,
-                                                                                           ClassificationStrategy(class_boundary_type).value))
+            fn = pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMapDouble
+            strat = ClassificationStrategy(class_boundary_type).value
+            return cls(fn(break_map, no_data_color, fallback, strat))
         else:
             raise TypeError("Break map keys must be either int or float.")
 
     @classmethod
-    def from_colors(cls, pysc, breaks, color_list, no_data_color=0x00000000,
-                    fallback=0x00000000, class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
+    def from_colors(cls, pysc, breaks, color_list,
+                    no_data_color=0x00000000, fallback=0x00000000,
+                    class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
         """Converts lists of values and colors to a ColorMap.
 
         Args:
@@ -187,27 +196,45 @@ class ColorMap(object):
         """
 
         if all(isinstance(x, int) for x in breaks):
-            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaks(breaks,
-                                                                                        color_list,
-                                                                                        no_data_color,
-                                                                                        fallback,
-                                                                                        ClassificationStrategy(class_boundary_type).value))
+            fn = pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaks
+            strat = ClassificationStrategy(class_boundary_type).value
+            return cls(fn(breaks, color_list, no_data_color, fallback, strat))
         else:
-            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaksDouble([float(br) for br in breaks],
-                                                                                              color_list,
-                                                                                              no_data_color,
-                                                                                              fallback,
-                                                                                              ClassificationStrategy(class_boundary_type).value))
+            fn = pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaksDouble
+            arr = [float(br) for br in breaks]
+            strat = ClassificationStrategy(class_boundary_type).value
+            return cls(fn(arr, color_list, no_data_color, fallback, strat))
 
     @classmethod
-    def from_histogram(cls, pysc, histogram, color_list, no_data_color=0x00000000,
-                       fallback=0x00000000, class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
+    def from_histogram(cls, pysc, histogram, color_list,
+                       no_data_color=0x00000000, fallback=0x00000000,
+                       class_boundary_type=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
 
-        return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromHistogram(histogram.scala_histogram,
-                                                                                       color_list,
-                                                                                       no_data_color,
-                                                                                       fallback,
-                                                                                       ClassificationStrategy(class_boundary_type).value))
+        """Converts a wrapped GeoTrellis histogram into a ColorMap.
+
+        Args:
+            pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
+            histogram (Histogram): A wrapped GeoTrellis histogram object; specifies breaks
+            color_list (int list): The colors corresponding to the values in the
+                breaks list, represented as integers---e.g., 0xff000080 is red
+                at half opacity.
+            no_data_color(int, optional): A color to replace NODATA values with
+            fallback (int, optional): A color to replace cells that have no
+                value in the mapping
+            class_boundary_type (string, optional): A string giving the strategy
+                for converting tile values to colors.  E.g., if
+                LessThanOrEqualTo is specified, and the break map is
+                {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red,
+                values from above 3 and up to and including 4 become green, and
+                values over 4 become the fallback color.
+
+        Returns:
+            [ColorMap]
+        """
+
+        fn = pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromHistogram
+        strat = ClassificationStrategy(class_boundary_type).value
+        return cls(fn(histogram.scala_histogram, color_list, no_data_color, fallback, strat))
 
     @staticmethod
     def nlcd_colormap(pysc):
