@@ -23,6 +23,9 @@ from geopyspark.geotrellis.constants import (Operation,
                                              CellType,
                                              LayoutScheme,
                                              LayerType,
+                                             StorageMethod,
+                                             ColorSpace,
+                                             Compression,
                                              NO_DATA_INT
                                             )
 from geopyspark.geotrellis.neighborhood import Neighborhood
@@ -228,6 +231,49 @@ class RasterLayer(CachableLayer):
         """
         result = self.srdd.toPngRDD(color_map.cmap)
         key = map_key_input(LayerType(self.layer_type).value, False)
+        ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
+
+        return create_python_rdd(self.pysc, result, ser)
+
+    def to_geotiff_rdd(self,
+                       layer_metadata,
+                       storage_method=StorageMethod.STRIPED,
+                       rows_per_strip=None,
+                       tile_dimensions=(256, 256),
+                       compression=Compression.NO_COMPRESSION,
+                       color_space=ColorSpace.BLACK_IS_ZERO,
+                       color_map=None,
+                       head_tags=None,
+                       band_tags=None):
+
+        storage_method = StorageMethod(storage_method).value
+        compression = Compression(compression).value
+        color_space = ColorSpace(color_space).value
+
+        if not head_tags:
+            head_tags = {}
+        if not band_tags:
+            band_tags = []
+
+        if color_map:
+            result = self.srdd.toGeoTiffRDD(storage_method,
+                                            rows_per_strip if rows_per_strip else 0,
+                                            tile_dimensions,
+                                            compression,
+                                            color_space,
+                                            color_map.cm,
+                                            head_tags,
+                                            band_tags)
+        else:
+            result = self.srdd.toGeoTiffRDD(storage_method,
+                                            rows_per_strip if rows_per_strip else 0,
+                                            tile_dimensions,
+                                            compression,
+                                            color_space,
+                                            head_tags,
+                                            band_tags)
+
+        key = map_key_input(LayerType(self.rdd_type).value, False)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
         return create_python_rdd(self.pysc, result, ser)
@@ -668,6 +714,48 @@ class TiledRasterLayer(CachableLayer):
         return TiledRasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
                                                python_rdd.mapValues(lambda tile: func(tile)),
                                                self.layer_metadata)
+
+    def to_geotiff_rdd(self,
+                       storage_method=StorageMethod.STRIPED,
+                       rows_per_strip=None,
+                       tile_dimensions=(256, 256),
+                       compression=Compression.NO_COMPRESSION,
+                       color_space=ColorSpace.BLACK_IS_ZERO,
+                       color_map=None,
+                       head_tags=None,
+                       band_tags=None):
+
+        storage_method = StorageMethod(storage_method).value
+        compression = Compression(compression).value
+        color_space = ColorSpace(color_space).value
+
+        if not head_tags:
+            head_tags = {}
+        if not band_tags:
+            band_tags = []
+
+        if color_map:
+            result = self.srdd.toGeoTiffRDD(storage_method,
+                                            rows_per_strip if rows_per_strip else 0,
+                                            tile_dimensions,
+                                            compression,
+                                            color_space,
+                                            color_map.cm,
+                                            head_tags,
+                                            band_tags)
+        else:
+            result = self.srdd.toGeoTiffRDD(storage_method,
+                                            rows_per_strip if rows_per_strip else 0,
+                                            tile_dimensions,
+                                            compression,
+                                            color_space,
+                                            head_tags,
+                                            band_tags)
+
+        key = map_key_input(LayerType(self.rdd_type).value, True)
+        ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
+
+        return create_python_rdd(self.pysc, result, ser)
 
     def convert_data_type(self, new_type, no_data_value=None):
         """Converts the underlying, raster values to a new ``CellType``.
