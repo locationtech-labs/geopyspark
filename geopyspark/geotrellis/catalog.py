@@ -471,9 +471,9 @@ def write(uri,
     if tiled_raster_rdd.rdd_type == LayerType.SPATIAL:
         cached.writer.writeSpatial(layer_name,
                                    tiled_raster_rdd.srdd,
-                                   index_strategy)
+                                   IndexingMethod(index_strategy).value)
     else:
         cached.writer.writeTemporal(layer_name,
                                     tiled_raster_rdd.srdd,
                                     time_unit,
-                                    index_strategy)
+                                    IndexingMethod(index_strategy).value)
