@@ -60,6 +60,9 @@ class HistogramTest(BaseTestClass):
     def test_values(self):
         self.assertEqual(self.hist.values(), [1.0, 2.0, 3.0, 4.0])
 
+    def test_item_count(self):
+        self.assertEqual(self.hist.item_count(3.0), 5)
+
     def test_merge(self):
 
         arr2 = np.array([[[1.0, 1.0, 1.0, 1.0],
