@@ -333,21 +333,16 @@ class SpatialTiledRasterRDD(
     val rdd2 = rdd.mapValues({ tile => tile.resample(cols, rows, method) })
 
     val metadata = rdd.metadata
-    val metadata2 = TileLayerMetadata(
-      metadata.cellType,
-      LayoutDefinition(
-        metadata.extent,
-        TileLayout(
-          metadata.layout.tileLayout.layoutCols,
-          metadata.layout.tileLayout.layoutRows,
-          cols,
-          rows
-        )
-      ),
+    val layout = LayoutDefinition(
       metadata.extent,
-      metadata.crs,
-      metadata.bounds
+      TileLayout(
+        metadata.layout.tileLayout.layoutCols,
+        metadata.layout.tileLayout.layoutRows,
+        cols,
+        rows
+      )
     )
+    val metadata2 = metadata.copy(layout = layout)
 
     SpatialTiledRasterRDD(None, ContextRDD(rdd2, metadata2))
   }
@@ -588,21 +583,16 @@ class TemporalTiledRasterRDD(
     val rdd2 = rdd.mapValues({ tile => tile.resample(cols, rows, method) })
 
     val metadata = rdd.metadata
-    val metadata2 = TileLayerMetadata(
-      metadata.cellType,
-      LayoutDefinition(
-        metadata.extent,
-        TileLayout(
-          metadata.layout.tileLayout.layoutCols,
-          metadata.layout.tileLayout.layoutRows,
-          cols,
-          rows
-        )
-      ),
+    val layout = LayoutDefinition(
       metadata.extent,
-      metadata.crs,
-      metadata.bounds
+      TileLayout(
+        metadata.layout.tileLayout.layoutCols,
+        metadata.layout.tileLayout.layoutRows,
+        cols,
+        rows
+      )
     )
+    val metadata2 = metadata.copy(layout = layout)
 
     TemporalTiledRasterRDD(None, ContextRDD(rdd2, metadata2))
   }
