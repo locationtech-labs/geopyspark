@@ -101,6 +101,30 @@ class PyramidingTest(BaseTestClass):
         with pytest.raises(ValueError):
             laid_out.pyramid(start_zoom=12, end_zoom=1)
 
+    def test_pyramid_class(self):
+        arr = np.zeros((1, 16, 16))
+        epsg_code = 3857
+        extent = Extent(0.0, 0.0, 10.0, 10.0)
+
+        tile = Tile(arr, 'FLOAT', False)
+        projected_extent = ProjectedExtent(extent, epsg_code)
+
+        rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        tile_layout = TileLayout(1, 1, 16, 16)
+
+        metadata = raster_rdd.collect_metadata(tile_size=16)
+        laid_out = raster_rdd.tile_to_layout(metadata)
+        reprojected = laid_out.reproject(3857, scheme=LayoutScheme.ZOOM)
+
+        result = reprojected.pyramid(end_zoom=1, start_zoom=12)
+        hist = result.get_histogram()
+
+        self.assertEqual(result.max_zoom, 12)
+        self.assertTrue(set(result.levels.keys()).issuperset(range(1, 13)))
+        self.assertEqual(hist.mean(), 0.0)
+        self.assertEqual(hist.min_max(), (0.0, 0.0))
+
     def pyramid_building_check(self, result):
         previous_layout_cols = None
         previous_layout_rows = None
