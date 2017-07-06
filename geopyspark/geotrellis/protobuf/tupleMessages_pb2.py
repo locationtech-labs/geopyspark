@@ -22,7 +22,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='tupleMessages.proto',
   package='protos',
   syntax='proto3',
-  serialized_pb=_b('\n\x13tupleMessages.proto\x12\x06protos\x1a\x14\x65xtentMessages.proto\x1a\x11keyMessages.proto\x1a\x12tileMessages.proto\"\x93\x02\n\nProtoTuple\x12\x35\n\x0fprojectedExtent\x18\x01 \x01(\x0b\x32\x1c.protos.ProtoProjectedExtent\x12\x45\n\x17temporalProjectedExtent\x18\x02 \x01(\x0b\x32$.protos.ProtoTemporalProjectedExtent\x12+\n\nspatialKey\x18\x03 \x01(\x0b\x32\x17.protos.ProtoSpatialKey\x12/\n\x0cspaceTimeKey\x18\x04 \x01(\x0b\x32\x19.protos.ProtoSpaceTimeKey\x12)\n\x05tiles\x18\x05 \x01(\x0b\x32\x1a.protos.ProtoMultibandTileb\x06proto3')
+  serialized_pb=_b('\n\x13tupleMessages.proto\x12\x06protos\x1a\x14\x65xtentMessages.proto\x1a\x11keyMessages.proto\x1a\x12tileMessages.proto\"\xa7\x02\n\nProtoTuple\x12\x35\n\x0fprojectedExtent\x18\x01 \x01(\x0b\x32\x1c.protos.ProtoProjectedExtent\x12\x45\n\x17temporalProjectedExtent\x18\x02 \x01(\x0b\x32$.protos.ProtoTemporalProjectedExtent\x12+\n\nspatialKey\x18\x03 \x01(\x0b\x32\x17.protos.ProtoSpatialKey\x12/\n\x0cspaceTimeKey\x18\x04 \x01(\x0b\x32\x19.protos.ProtoSpaceTimeKey\x12)\n\x05tiles\x18\x05 \x01(\x0b\x32\x1a.protos.ProtoMultibandTile\x12\x12\n\nimageBytes\x18\x06 \x01(\x0c\x62\x06proto3')
   ,
   dependencies=[extentMessages__pb2.DESCRIPTOR,keyMessages__pb2.DESCRIPTOR,tileMessages__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -72,6 +72,13 @@ _PROTOTUPLE = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='imageBytes', full_name='protos.ProtoTuple.imageBytes', index=5,
+      number=6, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -85,7 +92,7 @@ _PROTOTUPLE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=93,
-  serialized_end=368,
+  serialized_end=388,
 )
 
 _PROTOTUPLE.fields_by_name['projectedExtent'].message_type = extentMessages__pb2._PROTOPROJECTEDEXTENT

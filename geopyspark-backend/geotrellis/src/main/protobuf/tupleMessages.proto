@@ -12,4 +12,5 @@ message ProtoTuple {
   ProtoSpatialKey spatialKey = 3;
   ProtoSpaceTimeKey spaceTimeKey = 4;
   ProtoMultibandTile tiles = 5;
+  bytes imageBytes = 6;
 }

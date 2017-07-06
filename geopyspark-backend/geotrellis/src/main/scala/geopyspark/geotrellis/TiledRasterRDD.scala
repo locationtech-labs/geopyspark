@@ -564,6 +564,9 @@ class SpatialTiledRasterRDD(
 
   def toProtoRDD(): JavaRDD[Array[Byte]] =
     PythonTranslator.toPython[(SpatialKey, MultibandTile), ProtoTuple](rdd)
+
+  def toPngRDD(pngRDD: RDD[(SpatialKey, Array[Byte])]): JavaRDD[Array[Byte]] =
+    PythonTranslator.toPython[(SpatialKey, Array[Byte]), ProtoTuple](pngRDD)
 }
 
 
@@ -760,6 +763,9 @@ class TemporalTiledRasterRDD(
 
   def toProtoRDD(): JavaRDD[Array[Byte]] =
     PythonTranslator.toPython[(SpaceTimeKey, MultibandTile), ProtoTuple](rdd)
+
+  def toPngRDD(pngRDD: RDD[(SpaceTimeKey, Array[Byte])]): JavaRDD[Array[Byte]] =
+    PythonTranslator.toPython[(SpaceTimeKey, Array[Byte]), ProtoTuple](pngRDD)
 }
 
 
@@ -855,8 +861,8 @@ object SpatialTiledRasterRDD {
 
     SpatialTiledRasterRDD(Some(z), MultibandTileLayerRDD(mbtileRDD, metadata))
   }
-
 }
+
 
 object TemporalTiledRasterRDD {
   def fromProtoEncodedRDD(
