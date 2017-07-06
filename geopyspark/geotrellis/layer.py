@@ -1108,16 +1108,40 @@ def _common_entries(*dcts):
     for i in set(dcts[0]).intersection(*dcts[1:]):
         yield (i,) + tuple(d[i] for d in dcts)
 
-# Keep it in non rendered form so we can do map algebra operations to it
+
 class Pyramid(CachableLayer):
+    """Contains a list of ``TiledRasterLayer``\s that make up a tile pyramid.
+    Each layer represents a level within the pyramid. This class is used when creating
+    a tile server.
+
+    Map algebra can performed on instances of this class.
+
+    Args:
+        levels (list or dict): A list of ``TiledRasterLayer``\s or a dict of
+            ``TiledRasterLayer``\s where the value is the layer itself and the key is
+            its given zoom level.
+
+    Attributes:
+        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
+        rdd_type (str): What the spatial type of the geotiffs are. This is
+            represented by the constants: ``SPATIAL`` and ``SPACETIME``.
+        levels (dict): A dict of ``TiledRasterLayer``\s where the value is the layer itself
+            and the key is its given zoom level.
+        max_zoom (int): The highest zoom level of the pyramid.
+        is_cached (bool): Signals whether or not the internal RDDs are cached. Default
+            is ``False``.
+        histogram (:class:`~geopyspark.geotrellis.histogram.Histogram`): The ``Histogram``
+            that represents the layer with the max zoomw. Will not be calculated unless the
+            :meth:`~geopyspark.geotrellis.layer.Pyramid.get_histogram` method is used.
+            Otherwise, its value is ``None``.
+
+    Raises:
+        TypeError: If ``levels`` is neither a list or dict.
+    """
+
+    __slots__ = ['pysc', 'rdd_type', 'levels', 'max_zoom', 'is_cached', 'histogram']
+
     def __init__(self, levels):
-        """List of TiledRasterLayers into a coherent pyramid tile pyramid.
-
-        Args:
-            levels (list): A list of TiledRasterLayer.
-
-        """
-
         if isinstance(levels, dict):
             levels = levels
         elif isinstance(levels, list):
@@ -1133,12 +1157,26 @@ class Pyramid(CachableLayer):
         self.histogram = None
 
     def wrapped_rdds(self):
+        """Returns a list of the wrapped, Scala RDDs within each layer of the pyramid.
+
+        Returns:
+            [org.apache.spark.rdd.RDD]
+        """
+
         return [rdd.srdd for rdd in self.levels.values()]
 
     def get_histogram(self):
+        """Calculates the ``Histogram`` for the layer with the max zoom.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.histogram.Histogram`
+        """
+
         if not self.histogram:
             self.histogram = self.levels[self.max_zoom].get_histogram()
         return self.histogram
+
+    # Keep it in non rendered form so we can do map algebra operations to it
 
     def __add__(self, value):
         if isinstance(value, Pyramid):
