@@ -1050,7 +1050,7 @@ class TiledRasterLayer(CachableLayer):
         else:
             histogram = self.srdd.getIntHistograms()
 
-        return Histogram(self.pysc, histogram)
+        return Histogram(histogram)
 
     def _process_operation(self, value, operation):
         if isinstance(value, int) or isinstance(value, float):

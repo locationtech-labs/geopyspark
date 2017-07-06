@@ -12,16 +12,13 @@ class Histogram(object):
     layer.
 
     Args:
-        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         scala_histogram (py4j.JavaObject): An instance of the GeoTrellis histogram.
 
     Attributes:
-        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         scala_histogram (py4j.JavaObject): An instance of the GeoTrellis histogram.
     """
 
-    def __init__(self, pysc, scala_histogram):
-        self.pysc = pysc
+    def __init__(self, scala_histogram):
         self.scala_histogram = scala_histogram
 
     def min(self):
@@ -144,10 +141,10 @@ class Histogram(object):
             [(int, int)] or [(float, int)]
         """
 
-        java_converter = self.pysc._gateway.jvm.scala.collection.JavaConverters
-        counts = java_converter.seqAsJavaListConverter(self.scala_histogram.binCounts()).asJava()
+        labels = self.values()
+        counts = list(map(self.item_count, labels))
 
-        return [(count._1(), count._2()) for count in counts]
+        return list(zip(labels, counts))
 
     def quantile_breaks(self, num_breaks):
         """Returns quantile breaks for this Layer.
@@ -173,4 +170,4 @@ class Histogram(object):
             :class:`~geopyspark.geotrellis.histogram.Histogram`
         """
 
-        return Histogram(self.pysc, self.scala_histogram.merge(other_histogram.scala_histogram))
+        return Histogram(self.scala_histogram.merge(other_histogram.scala_histogram))
