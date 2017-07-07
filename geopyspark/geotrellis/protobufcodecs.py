@@ -6,6 +6,7 @@ ensure_pyspark()
 
 from geopyspark.geotrellis import (Extent, ProjectedExtent, TemporalProjectedExtent, SpatialKey,
                                    SpaceTimeKey, Tile)
+from geopyspark.geotrellis.constants import NO_DATA_INT, SCALA_MAX_INT
 
 from geopyspark.geotrellis.protobuf.tileMessages_pb2 import ProtoTile, ProtoMultibandTile, ProtoCellType
 from geopyspark.geotrellis.protobuf import keyMessages_pb2
@@ -27,28 +28,28 @@ _mapped_data_types = {
 # DECODERS
 
 
-def from_pb_tile(tile, data_type=None):
+def from_pb_tile(tile, no_data_value=None, data_type=None):
     if not data_type:
         data_type = _mapped_data_types[tile.cellType.dataType]
 
     if data_type == 'BIT':
-        cells = np.int8(tile.uint32Cells[:]).reshape(tile.rows, tile.cols)
+        cells = np.int8([no_data_value if x == SCALA_MAX_INT else x for x in tile.uint32Cells])
     elif data_type == 'BYTE':
-        cells = np.int8(tile.sint32Cells[:]).reshape(tile.rows, tile.cols)
+        cells = np.int8([no_data_value if x == NO_DATA_INT else x for x in tile.sint32Cells])
     elif data_type == 'UBYTE':
-        cells = np.uint8(tile.uint32Cells[:]).reshape(tile.rows, tile.cols)
+        cells = np.uint8([no_data_value if x == SCALA_MAX_INT else x for x in tile.uint32Cells])
     elif data_type == 'SHORT':
-        cells = np.int16(tile.sint32Cells[:]).reshape(tile.rows, tile.cols)
+        cells = np.int16([no_data_value if x == NO_DATA_INT else x for x in tile.sint32Cells])
     elif data_type == 'USHORT':
-        cells = np.uint16(tile.uint32Cells[:]).reshape(tile.rows, tile.cols)
+        cells = np.uint16([no_data_value if x == SCALA_MAX_INT else x for x in tile.uint32Cells])
     elif data_type == 'INT':
-        cells = np.int32(tile.sint32Cells[:]).reshape(tile.rows, tile.cols)
+        cells = np.int32(tile.sint32Cells[:])
     elif data_type == 'FLOAT':
-        cells = np.float32(tile.floatCells[:]).reshape(tile.rows, tile.cols)
+        cells = np.float32(tile.floatCells[:])
     else:
-        cells = np.double(tile.doubleCells[:]).reshape(tile.rows, tile.cols)
+        cells = np.double(tile.doubleCells[:])
 
-    return cells
+    return cells.reshape(tile.rows, tile.cols)
 
 def tile_decoder(proto_bytes):
     """Decodes a ``TILE`` into Python.
@@ -62,21 +63,23 @@ def tile_decoder(proto_bytes):
 
     tile = ProtoTile.FromString(proto_bytes)
     cell_type = _mapped_data_types[tile.cellType.dataType]
-    cells = np.array([from_pb_tile(tile, cell_type)])
 
     if tile.cellType.hasNoData:
-        return Tile(cells, cell_type, tile.cellType.nd)
+        nd = tile.cellType.nd
+        return Tile(np.array([from_pb_tile(tile, nd)]), cell_type, nd)
     else:
-        return Tile(cells, cell_type, None)
+        return Tile(np.array([from_pb_tile(tile)]), cell_type, None)
 
 def from_pb_multibandtile(multibandtile):
     cell_type = _mapped_data_types[multibandtile.tiles[0].cellType.dataType]
-    bands = np.array([from_pb_tile(tile, cell_type) for tile in multibandtile.tiles])
 
     if multibandtile.tiles[0].cellType.hasNoData:
-        return Tile(bands, cell_type, multibandtile.tiles[0].cellType.nd)
+        nd = multibandtile.tiles[0].cellType.nd
+        bands = np.array([from_pb_tile(tile, nd) for tile in multibandtile.tiles])
+        return Tile(bands, cell_type, nd)
     else:
-        return Tile(bands, None, multibandtile.tiles[0].cellType.nd)
+        bands = np.array([from_pb_tile(tile) for tile in multibandtile.tiles])
+        return Tile(bands, cell_type, None)
 
 def multibandtile_decoder(proto_bytes):
     """Decodes a ``TILE`` into Python.
