@@ -8,6 +8,8 @@ __all__ = ['LayerType', 'LayoutScheme', 'NO_DATA_INT']
 """The NoData value for ints in GeoTrellis."""
 NO_DATA_INT = -2147483648
 
+SCALA_MAX_INT = 2147483648
+
 
 class LayerType(Enum):
     """The type of the key within the tuple of the wrapped RDD."""
