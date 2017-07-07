@@ -236,7 +236,6 @@ class RasterLayer(CachableLayer):
         return create_python_rdd(self.pysc, result, ser)
 
     def to_geotiff_rdd(self,
-                       layer_metadata,
                        storage_method=StorageMethod.STRIPED,
                        rows_per_strip=None,
                        tile_dimensions=(256, 256),

@@ -70,7 +70,7 @@ object TileRDD {
     (storageMethod, rowsPerStrip) match {
       case (STRIPED, 0) => Striped()
       case (STRIPED, x) => Striped(x)
-      case (TILED, _) => Tiled(tileDimensions.get(0), tileDimensions.get(2))
+      case (TILED, _) => Tiled(tileDimensions.get(0), tileDimensions.get(1))
     }
 
   def getCompression(compressionType: String): Compression =
@@ -220,32 +220,6 @@ abstract class RasterRDD[K: ClassTag] extends TileRDD[K] {
       TileRDD.getCompression(compression),
       colorSpace,
       None)
-
-    toGeoTiffRDD(tags, options)
-  }
-
-  def toGeoTiffRDD(
-    storageMethod: String,
-    rowsPerStrip: Int,
-    tileDimensions: java.util.ArrayList[Int],
-    compression: String,
-    colorSpace: Int,
-    colorMap: ColorMap,
-    headTags: java.util.Map[String, String],
-    bandTags: java.util.ArrayList[java.util.Map[String, String]]
-  ): JavaRDD[Array[Byte]] = {
-    val storage = TileRDD.getStorageMethod(storageMethod, rowsPerStrip, tileDimensions)
-    val tags =
-      if (headTags.isEmpty || bandTags.isEmpty)
-        Tags.empty
-      else
-        Tags(headTags.asScala.toMap,
-          bandTags.toArray.map(_.asInstanceOf[scala.collection.immutable.Map[String, String]]).toList)
-
-    val options = GeoTiffOptions(storage,
-      TileRDD.getCompression(compression),
-      colorSpace,
-      Some(IndexedColorMap.fromColorMap(colorMap)))
 
     toGeoTiffRDD(tags, options)
   }

@@ -20,6 +20,8 @@ class BaseTestClass(unittest.TestCase):
         master_str = "local[*]"
 
     conf = geopyspark_conf(master=master_str, appName="test")
+    conf.set('spark.kryoserializer.buffer.max', value='1G')
+    conf.set('spark.ui.enabled', True)
 
     if 'TRAVIS' in os.environ:
         conf.set(key='spark.driver.memory', value='2G')
