@@ -351,29 +351,8 @@ Make Targets
  - **wheel** - build python GeoPySpark wheel for distribution
  - **pyspark** - start pyspark shell with project jars
  - **build** - builds the backend jar and moves it to the jars sub-package
- - **docker-build** - build docker image for Jupyter with GeoPySpark
  - **clean** - remove the wheel, the backend jar file, and clean the
    geotrellis-backend directory
- - **cleaner** - the same as **clean**, but also erase all .pyc
-   files and delete binary artifacts in the docker directory
-
-Docker Container
-^^^^^^^^^^^^^^^^
-
-To build the docker container, type the following in a terminal:
-
-.. code:: console
-
-   make docker-build
-
-If you encounter problems, typing ``make cleaner`` before typing
-``make docker-build`` could help.
-
-To run the container, type:
-
-.. code:: console
-
-   docker run -it --rm -p 8000:8000 quay.io/geodocker/jupyter-geopyspark:6
 
 Uninstalling
 ------------
