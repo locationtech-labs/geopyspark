@@ -60,8 +60,36 @@ class HistogramTest(BaseTestClass):
     def test_values(self):
         self.assertEqual(self.hist.values(), [1.0, 2.0, 3.0, 4.0])
 
-    def test_merge(self):
+    def test_item_count(self):
+        self.assertEqual(self.hist.item_count(3.0), 5)
 
+    def test_bin_counts(self):
+        metadata2 = {'cellType': 'int32ud-500',
+                     'extent': self.extent,
+                     'crs': '+proj=longlat +datum=WGS84 +no_defs ',
+                     'bounds': {
+                         'minKey': {'col': 0, 'row': 0},
+                         'maxKey': {'col': 0, 'row': 0}},
+                     'layoutDefinition': {
+                         'extent': self.extent,
+                         'tileLayout': {'tileCols': 4, 'tileRows': 4, 'layoutCols': 1, 'layoutRows': 1}}}
+
+        arr2 = np.int8([[[1, 1, 1, 1],
+                         [3, 1, 1, 1],
+                         [4, 3, 1, 1],
+                         [5, 4, 3, 1]]])
+
+        tile2 = Tile(arr2, 'INT', -500)
+        rdd2 = BaseTestClass.pysc.parallelize([(self.spatial_key, tile2)])
+        tiled2 = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd2,
+                                                 metadata2)
+
+        hist2 = tiled2.get_histogram()
+        bin_counts = hist2.bin_counts()
+
+        self.assertEqual(bin_counts, [(1, 10), (3, 3), (4, 2), (5, 1)])
+
+    def test_merge(self):
         arr2 = np.array([[[1.0, 1.0, 1.0, 1.0],
                           [1.0, 1.0, 1.0, 1.0],
                           [1.0, 1.0, 1.0, 1.0],

@@ -101,6 +101,18 @@ class Histogram(object):
 
         return list(self.scala_histogram.values())
 
+    def item_count(self, item):
+        """Returns the total number of times a given item appears in the histogram.
+
+        Args:
+            item (int or float): The value whose occurences should be counted.
+
+        Returns:
+            int: The total count of the occurences of ``item`` in the histogram.
+        """
+
+        return self.scala_histogram.itemCount(item)
+
     def cdf(self):
         """Returns the cdf of the distribution of the histogram.
 
@@ -120,6 +132,19 @@ class Histogram(object):
         """
 
         return self.scala_histogram.bucketCount()
+
+    def bin_counts(self):
+        """Returns a list of tuples where the key is the bin label value and the
+        value is the label's respective count.
+
+        Returns:
+            [(int, int)] or [(float, int)]
+        """
+
+        labels = self.values()
+        counts = list(map(self.item_count, labels))
+
+        return list(zip(labels, counts))
 
     def quantile_breaks(self, num_breaks):
         """Returns quantile breaks for this Layer.

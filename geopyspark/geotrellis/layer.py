@@ -467,6 +467,8 @@ class TiledRasterLayer(CachableLayer):
             constants: ``SPATIAL` and ``SPACETIME``.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
             ``RasterLayer`` to access the various Scala methods.
+        is_floating_point_layer (bool): Whether the data within the ``TiledRasterLayer`` is floating
+            point or not.
     """
 
     __slots__ = ['pysc', 'rdd_type', 'srdd']
@@ -476,6 +478,7 @@ class TiledRasterLayer(CachableLayer):
         self.pysc = pysc
         self.rdd_type = rdd_type
         self.srdd = srdd
+        self.is_floating_point_layer = self.srdd.isFloatingPointLayer()
 
     @property
     def layer_metadata(self):
@@ -1069,17 +1072,6 @@ class TiledRasterLayer(CachableLayer):
             ``[int]``
         """
         return list(self.srdd.quantileBreaksExactInt(num_breaks))
-
-    def is_floating_point_layer(self):
-        """Determines whether the content of the TiledRasterLayer is of floating point type.
-
-        Args:
-            None
-
-        Returns:
-            [boolean]
-        """
-        return self.srdd.isFloatingPointLayer()
 
     def get_histogram(self):
         """Creates a ``Histogram`` from the values within this layer.
