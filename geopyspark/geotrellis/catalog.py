@@ -406,7 +406,7 @@ def query(pysc,
             srdd = cached.reader.query(key,
                                        layer_name,
                                        layer_zoom,
-                                       shapely.wkb.dumps(query_geom.to_poly),
+                                       shapely.wkb.dumps(query_geom.to_polygon),
                                        time_intervals,
                                        query_proj,
                                        numPartitions)
