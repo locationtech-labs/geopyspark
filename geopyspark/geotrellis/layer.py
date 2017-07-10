@@ -31,7 +31,7 @@ from geopyspark.geotrellis.neighborhood import Neighborhood
 __all__ = ["RasterLayer", "TiledRasterLayer", "Pyramid"]
 
 
-def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_with):
+def _reclassify(srdd, value_map, data_type, classification_strategy, replace_nodata_with):
     new_dict = {}
 
     for key, value in value_map.items():
@@ -46,17 +46,17 @@ def _reclassify(srdd, value_map, data_type, boundary_strategy, replace_nodata_wi
 
     if data_type is int:
         if not replace_nodata_with:
-            return srdd.reclassify(new_dict, ClassificationStrategy(boundary_strategy).value,
+            return srdd.reclassify(new_dict, ClassificationStrategy(classification_strategy).value,
                                    NO_DATA_INT)
         else:
-            return srdd.reclassify(new_dict, ClassificationStrategy(boundary_strategy).value,
+            return srdd.reclassify(new_dict, ClassificationStrategy(classification_strategy).value,
                                    replace_nodata_with)
     else:
         if not replace_nodata_with:
-            return srdd.reclassifyDouble(new_dict, ClassificationStrategy(boundary_strategy).value,
+            return srdd.reclassifyDouble(new_dict, ClassificationStrategy(classification_strategy).value,
                                          float('nan'))
         else:
-            return srdd.reclassifyDouble(new_dict, ClassificationStrategy(boundary_strategy).value,
+            return srdd.reclassifyDouble(new_dict, ClassificationStrategy(classification_strategy).value,
                                          replace_nodata_with)
 
 
@@ -402,7 +402,7 @@ class RasterLayer(CachableLayer):
         return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
 
     def reclassify(self, value_map, data_type,
-                   boundary_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO,
+                   classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO,
                    replace_nodata_with=None):
         """Changes the cell values of a raster based on how the data is broken up.
 
@@ -411,7 +411,7 @@ class RasterLayer(CachableLayer):
                 its values are the new value the cells within the break should become.
             data_type (type): The type of the values within the rasters. Can either be ``int`` or
                 ``float``.
-            boundary_strategy (str, optional): How the cells should be classified along the breaks.
+            classification_strategy (str, optional): How the cells should be classified along the breaks.
                 This is represented by the following constants: ``GREATERTHAN``,
                 ``GREATERTHANOREQUALTO``, ``LESSTHAN``, ``LESSTHANOREQUALTO``, and ``EXACT``. If
                 unspecified, then ``LESSTHANOREQUALTO`` will be used.
@@ -430,7 +430,7 @@ class RasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.RasterLayer`
         """
 
-        srdd = _reclassify(self.srdd, value_map, data_type, boundary_strategy, replace_nodata_with)
+        srdd = _reclassify(self.srdd, value_map, data_type, classification_strategy, replace_nodata_with)
 
         return RasterLayer(self.pysc, self.rdd_type, srdd)
 
@@ -897,7 +897,7 @@ class TiledRasterLayer(CachableLayer):
         return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
 
     def reclassify(self, value_map, data_type,
-                   boundary_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO,
+                   classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO,
                    replace_nodata_with=None):
         """Changes the cell values of a raster based on how the data is broken up.
 
@@ -906,7 +906,7 @@ class TiledRasterLayer(CachableLayer):
                 its values are the new value the cells within the break should become.
             data_type (type): The type of the values within the rasters. Can either be ``int`` or
                 ``float``.
-            boundary_strategy (str, optional): How the cells should be classified along the breaks.
+            classification_strategy (str, optional): How the cells should be classified along the breaks.
                 This is represented by the following constants: ``GREATERTHAN``,
                 ``GREATERTHANOREQUALTO``, ``LESSTHAN``, ``LESSTHANOREQUALTO``, and ``EXACT``. If
                 unspecified, then ``LESSTHANOREQUALTO`` will be used.
@@ -926,7 +926,7 @@ class TiledRasterLayer(CachableLayer):
         """
 
         srdd = _reclassify(self.srdd, value_map, data_type,
-                           ClassificationStrategy(boundary_strategy).value, replace_nodata_with)
+                           ClassificationStrategy(classification_strategy).value, replace_nodata_with)
 
         return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
 
