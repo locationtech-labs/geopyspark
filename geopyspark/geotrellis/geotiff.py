@@ -7,7 +7,7 @@ from geopyspark.geotrellis.layer import RasterLayer
 
 
 def get(pysc,
-        rdd_type,
+        layer_type,
         uri,
         crs=None,
         max_tile_size=None,
@@ -22,7 +22,7 @@ def get(pysc,
 
     Args:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        rdd_type (str): What the spatial type of the geotiffs are. This is
+        layer_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
 
             Note:
@@ -60,7 +60,7 @@ def get(pysc,
 
     geotiff_rdd = pysc._gateway.jvm.geopyspark.geotrellis.io.geotiff.GeoTiffRDD
 
-    key = map_key_input(LayerType(rdd_type).value, False)
+    key = map_key_input(LayerType(layer_type).value, False)
 
     options = {}
 
@@ -96,4 +96,4 @@ def get(pysc,
                                [uri],
                                options)
 
-    return RasterLayer(pysc, rdd_type, srdd)
+    return RasterLayer(pysc, layer_type, srdd)

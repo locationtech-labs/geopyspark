@@ -137,7 +137,7 @@ class RasterLayer(CachableLayer):
 
     Represents a layer that wraps a RDD that contains ``(K, V)``. Where ``K`` is either
     :class:`~geopyspark.geotrellis.ProjectedExtent` or
-    :class:`~geopyspark.geotrellis.TemporalProjectedExtent` depending on the ``rdd_type`` of the RDD,
+    :class:`~geopyspark.geotrellis.TemporalProjectedExtent` depending on the ``layer_type`` of the RDD,
     and ``V`` being a :ref:`raster`.
 
     The data held within this layer has not been tiled. Meaning the data has yet to be
@@ -145,34 +145,34 @@ class RasterLayer(CachableLayer):
 
     Args:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        rdd_type (str): What the spatial type of the geotiffs are. This is
+        layer_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
             ``RasterLayer`` to access the various Scala methods.
 
     Attributes:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        rdd_type (str): What the spatial type of the geotiffs are. This is
+        layer_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
             ``RasterLayer`` to access the various Scala methods.
     """
 
-    __slots__ = ['pysc', 'rdd_type', 'srdd']
+    __slots__ = ['pysc', 'layer_type', 'srdd']
 
-    def __init__(self, pysc, rdd_type, srdd):
+    def __init__(self, pysc, layer_type, srdd):
         CachableLayer.__init__(self)
         self.pysc = pysc
-        self.rdd_type = rdd_type
+        self.layer_type = layer_type
         self.srdd = srdd
 
     @classmethod
-    def from_numpy_rdd(cls, pysc, rdd_type, numpy_rdd):
+    def from_numpy_rdd(cls, pysc, layer_type, numpy_rdd):
         """Create a ``RasterLayer`` from a numpy RDD.
 
         Args:
             pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-            rdd_type (str): What the spatial type of the geotiffs are. This is
+            layer_type (str): What the spatial type of the geotiffs are. This is
                 represented by the constants: ``SPATIAL`` and ``SPACETIME``.
             numpy_rdd (pyspark.RDD): A PySpark RDD that contains tuples of either
                 :class:`~geopyspark.geotrellis.ProjectedExtent`\s or
@@ -183,11 +183,11 @@ class RasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.RasterLayer`
         """
 
-        key = map_key_input(LayerType(rdd_type).value, False)
+        key = map_key_input(LayerType(layer_type).value, False)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
-        if rdd_type == LayerType.SPATIAL:
+        if layer_type == LayerType.SPATIAL:
             srdd = \
                     pysc._gateway.jvm.geopyspark.geotrellis.ProjectedRasterRDD.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd)
@@ -196,7 +196,7 @@ class RasterLayer(CachableLayer):
                     pysc._gateway.jvm.geopyspark.geotrellis.TemporalRasterRDD.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd)
 
-        return cls(pysc, rdd_type, srdd)
+        return cls(pysc, layer_type, srdd)
 
     def to_numpy_rdd(self):
         """Converts a ``RasterLayer`` to a numpy RDD.
@@ -210,7 +210,7 @@ class RasterLayer(CachableLayer):
         """
 
         result = self.srdd.toProtoRDD()
-        key = map_key_input(LayerType(self.rdd_type).value, False)
+        key = map_key_input(LayerType(self.layer_type).value, False)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
 
         return create_python_rdd(self.pysc, result, ser)
@@ -227,7 +227,7 @@ class RasterLayer(CachableLayer):
             RDD[(K, bytes)]
         """
         result = self.srdd.toPngRDD(color_map.cmap)
-        key = map_key_input(LayerType(self.rdd_type).value, False)
+        key = map_key_input(LayerType(self.layer_type).value, False)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
         return create_python_rdd(self.pysc, result, ser)
@@ -288,10 +288,10 @@ class RasterLayer(CachableLayer):
 
             no_data_constant = new_type + "ud" + str(no_data_value)
 
-            return RasterLayer(self.pysc, self.rdd_type,
+            return RasterLayer(self.pysc, self.layer_type,
                                self.srdd.convertDataType(no_data_constant))
         else:
-            return RasterLayer(self.pysc, self.rdd_type,
+            return RasterLayer(self.pysc, self.layer_type,
                                self.srdd.convertDataType(new_type))
 
     def collect_metadata(self, extent=None, layout=None, crs=None, tile_size=256):
@@ -355,7 +355,7 @@ class RasterLayer(CachableLayer):
         if isinstance(target_crs, int):
             target_crs = str(target_crs)
 
-        return RasterLayer(self.pysc, self.rdd_type,
+        return RasterLayer(self.pysc, self.layer_type,
                            self.srdd.reproject(target_crs, ResampleMethod(resample_method).value))
 
     def cut_tiles(self, layer_metadata, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
@@ -377,7 +377,7 @@ class RasterLayer(CachableLayer):
             layer_metadata = layer_metadata.to_dict()
 
         srdd = self.srdd.cutTiles(json.dumps(layer_metadata), ResampleMethod(resample_method).value)
-        return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
     def tile_to_layout(self, layer_metadata, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
@@ -399,7 +399,7 @@ class RasterLayer(CachableLayer):
 
         srdd = self.srdd.tileToLayout(json.dumps(layer_metadata),
                                       ResampleMethod(resample_method).value)
-        return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
     def reclassify(self, value_map, data_type,
                    classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO,
@@ -432,7 +432,7 @@ class RasterLayer(CachableLayer):
 
         srdd = _reclassify(self.srdd, value_map, data_type, classification_strategy, replace_nodata_with)
 
-        return RasterLayer(self.pysc, self.rdd_type, srdd)
+        return RasterLayer(self.pysc, self.layer_type, srdd)
 
     def get_min_max(self):
         """Returns the maximum and minimum values of all of the rasters in the layer.
@@ -449,21 +449,21 @@ class TiledRasterLayer(CachableLayer):
 
     Represents a RDD that contains ``(K, V)``. Where ``K`` is either
     :class:`~geopyspark.geotrellis.SpatialKey` or :class:`~geopyspark.geotrellis.SpaceTimeKey`
-    depending on the ``rdd_type`` of the RDD, and ``V`` being a :ref:`raster`.
+    depending on the ``layer_type`` of the RDD, and ``V`` being a :ref:`raster`.
 
     The data held within the layer is tiled. This means that the rasters have been modified to fit
     a larger layout. For more information, see :ref:`tiled-raster-rdd`.
 
     Args:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        rdd_type (str): What the spatial type of the geotiffs are. This is represented by the
+        layer_type (str): What the spatial type of the geotiffs are. This is represented by the
             constants: ``SPATIAL`` and ``SPACETIME``.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
             ``TiledRasterLayer`` to access the various Scala methods.
 
     Attributes:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        rdd_type (str): What the spatial type of the geotiffs are. This is represented by the
+        layer_type (str): What the spatial type of the geotiffs are. This is represented by the
             constants: ``SPATIAL` and ``SPACETIME``.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
             ``RasterLayer`` to access the various Scala methods.
@@ -471,12 +471,12 @@ class TiledRasterLayer(CachableLayer):
             point or not.
     """
 
-    __slots__ = ['pysc', 'rdd_type', 'srdd']
+    __slots__ = ['pysc', 'layer_type', 'srdd']
 
-    def __init__(self, pysc, rdd_type, srdd):
+    def __init__(self, pysc, layer_type, srdd):
         CachableLayer.__init__(self)
         self.pysc = pysc
-        self.rdd_type = rdd_type
+        self.layer_type = layer_type
         self.srdd = srdd
         self.is_floating_point_layer = self.srdd.isFloatingPointLayer()
 
@@ -491,12 +491,12 @@ class TiledRasterLayer(CachableLayer):
         return self.srdd.getZoom()
 
     @classmethod
-    def from_numpy_rdd(cls, pysc, rdd_type, numpy_rdd, metadata):
+    def from_numpy_rdd(cls, pysc, layer_type, numpy_rdd, metadata):
         """Create a ``TiledRasterLayer`` from a numpy RDD.
 
         Args:
             pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-            rdd_type (str): What the spatial type of the geotiffs are. This is represented by the
+            layer_type (str): What the spatial type of the geotiffs are. This is represented by the
                 constants: ``SPATIAL`` and ``SPACETIME``.
             numpy_rdd (pyspark.RDD): A PySpark RDD that contains tuples of either
                 :class:`~geopyspark.geotrellis.SpatialKey` or
@@ -508,14 +508,14 @@ class TiledRasterLayer(CachableLayer):
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
-        key = map_key_input(LayerType(rdd_type).value, True)
+        key = map_key_input(LayerType(layer_type).value, True)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
         if isinstance(metadata, Metadata):
             metadata = metadata.to_dict()
 
-        if rdd_type == LayerType.SPATIAL:
+        if layer_type == LayerType.SPATIAL:
             srdd = \
                     pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd, json.dumps(metadata))
@@ -524,7 +524,7 @@ class TiledRasterLayer(CachableLayer):
                     pysc._gateway.jvm.geopyspark.geotrellis.TemporalTiledRasterRDD.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd, json.dumps(metadata))
 
-        return cls(pysc, rdd_type, srdd)
+        return cls(pysc, layer_type, srdd)
 
     def to_numpy_rdd(self):
         """Converts a ``TiledRasterLayer`` to a numpy RDD.
@@ -537,7 +537,7 @@ class TiledRasterLayer(CachableLayer):
             ``pyspark.RDD``
         """
         result = self.srdd.toProtoRDD()
-        key = map_key_input(LayerType(self.rdd_type).value, True)
+        key = map_key_input(LayerType(self.layer_type).value, True)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
 
         return create_python_rdd(self.pysc, result, ser)
@@ -555,7 +555,7 @@ class TiledRasterLayer(CachableLayer):
         """
 
         result = self.srdd.toPngRDD(color_map.cmap)
-        key = map_key_input(LayerType(self.rdd_type).value, True)
+        key = map_key_input(LayerType(self.layer_type).value, True)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
         return create_python_rdd(self.pysc, result, ser)
@@ -585,10 +585,10 @@ class TiledRasterLayer(CachableLayer):
 
             no_data_constant = CellType(new_type).value + "ud" + str(no_data_value)
 
-            return TiledRasterLayer(self.pysc, self.rdd_type,
+            return TiledRasterLayer(self.pysc, self.layer_type,
                                     self.srdd.convertDataType(no_data_constant))
         else:
-            return TiledRasterLayer(self.pysc, self.rdd_type,
+            return TiledRasterLayer(self.pysc, self.layer_type,
                                     self.srdd.convertDataType(CellType(new_type).value))
 
     def reproject(self, target_crs, extent=None, layout=None, scheme=LayoutScheme.FLOAT, tile_size=256,
@@ -641,10 +641,10 @@ class TiledRasterLayer(CachableLayer):
         else:
             raise TypeError("Could not collect reproject Layer with {} and {}".format(extent, layout))
 
-        return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
     def repartition(self, num_partitions):
-        return TiledRasterLayer(self.pysc, self.rdd_type, self.srdd.repartition(num_partitions))
+        return TiledRasterLayer(self.pysc, self.layer_type, self.srdd.repartition(num_partitions))
 
     def lookup(self, col, row):
         """Return the value(s) in the image of a particular ``SpatialKey`` (given by col and row).
@@ -660,8 +660,8 @@ class TiledRasterLayer(CachableLayer):
             ValueError: If using lookup on a non ``SPATIAL`` ``TiledRasterLayer``.
             IndexError: If col and row are not within the ``TiledRasterLayer``\'s bounds.
         """
-        if self.rdd_type != LayerType.SPATIAL:
-            raise ValueError("Only TiledRasterLayers with a rdd_type of Spatial can use lookup()")
+        if self.layer_type != LayerType.SPATIAL:
+            raise ValueError("Only TiledRasterLayers with a layer_type of Spatial can use lookup()")
         bounds = self.layer_metadata.bounds
         min_col = bounds.minKey.col
         min_row = bounds.minKey.row
@@ -697,7 +697,7 @@ class TiledRasterLayer(CachableLayer):
 
         srdd = self.srdd.tileToLayout(layout, ResampleMethod(resample_method).value)
 
-        return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
     def pyramid(self, end_zoom, start_zoom=None, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Creates a pyramid of GeoTrellis layers where each layer reprsents a given zoom.
@@ -736,7 +736,7 @@ class TiledRasterLayer(CachableLayer):
 
         result = self.srdd.pyramid(start_zoom, end_zoom, ResampleMethod(resample_method).value)
 
-        return Pyramid([TiledRasterLayer(self.pysc, self.rdd_type, srdd) for srdd in result])
+        return Pyramid([TiledRasterLayer(self.pysc, self.layer_type, srdd) for srdd in result])
 
     def pyramid_non_power_of_two(self, col_power, row_power, end_zoom, start_zoom=None, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Creates a pyramid of GeoTrellis layers where each layer reprsents a given zoom.
@@ -763,7 +763,7 @@ class TiledRasterLayer(CachableLayer):
 
         method = ResampleMethod(resample_method).value
         new_srdd = self.srdd.resample_to_power_of_two(col_power, row_power, method)
-        new_layer = TiledRasterLayer(self.pysc, self.rdd_type, new_srdd)
+        new_layer = TiledRasterLayer(self.pysc, self.layer_type, new_srdd)
 
         return new_layer.pyramid(end_zoom=end_zoom, start_zoom=start_zoom, resample_method=resample_method)
 
@@ -825,7 +825,7 @@ class TiledRasterLayer(CachableLayer):
         else:
             raise ValueError("neighborhood must be set or the operation must be SLOPE or ASPECT")
 
-        return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
     def stitch(self):
         """Stitch all of the rasters within the Layer into one raster.
@@ -837,8 +837,8 @@ class TiledRasterLayer(CachableLayer):
             :ref:`raster`
         """
 
-        if self.rdd_type != LayerType.SPATIAL:
-            raise ValueError("Only TiledRasterLayers with a rdd_type of Spatial can use stitch()")
+        if self.layer_type != LayerType.SPATIAL:
+            raise ValueError("Only TiledRasterLayers with a layer_type of Spatial can use stitch()")
 
         value = self.srdd.stitch()
         ser = ProtoBufSerializer.create_value_serializer("Tile")
@@ -859,8 +859,8 @@ class TiledRasterLayer(CachableLayer):
             None
         """
 
-        if self.rdd_type != LayerType.SPATIAL:
-            raise ValueError("Only TiledRasterLayers with a rdd_type of Spatial can use stitch()")
+        if self.layer_type != LayerType.SPATIAL:
+            raise ValueError("Only TiledRasterLayers with a layer_type of Spatial can use stitch()")
 
         if crop_bounds:
             if crop_dimensions:
@@ -894,7 +894,7 @@ class TiledRasterLayer(CachableLayer):
         wkbs = [shapely.wkb.dumps(g) for g in geometries]
         srdd = self.srdd.mask(wkbs)
 
-        return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
     def reclassify(self, value_map, data_type,
                    classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO,
@@ -928,7 +928,7 @@ class TiledRasterLayer(CachableLayer):
         srdd = _reclassify(self.srdd, value_map, data_type,
                            ClassificationStrategy(classification_strategy).value, replace_nodata_with)
 
-        return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
     def get_min_max(self):
         """Returns the maximum and minimum values of all of the rasters in the Layer.
@@ -952,7 +952,7 @@ class TiledRasterLayer(CachableLayer):
         """
         srdd = self.srdd.normalize(old_min, old_max, new_min, new_max)
 
-        return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
     @staticmethod
     def _process_polygonal_summary(geometry, operation):
@@ -1091,8 +1091,8 @@ class TiledRasterLayer(CachableLayer):
         if isinstance(value, int) or isinstance(value, float):
             srdd = operation(value)
         elif isinstance(value, TiledRasterLayer):
-            if self.rdd_type != value.rdd_type:
-                raise ValueError("Both TiledRasterLayers need to have the same rdd_type")
+            if self.layer_type != value.layer_type:
+                raise ValueError("Both TiledRasterLayers need to have the same layer_type")
 
             if self.layer_metadata.tile_layout != value.layer_metadata.tile_layout:
                 raise ValueError("Both TiledRasterLayers need to have the same layout")
@@ -1103,7 +1103,7 @@ class TiledRasterLayer(CachableLayer):
         else:
             raise TypeError("Local operation cannot be performed with", value)
 
-        return TiledRasterLayer(self.pysc, self.rdd_type, srdd)
+        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
     def __add__(self, value):
         return self._process_operation(value, self.srdd.localAdd)
@@ -1150,7 +1150,7 @@ class Pyramid(CachableLayer):
 
     Attributes:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        rdd_type (str): What the spatial type of the geotiffs are. This is
+        layer_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         levels (dict): A dict of ``TiledRasterLayer``\s where the value is the layer itself
             and the key is its given zoom level.
@@ -1166,7 +1166,7 @@ class Pyramid(CachableLayer):
         TypeError: If ``levels`` is neither a list or dict.
     """
 
-    __slots__ = ['pysc', 'rdd_type', 'levels', 'max_zoom', 'is_cached', 'histogram']
+    __slots__ = ['pysc', 'layer_type', 'levels', 'max_zoom', 'is_cached', 'histogram']
 
     def __init__(self, levels):
         if isinstance(levels, dict):
@@ -1179,7 +1179,7 @@ class Pyramid(CachableLayer):
         self.levels = levels
         self.max_zoom = max(self.levels.keys())
         self.pysc = levels[self.max_zoom].pysc
-        self.rdd_type = levels[self.max_zoom].rdd_type
+        self.layer_type = levels[self.max_zoom].layer_type
         self.is_cached = False
         self.histogram = None
 
