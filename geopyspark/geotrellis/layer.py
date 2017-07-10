@@ -255,13 +255,32 @@ class RasterLayer(CachableLayer):
             ``extent`` and ``layout`` must both be defined if they are to be used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
         """
 
         return self.tile_to_layout(self.collect_metadata(extent, layout, crs, tile_size),
                                    resample_method)
 
     def bands(self, band):
+        """Select a subsection of bands from the ``Tile``\s within the layer.
+
+        Note:
+            There could be potential high performance cost if operations are performed
+            between two sub-bands of a large data set.
+
+        Note:
+            Due to the natue of GeoPySpark's backend, if selecting a band that is out of bounds
+            then the error returned will be a ``py4j.protocol.Py4JJavaError`` and not a normal
+            Python error.
+
+        Args:
+            band (int or tuple or list or range): The band(s) to be selected from the ``Tile``\s.
+                Can either be a single ``int``, or a collection of ``int``\s.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.RasterLayer` with the selected bands.
+        """
+
         if isinstance(band, range):
             band = list(band)
 
@@ -270,12 +289,27 @@ class RasterLayer(CachableLayer):
         else:
             raise TypeError("band must be an int, tuple, or list. Recieved", type(band), "instead.")
 
-        return RasterLayer(self.pysc, self.rdd_type, result)
+        return RasterLayer(self.pysc, self.layer_type, result)
 
     def map_tiles(self, func):
+        """Maps over each ``Tile`` within the layer with a given function.
+
+        Note:
+            This operation first needs to deserialize the wrapped ``RDD`` into Python and then
+            serialize the ``RDD`` back into a ``RasterRDD`` once the mapping is done. Thus,
+            it is advised to chain together operations to reduce performance cost.
+
+        Args:
+            func (:class:`~geopyspark.geotrellis.Tile` => :class:`~geopyspark.geotrellis.Tile`): A
+                function that takes a ``Tile`` and returns a ``Tile``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
+        """
+
         python_rdd = self.to_numpy_rdd()
 
-        return RasterLayer.from_numpy_rdd(self.pysc, self.rdd_type,
+        return RasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
                                           python_rdd.mapValues(lambda tile: func(tile.cells)))
 
     def convert_data_type(self, new_type, no_data_value=None):
@@ -578,6 +612,25 @@ class TiledRasterLayer(CachableLayer):
         return create_python_rdd(self.pysc, result, ser)
 
     def bands(self, band):
+        """Select a subsection of bands from the ``Tile``\s within the layer.
+
+        Note:
+            There could be potential high performance cost if operations are performed
+            between two sub-bands of a large data set.
+
+        Note:
+            Due to the natue of GeoPySpark's backend, if selecting a band that is out of bounds
+            then the error returned will be a ``py4j.protocol.Py4JJavaError`` and not a normal
+            Python error.
+
+        Args:
+            band (int or tuple or list or range): The band(s) to be selected from the ``Tile``\s.
+                Can either be a single ``int``, or a collection of ``int``\s.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer` with the selected bands.
+        """
+
         if isinstance(band, range):
             band = list(band)
 
@@ -586,12 +639,27 @@ class TiledRasterLayer(CachableLayer):
         else:
             raise TypeError("band must be an int, tuple, or list. Recieved", type(band), "instead.")
 
-        return TiledRasterLayer(self.pysc, self.rdd_type, result)
+        return TiledRasterLayer(self.pysc, self.layer_type, result)
 
     def map_tiles(self, func):
+        """Maps over each ``Tile`` within the layer with a given function.
+
+        Note:
+            This operation first needs to deserialize the wrapped ``RDD`` into Python and then
+            serialize the ``RDD`` back into a ``TiledRasterRDD`` once the mapping is done. Thus,
+            it is advised to chain together operations to reduce performance cost.
+
+        Args:
+            func (:class:`~geopyspark.geotrellis.Tile` => :class:`~geopyspark.geotrellis.Tile`): A
+                function that takes a ``Tile`` and returns a ``Tile``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+        """
+
         python_rdd = self.to_numpy_rdd()
 
-        return TiledRasterLayer.from_numpy_rdd(self.pysc, self.rdd_type,
+        return TiledRasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
                                                python_rdd.mapValues(lambda tile: func(tile)),
                                                self.layer_metadata)
 
