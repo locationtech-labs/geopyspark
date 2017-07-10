@@ -63,40 +63,43 @@ class TMSServer(object):
         self.server.set_handshake(handshake)
         self.handshake = handshake
 
-def s3_catalog_tms_server(pysc, bucket, root, catalog, color_map):
-    """A function to create a TMS server for a catalog stored in an S3 bucket.
+    @classmethod
+    def s3_catalog_tms_server(cls, pysc, bucket, root, catalog, color_map):
+        """A function to create a TMS server for a catalog stored in an S3 bucket.
 
-    Args:
-        bucket (string): The name of the S3 bucket
-        root (string): The key in the bucket containing the catalog
-        catalog (string): The name of the catalog
-        color_map (ColorMap): A ColorMap to use in rendering the catalog tiles
+        Args:
+            bucket (string): The name of the S3 bucket
+            root (string): The key in the bucket containing the catalog
+            catalog (string): The name of the catalog
+            color_map (ColorMap): A ColorMap to use in rendering the catalog tiles
 
-    Returns:
-        [TMSServer]
-    """
-    server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveS3Catalog(bucket, root, catalog, color_map.cmap)
-    return TMSServer(pysc, server)
+        Returns:
+            [TMSServer]
+        """
+        server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveS3Catalog(bucket, root, catalog, color_map.cmap)
+        return cls(pysc, server)
 
-def remote_tms_server(pysc, pattern_url):
-    """A function to create a TMS server delivering tiles from a remote TMS server
+    @classmethod
+    def remote_tms_server(cls, pysc, pattern_url):
+        """A function to create a TMS server delivering tiles from a remote TMS server
 
-    Args:
-        pattern_url (string): A string giving the form of the URL where tiles
-            are stored.  The pattern should contain the literals '{z}', '{x}',
-            and '{y}' giving the zoom, x, and y keys of the desired tile,
-            respectively.
+        Args:
+            pattern_url (string): A string giving the form of the URL where tiles
+                are stored.  The pattern should contain the literals '{z}', '{x}',
+                and '{y}' giving the zoom, x, and y keys of the desired tile,
+                respectively.
 
-    Returns:
-        [TMSServer]
-    """
-    server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveRemoteTMSLayer(pattern_url)
-    return TMSServer(pysc, server)
+        Returns:
+            [TMSServer]
+        """
 
+        server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveRemoteTMSLayer(pattern_url)
+        return cls(pysc, server)
 
-def rdd_tms_server(pysc, pyramid, color_map):
-    if isinstance(pyramid, list):
-        pyramid = Pyramid(pyramid)
-    rdd_levels = {k: v.srdd.rdd() for k, v in pyramid.levels.items()}
-    server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveSpatialRdd(rdd_levels, color_map.cmap, 0)
-    return TMSServer(pysc, server)
+    @classmethod
+    def rdd_tms_server(cls, pysc, pyramid, color_map):
+        if isinstance(pyramid, list):
+            pyramid = Pyramid(pyramid)
+        rdd_levels = {k: v.srdd.rdd() for k, v in pyramid.levels.items()}
+        server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveSpatialRdd(rdd_levels, color_map.cmap, 0)
+        return cls(pysc, server)
