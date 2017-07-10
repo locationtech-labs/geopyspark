@@ -120,9 +120,9 @@ def _construct_catalog(pysc, new_uri, options):
                                           value_reader=value_reader,
                                           writer=writer)
 
-def _in_bounds(pysc, rdd_type, uri, layer_name, zoom_level, col, row):
+def _in_bounds(pysc, layer_type, uri, layer_name, zoom_level, col, row):
     if (layer_name, zoom_level) not in _mapped_bounds:
-        layer_metadata = read_layer_metadata(pysc, rdd_type, uri, layer_name, zoom_level)
+        layer_metadata = read_layer_metadata(pysc, layer_type, uri, layer_name, zoom_level)
         bounds = layer_metadata.bounds
         _mapped_bounds[(layer_name, zoom_level)] = bounds
     else:
@@ -138,7 +138,7 @@ def _in_bounds(pysc, rdd_type, uri, layer_name, zoom_level, col, row):
 
 
 def read_layer_metadata(pysc,
-                        rdd_type,
+                        layer_type,
                         uri,
                         layer_name,
                         layer_zoom,
@@ -148,7 +148,7 @@ def read_layer_metadata(pysc,
 
     Args:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        rdd_type (str): What the spatial type of the geotiffs are. This is
+        layer_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
@@ -175,7 +175,7 @@ def read_layer_metadata(pysc,
     _construct_catalog(pysc, uri, options)
     cached = _mapped_cached[uri]
 
-    if rdd_type == LayerType.SPATIAL:
+    if layer_type == LayerType.SPATIAL:
         metadata = cached.store.metadataSpatial(layer_name, layer_zoom)
     else:
         metadata = cached.store.metadataSpaceTime(layer_name, layer_zoom)
@@ -221,7 +221,7 @@ def get_layer_ids(pysc,
 
 @deprecated
 def read(pysc,
-         rdd_type,
+         layer_type,
          uri,
          layer_name,
          layer_zoom,
@@ -231,11 +231,11 @@ def read(pysc,
 
     """Deprecated in favor of geopyspark.geotrellis.catalog.query."""
 
-    return query(pysc, rdd_type, uri, layer_name, layer_zoom, options=options,
+    return query(pysc, layer_type, uri, layer_name, layer_zoom, options=options,
                  numPartitions=numPartitions)
 
 def read_value(pysc,
-               rdd_type,
+               layer_type,
                uri,
                layer_name,
                layer_zoom,
@@ -254,7 +254,7 @@ def read_value(pysc,
 
     Args:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        rdd_type (str): What the spatial type of the geotiffs are. This is
+        layer_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
@@ -275,7 +275,7 @@ def read_value(pysc,
         :ref:`raster` or ``None``
     """
 
-    if not _in_bounds(pysc, rdd_type, uri, layer_name, layer_zoom, col, row):
+    if not _in_bounds(pysc, layer_type, uri, layer_name, layer_zoom, col, row):
         return None
     else:
         if options:
@@ -293,7 +293,7 @@ def read_value(pysc,
         if not zdt:
             zdt = ""
 
-        key = map_key_input(LayerType(rdd_type).value, True)
+        key = map_key_input(LayerType(layer_type).value, True)
 
         values = cached.value_reader.readTile(key,
                                               layer_name,
@@ -305,7 +305,7 @@ def read_value(pysc,
         return multibandtile_decoder(values)
 
 def query(pysc,
-          rdd_type,
+          layer_type,
           uri,
           layer_name,
           layer_zoom,
@@ -326,7 +326,7 @@ def query(pysc,
 
     Args:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        rdd_type (str): What the spatial type of the geotiffs are. This is
+        layer_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``. Note: All of the
             GeoTiffs must have the same saptial type.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
@@ -375,14 +375,14 @@ def query(pysc,
 
     cached = _mapped_cached[uri]
 
-    key = map_key_input(LayerType(rdd_type).value, True)
+    key = map_key_input(LayerType(layer_type).value, True)
 
     if numPartitions is None:
         numPartitions = pysc.defaultMinPartitions
 
     if not query_geom:
         srdd = cached.reader.read(key, layer_name, layer_zoom, numPartitions)
-        return TiledRasterLayer(pysc, rdd_type, srdd)
+        return TiledRasterLayer(pysc, layer_type, srdd)
 
     else:
         if time_intervals is None:
@@ -422,7 +422,7 @@ def query(pysc,
         else:
             raise TypeError("Could not query intersection", query_geom)
 
-        return TiledRasterLayer(pysc, rdd_type, srdd)
+        return TiledRasterLayer(pysc, layer_type, srdd)
 
 def write(uri,
           layer_name,
@@ -468,7 +468,7 @@ def write(uri,
     if not time_unit:
         time_unit = ""
 
-    if tiled_raster_rdd.rdd_type == LayerType.SPATIAL:
+    if tiled_raster_rdd.layer_type == LayerType.SPATIAL:
         cached.writer.writeSpatial(layer_name,
                                    tiled_raster_rdd.srdd,
                                    IndexingMethod(index_strategy).value)

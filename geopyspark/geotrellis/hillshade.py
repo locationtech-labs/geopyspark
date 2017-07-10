@@ -24,4 +24,4 @@ def hillshade(tiled_raster_layer, band=0, azimuth=315.0, altitude=45.0, z_factor
     srdd = tiled_raster_layer.srdd.hillshade(tiled_raster_layer.pysc._jsc.sc(), azimuth,
                                              altitude, z_factor, band)
 
-    return TiledRasterLayer(tiled_raster_layer.pysc, tiled_raster_layer.rdd_type, srdd)
+    return TiledRasterLayer(tiled_raster_layer.pysc, tiled_raster_layer.layer_type, srdd)
