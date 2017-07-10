@@ -11,6 +11,7 @@ from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
+from py4j.protocol import Py4JJavaError
 from pyspark.storagelevel import StorageLevel
 
 from geopyspark import map_key_input, create_python_rdd
@@ -260,6 +261,17 @@ class RasterLayer(CachableLayer):
 
         return self.tile_to_layout(self.collect_metadata(extent, layout, crs, tile_size),
                                    resample_method)
+
+    def bands(self, band):
+        if isinstance(band, range):
+            band = list(band)
+
+        if isinstance(band, (int, tuple, list)):
+            result = self.srdd.bands(band)
+        else:
+            raise TypeError("band must be an int, tuple, or list. Recieved", type(band), "instead.")
+
+        return RasterLayer(self.pysc, self.rdd_type, result)
 
     def convert_data_type(self, new_type, no_data_value=None):
         """Converts the underlying, raster values to a new ``CellType``.
@@ -559,6 +571,17 @@ class TiledRasterLayer(CachableLayer):
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
         return create_python_rdd(self.pysc, result, ser)
+
+    def bands(self, band):
+        if isinstance(band, range):
+            band = list(band)
+
+        if isinstance(band, (int, tuple, list)):
+            result = self.srdd.bands(band)
+        else:
+            raise TypeError("band must be an int, tuple, or list. Recieved", type(band), "instead.")
+
+        return TiledRasterLayer(self.pysc, self.rdd_type, result)
 
     def convert_data_type(self, new_type, no_data_value=None):
         """Converts the underlying, raster values to a new ``CellType``.
