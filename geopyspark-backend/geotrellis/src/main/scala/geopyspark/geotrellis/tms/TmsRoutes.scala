@@ -75,7 +75,7 @@ class ExternalTMSServerRoute(patternURL: String) extends TMSServerRoute {
       val newUrl = patternURL.replace("{z}", zoom.toString)
                              .replace("{x}", x.toString)
                              .replace("{y}", y.toString)
-      redirect(newUrl, StatusCodes.PermanentRedirect)
+      redirect(newUrl, StatusCodes.SeeOther)
     }
 }
 
