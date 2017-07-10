@@ -51,7 +51,6 @@ class FocalTest(BaseTestClass):
 
         self.assertTrue(result.to_numpy_rdd().first()[1].cells[0][1][0] >= 6)
 
-    '''
     def test_focal_sum_int(self):
         result = self.raster_rdd.focal(
             operation=Operation.SUM,
@@ -85,7 +84,6 @@ class FocalTest(BaseTestClass):
                                        param_1=2, param_2=1)
 
         self.assertEqual(result.to_numpy_rdd().first()[1].cells[0][0][0], -1)
-    '''
 
 
 if __name__ == "__main__":
