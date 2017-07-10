@@ -157,7 +157,6 @@ def read_layer_metadata(pysc,
         options (dict, optional): Additional parameters for reading the layer for specific backends.
             The dictionary is only used for ``Cassandra`` and ``HBase``, no other backend requires
             this to be set.
-        numPartitions (int, optional): Sets RDD partition count when reading from catalog.
         **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.
 
@@ -194,7 +193,7 @@ def get_layer_ids(pysc,
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         options (dict, optional): Additional parameters for reading the layer for specific backends.
-            The dictionary is only used for Cassandra and HBase, no other backend requires this
+            The dictionary is only used for ``Cassandra`` and ``HBase``, no other backend requires this
             to be set.
         **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.
@@ -228,8 +227,7 @@ def read(pysc,
          options=None,
          numPartitions=None,
          **kwargs):
-
-    """Deprecated in favor of geopyspark.geotrellis.catalog.query."""
+    """Deprecated in favor of :meth:`~geopyspark.geotrellis.catalog.query`."""
 
     return query(pysc, layer_type, uri, layer_name, layer_zoom, options=options,
                  numPartitions=numPartitions)
@@ -244,8 +242,7 @@ def read_value(pysc,
                zdt=None,
                options=None,
                **kwargs):
-
-    """Reads a single tile from a GeoTrellis catalog.
+    """Reads a single ``Tile`` from a GeoTrellis catalog.
     Unlike other functions in this module, this will not return a ``TiledRasterLayer``, but rather a
     GeoPySpark formatted raster. This is the function to use when creating a tile server.
 
@@ -272,7 +269,7 @@ def read_value(pysc,
             be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
-        :ref:`raster` or ``None``
+        :class:`~geopyspark.geotrellis.Tile`
     """
 
     if not _in_bounds(pysc, layer_type, uri, layer_name, layer_zoom, col, row):
@@ -315,7 +312,6 @@ def query(pysc,
           options=None,
           numPartitions=None,
           **kwargs):
-
     """Queries a single, zoom layer from a GeoTrellis catalog given spatial and/or time parameters.
     Unlike read, this method will only return part of the layer that intersects the specified
     region.
@@ -333,7 +329,7 @@ def query(pysc,
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be querried.
         layer_zoom (int): The zoom level of the layer that is to be querried.
-        query_geom (bytes or shapely.geometry or :class:`~geopyspark.geotrellis.data_structures.Extent`, Optional):
+        query_geom (bytes or shapely.geometry or :class:`~geopyspark.geotrellis.Extent`, Optional):
             The desired spatial area to be returned. Can either be a string, a shapely geometry, or
             instance of ``Extent``, or a WKB verson of the geometry.
 
@@ -364,6 +360,7 @@ def query(pysc,
         :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
 
     """
+
     if options:
         options = options
     elif kwargs:
@@ -431,7 +428,6 @@ def write(uri,
           time_unit=None,
           options=None,
           **kwargs):
-
     """Writes a tile layer to a specified destination.
 
     Args:
@@ -441,9 +437,10 @@ def write(uri,
         layer_zoom (int): The zoom level the layer should be saved at.
         tiled_raster_rdd (:class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`): The
             ``TiledRasterLayer`` to be saved.
-        index_strategy (str): The method used to orginize the saved data. Depending on the type of
-            data within the layer, only certain methods are available. The default method used is,
-            ``ZORDER``.
+        index_strategy (str or :class:`~geopyspark.geotrellis.constants.IndexingMethod`): The
+            method used to orginize the saved data. Depending on the type of data within the layer,
+            only certain methods are available. Can either be a string or a ``IndexingMethod``
+            attribute.  The default method used is, ``ZORDER``.
         time_unit (str, optional): Which time unit should be used when saving spatial-temporal data.
             While this is set to None as default, it must be set if saving spatial-temporal data.
             Depending on the indexing method chosen, different time units are used.
@@ -452,8 +449,8 @@ def write(uri,
             requires this to be set.
         **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.
-
     """
+
     if options:
         options = options
     elif kwargs:

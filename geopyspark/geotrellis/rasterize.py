@@ -11,7 +11,7 @@ def rasterize(pysc, geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, op
         geoms ([shapely.geometry]): List of shapely geometries to rasterize.
         crs (str or int): The CRS of the input geometry.
         zoom (int): The zoom level of the output raster.
-        fill_value: Value to burn into pixels intersectiong geometry
+        fill_value (int or float): Value to burn into pixels intersectiong geometry
         cell_type (str or :class:`~geopyspark.geotrellis.constants.CellType`): Which data type the
             cells should be when created. Defaults to ``CellType.FLOAT64``.
         options (:class:`~geopyspark.geotrellis.RasterizerOptions`): Pixel intersection options.
@@ -19,6 +19,7 @@ def rasterize(pysc, geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, op
     Returns:
         :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
     """
+
     if isinstance(crs, int):
         crs = str(crs)
 

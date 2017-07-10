@@ -26,8 +26,9 @@ def deprecated(func):
 Tile = namedtuple("Tile", 'cells cell_type no_data_value')
 """Represents a raster in GeoPySpark.
 
-    Note: All rasters in GeoPySpark are represented as having multiple bands,
-    even if the original raster just contained one.
+    Note:
+        All rasters in GeoPySpark are represented as having multiple bands, even if the original
+        raster just contained one.
 
     Args:
         cells (nd.array): The raster data itself. It is contained within a NumPy array.
@@ -318,7 +319,6 @@ class Metadata(object):
                 self.no_data_value = NO_DATA_INT
             else:
                 self.no_data_value = float('nan')
-
 
     @classmethod
     def from_dict(cls, metadata_dict):

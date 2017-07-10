@@ -28,6 +28,15 @@ _mapped_data_types = {
 
 
 def from_pb_tile(tile, no_data_value=None, data_type=None):
+    """Creates a ``Tile`` from ``ProtoTile``.
+
+    Args:
+        tile (ProtoTile): The ``ProtoTile`` instance to be converted.
+
+    Returns:
+        :obj:`~geopyspark.geotrellis.Tile`
+    """
+
     if not data_type:
         data_type = _mapped_data_types[tile.cellType.dataType]
 
@@ -51,13 +60,13 @@ def from_pb_tile(tile, no_data_value=None, data_type=None):
     return cells.reshape(tile.rows, tile.cols)
 
 def tile_decoder(proto_bytes):
-    """Decodes a ``TILE`` into Python.
+    """Deserializes the ``ProtoTile`` bytes into Python.
 
     Args:
         proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
 
     Returns:
-        :ref:`Tile <raster>`
+        :obj:`~geopyspark.geotrellis.Tile`
     """
 
     tile = ProtoTile.FromString(proto_bytes)
@@ -70,6 +79,15 @@ def tile_decoder(proto_bytes):
         return Tile(np.array([from_pb_tile(tile)]), cell_type, None)
 
 def from_pb_multibandtile(multibandtile):
+    """Creates a ``Tile`` from ``ProtoMultibandTile``.
+
+    Args:
+        multibandtile (ProtoTile): The ``ProtoMultibandTile`` instance to be converted.
+
+    Returns:
+        :obj:`~geopyspark.geotrellis.Tile`
+    """
+
     cell_type = _mapped_data_types[multibandtile.tiles[0].cellType.dataType]
 
     if multibandtile.tiles[0].cellType.hasNoData:
@@ -81,13 +99,13 @@ def from_pb_multibandtile(multibandtile):
         return Tile(bands, cell_type, None)
 
 def multibandtile_decoder(proto_bytes):
-    """Decodes a ``TILE`` into Python.
+    """Deserializes ``ProtoMultibandTile`` bytes into Python.
 
     Args:
         proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
 
     Returns:
-        :ref:`Tile <raster>`
+        :obj:`~geopyspark.geotrellis.Tile`
     """
 
     return from_pb_multibandtile(ProtoMultibandTile.FromString(proto_bytes))
@@ -106,7 +124,7 @@ def from_pb_extent(pb_extent):
     return Extent(pb_extent.xmin, pb_extent.ymin, pb_extent.xmax, pb_extent.ymax)
 
 def extent_decoder(proto_bytes):
-    """Decodes an ``Extent`` into Python.
+    """Deserializes ``ProtoExtent`` bytes into Python.
 
     Args:
         proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
@@ -137,7 +155,7 @@ def from_pb_projected_extent(pb_projected_extent):
                                proj4=pb_projected_extent.crs.proj4)
 
 def projected_extent_decoder(proto_bytes):
-    """Decodes a ``TemporalProjectedExtent`` into Python.
+    """Deserializes ``ProtoProjectedExtent`` bytes into Python.
 
     Args:
         proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
@@ -170,7 +188,7 @@ def from_pb_temporal_projected_extent(pb_temporal_projected_extent):
                                        instant=pb_temporal_projected_extent.instant)
 
 def temporal_projected_extent_decoder(proto_bytes):
-    """Decodes a ``TemproalProjectedExtent`` into Python.
+    """Deserializes ``ProtoTemporalProjectedExtent`` bytes into Python.
 
     Args:
         proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
@@ -196,7 +214,7 @@ def from_pb_spatial_key(pb_spatial_key):
     return SpatialKey(col=pb_spatial_key.col, row=pb_spatial_key.row)
 
 def spatial_key_decoder(proto_bytes):
-    """Decodes a ``SpatialKey`` into Python.
+    """Deserializes ``ProtoSpatialKey`` bytes into Python.
 
     Args:
         proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
@@ -223,7 +241,7 @@ def from_pb_space_time_key(pb_space_time_key):
                         instant=pb_space_time_key.instant)
 
 def space_time_key_decoder(proto_bytes):
-    """Decodes a ``SpaceTimeKey`` into Python.
+    """Deserializes ``ProtoSpaceTime`` bytes into Python.
 
     Args:
         proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
@@ -236,7 +254,7 @@ def space_time_key_decoder(proto_bytes):
     return from_pb_space_time_key(pb_space_time_key)
 
 def tuple_decoder(proto_bytes, key_decoder):
-    """Decodes a tuple into Python.
+    """Deserializes ``ProtoTuple`` bytes into Python.
 
     Note:
         The value of the tuple is always assumed to be a :ref:`Tile <raster>`,
@@ -332,6 +350,15 @@ def _get_decoder(name):
 # ENCODERS
 
 def to_pb_tile(obj):
+    """Converts an instance of ``Tile`` to ``ProtoTile``.
+
+    Args:
+        obj (:obj:`~geopyspark.geotrellis.Tile`): An instance of ``Tile``.
+
+    Returns:
+        :class:`~geopyspark.protobuf.tileMessages_pb2.ProtoTile`
+    """
+
     cells = obj.cells
     data_type = obj.cell_type
 
@@ -382,10 +409,10 @@ def to_pb_tile(obj):
 
 
 def tile_encoder(obj):
-    """Decodes a ``TILE`` into bytes.
+    """Encodes a ``TILE`` into ``ProtoTile`` bytes.
 
     Args:
-        obj (:ref:`Tile <raster>`): An instance of ``Extent``.
+        obj (:obj:`~geopyspark.geotrellis.Tile`): An instance of ``Tile``.
 
     Returns:
         bytes
@@ -395,6 +422,15 @@ def tile_encoder(obj):
 
 
 def to_pb_multibandtile(obj):
+    """Converts an instance of ``Tile`` to ``ProtoMultibandTile``.
+
+    Args:
+        obj (:obj:`~geopyspark.geotrellis.Tile`): An instance of ``Tile``.
+
+    Returns:
+        :class:`~geopyspark.protobuf.tileMessages_pb2.ProtoMultibandTile`
+    """
+
     cells = obj.cells
     if cells.ndim == 2:
         cells = np.expand_dims(cells, 0)
@@ -410,10 +446,10 @@ def to_pb_multibandtile(obj):
     return multibandtile
 
 def multibandtile_encoder(obj):
-    """Decodes a ``TILE`` into bytes.
+    """Encodes a ``TILE`` into ``ProtoMultibandTile`` bytes.
 
     Args:
-        obj (:ref:`Tile <raster>`): An instance of ``Extent``.
+        obj (:obj:`~geopyspark.geotrellis.Tile`): An instance of ``Tile``.
 
     Returns:
         bytes
@@ -441,7 +477,7 @@ def to_pb_extent(obj):
     return ex
 
 def extent_encoder(obj):
-    """Encodes an ``Extent`` into bytes.
+    """Encodes an ``Extent`` into ``ProtoExtent`` bytes.
 
     Args:
         obj (:class:`~geopyspark.geotrellis.Extent`): An instance of ``Extent``.
@@ -479,7 +515,7 @@ def to_pb_projected_extent(obj):
     return pex
 
 def projected_extent_encoder(obj):
-    """Encodes a ``ProjectedExtent`` into bytes.
+    """Encodes a ``ProjectedExtent`` into ``ProtoProjectedExtent`` bytes.
 
     Args:
         obj (:class:`~geopyspark.geotrellis.ProjectedExtent`): An instance of
@@ -519,7 +555,7 @@ def to_pb_temporal_projected_extent(obj):
     return tpex
 
 def temporal_projected_extent_encoder(obj):
-    """Encodes a ``TemproalProjectedExtent`` into bytes.
+    """Encodes a ``TemproalProjectedExtent`` into ``ProtoTemporalProjectedExtent`` bytes.
 
     Args:
         obj (:class:`~geopyspark.geotrellis.TemporalProjectedExtent`): An instance of
@@ -549,7 +585,7 @@ def to_pb_spatial_key(obj):
     return spatial_key
 
 def spatial_key_encoder(obj):
-    """Encodes a ``SpatialKey`` into bytes.
+    """Encodes a ``SpatialKey`` into ``ProtoSpatialKey`` bytes.
 
     Args:
         obj (:obj:`~geopyspark.geotrellis.SpatialKey`): An instance of ``SpatialKey``.
@@ -579,7 +615,7 @@ def to_pb_space_time_key(obj):
     return space_time_key
 
 def space_time_key_encoder(obj):
-    """Encodes a ``SpaceTimeKey`` into bytes.
+    """Encodes a ``SpaceTimeKey`` into ``ProtoSpaceTimeKey`` bytes.
 
     Args:
         obj (:obj:`~geopyspark.geotrellis.SpaceTimeKey`): An instance of ``SpaceTimeKey``.
@@ -591,7 +627,7 @@ def space_time_key_encoder(obj):
     return to_pb_space_time_key(obj).SerializeToString()
 
 def tuple_encoder(obj, key_encoder):
-    """Encodes a tuple into bytes.
+    """Encodes a tuple into ``ProtoTuple`` bytes.
 
     Note:
         The value of the tuple is always assumed to be a :ref:`Tile <raster>`,

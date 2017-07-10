@@ -8,18 +8,16 @@ class TileRender(object):
     """A Python implementation of the Scala geopyspark.geotrellis.tms.TileRender
     interface.  Permits a callback from Scala to Python to allow for custom
     rendering functions.
+    Args:
+        render_function (numpy.ndarray => bytes): A function to convert a numpy
+            array to a collection of bytes giving a binary image file.
+
+    Attributes:
+        render_function (numpy.ndarray => bytes): A function to convert a numpy
+            array to a collection of bytes giving a binary image file.
     """
 
     def __init__(self, render_function):
-        """Default constructor.
-
-        Args:
-            render_function (numpy array => bytes): A function to convert a numpy
-                array to a collection of bytes giving a binary image file.
-
-        Returns:
-            [TileRender]
-        """
         # render_function: numpyarry => Image
         self.render_function = render_function
 
@@ -33,7 +31,7 @@ class TileRender(object):
             cols (int): The number of cols in the final array
 
         Returns:
-            [bytes] representing an image
+            bytes representing an image
         """
         try:
             # tile = np.array(list(cells)) # turn tile to array with bands
@@ -52,7 +50,10 @@ class TileRender(object):
     class Java(object):
         implements = ["geopyspark.geotrellis.tms.TileRender"]
 
+
 class TMSServer(object):
+    """Represents a TMS server. The server begins running at initialization."""
+
     def __init__(self, pysc, server):
         self.pysc = pysc
         self.server = server
@@ -65,7 +66,7 @@ class TMSServer(object):
 
     @classmethod
     def s3_catalog_tms_server(cls, pysc, bucket, root, catalog, color_map):
-        """A function to create a TMS server for a catalog stored in an S3 bucket.
+        """A function to create a ``TMSServer`` for a catalog stored in an S3 bucket.
 
         Args:
             bucket (string): The name of the S3 bucket
@@ -74,8 +75,9 @@ class TMSServer(object):
             color_map (ColorMap): A ColorMap to use in rendering the catalog tiles
 
         Returns:
-            [TMSServer]
+            :class:`~geopyspark.geotrellis.tms.TMSServer`
         """
+
         server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveS3Catalog(bucket, root, catalog, color_map.cmap)
         return cls(pysc, server)
 
@@ -90,7 +92,7 @@ class TMSServer(object):
                 respectively.
 
         Returns:
-            [TMSServer]
+            :class:`~geopyspark.geotrellis.tms.TMSServer`
         """
 
         server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveRemoteTMSLayer(pattern_url)
@@ -98,6 +100,18 @@ class TMSServer(object):
 
     @classmethod
     def rdd_tms_server(cls, pysc, pyramid, color_map):
+        """Creates a ``TMSServer`` from a ``Pyramid`` instance.
+
+        Args:
+            pyramid (list or `~geopyspark.geotrellis.layer.Pyramid`): Either a list of pyramided
+                ``TiledRasterLayer``\s or a ``Pyramid`` instance.
+            color_map (`~geopyspark.geotrellis.color.ColorMap`): A ``ColorMap`` instance used to color
+                the resulting tiles.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.tms.TMSServer`
+        """
+
         if isinstance(pyramid, list):
             pyramid = Pyramid(pyramid)
         rdd_levels = {k: v.srdd.rdd() for k, v in pyramid.levels.items()}

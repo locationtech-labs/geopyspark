@@ -13,7 +13,8 @@ def cost_distance(friction_layer, geometries, max_distance):
 
             Note:
                 All geometries must be in the same CRS as the TileLayer.
-        max_distance (int, float): The maximum cost that a path may reach before the operation.
+
+        max_distance (int or float): The maximum cost that a path may reach before the operation.
             stops. This value can be an ``int`` or ``float``.
 
     Returns:
