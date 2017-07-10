@@ -20,6 +20,7 @@ import geotrellis.raster._
 import org.apache.spark.rdd._
 
 import scala.collection.immutable.HashMap
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect._
 
 object AkkaSystem {
@@ -85,7 +86,7 @@ object TMSServer {
     val level_map = levels.asScala.map { case (zoom, rdd) =>
       zoom -> rdd.map{ case (key, mbtile) => key -> mbtile.band(band) }
     }
-    val route = new SpatialRddRoute(level_map, new RenderFromCM(cm))
+    val route = new SpatialRddRoute(level_map, new RenderFromCM(cm), AkkaSystem.system)
     new TMSServer(route)
   }
 }
