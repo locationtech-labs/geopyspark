@@ -1,9 +1,9 @@
 import shapely.wkb
-from geopyspark.geotrellis.constants import LayerType
+from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
-def rasterize(pysc, geoms, crs, zoom, fill_value, cell_type='float64', options=None, numPartitions=None):
+def rasterize(pysc, geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=None, numPartitions=None):
     """Rasterizes a Shapely geometries.
 
     Args:
@@ -12,7 +12,8 @@ def rasterize(pysc, geoms, crs, zoom, fill_value, cell_type='float64', options=N
         crs (str or int): The CRS of the input geometry.
         zoom (int): The zoom level of the output raster.
         fill_value: Value to burn into pixels intersectiong geometry
-        cell_type (str): The string representation of the ``CellType`` to convert to.
+        cell_type (str or :class:`~geopyspark.geotrellis.constants.CellType`): Which data type the
+            cells should be when created. Defaults to ``CellType.FLOAT64``.
         options (:class:`~geopyspark.geotrellis.RasterizerOptions`): Pixel intersection options.
 
     Returns:
@@ -26,6 +27,7 @@ def rasterize(pysc, geoms, crs, zoom, fill_value, cell_type='float64', options=N
                                                                                            wkb_geoms,
                                                                                            crs,
                                                                                            zoom, float(fill_value),
-                                                                                           cell_type, options,
+                                                                                           CellType(cell_type).value,
+                                                                                           options,
                                                                                            numPartitions)
     return TiledRasterLayer(pysc, LayerType.SPATIAL, srdd)
