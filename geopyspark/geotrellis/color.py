@@ -14,7 +14,7 @@ def get_colors_from_colors(colors):
     colortools package.
 
     Args:
-        colors ([Color]): A list of color stops using colortools.Color
+        colors ([colortools.Color]): A list of color stops using colortools.Color
 
     Returns:
         [int]
@@ -74,10 +74,10 @@ class ColorMap(object):
     """A class that wraps a GeoTrellis ColorMap class.
 
     Args:
-        cmap (py4j.JavaObject): The ``JavaObject`` that represents the GeoTrellis ColorMap.
+        cmap (py4j.java_gateway.JavaObject): The ``JavaObject`` that represents the GeoTrellis ColorMap.
 
     Attributes:
-        cmap (py4j.JavaObject): The ``JavaObject`` that represents the GeoTrellis ColorMap.
+        cmap (py4j.java_gateway.JavaObject): The ``JavaObject`` that represents the GeoTrellis ColorMap.
     """
 
     def __init__(self, cmap):
@@ -87,7 +87,7 @@ class ColorMap(object):
     def build(cls, pysc, breaks=None, colors=None,
               no_data_color=0x00000000, fallback=0x00000000,
               classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
-        """Given breaks and colors, build a ColorMap object.
+        """Given breaks and colors, build a ``ColorMap`` object.
 
         Args:
             pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
@@ -104,7 +104,7 @@ class ColorMap(object):
                 value in the mapping
             classification_strategy (str or :class:`~geopyspark.geotrellis.constants.ClassificationStrategy`, optional):
                 A string giving the strategy for converting tile values to colors. e.g., if
-                ``LessThanOrEqualTo`` is specified, and the break map is
+                ``ClassificationStrategy.LESS_THAN_OR_EQUAL_TO`` is specified, and the break map is
                 {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red, values from above 3
                 and up to and including 4 become green, and values over 4 become the fallback color.
 
@@ -148,7 +148,7 @@ class ColorMap(object):
                 value in the mapping
             classification_strategy (str or :class:`~geopyspark.geotrellis.constants.ClassificationStrategy`, optional):
                 A string giving the strategy for converting tile values to colors. e.g., if
-                ``LessThanOrEqualTo`` is specified, and the break map is
+                ``ClassificationStrategy.LESS_THAN_OR_EQUAL_TO`` is specified, and the break map is
                 {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red, values from above 3
                 and up to and including 4 become green, and values over 4 become the fallback color.
 
@@ -171,7 +171,7 @@ class ColorMap(object):
     def from_colors(cls, pysc, breaks, color_list,
                     no_data_color=0x00000000, fallback=0x00000000,
                     classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
-        """Converts lists of values and colors to a ColorMap.
+        """Converts lists of values and colors to a ``ColorMap``.
 
         Args:
             pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
@@ -185,7 +185,7 @@ class ColorMap(object):
                 value in the mapping
             classification_strategy (str or :class:`~geopyspark.geotrellis.constants.ClassificationStrategy`, optional):
                 A string giving the strategy for converting tile values to colors. e.g., if
-                ``LessThanOrEqualTo`` is specified, and the break map is
+                ``ClassificationStrategy.LESS_THAN_OR_EQUAL_TO`` is specified, and the break map is
                 {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red, values from above 3
                 and up to and including 4 become green, and values over 4 become the fallback color.
 
@@ -207,7 +207,7 @@ class ColorMap(object):
     def from_histogram(cls, pysc, histogram, color_list,
                        no_data_color=0x00000000, fallback=0x00000000,
                        classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
-        """Converts a wrapped GeoTrellis histogram into a ColorMap.
+        """Converts a wrapped GeoTrellis histogram into a ``ColorMap``.
 
         Args:
             pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
@@ -221,7 +221,7 @@ class ColorMap(object):
                 value in the mapping
             classification_strategy (str or :class:`~geopyspark.geotrellis.constants.ClassificationStrategy`, optional):
                 A string giving the strategy for converting tile values to colors. e.g., if
-                ``LessThanOrEqualTo`` is specified, and the break map is
+                ``ClassificationStrategy.LESS_THAN_OR_EQUAL_TO`` is specified, and the break map is
                 {3: 0xff0000ff, 4: 0x00ff00ff}, then values up to 3 map to red, values from above 3
                 and up to and including 4 become green, and values over 4 become the fallback color.
 

@@ -13,7 +13,7 @@ def euclidean_distance(pysc, geometry, source_crs, zoom, cellType=CellType.FLOAT
         source_crs (str or int): The CRS of the input geometry.
         zoom (int): The zoom level of the output raster.
         cellType (str or :class:`~geopyspark.geotrellis.constants.CellType`, optional): The data
-            type of the cells for the new layer. If not specified, then ``FLOAT64`` is used.
+            type of the cells for the new layer. If not specified, then ``CellType.FLOAT64`` is used.
 
     Note:
         This function may run very slowly for polygonal inputs if they cover many cells of

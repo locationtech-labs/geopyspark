@@ -255,7 +255,7 @@ class RasterLayer(CachableLayer):
         return create_python_rdd(self.pysc, result, ser)
 
     def to_png_rdd(self, color_map):
-        """Converts the rasters within this layer to PNGs wich are then converted to bytes.
+        """Converts the rasters within this layer to PNGs which are then converted to bytes.
         This is returned as a RDD[(K, bytes)].
 
         Args:
@@ -412,7 +412,6 @@ class RasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.RasterLayer`
 
         Raises:
-            ValueError: When an unsupported cell type is entered.
             ValueError: If ``no_data_value`` is set and the ``new_type`` contains raw values.
             ValueError: If ``no_data_value`` is set and ``new_type`` is a boolean.
         """
@@ -575,6 +574,7 @@ class RasterLayer(CachableLayer):
         Returns:
             (float, float)
         """
+
         min_max = self.srdd.getMinMax()
         return (min_max._1(), min_max._2())
 
@@ -655,7 +655,7 @@ class TiledRasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        key = map_key_input(LayerType(rdd_type).value, True)
+        key = map_key_input(LayerType(layer_type).value, True)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
@@ -691,7 +691,7 @@ class TiledRasterLayer(CachableLayer):
         return create_python_rdd(self.pysc, result, ser)
 
     def to_png_rdd(self, color_map):
-        """Converts the rasters within this layer to PNGs wich are then converted to bytes.
+        """Converts the rasters within this layer to PNGs which are then converted to bytes.
         This is returned as a RDD[(K, bytes)].
 
         Args:
@@ -821,7 +821,6 @@ class TiledRasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
 
         Raises:
-            ValueError: When an unsupported cell type is entered.
             ValueError: If ``no_data_value`` is set and the ``new_type`` contains raw values.
             ValueError: If ``no_data_value`` is set and ``new_type`` is a boolean.
         """

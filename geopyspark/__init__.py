@@ -12,10 +12,12 @@ from pyspark.serializers import AutoBatchedSerializer
 
 
 def map_key_input(key_type, is_boundable):
-    """Gets the mapped GeoTrellis type from the `key_type`.
+    """Gets the mapped GeoTrellis type from the ``key_type``.
+
     Args:
         key_type (str): The type of the ``K`` in the tuple, ``(K, V)`` in the RDD.
         is_boundable (bool): Is ``K`` boundable.
+
     Returns:
         The corresponding GeoTrellis type.
     """
@@ -37,12 +39,14 @@ def map_key_input(key_type, is_boundable):
 
 def create_python_rdd(pysc, jrdd, serializer):
     """Creates a Python RDD from a RDD from Scala.
+
     Args:
         jrdd (org.apache.spark.api.java.JavaRDD): The RDD that came from Scala.
         serializer (:class:`~geopyspark.AvroSerializer` or pyspark.serializers.AutoBatchedSerializer(AvroSerializer)):
             An instance of ``AvroSerializer`` that is either alone, or wrapped by ``AutoBatchedSerializer``.
+
     Returns:
-        ``pyspark.RDD``
+        RDD
     """
 
     if isinstance(serializer, AutoBatchedSerializer):
@@ -54,24 +58,25 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
     """Construct the base SparkConf for use with GeoPySpark.  This configuration
     object may be used as is , or may be adjusted according to the user's needs.
 
+    Note:
+        The GEOPYSPARK_JARS_PATH environment variable may contain a colon-separated
+        list of directories to search for JAR files to make available via the
+        SparkConf.
+
     Args:
         master (string): The master URL to connect to, such as "local" to run
             locally with one thread, "local[4]" to run locally with 4 cores, or
             "spark://master:7077" to run on a Spark standalone cluster.
         appName (string): The name of the application, as seen in the Spark
             console
-        additional_jar_dirs (optional, list): A list of directory locations that
+        additional_jar_dirs (list, optional): A list of directory locations that
             might contain JAR files needed by the current script.  Already
             includes $(cwd)/jars.
 
     Returns:
-        [SparkConf]
-
-    Note:
-        The GEOPYSPARK_JARS_PATH environment variable may contain a colon-separated
-        list of directories to search for JAR files to make available via the
-        SparkConf.
+        SparkConf
     """
+
     conf = SparkConf()
 
     if not appName:

@@ -8,6 +8,7 @@ class TileRender(object):
     """A Python implementation of the Scala geopyspark.geotrellis.tms.TileRender
     interface.  Permits a callback from Scala to Python to allow for custom
     rendering functions.
+
     Args:
         render_function (numpy.ndarray => bytes): A function to convert a numpy
             array to a collection of bytes giving a binary image file.

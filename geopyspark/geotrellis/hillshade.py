@@ -14,8 +14,7 @@ def hillshade(tiled_raster_layer, band=0, azimuth=315.0, altitude=45.0, z_factor
     `description <http://goo.gl/DtVDQ>`_ of Hillshade.
 
     Args:
-        band (int) [default = 0]: The band of the raster to base the
-            hillshade calculation on.
+        band (int): The band of the raster to base the hillshade calculation on. Default is 0.
         azimuth (float): The azimuth angle of the source of light. Default value is 315.0.
         altitude (float): The angle of the altitude of the light above the horizon. Default is
             45.0.

@@ -148,8 +148,9 @@ def read_layer_metadata(pysc,
 
     Args:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        layer_type (str): What the spatial type of the geotiffs are. This is
-            represented by the constants: ``SPATIAL`` and ``SPACETIME``.
+        layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
+            of the geotiffs are. This is represented by either constants within ``LayerType`` or by
+            a string.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be read from.
@@ -251,8 +252,9 @@ def read_value(pysc,
 
     Args:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        layer_type (str): What the spatial type of the geotiffs are. This is
-            represented by the constants: ``SPATIAL`` and ``SPACETIME``.
+        layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
+            of the geotiffs are. This is represented by either constants within ``LayerType`` or by
+            a string.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be read from.
@@ -322,9 +324,9 @@ def query(pysc,
 
     Args:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        layer_type (str): What the spatial type of the geotiffs are. This is
-            represented by the constants: ``SPATIAL`` and ``SPACETIME``. Note: All of the
-            GeoTiffs must have the same saptial type.
+        layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
+            of the geotiffs are. This is represented by either constants within ``LayerType`` or by
+            a string.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be querried.
@@ -440,7 +442,7 @@ def write(uri,
         index_strategy (str or :class:`~geopyspark.geotrellis.constants.IndexingMethod`): The
             method used to orginize the saved data. Depending on the type of data within the layer,
             only certain methods are available. Can either be a string or a ``IndexingMethod``
-            attribute.  The default method used is, ``ZORDER``.
+            attribute.  The default method used is, ``IndexingMethod.ZORDER``.
         time_unit (str, optional): Which time unit should be used when saving spatial-temporal data.
             While this is set to None as default, it must be set if saving spatial-temporal data.
             Depending on the indexing method chosen, different time units are used.

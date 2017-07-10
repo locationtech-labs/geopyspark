@@ -114,8 +114,7 @@ def from_pb_extent(pb_extent):
     """Creates an ``Extent`` from a ``ProtoExtent``.
 
     Args:
-        pb_extent (:class:`~geopyspark.protobuf.extentMessages_pb2.ProtoExtent`): An instance
-            of ``ProtoExtent``.
+        pb_extent (ProtoExtent): An instance of ``ProtoExtent``.
 
     Returns:
         :class:`~geopyspark.geotrellis.Extent`
@@ -140,8 +139,7 @@ def from_pb_projected_extent(pb_projected_extent):
     """Creates a ``ProjectedExtent`` from a ``ProtoProjectedExtent``.
 
     Args:
-        pb_projected_extent (:class:`~geopyspark.protobuf.extentMessages_pb2.ProtoProjectedExtent`):
-            An instance of ``ProtoProjectedExtent``.
+        pb_projected_extent (ProtoProjectedExtent): An instance of ``ProtoProjectedExtent``.
 
     Returns:
         :class:`~geopyspark.geotrellis.ProjectedExtent`
@@ -171,8 +169,8 @@ def from_pb_temporal_projected_extent(pb_temporal_projected_extent):
     """Creates a ``TemporalProjectedExtent`` from a ``ProtoTemporalProjectedExtent``.
 
     Args:
-        pb_temporal_projected_extent (:class:`~geopyspark.protobuf.extentMessages_pb2.ProtoTemporalProjectedExtent`):
-            An instance of ``ProtoTemporalProjectedExtent``.
+        pb_temporal_projected_extent (ProtoTemporalProjectedExtent): An instance of
+            ``ProtoTemporalProjectedExtent``.
 
     Returns:
         :class:`~geopyspark.geotrellis.TemporalProjectedExtent`
@@ -204,8 +202,7 @@ def from_pb_spatial_key(pb_spatial_key):
     """Creates a ``SpatialKey`` from a ``ProtoSpatialKey``.
 
     Args:
-        pb_spatial_key (:class:`~geopyspark.protobuf.keyMessages_pb2.ProtoSpatialKey`):
-            An instance of ``ProtoSpatialKey``.
+        pb_spatial_key (ProtoSpatialKey): An instance of ``ProtoSpatialKey``.
 
     Returns:
         :obj:`~geopyspark.geotrellis.SpatialKey`
@@ -230,8 +227,7 @@ def from_pb_space_time_key(pb_space_time_key):
     """Creates a ``SpaceTimeKey`` from a ``ProtoSpaceTimeKey``.
 
     Args:
-        pb_space_time_key (:class:`~geopyspark.protobuf.keyMessages_pb2.ProtoSpaceTimeKey`):
-            An instance of ``ProtoSpaceTimeKey``.
+        pb_space_time_key (ProtoSpaceTimeKey): An instance of ``ProtoSpaceTimeKey``.
 
     Returns:
         :obj:`~geopyspark.geotrellis.SpaceTimeKey`
@@ -356,7 +352,7 @@ def to_pb_tile(obj):
         obj (:obj:`~geopyspark.geotrellis.Tile`): An instance of ``Tile``.
 
     Returns:
-        :class:`~geopyspark.protobuf.tileMessages_pb2.ProtoTile`
+        ProtoTile
     """
 
     cells = obj.cells
@@ -428,7 +424,7 @@ def to_pb_multibandtile(obj):
         obj (:obj:`~geopyspark.geotrellis.Tile`): An instance of ``Tile``.
 
     Returns:
-        :class:`~geopyspark.protobuf.tileMessages_pb2.ProtoMultibandTile`
+        ProtoMultibandTile
     """
 
     cells = obj.cells
@@ -464,7 +460,7 @@ def to_pb_extent(obj):
         obj (:class:`~geopyspark.geotrellis.Extent`): An instance of ``Extent``.
 
     Returns:
-        :class:`~geopyspark.protobuf.extentMessages_pb2.ProtoExtent`
+        ProtoExtent
     """
 
     ex = extentMessages_pb2.ProtoExtent()
@@ -496,7 +492,7 @@ def to_pb_projected_extent(obj):
             ``ProjectedExtent``.
 
     Returns:
-        :class:`~geopyspark.protobuf.extentMessages_pb2.ProtoProjectedExtent`
+        ProtoProjectedExtent
     """
 
     pex = extentMessages_pb2.ProtoProjectedExtent()
@@ -535,7 +531,7 @@ def to_pb_temporal_projected_extent(obj):
             ``TemporalProjectedExtent``.
 
     Returns:
-        :class:`~geopyspark.protobuf.extentMessages_pb2.ProtoTemporalProjectedExtent`
+        ProtoTemporalProjectedExtent
     """
 
     tpex = extentMessages_pb2.ProtoTemporalProjectedExtent()
@@ -574,7 +570,7 @@ def to_pb_spatial_key(obj):
         obj (:obj:`~geopyspark.geotrellis.SpatialKey`): An instance of ``SpatialKey``.
 
     Returns:
-        :class:`~geopyspark.protobuf.keyMessages_pb2.ProtoSpatialKey`
+        ProtoSpatialKey
     """
 
     spatial_key = keyMessages_pb2.ProtoSpatialKey()
@@ -603,7 +599,7 @@ def to_pb_space_time_key(obj):
         obj (:obj:`~geopyspark.geotrellis.SpaceTimeKey`): An instance of ``SpaceTimeKey``.
 
     Returns:
-        :class:`~geopyspark.protobuf.keyMessages_pb2.ProtoSpaceTimeKey`
+        ProtoSpaceTimeKey
     """
 
     space_time_key = keyMessages_pb2.ProtoSpaceTimeKey()
