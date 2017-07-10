@@ -44,22 +44,25 @@ class TMSServer(router: TMSServerRoute) { //(reader: ValueReader[LayerId], catal
   def unbind(): Unit = {
     Await.ready(binding.unbind, 10.seconds)
     binding = null
+    router.shutdown
   }
 
   def bind(host: String): ServerBinding = {
-    // val loggedRouter = DebuggingDirectives.logRequestResult("Client ReST", Logging.InfoLevel)(router.route(this))
+    router.startup
+
     var futureBinding: scala.util.Try[Future[ServerBinding]] = null
     do {
       var portReq = scala.util.Random.nextInt(16383) + 49152
-      futureBinding = scala.util.Try(Http()(system).bindAndHandle(router.route(this) /*loggedRouter*/, host, portReq))
+      futureBinding = scala.util.Try(Http()(system).bindAndHandle(router.route(this) , host, portReq))
     } while (futureBinding.isFailure)
     binding = Await.result(futureBinding.get, 10.seconds)
     binding
   }
 
   def bind(host: String, requestedPort: Int): ServerBinding = {
-    // val loggedRouter = DebuggingDirectives.logRequestResult("Client ReST", Logging.InfoLevel)(router.route(this))
-    val futureBinding = Http()(system).bindAndHandle(router.route(this) /*loggedRouter*/, host, requestedPort)
+    router.startup
+
+    val futureBinding = Http()(system).bindAndHandle(router.route(this) , host, requestedPort)
     binding = Await.result(futureBinding, 10.seconds)
     binding
   }

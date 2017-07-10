@@ -30,6 +30,9 @@ import scala.collection.concurrent._
 import scala.util.Try
 
 trait TMSServerRoute extends Directives with AkkaSystem.LoggerExecutor {
+  def startup(): Unit = {}
+  def shutdown(): Unit = {}
+
   def root: Route
   def route(server: TMSServer): Route = {
     get { root ~ path("handshake") { complete { server.handshake } } }
@@ -169,11 +172,34 @@ class SpatialRddRoute(
 
   implicit val executionContext: ExecutionContext = system.dispatchers.lookup("custom-blocking-dispatcher")  
 
-  val aggregator = system.actorOf(RequestAggregator.props, UUID.randomUUID.toString)
-  //aggregator ! FulfillRequests
+  private var _aggregator: ActorRef = null
+  private var _fulfiller: ActorRef = null
 
-  val fulfiller = system.actorOf(RDDLookup.props(levels, rf, aggregator), UUID.randomUUID.toString)
-  fulfiller ! Initialize
+  override def startup() = {
+    if (_aggregator != null) 
+      throw new IllegalStateException("Cannot start: TMS server already running")
+    else
+      println("Starting up RDD backend")
+
+    _aggregator = system.actorOf(RequestAggregator.props, UUID.randomUUID.toString)
+    _fulfiller = system.actorOf(RDDLookup.props(levels, rf, aggregator), UUID.randomUUID.toString)
+    _fulfiller ! Initialize
+  }
+
+  override def shutdown() = {
+    if (_aggregator == null)
+      throw new IllegalStateException("Cannot stop: TMS server not running")
+    else
+      println("Shutting down RDD backend")
+
+    system.stop(_aggregator)
+    system.stop(_fulfiller)
+    _aggregator = null
+    _fulfiller = null
+  }
+
+  def aggregator = _aggregator
+  def fulfiller = _fulfiller
 
   def root: Route =
     pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
