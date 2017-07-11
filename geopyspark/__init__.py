@@ -68,7 +68,7 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
         [SparkConf]
 
     Note:
-        The GEOPYSPARK_JARS_DIR environment variable may contain a colon-separated
+        The GEOPYSPARK_JARS_PATH environment variable may contain a colon-separated
         list of directories to search for JAR files to make available via the
         SparkConf.
     """
