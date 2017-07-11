@@ -1,7 +1,8 @@
-import unittest
 import numpy as np
 import pytest
 import struct
+import sys
+import unittest
 
 from colortools import Color
 from geopyspark.geotrellis.color import get_colors_from_colors, get_colors_from_matplotlib, ColorMap
@@ -20,6 +21,7 @@ class ColormapTest(BaseTestClass):
         self.assertEqual(len(result), 3)
         self.assertEqual(result[0], 0xff0000ff)
 
+    @pytest.mark.skipif(sys.version_info < (3,4), reason="Python 3.4 or greater needed for matplotlib")
     def test_get_colors_from_matplotlib(self):
         result = get_colors_from_matplotlib('viridis', num_colors=42)
         self.assertEqual(len(result), 42)
@@ -118,6 +120,7 @@ class ColormapTest(BaseTestClass):
         self.assertTrue(isinstance(result, ColorMap))
         self.assertEqual(result.cmap.map(2), struct.unpack(">L", bytes(color_list[2].rgba))[0])
 
+    @pytest.mark.skipif(sys.version_info < (3,4), reason="Python 3.4 or greater needed for matplotlib")
     def test_build_color_string(self):
         breaks = list(range(42))
         result = ColorMap.build(BaseTestClass.pysc, breaks=breaks, colors='viridis')
