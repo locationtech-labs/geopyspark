@@ -56,6 +56,12 @@ class Square(Neighborhood):
         Neighborhood.__init__(self, name="Square", param_1=extent)
         self.extent = extent
 
+    def __str__(self):
+        return "Square(extent={})".format(self.param_1)
+
+    def __repr__(self):
+        return "Square(extent={})".format(self.param_1)
+
 
 class Circle(Neighborhood):
     """A circle neighborhood.
@@ -80,6 +86,12 @@ class Circle(Neighborhood):
         Neighborhood.__init__(self, name="Circle", param_1=radius)
         self.radius = radius
 
+    def __str__(self):
+        return "Circle(radius={})".format(self.param_1)
+
+    def __repr__(self):
+        return "Circle(radius={})".format(self.param_1)
+
 
 class Nesw(Neighborhood):
     """A neighborhood that includes a column and row intersection for the focus.
@@ -100,6 +112,12 @@ class Nesw(Neighborhood):
     def __init__(self, extent):
         Neighborhood.__init__(self, name="Nesw", param_1=extent)
         self.extent = extent
+
+    def __str__(self):
+        return "Nesw(extent={})".format(self.param_1)
+
+    def __repr__(self):
+        return "Nesw(extent={})".format(self.param_1)
 
 
 class Wedge(Neighborhood):
@@ -126,6 +144,14 @@ class Wedge(Neighborhood):
         self.start_angle = start_angle
         self.end_angle = end_angle
 
+    def __str__(self):
+        return "Wedge(radius={}, start_angle={}, end_angle={})".format(self.param_1, self.param_2,
+                                                                       self.param_3)
+
+    def __repr__(self):
+        return "Wedge(radius={}, start_angle={}, end_angle={})".format(self.param_1, self.param_2,
+                                                                       self.param_3)
+
 
 class Annulus(Neighborhood):
     """An Annulus neighborhood.
@@ -147,3 +173,9 @@ class Annulus(Neighborhood):
         Neighborhood.__init__(self, name="Annulus", param_1=inner_radius, param_2=outer_radius)
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
+
+    def __str__(self):
+        return "Annulus(inner_radius={}, outer_radius={})".format(self.param_1, self.param_2)
+
+    def __repr__(self):
+        return "Annulus(inner_radius={}, outer_radius={})".format(self.param_1, self.param_2)
