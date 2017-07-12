@@ -128,6 +128,26 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
 
         self.assertEqual(no_data, -1)
 
+    def test_no_data_deserialization(self):
+        arr = np.int16([[[-32768, -32768, -32768, -32768],
+                         [-32768, -32768, -32768, -32768],
+                         [-32768, -32768, -32768, -32768],
+                         [-32768, -32768, -32768, -32768]]])
+
+        epsg_code = 3857
+        extent = Extent(0.0, 0.0, 10.0, 10.0)
+        projected_extent = ProjectedExtent(extent, epsg_code)
+
+        tile = Tile(arr, 'SHORT', -32768)
+        rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
+        raster_layer = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+
+        actual_tile = raster_layer.to_numpy_rdd().first()[1]
+
+        self.assertEqual(actual_tile.cell_type, tile.cell_type)
+        self.assertEqual(actual_tile.no_data_value, tile.no_data_value)
+        self.assertTrue((actual_tile.cells == tile.cells).all())
+
 
 if __name__ == "__main__":
     unittest.main()
