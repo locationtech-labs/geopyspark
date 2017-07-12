@@ -31,7 +31,6 @@ class HistogramTest(BaseTestClass):
     tile = Tile(arr, 'FLOAT', -500)
     rdd = BaseTestClass.pysc.parallelize([(spatial_key, tile)])
     tiled = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, metadata)
-
     hist = tiled.get_histogram()
 
     def test_min(self):
@@ -45,6 +44,23 @@ class HistogramTest(BaseTestClass):
 
     def test_mean(self):
         self.assertEqual(self.hist.mean(), 2.5)
+
+    def test_mode(self):
+        arr2 = np.array([[[1.0, 1.0, 1.0, 1.0],
+                          [2.0, 2.0, 2.0, 2.0],
+                          [1.0, 3.0, 3.0, 3.0],
+                          [4.0, 4.0, 4.0, 4.0]]], dtype=float)
+
+        tile2 = Tile(arr2, 'FLOAT', -500)
+        rdd2 = BaseTestClass.pysc.parallelize([(self.spatial_key, tile2)])
+        tiled2 = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd2, self.metadata)
+        hist2 = tiled2.get_histogram()
+
+        self.assertEqual(hist2.mode(), 1.0)
+
+    def test_quantile_breaks(self):
+        result = self.hist.quantile_breaks(4)
+        self.assertEqual(result, [1, 2, 3, 4])
 
     def test_median(self):
         self.assertEqual(self.hist.median(), 2.5)
