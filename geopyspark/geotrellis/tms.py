@@ -141,5 +141,5 @@ class TMSServer(object):
             server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveSpatialRddCustom(rdd_levels, display, 0)
         else:
             raise ValueError("Must specify the display parameter as a ColorMap or TileRender object")
-        
+
         return cls(pysc, server)
