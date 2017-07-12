@@ -494,6 +494,12 @@ class RasterLayer(CachableLayer):
         min_max = self.srdd.getMinMax()
         return (min_max._1(), min_max._2())
 
+    def __str__(self):
+        return "RasterLayer(layer_type={})".format(self.layer_type)
+
+    def __repr__(self):
+        return "RasterLayer(layer_type={})".format(self.layer_type)
+
 
 class TiledRasterLayer(CachableLayer):
     """Wraps a RDD of tiled, GeoTrellis rasters.
@@ -1232,6 +1238,14 @@ class TiledRasterLayer(CachableLayer):
     def __rtruediv__(self, value):
         return self._process_operation(value, self.srdd.reverseLocalDivide)
 
+    def __str__(self):
+        return "TiledRasterLayer(layer_type={}, zoom_level={}, is_floating_point_layer={})".format(
+            self.layer_type, self.zoom_level, self.is_floating_point_layer)
+
+    def __repr__(self):
+        return "TiledRasterLayer(layer_type={}, zoom_level={}, is_floating_point_layer={})".format(
+            self.layer_type, self.zoom_level, self.is_floating_point_layer)
+
 
 def _common_entries(*dcts):
     """Zip two dictionaries together by keys"""
@@ -1355,3 +1369,11 @@ class Pyramid(CachableLayer):
             return Pyramid({k: l.__rtruediv__(r) for k, l, r in _common_entries(self.levels, value.levels)})
         else:
             return Pyramid({k: l.__rtruediv__(value) for k, l in self.levels.items()})
+
+    def __str__(self):
+        return "Pyramid(layer_type={}, max_zoom={}, num_levels={}, is_cached={})".format(
+            self.layer_type, self.max_zoom, len(self.levels), self.is_cached)
+
+    def __repr__(self):
+        return "Pyramid(layer_type={}, max_zoom={}, num_levels={}, is_cached={})".format(
+            self.layer_type, self.max_zoom, len(self.levels), self.is_cached)
