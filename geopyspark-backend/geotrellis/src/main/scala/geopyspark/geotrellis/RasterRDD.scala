@@ -174,6 +174,12 @@ abstract class RasterRDD[K: ClassTag] extends TileRDD[K] {
 
   def toProtoRDD(): JavaRDD[Array[Byte]]
 
+  def bands(band: Int): RasterRDD[K] =
+    withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(band) })
+
+  def bands(bands: java.util.ArrayList[Int]): RasterRDD[K] =
+    withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(bands.asScala) })
+
   def collectMetadata(
     extent: java.util.Map[String, Double],
     layout: java.util.Map[String, Int],
@@ -201,7 +207,7 @@ abstract class RasterRDD[K: ClassTag] extends TileRDD[K] {
   protected def cutTiles(layerMetadata: String, resampleMethod: String): TiledRasterRDD[_]
   protected def tileToLayout(tileLayerMetadata: String, resampleMethod: String): TiledRasterRDD[_]
   protected def reproject(target_crs: String, resampleMethod: String): RasterRDD[_]
-  protected def withRDD(result: RDD[(K, MultibandTile)]): RasterRDD[_]
+  protected def withRDD(result: RDD[(K, MultibandTile)]): RasterRDD[K]
 }
 
 class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends RasterRDD[ProjectedExtent] {

@@ -57,6 +57,12 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
   def repartition(numPartitions: Int): TiledRasterRDD[K] =
     withRDD(rdd.repartition(numPartitions))
 
+  def bands(band: Int): TiledRasterRDD[K] =
+    withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(band) })
+
+  def bands(bands: java.util.ArrayList[Int]): TiledRasterRDD[K] =
+    withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(bands.asScala) })
+
   def getZoom: Integer =
     zoomLevel match {
       case None => null
