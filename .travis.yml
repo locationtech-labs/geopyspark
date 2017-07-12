@@ -40,6 +40,9 @@ install:
   - pip3 install -r requirements.txt
   - pip3 install pyproj
   - pip3 install pylint
+  - if [[ $TRAVIS_PYTHON_VERSION == "3.3" ]]; then
+    pip3 install pathlib;
+    fi
   - if [[ $TRAVIS_PYTHON_VERSION != "3.3" ]]; then
     pip3 install matplotlib==2.0.0;
     fi

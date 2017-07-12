@@ -1,9 +1,7 @@
-import io
-import unittest
-from os import walk, path
-import tempfile
 import pathlib
+import tempfile
 import rasterio
+import unittest
 import pytest
 
 from geopyspark.geotrellis import Tile
@@ -14,8 +12,8 @@ from geopyspark.tests.base_test_class import BaseTestClass
 
 
 class ToGeoTiffTest(BaseTestClass):
-    dir_path = geotiff_test_path("srtm_52_11.tif")
-    rdd = get(BaseTestClass.pysc, LayerType.SPATIAL, dir_path, max_tile_size=256, num_partitions=15)
+    dir_path = geotiff_test_path("all-ones.tif")
+    rdd = get(BaseTestClass.pysc, LayerType.SPATIAL, dir_path)
     metadata = rdd.collect_metadata()
 
     mapped_types = {
@@ -25,6 +23,7 @@ class ToGeoTiffTest(BaseTestClass):
         'uint16': 'USHORT',
         'int32': 'INT',
         'float': 'FLOAT',
+        'float32': 'FLOAT',
         'double': 'DOUBLE'
     }
 
@@ -35,8 +34,7 @@ class ToGeoTiffTest(BaseTestClass):
 
     def test_to_geotiff_rdd_rasterlayer(self):
         geotiff_rdd = self.rdd.to_geotiff_rdd(storage_method="Tiled",
-                                              tile_dimensions=(128, 128),
-                                              #compression="DeflateCompression",
+                                              compression="DeflateCompression",
                                               color_space=0,
                                               head_tags={'INTERLEAVE': 'BAND'})
 
@@ -51,18 +49,16 @@ class ToGeoTiffTest(BaseTestClass):
 
                 profile = src.profile
 
-                self.assertEqual(profile['blockxsize'], 128)
-                self.assertEqual(profile['blockysize'], 128)
+                self.assertEqual(profile['blockxsize'], 256)
+                self.assertEqual(profile['blockysize'], 256)
                 self.assertEqual(profile['interleave'], 'band')
-
+                self.assertEqual(src.compression, rasterio.enums.Compression.deflate)
 
     def test_to_geotiff_rdd_tiledrasterlayer(self):
         tiled_rdd = self.rdd.to_tiled_layer()
-        #tiled_collected = tiled_rdd.to_numpy_rdd().map(lambda x: x[1]).collect()
         tiled_collected = tiled_rdd.to_numpy_rdd().first()[1]
 
         geotiff_rdd = tiled_rdd.to_geotiff_rdd()
-        #geotiff_collected = geotiff_rdd.map(lambda x: x[1]).collect()
         geotiff_collected = geotiff_rdd.first()[1]
 
         def to_geotiff(x):
@@ -75,19 +71,11 @@ class ToGeoTiffTest(BaseTestClass):
                     data = src.read()
                     return Tile(data, self.mapped_types[str(data.dtype)], src.nodata)
 
-        #rasterio_geotiffs = list(map(to_geotiff, geotiff_collected))
         rasterio_geotiff = to_geotiff(geotiff_collected)
 
         self.assertTrue((tiled_collected.cells == rasterio_geotiff.cells).all())
         self.assertEqual(tiled_collected.cell_type, rasterio_geotiff.cell_type)
         self.assertEqual(tiled_collected.no_data_value, rasterio_geotiff.no_data_value)
-
-        '''
-        for x, y in zip(tiled_collected, rasterio_geotiffs):
-            self.assertTrue((x.cells == y.cells).all())
-            self.assertEqual(x.cell_type, y.cell_type)
-            self.assertEqual(x.no_data_value, y.no_data_value)
-        '''
 
 
 if __name__ == "__main__":
