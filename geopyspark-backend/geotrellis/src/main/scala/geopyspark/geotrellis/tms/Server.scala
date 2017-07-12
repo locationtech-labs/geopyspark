@@ -105,7 +105,7 @@ object TMSServer {
     val level_map = levels.asScala.map { case (zoom, rdd) =>
       zoom -> rdd.map{ case (key, mbtile) => key -> mbtile.band(band) }
     }
-    val route = new SpatialRddRoute(level_map, display)
+    val route = new SpatialRddRoute(level_map, display, AkkaSystem.system)
     new TMSServer(route)
   }
 }
