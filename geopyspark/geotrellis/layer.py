@@ -275,6 +275,37 @@ class RasterLayer(CachableLayer):
                        color_map=None,
                        head_tags=None,
                        band_tags=None):
+        """Converts the rasters within this layer to GeoTiffs which are then converted to bytes.
+        This is returned as a ``RDD[(K, bytes)]``. Where ``K`` is either ``ProjectedExtent`` or
+        ``TemporalProjectedExtent``.
+
+        Args:
+            storage_method (str or :class:`~geopyspark.geotrellis.constants.StorageMethod`, optional): How
+                the segments within the GeoTiffs should be arranged. Default is
+                ``StorageMethod.STRIPED``.
+            rows_per_strip (int, optional): How many rows should be in each strip segment of the
+                GeoTiffs if ``storage_method`` is ``StorageMethod.STRIPED``. If ``None``, then the
+                strip size will default to a value that is 8K or less.
+            tile_dimensions ((int, int), optional): The length and width for each tile segment of the GeoTiff
+                if ``storage_method`` is ``StorageMethod.TILED``. If ``None`` then the default size
+                is ``(256, 256)``.
+            compression (str or :class:`~geopyspark.geotrellis.constants.Compression`, optional): How the
+                data should be compressed. Defaults to ``Compression.NO_COMPRESSION``.
+            color_space (str or :class:`~geopyspark.geotrellis.constants.ColorSpace`, optional): How the
+                colors should be organized in the GeoTiffs. Defaults to
+                ``ColorSpace.BLACK_IS_ZERO``.
+            color_map (:class:`~geopyspark.geotrellis.color.ColorMap`, optional): A ``ColorMap``
+                instance used to color the GeoTiffs to a different gradient.
+            head_tags (dict, optional): A ``dict`` where each key and value is a ``str``.
+            band_tags (list, optional): A ``list`` of ``dict``\s where each key and value is a
+                ``str``.
+
+            Note:
+                For more information on the contents of the tags, see www.gdal.org/gdal_datamodel.html
+
+        Returns:
+            RDD[(K, bytes)]
+        """
 
         result = _to_geotiff_rdd(self.pysc, self.srdd, storage_method, rows_per_strip, tile_dimensions,
                                  compression, color_space, color_map, head_tags, band_tags)
@@ -730,6 +761,37 @@ class TiledRasterLayer(CachableLayer):
                        color_map=None,
                        head_tags=None,
                        band_tags=None):
+        """Converts the rasters within this layer to GeoTiffs which are then converted to bytes.
+        This is returned as a ``RDD[(K, bytes)]``. Where ``K`` is either ``SpatialKey`` or
+        ``SpaceTimeKey``.
+
+        Args:
+            storage_method (str or :class:`~geopyspark.geotrellis.constants.StorageMethod`, optional): How
+                the segments within the GeoTiffs should be arranged. Default is
+                ``StorageMethod.STRIPED``.
+            rows_per_strip (int, optional): How many rows should be in each strip segment of the
+                GeoTiffs if ``storage_method`` is ``StorageMethod.STRIPED``. If ``None``, then the
+                strip size will default to a value that is 8K or less.
+            tile_dimensions ((int, int), optional): The length and width for each tile segment of the GeoTiff
+                if ``storage_method`` is ``StorageMethod.TILED``. If ``None`` then the default size
+                is ``(256, 256)``.
+            compression (str or :class:`~geopyspark.geotrellis.constants.Compression`, optional): How the
+                data should be compressed. Defaults to ``Compression.NO_COMPRESSION``.
+            color_space (str or :class:`~geopyspark.geotrellis.constants.ColorSpace`, optional): How the
+                colors should be organized in the GeoTiffs. Defaults to
+                ``ColorSpace.BLACK_IS_ZERO``.
+            color_map (:class:`~geopyspark.geotrellis.color.ColorMap`, optional): A ``ColorMap``
+                instance used to color the GeoTiffs to a different gradient.
+            head_tags (dict, optional): A ``dict`` where each key and value is a ``str``.
+            band_tags (list, optional): A ``list`` of ``dict``\s where each key and value is a
+                ``str``.
+
+            Note:
+                For more information on the contents of the tags, see www.gdal.org/gdal_datamodel.html
+
+        Returns:
+            RDD[(K, bytes)]
+        """
 
         result = _to_geotiff_rdd(self.pysc, self.srdd, storage_method, rows_per_strip, tile_dimensions,
                                  compression, color_space, color_map, head_tags, band_tags)

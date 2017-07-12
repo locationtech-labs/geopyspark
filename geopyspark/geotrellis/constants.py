@@ -179,11 +179,15 @@ class ColorRamp(Enum):
 
 
 class StorageMethod(Enum):
+    """Internal storage methods for GeoTiffs."""
+
     STRIPED = "Striped"
     TILED = "Tiled"
 
 
 class ColorSpace(IntEnum):
+    """Color space types for GeoTiffs."""
+
     WHITE_IS_ZERO = 0
     BLACK_IS_ZERO = 1
     RGB = 2
@@ -201,5 +205,7 @@ class ColorSpace(IntEnum):
 
 
 class Compression(Enum):
+    """Compression methods for GeoTiffs."""
+
     NO_COMPRESSION = "NoCompression"
     DEFLATE_COMPRESSION = "DeflateCompression"
