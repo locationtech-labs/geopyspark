@@ -33,6 +33,19 @@ class RasterizeTest(BaseTestClass):
         for x in cells.flatten().tolist():
             self.assertTrue(math.isnan(x))
 
+    def test_whole_area_integer_crs(self):
+        polygon = Polygon([(0, 11), (11, 11), (11, 0), (0, 0)])
+
+        raster_rdd = rasterize.rasterize(BaseTestClass.pysc,
+                                         [polygon],
+                                         3857,
+                                         11,
+                                         1)
+
+        cells = raster_rdd.to_numpy_rdd().first()[1].cells
+
+        for x in cells.flatten().tolist():
+            self.assertTrue(math.isnan(x))
 
 if __name__ == "__main__":
     unittest.main()

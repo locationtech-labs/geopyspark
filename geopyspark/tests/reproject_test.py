@@ -21,8 +21,24 @@ class ReprojectTest(BaseTestClass):
         yield
         BaseTestClass.pysc._gateway.close()
 
+    def test_invalid(self):
+        with pytest.raises(TypeError):
+            self.laid_out_rdd.reproject(4326, extent=self.extent)
+
+    def test_repartition(self):
+        result = self.laid_out_rdd.repartition(2)
+        self.assertEqual(result.getNumPartitions(), 2)
+
     def test_same_crs_layout(self):
         result = self.laid_out_rdd.reproject("EPSG:4326", extent =self.extent, layout=self.layout)
+        new_metadata = result.layer_metadata
+
+        layout_definition = LayoutDefinition(BaseTestClass.extent, BaseTestClass.layout)
+
+        self.assertEqual(layout_definition, new_metadata.layout_definition)
+
+    def test_integer_crs(self):
+        result = self.laid_out_rdd.reproject(4326, extent =self.extent, layout=self.layout)
         new_metadata = result.layer_metadata
 
         layout_definition = LayoutDefinition(BaseTestClass.extent, BaseTestClass.layout)

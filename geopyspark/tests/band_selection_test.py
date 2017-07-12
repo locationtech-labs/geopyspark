@@ -7,8 +7,8 @@ import pytest
 from shapely.geometry import Point
 from geopyspark.geotrellis import SpatialKey, Tile
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis import cost_distance
-from geopyspark.geotrellis.layer import TiledRasterLayer
+from geopyspark.geotrellis import Extent, ProjectedExtent, cost_distance
+from geopyspark.geotrellis.layer import RasterLayer, TiledRasterLayer
 from geopyspark.geotrellis.constants import LayerType
 
 
@@ -55,53 +55,105 @@ class BandSelectionTest(BaseTestClass):
                     'extent': extent,
                     'tileLayout': {'tileCols': 5, 'tileRows': 5, 'layoutCols': 2, 'layoutRows': 2}}}
 
-    raster_rdd = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, metadata)
+    tiled_raster_rdd = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, metadata)
+
+    layer2 = [(ProjectedExtent(Extent(0, 0, 1, 1), 3857), Tile(bands, 'FLOAT', -1.0)),
+              (ProjectedExtent(Extent(1, 0, 2, 1), 3857), Tile(bands, 'FLOAT', -1.0)),
+              (ProjectedExtent(Extent(0, 1, 1, 2), 3857), Tile(bands, 'FLOAT', -1.0)),
+              (ProjectedExtent(Extent(1, 1, 2, 2), 3857), Tile(bands, 'FLOAT', -1.0))]
+    rdd2 = BaseTestClass.pysc.parallelize(layer2)
+    raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd2)
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
         BaseTestClass.pysc._gateway.close()
 
-    def test_bands_int(self):
+    def test_bands_invalid(self):
+        with pytest.raises(TypeError):
+            self.tiled_raster_rdd.bands("hello").to_numpy_rdd().first()[1]
+
+    def test_bands_int_tiled(self):
+        actual = self.tiled_raster_rdd.bands(1).to_numpy_rdd().first()[1]
+        expected = np.array(self.band_2)
+
+        self.assertTrue((expected == actual.cells).all())
+
+    def test_bands_int_raster(self):
         actual = self.raster_rdd.bands(1).to_numpy_rdd().first()[1]
         expected = np.array(self.band_2)
 
         self.assertTrue((expected == actual.cells).all())
 
-    def test_bands_tuple(self):
+    def test_bands_tuple_tiled(self):
+        actual = self.tiled_raster_rdd.bands((1, 2)).to_numpy_rdd().first()[1]
+        expected = np.array([self.band_2, self.band_3])
+
+        self.assertTrue((expected == actual.cells).all())
+
+    def test_bands_tuple_raster(self):
         actual = self.raster_rdd.bands((1, 2)).to_numpy_rdd().first()[1]
         expected = np.array([self.band_2, self.band_3])
 
         self.assertTrue((expected == actual.cells).all())
 
-    def test_bands_list(self):
+    def test_bands_list_tiled(self):
+        actual = self.tiled_raster_rdd.bands([0, 2]).to_numpy_rdd().first()[1]
+        expected = np.array([self.band_1, self.band_3])
+
+        self.assertTrue((expected == actual.cells).all())
+
+    def test_bands_list_raster(self):
         actual = self.raster_rdd.bands([0, 2]).to_numpy_rdd().first()[1]
         expected = np.array([self.band_1, self.band_3])
 
         self.assertTrue((expected == actual.cells).all())
 
-    def test_band_range(self):
+    def test_band_range_tiled(self):
+        actual = self.tiled_raster_rdd.bands(range(0, 3)).to_numpy_rdd().first()[1]
+        expected = np.array([self.band_1, self.band_2, self.band_3])
+
+        self.assertTrue((expected == actual.cells).all())
+
+    def test_band_range_raster(self):
         actual = self.raster_rdd.bands(range(0, 3)).to_numpy_rdd().first()[1]
         expected = np.array([self.band_1, self.band_2, self.band_3])
 
         self.assertTrue((expected == actual.cells).all())
 
-    def test_map_tiles_func(self):
+    def test_map_tiles_func_tiled(self):
         def test_func(tile):
             cells = tile.cells
             return Tile((cells[0] + cells[1]) / cells[2], tile.cell_type, tile.no_data_value)
 
-        actual = self.raster_rdd.map_tiles(test_func).to_numpy_rdd().first()[1]
+        actual = self.tiled_raster_rdd.map_tiles(test_func).to_numpy_rdd().first()[1]
         expected = np.array([self.band_1])
 
         self.assertTrue((expected == actual.cells).all())
 
-    def test_map_tiles_lambda(self):
-        actual = self.raster_rdd.map_tiles(lambda tile: Tile(tile.cells[0], tile.cell_type,
-                                                             tile.no_data_value)).to_numpy_rdd().first()[1]
+    # def test_map_tiles_func_raster(self):
+    #     def test_func(tile):
+    #         cells = tile.cells
+    #         return Tile((cells[0] + cells[1]) / cells[2], tile.cell_type, tile.no_data_value)
+
+    #     actual = self.raster_rdd.map_tiles(test_func).to_numpy_rdd().first()[1]
+    #     expected = np.array([self.band_1])
+
+    #     self.assertTrue((expected == actual.cells).all())
+
+    def test_map_tiles_lambda_tiled(self):
+        actual = self.tiled_raster_rdd.map_tiles(lambda tile: Tile(tile.cells[0], tile.cell_type,
+                                                                   tile.no_data_value)).to_numpy_rdd().first()[1]
         expected = np.array([self.band_1])
 
         self.assertTrue((expected == actual.cells).all())
+
+    # def test_map_tiles_lambda_raster(self):
+    #     actual = self.raster_rdd.map_tiles(lambda tile: Tile(tile.cells[0], tile.cell_type,
+    #                                                          tile.no_data_value)).to_numpy_rdd().first()[1]
+    #     expected = np.array([self.band_1])
+
+    #     self.assertTrue((expected == actual.cells).all())
 
 if __name__ == "__main__":
     unittest.main()

@@ -89,7 +89,7 @@ class FocalTest(BaseTestClass):
             operation=Operation.SUM,
             neighborhood=neighborhood)
 
-        self.assertTrue(result.to_numpy_rdd().first()[1].cells[0][1][0] >= 8.0)
+        self.assertTrue(result.to_numpy_rdd().first()[1].cells[0][1][0] >= 5.0)
 
     def test_square(self):
         neighborhood = Square(extent=1.0)
@@ -99,7 +99,7 @@ class FocalTest(BaseTestClass):
             operation=Operation.SUM,
             neighborhood=neighborhood)
 
-        self.assertTrue(result.to_numpy_rdd().first()[1].cells[0][1][0] >= 9.0)
+        self.assertTrue(result.to_numpy_rdd().first()[1].cells[0][1][0] >= 6.0)
 
     def test_focal_sum_int(self):
         result = self.raster_rdd.focal(

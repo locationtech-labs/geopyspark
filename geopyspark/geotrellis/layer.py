@@ -771,6 +771,7 @@ class TiledRasterLayer(CachableLayer):
         """
         if self.layer_type != LayerType.SPATIAL:
             raise ValueError("Only TiledRasterLayers with a layer_type of Spatial can use lookup()")
+
         bounds = self.layer_metadata.bounds
         min_col = bounds.minKey.col
         min_row = bounds.minKey.row
