@@ -130,27 +130,10 @@ trait TileProtoBuf {
       val ct = messageToCellType(messageCellType)
 
       message.cellType.get.dataType.toString match {
-        case "BIT" =>
-            ArrayTile(message.uint32Cells.toArray, message.cols, message.rows).interpretAs(ct)
-
-        case ("BYTE" | "SHORT") =>
-          if (messageCellType.hasNoData)
-            ArrayTile(message.sint32Cells.toArray, message.cols, message.rows)
-              .interpretAs(ct)
-              .map { x => if (x == Int.MinValue) messageCellType.nd.toInt else x }
-          else
-            ArrayTile(message.sint32Cells.toArray, message.cols, message.rows).interpretAs(ct)
-
-        case ("UBYTE" | "USHORT") =>
-          if (messageCellType.hasNoData)
-            ArrayTile(message.uint32Cells.toArray, message.cols, message.rows)
-              .interpretAs(ct)
-              .map { x => if (x == Int.MaxValue) messageCellType.nd.toInt else x }
-          else
-            ArrayTile(message.uint32Cells.toArray, message.cols, message.rows).interpretAs(ct)
-
-        case "INT" =>
-            ArrayTile(message.sint32Cells.toArray, message.cols, message.rows).interpretAs(ct)
+        case ("BYTE" | "SHORT" | "INT") =>
+          RawArrayTile(message.sint32Cells.toArray, message.cols, message.rows).interpretAs(ct)
+        case ("BIT" | "UBYTE" | "USHORT") =>
+          RawArrayTile(message.uint32Cells.toArray, message.cols, message.rows).interpretAs(ct)
         case "FLOAT" =>
           ArrayTile(message.floatCells.toArray, message.cols, message.rows).interpretAs(ct)
         case "DOUBLE" =>
