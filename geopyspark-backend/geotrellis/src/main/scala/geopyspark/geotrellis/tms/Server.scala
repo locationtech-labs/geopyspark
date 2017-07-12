@@ -32,7 +32,7 @@ object AkkaSystem {
   }
 }
 
-class TMSServer(router: TMSServerRoute) { //(reader: ValueReader[LayerId], catalog: String, rf: TileRender) {
+class TMSServer(router: TMSServerRoute) {
   import AkkaSystem._
 
   var _handshake = ""

@@ -94,12 +94,7 @@ class RequestAggregator extends Actor {
   def receive = {
     case qr @ QueueRequest(zoom, x, y, pr) => 
       requests += qr
-      println(s"Request for ${(zoom, x, y)} added; There are now ${requests.size} pending requests")
-    // case FulfillRequests =>
-    //   fulfillRequests()
-    //   context.system.scheduler.scheduleOnce(RDDLookupAggregator.interval, self, FulfillRequests)
     case DumpRequests => 
-      // println("Dump request received")
       sender ! FulfillRequests(requests.toSeq)
       requests.clear
     case _ => println("Unexpected message!")
@@ -126,17 +121,14 @@ class RDDLookup(
 )(implicit ec: ExecutionContext) extends Actor {
   def receive = {
     case Initialize =>
-      println("Initialized tile fullfillment server")
       context.system.scheduler.scheduleOnce(RDDLookup.interval, aggregator, DumpRequests)
     case FulfillRequests(requests) => 
-      //println("Pong!")
       fulfillRequests(requests)
       context.system.scheduler.scheduleOnce(RDDLookup.interval, aggregator, DumpRequests)
   }
 
   def fulfillRequests(requests: Seq[QueueRequest]) = {
     if (requests nonEmpty) {
-      println(s"Filling ${requests.size} requests for ${requests}")
       requests
         .groupBy{ case QueueRequest(zoom, _, _, _) => zoom }
         .foreach{ case (zoom, reqs) => {
@@ -149,13 +141,11 @@ class RDDLookup(
                 promise success (results
                   .find{ case (rddKey, _) => rddKey == key } 
                   .map{ case (_, tile) => 
-                        println(s"Rendering tile at zoom=$zoom, $key") 
                         HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`image/png`), rf.render(tile))) 
                       }
                 )
               }}
             case None =>
-              println(s"No data at zoom level $zoom!")
               reqs.foreach{ case QueueRequest(_, _, _, promise) => promise success None }
           }
         }}
@@ -178,8 +168,6 @@ class SpatialRddRoute(
   override def startup() = {
     if (_aggregator != null) 
       throw new IllegalStateException("Cannot start: TMS server already running")
-    else
-      println("Starting up RDD backend")
 
     _aggregator = system.actorOf(RequestAggregator.props, UUID.randomUUID.toString)
     _fulfiller = system.actorOf(RDDLookup.props(levels, rf, aggregator), UUID.randomUUID.toString)
@@ -189,8 +177,6 @@ class SpatialRddRoute(
   override def shutdown() = {
     if (_aggregator == null)
       throw new IllegalStateException("Cannot stop: TMS server not running")
-    else
-      println("Shutting down RDD backend")
 
     system.stop(_aggregator)
     system.stop(_fulfiller)
@@ -204,9 +190,7 @@ class SpatialRddRoute(
   def root: Route =
     pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
       val callback = Promise[Option[HttpResponse]]()
-      print(s"Sending message for ${(zoom, x, y)}")
       aggregator ! QueueRequest(zoom, x, y, callback) 
-      println(" ... Done!")
       complete { 
         callback.future
       }
