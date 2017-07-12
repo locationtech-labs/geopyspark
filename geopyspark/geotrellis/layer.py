@@ -63,6 +63,37 @@ def _reclassify(srdd, value_map, data_type, classification_strategy, replace_nod
                                          replace_nodata_with)
 
 
+def _to_geotiff_rdd(pysc, srdd, storage_method, rows_per_strip, tile_dimensions, compression,
+                    color_space, color_map, head_tags, band_tags):
+    storage_method = StorageMethod(storage_method).value
+    compression = Compression(compression).value
+    color_space = ColorSpace(color_space).value
+
+    if storage_method == StorageMethod.STRIPED:
+        if rows_per_strip:
+            scala_storage = \
+                    pysc._gateway.jvm.geotrellis.raster.io.geotiff.Striped.apply(rows_per_strip)
+        else:
+            scala_storage = \
+                    pysc._gateway.jvm.geotrellis.raster.io.geotiff.Striped.apply()
+    else:
+        scala_storage = pysc._gateway.jvm.geotrellis.raster.io.geotiff.Tiled(*tile_dimensions)
+
+    if color_map:
+        return srdd.toGeoTiffRDD(scala_storage,
+                                 compression,
+                                 color_space,
+                                 color_map.cmap,
+                                 head_tags or {},
+                                 band_tags or [])
+    else:
+        return srdd.toGeoTiffRDD(scala_storage,
+                                 compression,
+                                 color_space,
+                                 head_tags or {},
+                                 band_tags or [])
+
+
 class CachableLayer(object):
     """
     Base class for class that wraps a Scala RDD instance through a py4j reference.
@@ -245,34 +276,10 @@ class RasterLayer(CachableLayer):
                        head_tags=None,
                        band_tags=None):
 
-        storage_method = StorageMethod(storage_method).value
-        compression = Compression(compression).value
-        color_space = ColorSpace(color_space).value
+        result = _to_geotiff_rdd(self.pysc, self.srdd, storage_method, rows_per_strip, tile_dimensions,
+                                 compression, color_space, color_map, head_tags, band_tags)
 
-        if not head_tags:
-            head_tags = {}
-        if not band_tags:
-            band_tags = []
-
-        if color_map:
-            result = self.srdd.toGeoTiffRDD(storage_method,
-                                            rows_per_strip if rows_per_strip else 0,
-                                            tile_dimensions,
-                                            compression,
-                                            color_space,
-                                            color_map.cm,
-                                            head_tags,
-                                            band_tags)
-        else:
-            result = self.srdd.toGeoTiffRDD(storage_method,
-                                            rows_per_strip if rows_per_strip else 0,
-                                            tile_dimensions,
-                                            compression,
-                                            color_space,
-                                            head_tags,
-                                            band_tags)
-
-        key = map_key_input(LayerType(self.rdd_type).value, False)
+        key = map_key_input(LayerType(self.layer_type).value, False)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
         return create_python_rdd(self.pysc, result, ser)
@@ -724,34 +731,10 @@ class TiledRasterLayer(CachableLayer):
                        head_tags=None,
                        band_tags=None):
 
-        storage_method = StorageMethod(storage_method).value
-        compression = Compression(compression).value
-        color_space = ColorSpace(color_space).value
+        result = _to_geotiff_rdd(self.pysc, self.srdd, storage_method, rows_per_strip, tile_dimensions,
+                                 compression, color_space, color_map, head_tags, band_tags)
 
-        if not head_tags:
-            head_tags = {}
-        if not band_tags:
-            band_tags = []
-
-        if color_map:
-            result = self.srdd.toGeoTiffRDD(storage_method,
-                                            rows_per_strip if rows_per_strip else 0,
-                                            tile_dimensions,
-                                            compression,
-                                            color_space,
-                                            color_map.cm,
-                                            head_tags,
-                                            band_tags)
-        else:
-            result = self.srdd.toGeoTiffRDD(storage_method,
-                                            rows_per_strip if rows_per_strip else 0,
-                                            tile_dimensions,
-                                            compression,
-                                            color_space,
-                                            head_tags,
-                                            band_tags)
-
-        key = map_key_input(LayerType(self.rdd_type).value, True)
+        key = map_key_input(LayerType(self.layer_type).value, True)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
         return create_python_rdd(self.pysc, result, ser)
