@@ -64,9 +64,13 @@ class LookupTest(BaseTestClass):
         n = np.sum(result.cells)
         self.assertEqual(n, 24 + 3*25)
 
-    def test_lookup_5(self):
+    def test_invalid_1(self):
         with pytest.raises(IndexError):
             result = self.raster_rdd.lookup(13, 33)
+
+    def test_invalid_2(self):
+        with pytest.raises(IndexError):
+            result = self.raster_rdd.lookup(33, 13)
 
 
 

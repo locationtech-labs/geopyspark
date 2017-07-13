@@ -34,5 +34,35 @@ class LayerWrapperTest(BaseTestClass):
         raster_rdd.unpersist()
         self.assertEqual(raster_rdd.is_cached, False)
 
+    def test_cache(self):
+        arr = np.array([[[1, 1, 1, 1]],
+                        [[2, 2, 2, 2]],
+                        [[3, 3, 3, 3]],
+                        [[4, 4, 4, 4]]], dtype=int)
+        tile = Tile(arr, 'INT', -500)
+
+        rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+
+        self.assertEqual(raster_rdd.is_cached, False)
+
+        raster_rdd.cache()
+        self.assertEqual(raster_rdd.is_cached, True)
+
+    def test_miscellaneous(self):
+        arr = np.array([[[1, 1, 1, 1]],
+                        [[2, 2, 2, 2]],
+                        [[3, 3, 3, 3]],
+                        [[4, 4, 4, 4]]], dtype=int)
+        tile = Tile(arr, 'INT', -500)
+
+        rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+
+        self.assertEqual(raster_rdd.count(), 1)
+        self.assertTrue(raster_rdd.getNumPartitions() >= 1)
+        self.assertTrue(len(raster_rdd.wrapped_rdds()) >= 1)
+        self.assertEqual(str(raster_rdd), repr(raster_rdd))
+
 if __name__ == "__main__":
     unittest.main()

@@ -29,7 +29,7 @@ class PyramidingTest(BaseTestClass):
         raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
         tile_layout = TileLayout(1, 1, 17, 17)
 
-        metadata = raster_rdd.collect_metadata(tile_size=17)
+        metadata = raster_rdd.collect_metadata(tile_size=17, crs=3857)
         laid_out = raster_rdd.tile_to_layout(metadata)
 
         result = laid_out.pyramid_non_power_of_two(col_power=10, row_power=10, end_zoom=2, start_zoom=9)

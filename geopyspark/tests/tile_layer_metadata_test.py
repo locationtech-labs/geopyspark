@@ -21,6 +21,10 @@ class TileLayerMetadataTest(BaseTestClass):
         yield
         BaseTestClass.pysc._gateway.close()
 
+    def test_collection_invalid(self):
+        with pytest.raises(TypeError):
+            self.rdd.collect_metadata(self.extent)
+
     def test_collection_avro_rdd(self):
         result = self.rdd.collect_metadata(self.extent, self.layout)
 

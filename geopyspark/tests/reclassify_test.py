@@ -21,6 +21,32 @@ class ReclassifyTest(BaseTestClass):
         yield
         BaseTestClass.pysc._gateway.close()
 
+    def test_tuple_key(self):
+        arr = np.zeros((1, 16, 16))
+        tile = Tile(arr, 'FLOAT', -500)
+
+        rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+
+        value_map = {(0, 1): 1}
+
+        result = raster_rdd.reclassify(value_map, int).to_numpy_rdd().first()[1].cells
+
+        self.assertTrue((result == 1).all())
+
+    def test_list_bad(self):
+        arr = np.zeros((1, 16, 16))
+        tile = Tile(arr, 'FLOAT', -500)
+
+        rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
+        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+
+        value_map = {'apple, orange, banana': 1}
+
+        with pytest.raises(TypeError):
+            result = raster_rdd.reclassify(value_map, int).to_numpy_rdd().first()[1].cells
+
+
     def test_all_zeros(self):
         arr = np.zeros((1, 16, 16))
         tile = Tile(arr, 'FLOAT', -500)
