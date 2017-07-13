@@ -16,6 +16,9 @@ from geopyspark.geotrellis import Metadata, Extent, deprecated
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
+__all__ = ["read_layer_metadata", "get_layer_ids", "read_value", "query", "write"]
+
+
 _mapped_cached = {}
 _mapped_serializers = {}
 _cached = namedtuple('Cached', ('store', 'reader', 'value_reader', 'writer'))

@@ -129,3 +129,12 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
     conf.set(key='spark.executor.memory', value='8G')
 
     return conf
+
+
+__all__ = ['geopyspark_conf']
+
+
+from . import geotrellis
+from .geotrellis import *
+
+__all__.extend(geotrellis.__all__)

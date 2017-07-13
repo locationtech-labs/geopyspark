@@ -9,6 +9,9 @@ ensure_pyspark()
 from geopyspark.geotrellis.constants import ClassificationStrategy
 
 
+__all__ = ["get_colors_from_colors", "get_colors_from_matplotlib", "ColorMap"]
+
+
 def get_colors_from_colors(colors):
     """Returns a list of integer colors from a list of Color objects from the
     colortools package.

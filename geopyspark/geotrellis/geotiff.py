@@ -6,6 +6,9 @@ from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.layer import RasterLayer
 
 
+__all__ = ['get']
+
+
 def get(pysc,
         layer_type,
         uri,

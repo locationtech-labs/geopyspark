@@ -6,6 +6,9 @@ Note:
 """
 
 
+__all__ = ['Square', 'Circle', 'Wedge', 'Nesw', 'Annulus']
+
+
 class Neighborhood(object):
     def __init__(self, name, param_1, param_2=None, param_3=None):
         """The base class of the all of the neighborhoods.

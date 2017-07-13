@@ -3,6 +3,9 @@ class.
 """
 
 
+__all__ = ['Histogram']
+
+
 class Histogram(object):
     """A wrapper class for a GeoTrellis Histogram.
 

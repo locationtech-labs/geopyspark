@@ -2,7 +2,8 @@
 from enum import Enum, IntEnum
 
 
-__all__ = ['LayerType', 'LayoutScheme', 'NO_DATA_INT']
+__all__ = ['NO_DATA_INT', 'LayerType', 'LayoutScheme', 'IndexingMethod', 'ResampleMethod', 'TimeUnit',
+           'Operation', 'Neighborhood', 'ClassificationStrategy', 'CellType', 'ColorRamp']
 
 
 """The NoData value for ints in GeoTrellis."""

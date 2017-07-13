@@ -4,6 +4,9 @@ import numpy as np
 from geopyspark.geotrellis.layer import Pyramid
 
 
+__all__ = ['TileRender', 'TMSServer']
+
+
 class TileRender(object):
     """A Python implementation of the Scala geopyspark.geotrellis.tms.TileRender
     interface.  Permits a callback from Scala to Python to allow for custom

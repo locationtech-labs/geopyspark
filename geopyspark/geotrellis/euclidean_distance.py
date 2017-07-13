@@ -3,6 +3,9 @@ from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
+__all__ = ['euclidean_distance']
+
+
 def euclidean_distance(pysc, geometry, source_crs, zoom, cellType=CellType.FLOAT64):
     """Calculates the Euclidean distance of a Shapely geometry.
 
