@@ -1,5 +1,5 @@
 """Constants that are used by ``geopyspark.geotrellis`` classes, methods, and functions."""
-from enum import Enum
+from enum import Enum, IntEnum
 
 
 __all__ = ['LayerType', 'LayoutScheme', 'NO_DATA_INT']
@@ -176,3 +176,36 @@ class ColorRamp(Enum):
     HEATMAP_LIGHT_PURPLE_TO_DARK_PURPLE_TO_WHITE = "HeatmapLightPurpleToDarkPurpleToWhite"
     CLASSIFICATION_BOLD_LAND_USE = "ClassificationBoldLandUse"
     CLASSIFICATION_MUTED_TERRAIN = "ClassificationMutedTerrain"
+
+
+class StorageMethod(Enum):
+    """Internal storage methods for GeoTiffs."""
+
+    STRIPED = "Striped"
+    TILED = "Tiled"
+
+
+class ColorSpace(IntEnum):
+    """Color space types for GeoTiffs."""
+
+    WHITE_IS_ZERO = 0
+    BLACK_IS_ZERO = 1
+    RGB = 2
+    PALETTE = 3
+    TRANSPARENCY_MASK = 4
+    CMYK = 5
+    Y_CB_CR = 6
+    CIE_LAB = 8
+    ICC_LAB = 9
+    ITU_LAB = 10
+    CFA = 32803
+    LINEAR_RAW = 34892
+    LOG_L = 32844
+    LOG_LUV = 32845
+
+
+class Compression(Enum):
+    """Compression methods for GeoTiffs."""
+
+    NO_COMPRESSION = "NoCompression"
+    DEFLATE_COMPRESSION = "DeflateCompression"

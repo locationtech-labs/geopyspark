@@ -40,4 +40,10 @@ object Constants {
   final val LESSTHAN = "LessThan"
   final val LESSTHANOREQUALTO = "LessThanOrEqualTo"
   final val EXACT = "Exact"
+
+  final val NOCOMPRESSION = "NoCompression"
+  final val DEFLATECOMPRESSION = "DeflateCompression"
+
+  final val STRIPED = "Striped"
+  final val TILED = "Tiled"
 }

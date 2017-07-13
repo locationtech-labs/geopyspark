@@ -11,6 +11,7 @@ import geotrellis.raster._
 import geotrellis.raster.distance._
 import geotrellis.raster.histogram._
 import geotrellis.raster.io.geotiff._
+import geotrellis.raster.io.geotiff.compression._
 import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
 import geotrellis.raster.resample.ResampleMethod
@@ -573,6 +574,26 @@ class SpatialTiledRasterRDD(
 
   def toPngRDD(pngRDD: RDD[(SpatialKey, Array[Byte])]): JavaRDD[Array[Byte]] =
     PythonTranslator.toPython[(SpatialKey, Array[Byte]), ProtoTuple](pngRDD)
+
+  def toGeoTiffRDD(
+    tags: Tags,
+    geotiffOptions: GeoTiffOptions
+  ): JavaRDD[Array[Byte]] = {
+    val mapTransform = MapKeyTransform(
+      rdd.metadata.layout.extent,
+      rdd.metadata.layout.layoutCols,
+      rdd.metadata.layout.layoutRows)
+
+    val crs = rdd.metadata.crs
+
+    val geotiffRDD = rdd.map { x =>
+      val transKey = ProjectedExtent(mapTransform(x._1), crs)
+
+      (x._1, MultibandGeoTiff(x._2, transKey.extent, transKey.crs, tags, geotiffOptions).toByteArray)
+    }
+
+    PythonTranslator.toPython[(SpatialKey, Array[Byte]), ProtoTuple](geotiffRDD)
+  }
 }
 
 
@@ -772,6 +793,26 @@ class TemporalTiledRasterRDD(
 
   def toPngRDD(pngRDD: RDD[(SpaceTimeKey, Array[Byte])]): JavaRDD[Array[Byte]] =
     PythonTranslator.toPython[(SpaceTimeKey, Array[Byte]), ProtoTuple](pngRDD)
+
+  def toGeoTiffRDD(
+    tags: Tags,
+    geotiffOptions: GeoTiffOptions
+  ): JavaRDD[Array[Byte]] = {
+    val mapTransform = MapKeyTransform(
+      rdd.metadata.layout.extent,
+      rdd.metadata.layout.layoutCols,
+      rdd.metadata.layout.layoutRows)
+
+    val crs = rdd.metadata.crs
+
+    val geotiffRDD = rdd.map { x =>
+      val transKey = TemporalProjectedExtent(mapTransform(x._1), crs, x._1.instant)
+
+      (x._1, MultibandGeoTiff(x._2, transKey.extent, transKey.crs, tags, geotiffOptions).toByteArray)
+    }
+
+    PythonTranslator.toPython[(SpaceTimeKey, Array[Byte]), ProtoTuple](geotiffRDD)
+  }
 }
 
 

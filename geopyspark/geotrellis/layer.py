@@ -23,6 +23,9 @@ from geopyspark.geotrellis.constants import (Operation,
                                              CellType,
                                              LayoutScheme,
                                              LayerType,
+                                             StorageMethod,
+                                             ColorSpace,
+                                             Compression,
                                              NO_DATA_INT
                                             )
 from geopyspark.geotrellis.neighborhood import Neighborhood
@@ -58,6 +61,37 @@ def _reclassify(srdd, value_map, data_type, classification_strategy, replace_nod
         else:
             return srdd.reclassifyDouble(new_dict, ClassificationStrategy(classification_strategy).value,
                                          replace_nodata_with)
+
+
+def _to_geotiff_rdd(pysc, srdd, storage_method, rows_per_strip, tile_dimensions, compression,
+                    color_space, color_map, head_tags, band_tags):
+    storage_method = StorageMethod(storage_method).value
+    compression = Compression(compression).value
+    color_space = ColorSpace(color_space).value
+
+    if storage_method == StorageMethod.STRIPED:
+        if rows_per_strip:
+            scala_storage = \
+                    pysc._gateway.jvm.geotrellis.raster.io.geotiff.Striped.apply(rows_per_strip)
+        else:
+            scala_storage = \
+                    pysc._gateway.jvm.geotrellis.raster.io.geotiff.Striped.apply()
+    else:
+        scala_storage = pysc._gateway.jvm.geotrellis.raster.io.geotiff.Tiled(*tile_dimensions)
+
+    if color_map:
+        return srdd.toGeoTiffRDD(scala_storage,
+                                 compression,
+                                 color_space,
+                                 color_map.cmap,
+                                 head_tags or {},
+                                 band_tags or [])
+    else:
+        return srdd.toGeoTiffRDD(scala_storage,
+                                 compression,
+                                 color_space,
+                                 head_tags or {},
+                                 band_tags or [])
 
 
 class CachableLayer(object):
@@ -227,6 +261,55 @@ class RasterLayer(CachableLayer):
             RDD[(K, bytes)]
         """
         result = self.srdd.toPngRDD(color_map.cmap)
+        key = map_key_input(LayerType(self.layer_type).value, False)
+        ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
+
+        return create_python_rdd(self.pysc, result, ser)
+
+    def to_geotiff_rdd(self,
+                       storage_method=StorageMethod.STRIPED,
+                       rows_per_strip=None,
+                       tile_dimensions=(256, 256),
+                       compression=Compression.NO_COMPRESSION,
+                       color_space=ColorSpace.BLACK_IS_ZERO,
+                       color_map=None,
+                       head_tags=None,
+                       band_tags=None):
+        """Converts the rasters within this layer to GeoTiffs which are then converted to bytes.
+        This is returned as a ``RDD[(K, bytes)]``. Where ``K`` is either ``ProjectedExtent`` or
+        ``TemporalProjectedExtent``.
+
+        Args:
+            storage_method (str or :class:`~geopyspark.geotrellis.constants.StorageMethod`, optional): How
+                the segments within the GeoTiffs should be arranged. Default is
+                ``StorageMethod.STRIPED``.
+            rows_per_strip (int, optional): How many rows should be in each strip segment of the
+                GeoTiffs if ``storage_method`` is ``StorageMethod.STRIPED``. If ``None``, then the
+                strip size will default to a value that is 8K or less.
+            tile_dimensions ((int, int), optional): The length and width for each tile segment of the GeoTiff
+                if ``storage_method`` is ``StorageMethod.TILED``. If ``None`` then the default size
+                is ``(256, 256)``.
+            compression (str or :class:`~geopyspark.geotrellis.constants.Compression`, optional): How the
+                data should be compressed. Defaults to ``Compression.NO_COMPRESSION``.
+            color_space (str or :class:`~geopyspark.geotrellis.constants.ColorSpace`, optional): How the
+                colors should be organized in the GeoTiffs. Defaults to
+                ``ColorSpace.BLACK_IS_ZERO``.
+            color_map (:class:`~geopyspark.geotrellis.color.ColorMap`, optional): A ``ColorMap``
+                instance used to color the GeoTiffs to a different gradient.
+            head_tags (dict, optional): A ``dict`` where each key and value is a ``str``.
+            band_tags (list, optional): A ``list`` of ``dict``\s where each key and value is a
+                ``str``.
+
+            Note:
+                For more information on the contents of the tags, see www.gdal.org/gdal_datamodel.html
+
+        Returns:
+            RDD[(K, bytes)]
+        """
+
+        result = _to_geotiff_rdd(self.pysc, self.srdd, storage_method, rows_per_strip, tile_dimensions,
+                                 compression, color_space, color_map, head_tags, band_tags)
+
         key = map_key_input(LayerType(self.layer_type).value, False)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
@@ -668,6 +751,55 @@ class TiledRasterLayer(CachableLayer):
         return TiledRasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
                                                python_rdd.mapValues(lambda tile: func(tile)),
                                                self.layer_metadata)
+
+    def to_geotiff_rdd(self,
+                       storage_method=StorageMethod.STRIPED,
+                       rows_per_strip=None,
+                       tile_dimensions=(256, 256),
+                       compression=Compression.NO_COMPRESSION,
+                       color_space=ColorSpace.BLACK_IS_ZERO,
+                       color_map=None,
+                       head_tags=None,
+                       band_tags=None):
+        """Converts the rasters within this layer to GeoTiffs which are then converted to bytes.
+        This is returned as a ``RDD[(K, bytes)]``. Where ``K`` is either ``SpatialKey`` or
+        ``SpaceTimeKey``.
+
+        Args:
+            storage_method (str or :class:`~geopyspark.geotrellis.constants.StorageMethod`, optional): How
+                the segments within the GeoTiffs should be arranged. Default is
+                ``StorageMethod.STRIPED``.
+            rows_per_strip (int, optional): How many rows should be in each strip segment of the
+                GeoTiffs if ``storage_method`` is ``StorageMethod.STRIPED``. If ``None``, then the
+                strip size will default to a value that is 8K or less.
+            tile_dimensions ((int, int), optional): The length and width for each tile segment of the GeoTiff
+                if ``storage_method`` is ``StorageMethod.TILED``. If ``None`` then the default size
+                is ``(256, 256)``.
+            compression (str or :class:`~geopyspark.geotrellis.constants.Compression`, optional): How the
+                data should be compressed. Defaults to ``Compression.NO_COMPRESSION``.
+            color_space (str or :class:`~geopyspark.geotrellis.constants.ColorSpace`, optional): How the
+                colors should be organized in the GeoTiffs. Defaults to
+                ``ColorSpace.BLACK_IS_ZERO``.
+            color_map (:class:`~geopyspark.geotrellis.color.ColorMap`, optional): A ``ColorMap``
+                instance used to color the GeoTiffs to a different gradient.
+            head_tags (dict, optional): A ``dict`` where each key and value is a ``str``.
+            band_tags (list, optional): A ``list`` of ``dict``\s where each key and value is a
+                ``str``.
+
+            Note:
+                For more information on the contents of the tags, see www.gdal.org/gdal_datamodel.html
+
+        Returns:
+            RDD[(K, bytes)]
+        """
+
+        result = _to_geotiff_rdd(self.pysc, self.srdd, storage_method, rows_per_strip, tile_dimensions,
+                                 compression, color_space, color_map, head_tags, band_tags)
+
+        key = map_key_input(LayerType(self.layer_type).value, True)
+        ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
+
+        return create_python_rdd(self.pysc, result, ser)
 
     def convert_data_type(self, new_type, no_data_value=None):
         """Converts the underlying, raster values to a new ``CellType``.

@@ -10,6 +10,8 @@ import geotrellis.raster._
 import geotrellis.raster.resample._
 import geotrellis.raster.render._
 import geotrellis.raster.histogram.Histogram
+import geotrellis.raster.io.geotiff._
+import geotrellis.raster.io.geotiff.compression._
 import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.json._
@@ -59,6 +61,23 @@ object TileRDD {
       .recover({ case e => CRS.fromEpsgCode(crs.toInt) })
       .toOption
   }
+
+  def getStorageMethod(
+    storageMethod: String,
+    rowsPerStrip: Int,
+    tileDimensions: java.util.ArrayList[Int]
+  ): StorageMethod =
+    (storageMethod, rowsPerStrip) match {
+      case (STRIPED, 0) => Striped()
+      case (STRIPED, x) => Striped(x)
+      case (TILED, _) => Tiled(tileDimensions.get(0), tileDimensions.get(1))
+    }
+
+  def getCompression(compressionType: String): Compression =
+    compressionType match {
+      case NOCOMPRESSION => NoCompression
+      case DEFLATECOMPRESSION => DeflateCompression
+    }
 }
 
 abstract class TileRDD[K: ClassTag] {
@@ -70,6 +89,55 @@ abstract class TileRDD[K: ClassTag] {
     toPngRDD(rdd.mapValues { v => v.bands(0).renderPng(cm).bytes })
 
   def toPngRDD(pngRDD: RDD[(K, Array[Byte])]): JavaRDD[Array[Byte]]
+
+  def toGeoTiffRDD(
+    storageMethod: StorageMethod,
+    compression: String,
+    colorSpace: Int,
+    headTags: java.util.Map[String, String],
+    bandTags: java.util.ArrayList[java.util.Map[String, String]]
+  ): JavaRDD[Array[Byte]] = {
+    val tags =
+      if (headTags.isEmpty || bandTags.isEmpty)
+        Tags.empty
+      else
+        Tags(headTags.asScala.toMap,
+          bandTags.toArray.map(_.asInstanceOf[scala.collection.immutable.Map[String, String]]).toList)
+
+    val options = GeoTiffOptions(
+      storageMethod,
+      TileRDD.getCompression(compression),
+      colorSpace,
+      None)
+
+    toGeoTiffRDD(tags, options)
+  }
+
+  def toGeoTiffRDD(
+    storageMethod: StorageMethod,
+    compression: String,
+    colorSpace: Int,
+    colorMap: ColorMap,
+    headTags: java.util.Map[String, String],
+    bandTags: java.util.ArrayList[java.util.Map[String, String]]
+  ): JavaRDD[Array[Byte]] = {
+    val tags =
+      if (headTags.isEmpty || bandTags.isEmpty)
+        Tags.empty
+      else
+        Tags(headTags.asScala.toMap,
+          bandTags.toArray.map(_.asInstanceOf[scala.collection.immutable.Map[String, String]]).toList)
+
+    val options = GeoTiffOptions(
+      storageMethod,
+      TileRDD.getCompression(compression),
+      colorSpace,
+      Some(IndexedColorMap.fromColorMap(colorMap)))
+
+    toGeoTiffRDD(tags, options)
+  }
+
+  def toGeoTiffRDD(tags: Tags, geotiffOptions: GeoTiffOptions): JavaRDD[Array[Byte]]
 
   def reclassify(
     intMap: java.util.Map[Int, Int],
@@ -257,6 +325,17 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
 
   def toPngRDD(pngRDD: RDD[(ProjectedExtent, Array[Byte])]): JavaRDD[Array[Byte]] =
     PythonTranslator.toPython[(ProjectedExtent, Array[Byte]), ProtoTuple](pngRDD)
+
+  def toGeoTiffRDD(
+    tags: Tags,
+    geotiffOptions: GeoTiffOptions
+  ): JavaRDD[Array[Byte]] = {
+    val geotiffRDD = rdd.map { x =>
+      (x._1, MultibandGeoTiff(x._2, x._1.extent, x._1.crs, tags, geotiffOptions).toByteArray)
+    }
+
+    PythonTranslator.toPython[(ProjectedExtent, Array[Byte]), ProtoTuple](geotiffRDD)
+  }
 }
 
 
@@ -308,6 +387,17 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
 
   def toPngRDD(pngRDD: RDD[(TemporalProjectedExtent, Array[Byte])]): JavaRDD[Array[Byte]] =
     PythonTranslator.toPython[(TemporalProjectedExtent, Array[Byte]), ProtoTuple](pngRDD)
+
+  def toGeoTiffRDD(
+    tags: Tags,
+    geotiffOptions: GeoTiffOptions
+  ): JavaRDD[Array[Byte]] = {
+    val geotiffRDD = rdd.map { x =>
+      (x._1, MultibandGeoTiff(x._2, x._1.extent, x._1.crs, tags, geotiffOptions).toByteArray)
+    }
+
+    PythonTranslator.toPython[(TemporalProjectedExtent, Array[Byte]), ProtoTuple](geotiffRDD)
+  }
 }
 
 
