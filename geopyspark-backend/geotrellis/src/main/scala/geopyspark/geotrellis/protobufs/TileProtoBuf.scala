@@ -114,10 +114,18 @@ trait TileProtoBuf {
           cellType = Some(protoCellType))
 
       protoCellType.dataType.toString match {
-        case ("INT" | "BYTE" | "SHORT") =>
-          initialProtoTile.withSint32Cells(tile.toArray())
-        case ("UBYTE" | "USHORT" | "BIT") =>
+        case "BIT" =>
           initialProtoTile.withUint32Cells(tile.toArray())
+        case "BYTE" =>
+          initialProtoTile.withSint32Cells(tile.interpretAs(ByteCellType).toArray())
+        case "UBYTE" =>
+          initialProtoTile.withUint32Cells(tile.interpretAs(UByteCellType).toArray())
+        case "SHORT" =>
+          initialProtoTile.withSint32Cells(tile.interpretAs(ShortCellType).toArray())
+        case "USHORT" =>
+          initialProtoTile.withUint32Cells(tile.interpretAs(UShortCellType).toArray())
+        case "INT" =>
+          initialProtoTile.withSint32Cells(tile.toArray())
         case "FLOAT" =>
           initialProtoTile.withFloatCells(tile.asInstanceOf[FloatArrayTile].array)
         case "DOUBLE" =>

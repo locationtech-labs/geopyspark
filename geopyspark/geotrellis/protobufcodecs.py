@@ -6,7 +6,6 @@ ensure_pyspark()
 
 from geopyspark.geotrellis import (Extent, ProjectedExtent, TemporalProjectedExtent, SpatialKey,
                                    SpaceTimeKey, Tile)
-from geopyspark.geotrellis.constants import NO_DATA_INT, SCALA_MAX_INT
 
 from geopyspark.geotrellis.protobuf.tileMessages_pb2 import ProtoTile, ProtoMultibandTile, ProtoCellType
 from geopyspark.geotrellis.protobuf import keyMessages_pb2
@@ -33,15 +32,15 @@ def from_pb_tile(tile, no_data_value=None, data_type=None):
         data_type = _mapped_data_types[tile.cellType.dataType]
 
     if data_type == 'BIT':
-        cells = np.int8([no_data_value if x == SCALA_MAX_INT else x for x in tile.uint32Cells])
+        cells = np.int8(tile.uint32Cells[:])
     elif data_type == 'BYTE':
-        cells = np.int8([no_data_value if x == NO_DATA_INT else x for x in tile.sint32Cells])
+        cells = np.int8(tile.sint32Cells[:])
     elif data_type == 'UBYTE':
-        cells = np.uint8([no_data_value if x == SCALA_MAX_INT else x for x in tile.uint32Cells])
+        cells = np.uint8(tile.uint32Cells[:])
     elif data_type == 'SHORT':
-        cells = np.int16([no_data_value if x == NO_DATA_INT else x for x in tile.sint32Cells])
+        cells = np.int16(tile.sint32Cells[:])
     elif data_type == 'USHORT':
-        cells = np.uint16([no_data_value if x == SCALA_MAX_INT else x for x in tile.uint32Cells])
+        cells = np.uint16(tile.uint32Cells[:])
     elif data_type == 'INT':
         cells = np.int32(tile.sint32Cells[:])
     elif data_type == 'FLOAT':
