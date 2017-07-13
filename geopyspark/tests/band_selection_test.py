@@ -131,29 +131,12 @@ class BandSelectionTest(BaseTestClass):
 
         self.assertTrue((expected == actual.cells).all())
 
-    # def test_map_tiles_func_raster(self):
-    #     def test_func(tile):
-    #         cells = tile.cells
-    #         return Tile((cells[0] + cells[1]) / cells[2], tile.cell_type, tile.no_data_value)
-
-    #     actual = self.raster_rdd.map_tiles(test_func).to_numpy_rdd().first()[1]
-    #     expected = np.array([self.band_1])
-
-    #     self.assertTrue((expected == actual.cells).all())
-
     def test_map_tiles_lambda_tiled(self):
         actual = self.tiled_raster_rdd.map_tiles(lambda tile: Tile(tile.cells[0], tile.cell_type,
                                                                    tile.no_data_value)).to_numpy_rdd().first()[1]
         expected = np.array([self.band_1])
 
         self.assertTrue((expected == actual.cells).all())
-
-    # def test_map_tiles_lambda_raster(self):
-    #     actual = self.raster_rdd.map_tiles(lambda tile: Tile(tile.cells[0], tile.cell_type,
-    #                                                          tile.no_data_value)).to_numpy_rdd().first()[1]
-    #     expected = np.array([self.band_1])
-
-    #     self.assertTrue((expected == actual.cells).all())
 
 if __name__ == "__main__":
     unittest.main()
