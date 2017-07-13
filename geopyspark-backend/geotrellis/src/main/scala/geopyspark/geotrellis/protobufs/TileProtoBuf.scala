@@ -114,10 +114,18 @@ trait TileProtoBuf {
           cellType = Some(protoCellType))
 
       protoCellType.dataType.toString match {
-        case ("INT" | "BYTE" | "SHORT") =>
-          initialProtoTile.withSint32Cells(tile.toArray())
-        case ("UBYTE" | "USHORT" | "BIT") =>
+        case "BIT" =>
           initialProtoTile.withUint32Cells(tile.toArray())
+        case "BYTE" =>
+          initialProtoTile.withSint32Cells(tile.interpretAs(ByteCellType).toArray())
+        case "UBYTE" =>
+          initialProtoTile.withUint32Cells(tile.interpretAs(UByteCellType).toArray())
+        case "SHORT" =>
+          initialProtoTile.withSint32Cells(tile.interpretAs(ShortCellType).toArray())
+        case "USHORT" =>
+          initialProtoTile.withUint32Cells(tile.interpretAs(UShortCellType).toArray())
+        case "INT" =>
+          initialProtoTile.withSint32Cells(tile.toArray())
         case "FLOAT" =>
           initialProtoTile.withFloatCells(tile.asInstanceOf[FloatArrayTile].array)
         case "DOUBLE" =>
@@ -126,13 +134,14 @@ trait TileProtoBuf {
     }
 
     def decode(message: ProtoTile): Tile = {
-      val ct = messageToCellType(message.cellType.get)
+      val messageCellType = message.cellType.get
+      val ct = messageToCellType(messageCellType)
 
       message.cellType.get.dataType.toString match {
-        case ("INT" | "BYTE" | "SHORT") =>
-          ArrayTile(message.sint32Cells.toArray, message.cols, message.rows).interpretAs(ct)
-        case ("UBYTE" | "USHORT" | "BIT") =>
-          ArrayTile(message.uint32Cells.toArray, message.cols, message.rows).interpretAs(ct)
+        case ("BYTE" | "SHORT" | "INT") =>
+          RawArrayTile(message.sint32Cells.toArray, message.cols, message.rows).interpretAs(ct)
+        case ("BIT" | "UBYTE" | "USHORT") =>
+          RawArrayTile(message.uint32Cells.toArray, message.cols, message.rows).interpretAs(ct)
         case "FLOAT" =>
           ArrayTile(message.floatCells.toArray, message.cols, message.rows).interpretAs(ct)
         case "DOUBLE" =>
