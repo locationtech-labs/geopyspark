@@ -90,6 +90,55 @@ abstract class TileRDD[K: ClassTag] {
 
   def toPngRDD(pngRDD: RDD[(K, Array[Byte])]): JavaRDD[Array[Byte]]
 
+  def toGeoTiffRDD(
+    storageMethod: StorageMethod,
+    compression: String,
+    colorSpace: Int,
+    headTags: java.util.Map[String, String],
+    bandTags: java.util.ArrayList[java.util.Map[String, String]]
+  ): JavaRDD[Array[Byte]] = {
+    val tags =
+      if (headTags.isEmpty || bandTags.isEmpty)
+        Tags.empty
+      else
+        Tags(headTags.asScala.toMap,
+          bandTags.toArray.map(_.asInstanceOf[scala.collection.immutable.Map[String, String]]).toList)
+
+    val options = GeoTiffOptions(
+      storageMethod,
+      TileRDD.getCompression(compression),
+      colorSpace,
+      None)
+
+    toGeoTiffRDD(tags, options)
+  }
+
+  def toGeoTiffRDD(
+    storageMethod: StorageMethod,
+    compression: String,
+    colorSpace: Int,
+    colorMap: ColorMap,
+    headTags: java.util.Map[String, String],
+    bandTags: java.util.ArrayList[java.util.Map[String, String]]
+  ): JavaRDD[Array[Byte]] = {
+    val tags =
+      if (headTags.isEmpty || bandTags.isEmpty)
+        Tags.empty
+      else
+        Tags(headTags.asScala.toMap,
+          bandTags.toArray.map(_.asInstanceOf[scala.collection.immutable.Map[String, String]]).toList)
+
+    val options = GeoTiffOptions(
+      storageMethod,
+      TileRDD.getCompression(compression),
+      colorSpace,
+      Some(IndexedColorMap.fromColorMap(colorMap)))
+
+    toGeoTiffRDD(tags, options)
+  }
+
+  def toGeoTiffRDD(tags: Tags, geotiffOptions: GeoTiffOptions): JavaRDD[Array[Byte]]
+
   def reclassify(
     intMap: java.util.Map[Int, Int],
     boundaryType: String,
@@ -198,58 +247,6 @@ abstract class RasterRDD[K: ClassTag] extends TileRDD[K] {
 
   def bands(bands: java.util.ArrayList[Int]): RasterRDD[K] =
     withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(bands.asScala) })
-
-  def toGeoTiffRDD(
-    storageMethod: StorageMethod,
-    compression: String,
-    colorSpace: Int,
-    headTags: java.util.Map[String, String],
-    bandTags: java.util.ArrayList[java.util.Map[String, String]]
-  ): JavaRDD[Array[Byte]] = {
-    val tags =
-      if (headTags.isEmpty || bandTags.isEmpty)
-        Tags.empty
-      else
-        Tags(headTags.asScala.toMap,
-          bandTags.toArray.map(_.asInstanceOf[scala.collection.immutable.Map[String, String]]).toList)
-
-    val options = GeoTiffOptions(
-      storageMethod,
-      TileRDD.getCompression(compression),
-      colorSpace,
-      None)
-
-    toGeoTiffRDD(tags, options)
-  }
-
-  def toGeoTiffRDD(
-    storageMethod: StorageMethod,
-    compression: String,
-    colorSpace: Int,
-    colorMap: ColorMap,
-    headTags: java.util.Map[String, String],
-    bandTags: java.util.ArrayList[java.util.Map[String, String]]
-  ): JavaRDD[Array[Byte]] = {
-    val tags =
-      if (headTags.isEmpty || bandTags.isEmpty)
-        Tags.empty
-      else
-        Tags(headTags.asScala.toMap,
-          bandTags.toArray.map(_.asInstanceOf[scala.collection.immutable.Map[String, String]]).toList)
-
-    val options = GeoTiffOptions(
-      storageMethod,
-      TileRDD.getCompression(compression),
-      colorSpace,
-      Some(IndexedColorMap.fromColorMap(colorMap)))
-
-    toGeoTiffRDD(tags, options)
-  }
-
-  def toGeoTiffRDD(
-    tags: Tags,
-    geotiffOptions: GeoTiffOptions
-  ): JavaRDD[Array[Byte]]
 
   def collectMetadata(
     extent: java.util.Map[String, Double],
