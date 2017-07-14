@@ -16,17 +16,18 @@ def get(pysc,
         time_tag=None,
         time_format=None,
         s3_client=None):
-
     """Creates a ``RasterLayer`` from GeoTiffs that are located on the local file system, ``HDFS``,
     or ``S3``.
 
     Args:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        layer_type (str): What the spatial type of the geotiffs are. This is
-            represented by the constants: ``SPATIAL`` and ``SPACETIME``.
+        layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
+            of the geotiffs are. This is represented by either constants within ``LayerType`` or by
+            a string.
 
             Note:
                 All of the GeoTiffs must have the same saptial type.
+
         uri (str): The path to a given file/directory.
         crs (str, optional): The CRS that the output tiles should be
             in. The CRS must be in the well-known name format. If ``None``,

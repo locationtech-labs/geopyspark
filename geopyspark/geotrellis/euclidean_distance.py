@@ -1,9 +1,9 @@
 import shapely.wkb
-from geopyspark.geotrellis.constants import LayerType
+from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
-def euclidean_distance(pysc, geometry, source_crs, zoom, cellType='float64'):
+def euclidean_distance(pysc, geometry, source_crs, zoom, cellType=CellType.FLOAT64):
     """Calculates the Euclidean distance of a Shapely geometry.
 
     Args:
@@ -12,6 +12,8 @@ def euclidean_distance(pysc, geometry, source_crs, zoom, cellType='float64'):
             for.
         source_crs (str or int): The CRS of the input geometry.
         zoom (int): The zoom level of the output raster.
+        cellType (str or :class:`~geopyspark.geotrellis.constants.CellType`, optional): The data
+            type of the cells for the new layer. If not specified, then ``CellType.FLOAT64`` is used.
 
     Note:
         This function may run very slowly for polygonal inputs if they cover many cells of
@@ -27,6 +29,6 @@ def euclidean_distance(pysc, geometry, source_crs, zoom, cellType='float64'):
     srdd = pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.euclideanDistance(pysc._jsc.sc(),
                                                                                            shapely.wkb.dumps(geometry),
                                                                                            source_crs,
-                                                                                           cellType,
+                                                                                           CellType(cellType).value,
                                                                                            zoom)
     return TiledRasterLayer(pysc, LayerType.SPATIAL, srdd)
