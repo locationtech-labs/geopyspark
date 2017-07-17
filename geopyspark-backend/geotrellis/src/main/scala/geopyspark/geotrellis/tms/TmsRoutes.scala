@@ -56,60 +56,6 @@ trait TMSServerRoute extends Directives with AkkaSystem.LoggerExecutor {
 
 object TMSServerRoutes {
 
-  // class ExternalTMSServerRoute(patternURL: String) extends TMSServerRoute {
-  //   def root: Route =
-  //     pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
-  //       val newUrl = patternURL.replace("{z}", zoom.toString)
-  //                              .replace("{x}", x.toString)
-  //                              .replace("{y}", y.toString)
-  //       redirect(newUrl, StatusCodes.SeeOther)
-  //     }
-  // }
-
-  // class ValueReaderRoute(
-  //   valueReader: ValueReader[LayerId],
-  //   catalog: String,
-  //   rf: TileRender
-  // ) extends TMSServerRoute {
-
-  //   val reader = valueReader
-  //   val layers = TrieMap.empty[Int, Reader[SpatialKey, Tile]]
-  //   def root: Route =
-  //     pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
-  //       val key = SpatialKey(x, y)
-  //       complete {
-  //         Future {
-  //           val reader = layers.getOrElseUpdate(zoom, valueReader.reader[SpatialKey, Tile](LayerId(catalog, zoom)))
-  //           val tile: Tile = reader(key)
-  //           val bytes: Array[Byte] = time(s"Rendering tile @ $key (zoom=$zoom)"){
-  //             if (rf.requiresEncoding()) {
-  //               rf.renderEncoded(geopyspark.geotrellis.PythonTranslator.toPython(MultibandTile(tile)))
-  //             } else {
-  //               rf.render(MultibandTile(tile)) 
-  //             }
-  //           }
-  //           HttpEntity(`image/png`, bytes)
-  //         }
-  //       }
-  //     }
-  // }
-
-  // class SpatialRddRoute(
-  //   levels: scala.collection.mutable.Map[Int, RDD[(SpatialKey, Tile)]],
-  //   rf: TileRender,
-  //   system: ActorSystem
-  // ) extends TMSServerRoute {
-  //   def root: Route =
-  //     pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
-  //       val callback = Promise[Option[Tile]]()
-  //       aggregator ! QueueRequest(zoom, x, y, callback) 
-  //       complete { 
-  //         callback.future
-  //       }
-  //     }
-
-  // }
-
   private class RenderingTileRoute(reader: TileReader, renderer: TileRender) extends TMSServerRoute {
     def root: Route = 
       pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>

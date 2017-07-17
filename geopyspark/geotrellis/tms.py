@@ -13,22 +13,21 @@ class TileRender(object):
     interface.  Permits a callback from Scala to Python to allow for custom
     rendering functions.
 
-    Args:
-        render_function (numpy.ndarray => bytes): A function to convert a numpy
-            array to a collection of bytes giving a binary image file.
-
     Attributes:
         render_function (numpy.ndarray => bytes): A function to convert a numpy
             array to a collection of bytes giving a binary image file.
     """
 
     def __init__(self, render_function):
-        """
+        """Default constructor.
+
+        Args:
+            render_function (np.array => bytes): A function to convert a numpy 
+                array to a collection of bytes giving a binary image file.
+
         Returns:
             [TileRender]
         """
-        print("Created Python TileRender object")
-        # render_function: numpyarry => Image
         self.render_function = render_function
 
     def requiresEncoding(self):
@@ -77,7 +76,6 @@ class TileCompositer(object):
         Returns:
             [TileCompositer]
         """
-        print("Created Python TileRender object")
         # composite_function: List[np.array] => Image
         self.composite_function = composite_function
 
@@ -123,71 +121,6 @@ class TMS(object):
     def set_handshake(self, handshake):
         self.server.set_handshake(handshake)
         self.handshake = handshake
-
-    # @classmethod
-    # def s3_catalog_tms_server(cls, pysc, bucket, root, catalog, display):
-    #     """A function to create a TMS server for a catalog stored in an S3 bucket.
-
-    #     Args:
-    #         bucket (string): The name of the S3 bucket
-    #         root (string): The key in the bucket containing the catalog
-    #         catalog (string): The name of the catalog
-    #         display (ColorMap, TileRender): A ColorMap to use in rendering the catalog tiles
-
-    #     Returns:
-    #         [TMSServer]
-    #     """
-    #     if isinstance(display, ColorMap):
-    #         server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveS3Catalog(bucket, root, catalog, display.cmap)
-    #     elif isinstance(display, TileRender):
-    #         server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveS3CatalogCustom(bucket, root, catalog, display)
-    #     else:
-    #         raise ValueError("Must specify the display parameter as a ColorMap or TileRender object")
-
-    #     return cls(pysc, server)
-
-    # @classmethod
-    # def remote_tms_server(cls, pysc, pattern_url):
-    #     """A function to create a TMS server delivering tiles from a remote TMS server
-
-    #     Args:
-    #         pattern_url (string): A string giving the form of the URL where tiles
-    #             are stored.  The pattern should contain the literals '{z}', '{x}',
-    #             and '{y}' giving the zoom, x, and y keys of the desired tile,
-    #             respectively.
-
-    #     Returns:
-    #         [TMSServer]
-    #     """
-
-    #     server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveRemoteTMSLayer(pattern_url)
-    #     return cls(pysc, server)
-
-    # @classmethod
-    # def rdd_tms_server(cls, pysc, pyramid, display):
-    #     """Creates a TMS server for displaying a Pyramided RDD.
-
-    #     Args:
-    #         pysc (SparkContext): The current SparkContext
-    #         pyramid (Pyramid): The pyramided RDD
-    #         display (ColorMap, TileRender): A color map or TileRender object
-    #             that will be used for display.
-
-    #     Returns:
-    #         [TMSServer]
-    #     """
-    #     if isinstance(pyramid, list):
-    #         pyramid = Pyramid(pyramid)
-    #     rdd_levels = {k: v.srdd.rdd() for k, v in pyramid.levels.items()}
-
-    #     if isinstance(display, ColorMap):
-    #         server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveSpatialRdd(rdd_levels, display.cmap, 0)
-    #     elif isinstance(display, TileRender):
-    #         server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveSpatialRddCustom(rdd_levels, display, 0)
-    #     else:
-    #         raise ValueError("Must specify the display parameter as a ColorMap or TileRender object")
-
-    #     return cls(pysc, server)
 
     @classmethod
     def build(cls, pysc, *args, **kwargs):
