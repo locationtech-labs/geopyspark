@@ -87,7 +87,6 @@ class UShortTileSchemaTest(BaseTestClass):
 
     def test_decoded_tiles(self):
         for actual, expected in zip(self.collected, self.tiles):
-            print(actual.cells.dtype, expected.cells.dtype)
             self.assertTrue((actual.cells == expected.cells).all())
             self.assertTrue(actual.cells.dtype == expected.cells.dtype)
             self.assertEqual(actual.cells.shape, actual.cells.shape)
