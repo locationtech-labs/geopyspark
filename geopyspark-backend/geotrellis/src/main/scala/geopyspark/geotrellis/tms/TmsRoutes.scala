@@ -24,6 +24,7 @@ import spray.json._
 import spray.json.DefaultJsonProtocol
 
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -99,6 +100,6 @@ object TMSServerRoutes {
 
   def renderingTileRoute(reader: TileReader, renderer: TileRender): TMSServerRoute = new RenderingTileRoute(reader, renderer)
 
-  def compositingTileRoute(readers: List[TileReader], compositer: TileCompositer): TMSServerRoute = new CompositingTileRoute(readers, compositer)
+  def compositingTileRoute(readers: java.util.ArrayList[TileReader], compositer: TileCompositer): TMSServerRoute = new CompositingTileRoute(readers.toList, compositer)
 
 }
