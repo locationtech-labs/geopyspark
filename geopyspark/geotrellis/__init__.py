@@ -415,7 +415,6 @@ from .constants import *
 from .converters import *
 from .cost_distance import *
 from .euclidean_distance import *
-from .geotiff import *
 from .hillshade import *
 from .histogram import *
 from .layer import *
@@ -428,7 +427,7 @@ __all__ += color.__all__
 __all__ += constants.__all__
 __all__ += ['cost_distance']
 __all__ += ['euclidean_distance']
-__all__ += geotiff.__all__
+__all__ += ['geotiff']
 __all__ += ['hillshade']
 __all__ += histogram.__all__
 __all__ += layer.__all__
