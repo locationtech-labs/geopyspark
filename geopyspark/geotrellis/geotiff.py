@@ -59,42 +59,21 @@ def get(pysc,
         :class:`~geopyspark.geotrellis.rdd.RasterLayer`
     """
 
+    inputs = {k:v for k, v in locals().items() if v is not None}
+
     geotiff_rdd = pysc._gateway.jvm.geopyspark.geotrellis.io.geotiff.GeoTiffRDD
 
-    key = map_key_input(LayerType(layer_type).value, False)
-
-    options = {}
-
-    if time_tag:
-        options['timeTag'] = time_tag
-
-    if time_format:
-        options['timeFormat'] = time_format
-
-    if crs:
-        options['crs'] = crs
-
-    if max_tile_size:
-        options['maxTileSize'] = max_tile_size
-
-    if chunk_size:
-        options['chunkSize'] = chunk_size
-
-    if s3_client:
-        options['s3Client'] = s3_client
-
-    if num_partitions:
-        options['numPartitions'] = num_partitions
+    key = map_key_input(LayerType(inputs.pop('layer_type')).value, False)
 
     if isinstance(uri, list):
-        srdd = geotiff_rdd.get(pysc._jsc.sc(),
+        srdd = geotiff_rdd.get(inputs.pop('pysc')._jsc.sc(),
                                key,
-                               uri,
-                               options)
+                               inputs.pop('uri'),
+                               inputs)
     else:
-        srdd = geotiff_rdd.get(pysc._jsc.sc(),
+        srdd = geotiff_rdd.get(inputs.pop('pysc')._jsc.sc(),
                                key,
-                               [uri],
-                               options)
+                               [inputs.pop('uri')],
+                               inputs)
 
     return RasterLayer(pysc, layer_type, srdd)

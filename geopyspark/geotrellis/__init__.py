@@ -129,16 +129,6 @@ class ProjectedExtent(namedtuple("ProjectedExtent", 'extent epsg proj4')):
     def __new__(cls, extent, epsg=None, proj4=None):
         return super(ProjectedExtent, cls).__new__(cls, extent, epsg, proj4)
 
-    @classmethod
-    def from_protobuf_projected_extent(cls, proto_projected_extent):
-
-        if proto_projected_extent.crs.epsg is not 0:
-            return cls(extent=Extent.from_protobuf_extent(proto_projected_extent.extent),
-                       epsg=proto_projected_extent.crs.epsg)
-        else:
-            return cls(extent=Extent.from_protobuf_extent(proto_projected_extent.extent),
-                       proj4=proto_projected_extent.crs.proj4)
-
     def _asdict(self):
         if isinstance(self.extent, dict):
             return {'extent': self.extent, 'epsg': self.epsg, 'proj4': self.proj4}

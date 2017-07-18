@@ -165,12 +165,7 @@ def read_layer_metadata(pysc,
         :class:`~geopyspark.geotrellis.Metadata`
     """
 
-    if options:
-        options = options
-    elif kwargs:
-        options = kwargs
-    else:
-        options = {}
+    options = options or kwargs or {}
 
     _construct_catalog(pysc, uri, options)
     cached = _mapped_cached[uri]
@@ -207,12 +202,7 @@ def get_layer_ids(pysc,
             - **zoom** (int): The zoom level of the given layer.
     """
 
-    if options:
-        options = options
-    elif kwargs:
-        options = kwargs
-    else:
-        options = {}
+    options = options or kwargs or {}
 
     _construct_catalog(pysc, uri, options)
     cached = _mapped_cached[uri]
@@ -226,12 +216,12 @@ def read(pysc,
          layer_name,
          layer_zoom,
          options=None,
-         numPartitions=None,
+         num_partitions=None,
          **kwargs):
     """Deprecated in favor of :meth:`~geopyspark.geotrellis.catalog.query`."""
 
     return query(pysc, layer_type, uri, layer_name, layer_zoom, options=options,
-                 numPartitions=numPartitions)
+                 num_partitions=num_partitions)
 
 def read_value(pysc,
                layer_type,
@@ -277,20 +267,13 @@ def read_value(pysc,
     if not _in_bounds(pysc, layer_type, uri, layer_name, layer_zoom, col, row):
         return None
     else:
-        if options:
-            options = options
-        elif kwargs:
-            options = kwargs
-        else:
-            options = {}
+        options = options or kwargs or {}
+        zdt = zdt or ""
 
         if uri not in _mapped_cached:
             _construct_catalog(pysc, uri, options)
 
         cached = _mapped_cached[uri]
-
-        if not zdt:
-            zdt = ""
 
         key = map_key_input(LayerType(layer_type).value, True)
 
@@ -312,7 +295,7 @@ def query(pysc,
           time_intervals=None,
           query_proj=None,
           options=None,
-          numPartitions=None,
+          num_partitions=None,
           **kwargs):
     """Queries a single, zoom layer from a GeoTrellis catalog given spatial and/or time parameters.
     Unlike read, this method will only return part of the layer that intersects the specified
@@ -354,21 +337,15 @@ def query(pysc,
         options (dict, optional): Additional parameters for querying the tile for specific backends.
             The dictioanry is only used for ``Cassandra`` and ``HBase``, no other backend requires
             this to be set.
-        numPartitions (int, optional): Sets RDD partition count when reading from catalog.
+        num_partitions (int, optional): Sets RDD partition count when reading from catalog.
         **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
             be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
         :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
-
     """
 
-    if options:
-        options = options
-    elif kwargs:
-        options = kwargs
-    else:
-        options = {}
+    options = options or kwargs or {}
 
     _construct_catalog(pysc, uri, options)
 
@@ -376,21 +353,18 @@ def query(pysc,
 
     key = map_key_input(LayerType(layer_type).value, True)
 
-    if numPartitions is None:
-        numPartitions = pysc.defaultMinPartitions
+    num_partitions = num_partitions or pysc.defaultMinPartitions
 
     if not query_geom:
-        srdd = cached.reader.read(key, layer_name, layer_zoom, numPartitions)
+        srdd = cached.reader.read(key, layer_name, layer_zoom, num_partitions)
         return TiledRasterLayer(pysc, layer_type, srdd)
 
     else:
-        if time_intervals is None:
-            time_intervals = []
+        time_intervals = time_intervals or []
+        query_proj = query_proj or ""
 
-        if query_proj is None:
-            query_proj = ""
         if isinstance(query_proj, int):
-            query_proj = "EPSG:" + str(query_proj)
+            query_proj = "EPSG:{}".format(query_proj)
 
         if isinstance(query_geom, (Polygon, MultiPolygon, Point)):
             srdd = cached.reader.query(key,
@@ -399,7 +373,7 @@ def query(pysc,
                                        shapely.wkb.dumps(query_geom),
                                        time_intervals,
                                        query_proj,
-                                       numPartitions)
+                                       num_partitions)
 
         elif isinstance(query_geom, Extent):
             srdd = cached.reader.query(key,
@@ -408,7 +382,7 @@ def query(pysc,
                                        shapely.wkb.dumps(query_geom.to_polygon),
                                        time_intervals,
                                        query_proj,
-                                       numPartitions)
+                                       num_partitions)
 
         elif isinstance(query_geom, bytes):
             srdd = cached.reader.query(key,
@@ -417,7 +391,7 @@ def query(pysc,
                                        query_geom,
                                        time_intervals,
                                        query_proj,
-                                       numPartitions)
+                                       num_partitions)
         else:
             raise TypeError("Could not query intersection", query_geom)
 
@@ -453,19 +427,12 @@ def write(uri,
             be in camel case. If both options and keywords are set, then the options will be used.
     """
 
-    if options:
-        options = options
-    elif kwargs:
-        options = kwargs
-    else:
-        options = {}
+    options = options or kwargs or {}
+    time_unit = time_unit or ""
 
     _construct_catalog(tiled_raster_rdd.pysc, uri, options)
 
     cached = _mapped_cached[uri]
-
-    if not time_unit:
-        time_unit = ""
 
     if tiled_raster_rdd.layer_type == LayerType.SPATIAL:
         cached.writer.writeSpatial(layer_name,

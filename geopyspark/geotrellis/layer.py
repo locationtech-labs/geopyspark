@@ -1062,8 +1062,8 @@ class TiledRasterLayer(CachableLayer):
             ValueError: If the given ``resample_method`` is not known.
         """
 
-        method = ResampleMethod(resample_method).value
-        new_srdd = self.srdd.resample_to_power_of_two(col_power, row_power, method)
+        resample_method = ResampleMethod(resample_method).value
+        new_srdd = self.srdd.resample_to_power_of_two(col_power, row_power, resample_method)
         new_layer = TiledRasterLayer(self.pysc, self.layer_type, new_srdd)
 
         return new_layer.pyramid(end_zoom=end_zoom, start_zoom=start_zoom, resample_method=resample_method)
@@ -1108,12 +1108,9 @@ class TiledRasterLayer(CachableLayer):
                                    neighborhood.param_2, neighborhood.param_3)
 
         elif isinstance(neighborhood, (str, nb)):
-            if param_1 is None:
-                param_1 = 0.0
-            if param_2 is None:
-                param_2 = 0.0
-            if param_3 is None:
-                param_3 = 0.0
+            param_1 = param_1 or 0.0
+            param_2 = param_2 or 0.0
+            param_3 = param_3 or 0.0
 
             srdd = self.srdd.focal(operation, nb(neighborhood).value,
                                    float(param_1), float(param_2), float(param_3))
