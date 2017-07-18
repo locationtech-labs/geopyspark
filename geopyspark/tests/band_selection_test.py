@@ -138,5 +138,55 @@ class BandSelectionTest(BaseTestClass):
 
         self.assertTrue((expected == actual.cells).all())
 
+    def test_map_cells_func_raster(self):
+        def test_func(cells, nd):
+            cells[cells >= 3.0] = nd
+            return cells
+
+        actual = self.raster_rdd.map_cells(test_func).to_numpy_rdd().first()[1]
+
+        negative_band = np.array([
+            [-1.0, -1.0, -1.0, -1.0, -1.0],
+            [-1.0, -1.0, -1.0, -1.0, -1.0],
+            [-1.0, -1.0, -1.0, -1.0, -1.0],
+            [-1.0, -1.0, -1.0, -1.0, -1.0],
+            [-1.0, -1.0, -1.0, -1.0, -1.0]])
+
+        expected = np.array([self.band_1, self.band_2, negative_band])
+
+        self.assertTrue((expected == actual.cells).all())
+
+    def test_map_cells_lambda_raster(self):
+        actual = self.raster_rdd.map_cells(lambda cells, nd: cells + nd).to_numpy_rdd().first()[1]
+
+        self.assertTrue((0.0 == actual.cells[0, :]).all())
+        self.assertTrue((self.band_1 == actual.cells[1, :]).all())
+        self.assertTrue((self.band_2 == actual.cells[2, :]).all())
+
+    def test_map_cells_func_tiled(self):
+        def test_func(cells, nd):
+            cells[cells >= 3.0] = nd
+            return cells
+
+        actual = self.tiled_raster_rdd.map_cells(test_func).to_numpy_rdd().first()[1]
+
+        negative_band = np.array([
+            [-1.0, -1.0, -1.0, -1.0, -1.0],
+            [-1.0, -1.0, -1.0, -1.0, -1.0],
+            [-1.0, -1.0, -1.0, -1.0, -1.0],
+            [-1.0, -1.0, -1.0, -1.0, -1.0],
+            [-1.0, -1.0, -1.0, -1.0, -1.0]])
+
+        expected = np.array([self.band_1, self.band_2, negative_band])
+
+        self.assertTrue((expected == actual.cells).all())
+
+    def test_map_cells_lambda_tiled(self):
+        actual = self.tiled_raster_rdd.map_cells(lambda cells, nd: cells + nd).to_numpy_rdd().first()[1]
+
+        self.assertTrue((0.0 == actual.cells[0, :]).all())
+        self.assertTrue((self.band_1 == actual.cells[1, :]).all())
+        self.assertTrue((self.band_2 == actual.cells[2, :]).all())
+
 if __name__ == "__main__":
     unittest.main()

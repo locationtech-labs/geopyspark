@@ -14,7 +14,7 @@ ensure_pyspark()
 from pyspark.storagelevel import StorageLevel
 
 from geopyspark import map_key_input, create_python_rdd
-from geopyspark.geotrellis import Metadata
+from geopyspark.geotrellis import Metadata, Tile
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
                                              Neighborhood as nb,
@@ -400,6 +400,32 @@ class RasterLayer(CachableLayer):
         return RasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
                                           python_rdd.mapValues(lambda tile: func(tile.cells)))
 
+    def map_cells(self, func):
+        """Maps over the cells of each ``Tile`` within the layer with a given function.
+
+        Note:
+            This operation first needs to deserialize the wrapped ``RDD`` into Python and then
+            serialize the ``RDD`` back into a ``TiledRasterRDD`` once the mapping is done. Thus,
+            it is advised to chain together operations to reduce performance cost.
+
+        Args:
+            func (cells, nd => cells): A function that takes two arguements: ``cells`` and
+                ``nd``. Where ``cells`` is the numpy array and ``nd`` is the ``no_data_value`` of
+                the tile. It returns ``cells`` which are the new cells values of the tile
+                represented as a numpy array.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
+        """
+
+        python_rdd = self.to_numpy_rdd()
+
+        def tile_func(cells, cell_type, no_data_value):
+            return Tile(func(cells, no_data_value), cell_type, no_data_value)
+
+        return RasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
+                                          python_rdd.mapValues(lambda tile: tile_func(*tile)))
+
     def convert_data_type(self, new_type, no_data_value=None):
         """Converts the underlying, raster values to a new ``CellType``.
 
@@ -758,6 +784,33 @@ class TiledRasterLayer(CachableLayer):
 
         return TiledRasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
                                                python_rdd.mapValues(lambda tile: func(tile)),
+                                               self.layer_metadata)
+
+    def map_cells(self, func):
+        """Maps over the cells of each ``Tile`` within the layer with a given function.
+
+        Note:
+            This operation first needs to deserialize the wrapped ``RDD`` into Python and then
+            serialize the ``RDD`` back into a ``TiledRasterRDD`` once the mapping is done. Thus,
+            it is advised to chain together operations to reduce performance cost.
+
+        Args:
+            func (cells, nd => cells): A function that takes two arguements: ``cells`` and
+                ``nd``. Where ``cells`` is the numpy array and ``nd`` is the ``no_data_value`` of
+                the tile. It returns ``cells`` which are the new cells values of the tile
+                represented as a numpy array.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+        """
+
+        python_rdd = self.to_numpy_rdd()
+
+        def tile_func(cells, cell_type, no_data_value):
+            return Tile(func(cells, no_data_value), cell_type, no_data_value)
+
+        return TiledRasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
+                                               python_rdd.mapValues(lambda tile: tile_func(*tile)),
                                                self.layer_metadata)
 
     def to_geotiff_rdd(self,
