@@ -36,11 +36,8 @@ class TileRender(object):
         """
         try:
             # tile = np.array(list(cells)) # turn tile to array with bands
-            print("Reshaping to {}x{} matrix".format(rows, cols))
             tile = np.reshape(np.frombuffer(cells, dtype="uint8"), (1, rows, cols)) # turn tile to array with bands
-            print("Rendering tile")
             image = self.render_function(tile)
-            print("Saving result")
             bio = io.BytesIO()
             image.save(bio, 'PNG')
             return bio.getvalue()
