@@ -41,6 +41,24 @@ Tile = namedtuple("Tile", 'cells cell_type no_data_value')
 """
 
 
+class Log(object):
+    @classmethod
+    def debug(cls, pysc, s):
+        pysc._gateway.jvm.geopyspark.geotrellis.Log.debug(s)
+
+    @classmethod
+    def info(cls, pysc, s):
+        pysc._gateway.jvm.geopyspark.geotrellis.Log.info(s)
+
+    @classmethod
+    def warn(cls, pysc, s):
+        pysc._gateway.jvm.geopyspark.geotrellis.Log.warn(s)
+
+    @classmethod
+    def error(cls, pysc, s):
+        pysc._gateway.jvm.geopyspark.geotrellis.Log.error(s)
+
+
 class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
     """
     The "bounding box" or geographic region of an area on Earth a raster represents.
