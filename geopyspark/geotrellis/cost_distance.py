@@ -2,6 +2,9 @@ import shapely.wkb
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
+__all__ = ['cost_distance']
+
+
 def cost_distance(friction_layer, geometries, max_distance):
     """Performs cost distance of a TileLayer.
 

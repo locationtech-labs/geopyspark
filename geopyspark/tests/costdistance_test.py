@@ -51,8 +51,8 @@ class CostDistanceTest(BaseTestClass):
             k = kv[0]
             return (k.col == 0 and k.row == 1)
 
-        result = cost_distance.cost_distance(self.raster_rdd,
-                                             geometries=[Point(13, 13)], max_distance=144000.0)
+        result = cost_distance(self.raster_rdd,
+                               geometries=[Point(13, 13)], max_distance=144000.0)
 
         tile = result.to_numpy_rdd().filter(zero_one).first()[1]
         point_distance = tile.cells[0][1][3]
@@ -63,8 +63,8 @@ class CostDistanceTest(BaseTestClass):
             k = kv[0]
             return (k.col == 0 and k.row == 1)
 
-        result = cost_distance.cost_distance(self.raster_rdd,
-                                             geometries=[Point(13, 13)], max_distance=144000)
+        result = cost_distance(self.raster_rdd,
+                               geometries=[Point(13, 13)], max_distance=144000)
 
         tile = result.to_numpy_rdd().filter(zero_one).first()[1]
         point_distance = tile.cells[0][1][3]
@@ -75,8 +75,8 @@ class CostDistanceTest(BaseTestClass):
             k = kv[0]
             return (k.col == 0 and k.row == 1)
 
-        result = cost_distance.cost_distance(self.raster_rdd,
-                                             geometries=[Point(13, 13)], max_distance=float('inf'))
+        result = cost_distance(self.raster_rdd,
+                               geometries=[Point(13, 13)], max_distance=float('inf'))
 
         tile = result.to_numpy_rdd().filter(zero_one).first()[1]
         point_distance = tile.cells[0][0][0]

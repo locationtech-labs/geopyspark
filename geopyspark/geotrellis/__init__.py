@@ -404,7 +404,41 @@ class Metadata(object):
                                                self.tile_layout, self.layout_definition)
 
 
-__all__ = ["catalog", "geotiff", "layer", "cost_distance", "hillshade", "euclidean_distance",
-           "rasterize", "tms"]
+__all__ = ["Tile", "Extent", "ProjectedExtent", "TemporalProjectedExtent", "SpatialKey", "SpaceTimeKey",
+           "Metadata", "TileLayout", "LayoutDefinition", "Bounds", "RasterizerOptions"]
 
+from . import catalog
+from . import color
+from . import constants
 from . import converters
+from . import geotiff
+from . import histogram
+from . import layer
+from . import neighborhood
+from . import tms
+
+from .catalog import *
+from .color import *
+from .constants import *
+from .converters import *
+from .cost_distance import *
+from .euclidean_distance import *
+from .hillshade import *
+from .histogram import *
+from .layer import *
+from .neighborhood import *
+from .rasterize import *
+from .tms import *
+
+__all__ += catalog.__all__
+__all__ += color.__all__
+__all__ += constants.__all__
+__all__ += ['cost_distance']
+__all__ += ['euclidean_distance']
+__all__ += ['geotiff']
+__all__ += ['hillshade']
+__all__ += histogram.__all__
+__all__ += layer.__all__
+__all__ += neighborhood.__all__
+__all__ += ['rasterize']
+__all__ += tms.__all__

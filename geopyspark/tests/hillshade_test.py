@@ -45,7 +45,7 @@ class HillshadeTest(BaseTestClass):
         BaseTestClass.pysc._gateway.close()
 
     def test_hillshade(self):
-        result = hillshade.hillshade(self.raster_rdd, band=0, azimuth=99.0, altitude=33.0, z_factor=0.0)
+        result = hillshade(self.raster_rdd, band=0, azimuth=99.0, altitude=33.0, z_factor=0.0)
 
         data = result.to_numpy_rdd().first()[1].cells[0][0][0]
         self.assertEqual(data, 63)

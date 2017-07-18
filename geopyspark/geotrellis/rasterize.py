@@ -3,6 +3,9 @@ from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
+__all__ = ['rasterize']
+
+
 def rasterize(pysc, geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=None, num_partitions=None):
     """Rasterizes a Shapely geometries.
 

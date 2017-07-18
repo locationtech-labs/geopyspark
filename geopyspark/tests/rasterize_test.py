@@ -22,11 +22,11 @@ class RasterizeTest(BaseTestClass):
     def test_whole_area(self):
         polygon = Polygon([(0, 11), (11, 11), (11, 0), (0, 0)])
 
-        raster_rdd = rasterize.rasterize(BaseTestClass.pysc,
-                                         [polygon],
-                                         "EPSG:3857",
-                                         11,
-                                         1)
+        raster_rdd = rasterize(BaseTestClass.pysc,
+                               [polygon],
+                               "EPSG:3857",
+                               11,
+                               1)
 
         cells = raster_rdd.to_numpy_rdd().first()[1].cells
 
@@ -36,11 +36,11 @@ class RasterizeTest(BaseTestClass):
     def test_whole_area_integer_crs(self):
         polygon = Polygon([(0, 11), (11, 11), (11, 0), (0, 0)])
 
-        raster_rdd = rasterize.rasterize(BaseTestClass.pysc,
-                                         [polygon],
-                                         3857,
-                                         11,
-                                         1)
+        raster_rdd = rasterize(BaseTestClass.pysc,
+                               [polygon],
+                               3857,
+                               11,
+                               1)
 
         cells = raster_rdd.to_numpy_rdd().first()[1].cells
 
