@@ -29,7 +29,12 @@ import scala.collection.immutable.HashMap
 import scala.collection.concurrent._
 import scala.util.Try
 
+import org.apache.log4j.Logger
+
+
 trait TMSServerRoute extends Directives with AkkaSystem.LoggerExecutor {
+  val logger = Logger.getLogger(this.getClass)
+
   def startup(): Unit = {}
   def shutdown(): Unit = {}
 
@@ -42,7 +47,7 @@ trait TMSServerRoute extends Directives with AkkaSystem.LoggerExecutor {
     val start = System.currentTimeMillis
     val v = f
     val end = System.currentTimeMillis
-    println(s"[TIMING] $msg: ${java.text.NumberFormat.getIntegerInstance.format(end - start)} ms")
+    logger.info(s"[TIMING] $msg: ${java.text.NumberFormat.getIntegerInstance.format(end - start)} ms")
     v
   }
 }
@@ -90,14 +95,15 @@ object RequestAggregator {
 
 class RequestAggregator extends Actor {
   val requests = scala.collection.mutable.ListBuffer.empty[QueueRequest]
+  val logger = Logger.getLogger(this.getClass)
 
   def receive = {
-    case qr @ QueueRequest(zoom, x, y, pr) => 
+    case qr @ QueueRequest(zoom, x, y, pr) =>
       requests += qr
-    case DumpRequests => 
+    case DumpRequests =>
       sender ! FulfillRequests(requests.toSeq)
       requests.clear
-    case _ => println("Unexpected message!")
+    case _ => logger.error("Unexpected message!")
   }
 
   def queueRequest(qr: QueueRequest): Unit = {
@@ -115,14 +121,14 @@ object RDDLookup {
 }
 
 class RDDLookup(
-  levels: scala.collection.mutable.Map[Int, RDD[(SpatialKey, Tile)]], 
+  levels: scala.collection.mutable.Map[Int, RDD[(SpatialKey, Tile)]],
   rf: TileRender,
   aggregator: ActorRef
 )(implicit ec: ExecutionContext) extends Actor {
   def receive = {
     case Initialize =>
       context.system.scheduler.scheduleOnce(RDDLookup.interval, aggregator, DumpRequests)
-    case FulfillRequests(requests) => 
+    case FulfillRequests(requests) =>
       fulfillRequests(requests)
       context.system.scheduler.scheduleOnce(RDDLookup.interval, aggregator, DumpRequests)
   }
@@ -139,8 +145,8 @@ class RDDLookup(
               val results = rdd.filter{ elem => keys.contains(elem._1) }.collect()
               kps.foreach{ case (key, promise) => {
                 promise success (results
-                  .find{ case (rddKey, _) => rddKey == key } 
-                  .map{ case (_, tile) => 
+                  .find{ case (rddKey, _) => rddKey == key }
+                  .map{ case (_, tile) =>
                         HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`image/png`), rf.render(tile))) 
                       }
                 )
@@ -166,7 +172,7 @@ class SpatialRddRoute(
   private var _fulfiller: ActorRef = null
 
   override def startup() = {
-    if (_aggregator != null) 
+    if (_aggregator != null)
       throw new IllegalStateException("Cannot start: TMS server already running")
 
     _aggregator = system.actorOf(RequestAggregator.props, UUID.randomUUID.toString)
@@ -190,11 +196,10 @@ class SpatialRddRoute(
   def root: Route =
     pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
       val callback = Promise[Option[HttpResponse]]()
-      aggregator ! QueueRequest(zoom, x, y, callback) 
-      complete { 
+      aggregator ! QueueRequest(zoom, x, y, callback)
+      complete {
         callback.future
       }
     }
 
 }
-
