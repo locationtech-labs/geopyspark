@@ -14,7 +14,7 @@ ensure_pyspark()
 from pyspark.storagelevel import StorageLevel
 
 from geopyspark import map_key_input, create_python_rdd
-from geopyspark.geotrellis import Metadata
+from geopyspark.geotrellis import Metadata, Tile
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
                                              Neighborhood as nb,
@@ -400,6 +400,32 @@ class RasterLayer(CachableLayer):
         return RasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
                                           python_rdd.mapValues(lambda tile: func(tile.cells)))
 
+    def map_cells(self, func):
+        """Maps over the cells of each ``Tile`` within the layer with a given function.
+
+        Note:
+            This operation first needs to deserialize the wrapped ``RDD`` into Python and then
+            serialize the ``RDD`` back into a ``TiledRasterRDD`` once the mapping is done. Thus,
+            it is advised to chain together operations to reduce performance cost.
+
+        Args:
+            func (cells, nd => cells): A function that takes two arguements: ``cells`` and
+                ``nd``. Where ``cells`` is the numpy array and ``nd`` is the ``no_data_value`` of
+                the tile. It returns ``cells`` which are the new cells values of the tile
+                represented as a numpy array.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
+        """
+
+        python_rdd = self.to_numpy_rdd()
+
+        def tile_func(cells, cell_type, no_data_value):
+            return Tile(func(cells, no_data_value), cell_type, no_data_value)
+
+        return RasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
+                                          python_rdd.mapValues(lambda tile: tile_func(*tile)))
+
     def convert_data_type(self, new_type, no_data_value=None):
         """Converts the underlying, raster values to a new ``CellType``.
 
@@ -760,6 +786,33 @@ class TiledRasterLayer(CachableLayer):
                                                python_rdd.mapValues(lambda tile: func(tile)),
                                                self.layer_metadata)
 
+    def map_cells(self, func):
+        """Maps over the cells of each ``Tile`` within the layer with a given function.
+
+        Note:
+            This operation first needs to deserialize the wrapped ``RDD`` into Python and then
+            serialize the ``RDD`` back into a ``TiledRasterRDD`` once the mapping is done. Thus,
+            it is advised to chain together operations to reduce performance cost.
+
+        Args:
+            func (cells, nd => cells): A function that takes two arguements: ``cells`` and
+                ``nd``. Where ``cells`` is the numpy array and ``nd`` is the ``no_data_value`` of
+                the tile. It returns ``cells`` which are the new cells values of the tile
+                represented as a numpy array.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+        """
+
+        python_rdd = self.to_numpy_rdd()
+
+        def tile_func(cells, cell_type, no_data_value):
+            return Tile(func(cells, no_data_value), cell_type, no_data_value)
+
+        return TiledRasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
+                                               python_rdd.mapValues(lambda tile: tile_func(*tile)),
+                                               self.layer_metadata)
+
     def to_geotiff_rdd(self,
                        storage_method=StorageMethod.STRIPED,
                        rows_per_strip=None,
@@ -925,12 +978,12 @@ class TiledRasterLayer(CachableLayer):
 
         return [multibandtile_decoder(tile) for tile in array_of_tiles]
 
-    def tile_to_layout(self, layout, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
+    def tile_to_layout(self, layout_definition, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to a given layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layout (:obj:`~geopyspark.geotrellis.TileLayout`): Specify the ``TileLayout`` to cut
-                to.
+            layout_definition (:obj:`~geopyspark.geotrellis.LayoutDefinition`): Specify the
+                ``LayoutDefinition`` to cut to.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use for the reprojection. If none is specified, then
                 ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
@@ -939,10 +992,9 @@ class TiledRasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        if not isinstance(layout, dict):
-            layout = layout._asdict()
-
-        srdd = self.srdd.tileToLayout(layout, ResampleMethod(resample_method).value)
+        srdd = self.srdd.tileToLayout(layout_definition.extent._asdict(),
+                                      layout_definition.tileLayout._asdict(),
+                                      ResampleMethod(resample_method).value)
 
         return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
@@ -1010,8 +1062,8 @@ class TiledRasterLayer(CachableLayer):
             ValueError: If the given ``resample_method`` is not known.
         """
 
-        method = ResampleMethod(resample_method).value
-        new_srdd = self.srdd.resample_to_power_of_two(col_power, row_power, method)
+        resample_method = ResampleMethod(resample_method).value
+        new_srdd = self.srdd.resample_to_power_of_two(col_power, row_power, resample_method)
         new_layer = TiledRasterLayer(self.pysc, self.layer_type, new_srdd)
 
         return new_layer.pyramid(end_zoom=end_zoom, start_zoom=start_zoom, resample_method=resample_method)
@@ -1056,12 +1108,9 @@ class TiledRasterLayer(CachableLayer):
                                    neighborhood.param_2, neighborhood.param_3)
 
         elif isinstance(neighborhood, (str, nb)):
-            if param_1 is None:
-                param_1 = 0.0
-            if param_2 is None:
-                param_2 = 0.0
-            if param_3 is None:
-                param_3 = 0.0
+            param_1 = param_1 or 0.0
+            param_2 = param_2 or 0.0
+            param_3 = param_3 or 0.0
 
             srdd = self.srdd.focal(operation, nb(neighborhood).value,
                                    float(param_1), float(param_2), float(param_3))

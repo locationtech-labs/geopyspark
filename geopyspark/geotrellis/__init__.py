@@ -41,6 +41,24 @@ Tile = namedtuple("Tile", 'cells cell_type no_data_value')
 """
 
 
+class Log(object):
+    @classmethod
+    def debug(cls, pysc, s):
+        pysc._gateway.jvm.geopyspark.geotrellis.Log.debug(s)
+
+    @classmethod
+    def info(cls, pysc, s):
+        pysc._gateway.jvm.geopyspark.geotrellis.Log.info(s)
+
+    @classmethod
+    def warn(cls, pysc, s):
+        pysc._gateway.jvm.geopyspark.geotrellis.Log.warn(s)
+
+    @classmethod
+    def error(cls, pysc, s):
+        pysc._gateway.jvm.geopyspark.geotrellis.Log.error(s)
+
+
 class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
     """
     The "bounding box" or geographic region of an area on Earth a raster represents.
@@ -110,16 +128,6 @@ class ProjectedExtent(namedtuple("ProjectedExtent", 'extent epsg proj4')):
 
     def __new__(cls, extent, epsg=None, proj4=None):
         return super(ProjectedExtent, cls).__new__(cls, extent, epsg, proj4)
-
-    @classmethod
-    def from_protobuf_projected_extent(cls, proto_projected_extent):
-
-        if proto_projected_extent.crs.epsg is not 0:
-            return cls(extent=Extent.from_protobuf_extent(proto_projected_extent.extent),
-                       epsg=proto_projected_extent.crs.epsg)
-        else:
-            return cls(extent=Extent.from_protobuf_extent(proto_projected_extent.extent),
-                       proj4=proto_projected_extent.crs.proj4)
 
     def _asdict(self):
         if isinstance(self.extent, dict):

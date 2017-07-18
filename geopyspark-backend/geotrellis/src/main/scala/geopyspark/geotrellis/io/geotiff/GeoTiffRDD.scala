@@ -25,7 +25,7 @@ object GeoTiffRDD {
     def default = HadoopGeoTiffRDD.Options.DEFAULT
 
     def setValues(javaMap: java.util.Map[String, Any]): HadoopGeoTiffRDD.Options = {
-      val stringValues = Array("timeTag", "timeFormat", "crs")
+      val stringValues = Array("time_tag", "time_format", "crs")
 
       val (stringMap, intMap) = GeoTrellisUtils.convertToScalaMap(javaMap, stringValues)
 
@@ -37,11 +37,11 @@ object GeoTiffRDD {
 
       HadoopGeoTiffRDD.Options(
         crs = crs,
-        timeTag = stringMap.getOrElse("timeTag", default.timeTag),
-        timeFormat = stringMap.getOrElse("timeFormat", default.timeFormat),
-        maxTileSize = intMap.get("maxTileSize"),
-        numPartitions = intMap.get("numPartitions"),
-        chunkSize = intMap.get("chunkSize"))
+        timeTag = stringMap.getOrElse("time_tag", default.timeTag),
+        timeFormat = stringMap.getOrElse("time_format", default.timeFormat),
+        maxTileSize = intMap.get("max_tile_size"),
+        numPartitions = intMap.get("num_partitions"),
+        chunkSize = intMap.get("chunk_size"))
     }
   }
 
@@ -49,7 +49,7 @@ object GeoTiffRDD {
     def default = S3GeoTiffRDD.Options.DEFAULT
 
     def setValues(javaMap: java.util.Map[String, Any]): S3GeoTiffRDD.Options = {
-      val stringValues = Array("timeTag", "timeFormat", "s3Client", "crs")
+      val stringValues = Array("time_tag", "time_format", "s3_client", "crs")
       val (stringMap, intMap) = GeoTrellisUtils.convertToScalaMap(javaMap, stringValues)
 
       val crs: Option[CRS] =
@@ -59,7 +59,7 @@ object GeoTiffRDD {
           None
 
       val getS3Client: () => S3Client =
-        stringMap.get("s3Client") match {
+        stringMap.get("s3_client") match {
           case Some(client) =>
             if (client == "default")
               default.getS3Client
@@ -72,11 +72,11 @@ object GeoTiffRDD {
 
       S3GeoTiffRDD.Options(
         crs = crs,
-        timeTag = stringMap.getOrElse("timeTag", default.timeTag),
-        timeFormat = stringMap.getOrElse("timeFormat", default.timeFormat),
-        maxTileSize = intMap.get("maxTileSize"),
-        numPartitions = intMap.get("numPartitions"),
-        chunkSize = intMap.get("chunkSize"),
+        timeTag = stringMap.getOrElse("time_tag", default.timeTag),
+        timeFormat = stringMap.getOrElse("time_format", default.timeFormat),
+        maxTileSize = intMap.get("max_tile_size"),
+        numPartitions = intMap.get("num_partitions"),
+        chunkSize = intMap.get("chunk_size"),
         getS3Client = getS3Client)
     }
   }
