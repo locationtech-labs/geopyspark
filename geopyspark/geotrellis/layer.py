@@ -978,12 +978,12 @@ class TiledRasterLayer(CachableLayer):
 
         return [multibandtile_decoder(tile) for tile in array_of_tiles]
 
-    def tile_to_layout(self, layout, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
+    def tile_to_layout(self, layout_definition, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to a given layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layout (:obj:`~geopyspark.geotrellis.TileLayout`): Specify the ``TileLayout`` to cut
-                to.
+            layout_definition (:obj:`~geopyspark.geotrellis.LayoutDefinition`): Specify the
+                ``LayoutDefinition`` to cut to.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use for the reprojection. If none is specified, then
                 ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
@@ -992,10 +992,9 @@ class TiledRasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        if not isinstance(layout, dict):
-            layout = layout._asdict()
-
-        srdd = self.srdd.tileToLayout(layout, ResampleMethod(resample_method).value)
+        srdd = self.srdd.tileToLayout(layout_definition.extent._asdict(),
+                                      layout_definition.tileLayout._asdict(),
+                                      ResampleMethod(resample_method).value)
 
         return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
