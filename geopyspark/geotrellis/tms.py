@@ -13,21 +13,16 @@ class TileRender(object):
     interface.  Permits a callback from Scala to Python to allow for custom
     rendering functions.
 
+    Args:
+        render_function (numpy.ndarray => bytes): A function to convert a numpy
+            array to a collection of bytes giving a binary image file.
+
     Attributes:
         render_function (numpy.ndarray => bytes): A function to convert a numpy
             array to a collection of bytes giving a binary image file.
     """
 
     def __init__(self, render_function):
-        """Default constructor.
-
-        Args:
-            render_function (np.array => bytes): A function to convert a numpy
-                array to a collection of bytes giving a binary image file.
-
-        Returns:
-            [TileRender]
-        """
         self.render_function = render_function
 
     def requiresEncoding(self):
@@ -37,10 +32,8 @@ class TileRender(object):
         """A function to convert an array to an image.
 
         Args:
-            cells (bytes): A linear array of bytes representing the contents of
-                a tile
-            rows (int): The number of rows in the final array
-            cols (int): The number of cols in the final array
+            scala_array: A linear array of bytes representing the protobuf-encoded
+                contents of a tile
 
         Returns:
             bytes representing an image
@@ -63,20 +56,19 @@ class TileCompositer(object):
     """A Python implementation of the Scala geopyspark.geotrellis.tms.TileCompositer
     interface.  Permits a callback from Scala to Python to allow for custom
     compositing functions.
+
+    Args:
+        composite_function (list[numpy array] => bytes): A function to convert
+            a list of numpy arrays to a collection of bytes giving a binary
+            image file.
+
+    Attributes:
+        composite_function (list[numpy array] => bytes): A function to convert
+            a list of numpy arrays to a collection of bytes giving a binary
+            image file.
     """
 
     def __init__(self, composite_function):
-        """Default constructor.
-
-        Args:
-            render_function (list[numpy array] => bytes): A function to convert
-                a list of numpy arrays to a collection of bytes giving a binary
-                image file.
-
-        Returns:
-            [TileCompositer]
-        """
-        # composite_function: List[np.array] => Image
         self.composite_function = composite_function
 
     def requiresEncoding(self):
@@ -111,6 +103,14 @@ class TMS(object):
     In order to display raster data on a variety of different map interfaces
     (e.g., leaflet maps, geojson.io, GeoNotebook, and others), we provide
     the TMS class.
+
+    Args:
+        pysc (SparkContext)
+        server (JavaObject): The Java TMSServer instance
+
+    Attributes:
+        pysc (SparkContext)
+        server (JavaObject): The Java TMSServer instance
     """
     def __init__(self, pysc, server):
         self.pysc = pysc
@@ -134,6 +134,12 @@ class TMS(object):
         supported are formatted as 's3://path/to/catalog'.
 
         It will also be necessary to provide a means to display the tile inputs.
+        This comes either in the form of a color map, a render function (taking 
+        a single tile input and returning an image), or a composite function 
+        (taking a list of tiles and returning a single image).  The first two 
+        are provided via the 'render' keyword argument, the latter by the 
+        'composite' keyword argument.  For the sake of clarity, only one of 
+        these arguments may be provided at once.
 
         Args:
             pysc (SparkContext): The Spark context
