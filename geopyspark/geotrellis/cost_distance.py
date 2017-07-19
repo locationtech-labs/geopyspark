@@ -30,4 +30,4 @@ def cost_distance(friction_layer, geometries, max_distance):
         wkbs,
         float(max_distance))
 
-    return TiledRasterLayer(friction_layer.pysc, friction_layer.layer_type, srdd)
+    return TiledRasterLayer(friction_layer.layer_type, srdd)

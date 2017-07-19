@@ -62,8 +62,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
 
     def read_multiband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.cells)
-        result = get(BaseTestClass.pysc,
-                     LayerType.SPATIAL,
+        result = get(LayerType.SPATIAL,
                      self.uri,
                      s3_client=opt['s3Client'],
                      max_tile_size=opt.get('maxTileSize'))

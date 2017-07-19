@@ -41,7 +41,7 @@ class MaskTest(BaseTestClass):
                     'tileLayout': layout}}
 
     geometries = Polygon([(17, 17), (42, 17), (42, 42), (17, 42)])
-    raster_rdd = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, metadata)
+    raster_rdd = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, metadata)
 
     @pytest.fixture(autouse=True)
     def tearDown(self):

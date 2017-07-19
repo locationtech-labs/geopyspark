@@ -13,7 +13,7 @@ ensure_pyspark()
 
 from pyspark.storagelevel import StorageLevel
 
-from geopyspark import map_key_input, create_python_rdd
+from geopyspark import get_spark_context, map_key_input, create_python_rdd
 from geopyspark.geotrellis import Metadata, Tile, LocalLayout, GlobalLayout, LayoutDefinition, crs_to_proj4
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
@@ -64,6 +64,7 @@ def _reclassify(srdd, value_map, data_type, classification_strategy, replace_nod
 
 def _to_geotiff_rdd(pysc, srdd, storage_method, rows_per_strip, tile_dimensions, compression,
                     color_space, color_map, head_tags, band_tags):
+
     storage_method = StorageMethod(storage_method).value
     compression = Compression(compression).value
     color_space = ColorSpace(color_space).value
@@ -221,14 +222,14 @@ class RasterLayer(CachableLayer):
 
     __slots__ = ['pysc', 'layer_type', 'srdd']
 
-    def __init__(self, pysc, layer_type, srdd):
+    def __init__(self, layer_type, srdd):
         CachableLayer.__init__(self)
-        self.pysc = pysc
+        self.pysc = get_spark_context()
         self.layer_type = layer_type
         self.srdd = srdd
 
     @classmethod
-    def from_numpy_rdd(cls, pysc, layer_type, numpy_rdd):
+    def from_numpy_rdd(cls, layer_type, numpy_rdd):
         """Create a ``RasterLayer`` from a numpy RDD.
 
         Args:
@@ -245,6 +246,7 @@ class RasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.RasterLayer`
         """
 
+        pysc = get_spark_context()
         key = map_key_input(LayerType(layer_type).value, False)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
@@ -258,7 +260,7 @@ class RasterLayer(CachableLayer):
                     pysc._gateway.jvm.geopyspark.geotrellis.TemporalRasterLayer.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd)
 
-        return cls(pysc, layer_type, srdd)
+        return cls(layer_type, srdd)
 
     def to_numpy_rdd(self):
         """Converts a ``RasterLayer`` to a numpy RDD.
@@ -275,7 +277,7 @@ class RasterLayer(CachableLayer):
         key = map_key_input(LayerType(self.layer_type).value, False)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
 
-        return create_python_rdd(self.pysc, result, ser)
+        return create_python_rdd(result, ser)
 
     def to_png_rdd(self, color_map):
         """Converts the rasters within this layer to PNGs which are then converted to bytes.
@@ -293,7 +295,7 @@ class RasterLayer(CachableLayer):
         key = map_key_input(LayerType(self.layer_type).value, False)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
-        return create_python_rdd(self.pysc, result, ser)
+        return create_python_rdd(result, ser)
 
     def to_geotiff_rdd(self,
                        storage_method=StorageMethod.STRIPED,
@@ -342,7 +344,7 @@ class RasterLayer(CachableLayer):
         key = map_key_input(LayerType(self.layer_type).value, False)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
-        return create_python_rdd(self.pysc, result, ser)
+        return create_python_rdd(result, ser)
 
     def bands(self, band):
         """Select a subsection of bands from the ``Tile``\s within the layer.
@@ -372,7 +374,7 @@ class RasterLayer(CachableLayer):
         else:
             raise TypeError("band must be an int, tuple, or list. Recieved", type(band), "instead.")
 
-        return RasterLayer(self.pysc, self.layer_type, result)
+        return RasterLayer(self.layer_type, result)
 
     def map_tiles(self, func):
         """Maps over each ``Tile`` within the layer with a given function.
@@ -392,7 +394,7 @@ class RasterLayer(CachableLayer):
 
         python_rdd = self.to_numpy_rdd()
 
-        return RasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
+        return RasterLayer.from_numpy_rdd(self.layer_type,
                                           python_rdd.mapValues(lambda tile: func(tile.cells)))
 
     def map_cells(self, func):
@@ -418,7 +420,7 @@ class RasterLayer(CachableLayer):
         def tile_func(cells, cell_type, no_data_value):
             return Tile(func(cells, no_data_value), cell_type, no_data_value)
 
-        return RasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
+        return RasterLayer.from_numpy_rdd(self.layer_type,
                                           python_rdd.mapValues(lambda tile: tile_func(*tile)))
 
     def convert_data_type(self, new_type, no_data_value=None):
@@ -447,11 +449,9 @@ class RasterLayer(CachableLayer):
 
             no_data_constant = new_type + "ud" + str(no_data_value)
 
-            return RasterLayer(self.pysc, self.layer_type,
-                               self.srdd.convertDataType(no_data_constant))
+            return RasterLayer(self.layer_type, self.srdd.convertDataType(no_data_constant))
         else:
-            return RasterLayer(self.pysc, self.layer_type,
-                               self.srdd.convertDataType(new_type))
+            return RasterLayer(self.layer_type, self.srdd.convertDataType(new_type))
 
     def collect_metadata(self, layout=LocalLayout()):
         """Iterate over the RDD records and generates layer metadata desribing the contained
@@ -494,7 +494,7 @@ class RasterLayer(CachableLayer):
 
         srdd = self.srdd.reproject(target_crs, resample_method)
 
-        return RasterLayer(self.pysc, self.layer_type, srdd)
+        return RasterLayer(self.layer_type, srdd)
 
     def tile_to_layout(self, layout=LocalLayout(), target_crs=None, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
@@ -536,7 +536,7 @@ class RasterLayer(CachableLayer):
         else:
             raise TypeError("%s can not be converted to raster layout." % layout)
 
-        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
+        return TiledRasterLayer(self.layer_type, srdd)
 
     def reclassify(self, value_map, data_type,
                    classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO,
@@ -568,7 +568,7 @@ class RasterLayer(CachableLayer):
 
         srdd = _reclassify(self.srdd, value_map, data_type, classification_strategy, replace_nodata_with)
 
-        return RasterLayer(self.pysc, self.layer_type, srdd)
+        return RasterLayer(self.layer_type, srdd)
 
     def get_min_max(self):
         """Returns the maximum and minimum values of all of the rasters in the layer.
@@ -621,9 +621,9 @@ class TiledRasterLayer(CachableLayer):
 
     __slots__ = ['pysc', 'layer_type', 'srdd']
 
-    def __init__(self, pysc, layer_type, srdd):
+    def __init__(self, layer_type, srdd):
         CachableLayer.__init__(self)
-        self.pysc = pysc
+        self.pysc = get_spark_context()
         self.layer_type = layer_type
         self.srdd = srdd
 
@@ -632,7 +632,7 @@ class TiledRasterLayer(CachableLayer):
         self.zoom_level = self.srdd.getZoom()
 
     @classmethod
-    def from_numpy_rdd(cls, pysc, layer_type, numpy_rdd, metadata):
+    def from_numpy_rdd(cls, layer_type, numpy_rdd, metadata):
         """Create a ``TiledRasterLayer`` from a numpy RDD.
 
         Args:
@@ -651,6 +651,7 @@ class TiledRasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
+        pysc = get_spark_context()
         key = map_key_input(LayerType(layer_type).value, True)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
@@ -667,7 +668,7 @@ class TiledRasterLayer(CachableLayer):
                     pysc._gateway.jvm.geopyspark.geotrellis.TemporalTiledRasterLayer.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd, json.dumps(metadata))
 
-        return cls(pysc, layer_type, srdd)
+        return cls(layer_type, srdd)
 
     def to_numpy_rdd(self):
         """Converts a ``TiledRasterLayer`` to a numpy RDD.
@@ -684,7 +685,7 @@ class TiledRasterLayer(CachableLayer):
         key = map_key_input(LayerType(self.layer_type).value, True)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
 
-        return create_python_rdd(self.pysc, result, ser)
+        return create_python_rdd(result, ser)
 
     def to_png_rdd(self, color_map):
         """Converts the rasters within this layer to PNGs which are then converted to bytes.
@@ -702,7 +703,7 @@ class TiledRasterLayer(CachableLayer):
         key = map_key_input(LayerType(self.layer_type).value, True)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
-        return create_python_rdd(self.pysc, result, ser)
+        return create_python_rdd(result, ser)
 
     def bands(self, band):
         """Select a subsection of bands from the ``Tile``\s within the layer.
@@ -732,7 +733,7 @@ class TiledRasterLayer(CachableLayer):
         else:
             raise TypeError("band must be an int, tuple, or list. Recieved", type(band), "instead.")
 
-        return TiledRasterLayer(self.pysc, self.layer_type, result)
+        return TiledRasterLayer(self.layer_type, result)
 
     def map_tiles(self, func):
         """Maps over each ``Tile`` within the layer with a given function.
@@ -752,7 +753,7 @@ class TiledRasterLayer(CachableLayer):
 
         python_rdd = self.to_numpy_rdd()
 
-        return TiledRasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
+        return TiledRasterLayer.from_numpy_rdd(self.layer_type,
                                                python_rdd.mapValues(lambda tile: func(tile)),
                                                self.layer_metadata)
 
@@ -779,7 +780,7 @@ class TiledRasterLayer(CachableLayer):
         def tile_func(cells, cell_type, no_data_value):
             return Tile(func(cells, no_data_value), cell_type, no_data_value)
 
-        return TiledRasterLayer.from_numpy_rdd(self.pysc, self.layer_type,
+        return TiledRasterLayer.from_numpy_rdd(self.layer_type,
                                                python_rdd.mapValues(lambda tile: tile_func(*tile)),
                                                self.layer_metadata)
 
@@ -830,7 +831,7 @@ class TiledRasterLayer(CachableLayer):
         key = map_key_input(LayerType(self.layer_type).value, True)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
-        return create_python_rdd(self.pysc, result, ser)
+        return create_python_rdd(result, ser)
 
     def convert_data_type(self, new_type, no_data_value=None):
         """Converts the underlying, raster values to a new ``CellType``.
@@ -856,10 +857,10 @@ class TiledRasterLayer(CachableLayer):
 
             no_data_constant = CellType(new_type).value + "ud" + str(no_data_value)
 
-            return TiledRasterLayer(self.pysc, self.layer_type,
+            return TiledRasterLayer(self.layer_type,
                                     self.srdd.convertDataType(no_data_constant))
         else:
-            return TiledRasterLayer(self.pysc, self.layer_type,
+            return TiledRasterLayer(self.layer_type,
                                     self.srdd.convertDataType(CellType(new_type).value))
 
     def reproject(self, target_crs, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
@@ -880,10 +881,11 @@ class TiledRasterLayer(CachableLayer):
         resample_method = ResampleMethod(resample_method)
 
         srdd = self.srdd.reproject(target_crs, resample_method)
-        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
+
+        return TiledRasterLayer(self.layer_type, srdd)
 
     def repartition(self, num_partitions):
-        return TiledRasterLayer(self.pysc, self.layer_type, self.srdd.repartition(num_partitions))
+        return TiledRasterLayer(self.layer_type, self.srdd.repartition(num_partitions))
 
     def lookup(self, col, row):
         """Return the value(s) in the image of a particular ``SpatialKey`` (given by col and row).
@@ -966,7 +968,7 @@ class TiledRasterLayer(CachableLayer):
         else:
             raise TypeError("Could not retile from the given layout", layout)
 
-        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
+        return TiledRasterLayer(self.layer_type, srdd)
 
     def pyramid(self, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Creates a layer ``Pyramid`` where the resolution is halved per level.
@@ -985,7 +987,7 @@ class TiledRasterLayer(CachableLayer):
 
         resample_method = ResampleMethod(resample_method)
         result = self.srdd.pyramid(resample_method)
-        return Pyramid([TiledRasterLayer(self.pysc, self.layer_type, srdd) for srdd in result])
+        return Pyramid([TiledRasterLayer(self.layer_type, srdd) for srdd in result])
 
     def focal(self, operation, neighborhood=None, param_1=None, param_2=None, param_3=None):
         """Performs the given focal operation on the layers contained in the Layer.
@@ -1040,7 +1042,7 @@ class TiledRasterLayer(CachableLayer):
         else:
             raise ValueError("neighborhood must be set or the operation must be SLOPE or ASPECT")
 
-        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
+        return TiledRasterLayer(self.layer_type, srdd)
 
     def stitch(self):
         """Stitch all of the rasters within the Layer into one raster.
@@ -1104,7 +1106,7 @@ class TiledRasterLayer(CachableLayer):
         wkbs = [shapely.wkb.dumps(g) for g in geometries]
         srdd = self.srdd.mask(wkbs)
 
-        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
+        return TiledRasterLayer(self.layer_type, srdd)
 
     def reclassify(self, value_map, data_type,
                    classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO,
@@ -1137,7 +1139,7 @@ class TiledRasterLayer(CachableLayer):
         srdd = _reclassify(self.srdd, value_map, data_type,
                            ClassificationStrategy(classification_strategy).value, replace_nodata_with)
 
-        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
+        return TiledRasterLayer(self.layer_type, srdd)
 
     def get_min_max(self):
         """Returns the maximum and minimum values of all of the rasters in the Layer.
@@ -1164,7 +1166,7 @@ class TiledRasterLayer(CachableLayer):
 
         srdd = self.srdd.normalize(old_min, old_max, new_min, new_max)
 
-        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
+        return TiledRasterLayer(self.layer_type, srdd)
 
     @staticmethod
     def _process_polygonal_summary(geometry, operation):
@@ -1315,7 +1317,7 @@ class TiledRasterLayer(CachableLayer):
         else:
             raise TypeError("Local operation cannot be performed with", value)
 
-        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
+        return TiledRasterLayer(self.layer_type, srdd)
 
     def __add__(self, value):
         return self._process_operation(value, self.srdd.localAdd)

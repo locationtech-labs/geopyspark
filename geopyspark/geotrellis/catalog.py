@@ -9,7 +9,7 @@ from shapely.geometry import Polygon, MultiPolygon, Point
 from shapely.wkt import dumps
 import shapely.wkb
 
-from geopyspark import map_key_input
+from geopyspark import map_key_input, get_spark_context
 from geopyspark.geotrellis.constants import LayerType, IndexingMethod
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
 from geopyspark.geotrellis import Metadata, Extent, deprecated
@@ -123,9 +123,9 @@ def _construct_catalog(pysc, new_uri, options):
                                           value_reader=value_reader,
                                           writer=writer)
 
-def _in_bounds(pysc, layer_type, uri, layer_name, zoom_level, col, row):
+def _in_bounds(layer_type, uri, layer_name, zoom_level, col, row):
     if (layer_name, zoom_level) not in _mapped_bounds:
-        layer_metadata = read_layer_metadata(pysc, layer_type, uri, layer_name, zoom_level)
+        layer_metadata = read_layer_metadata(layer_type, uri, layer_name, zoom_level)
         bounds = layer_metadata.bounds
         _mapped_bounds[(layer_name, zoom_level)] = bounds
     else:
@@ -140,8 +140,7 @@ def _in_bounds(pysc, layer_type, uri, layer_name, zoom_level, col, row):
         return True
 
 
-def read_layer_metadata(pysc,
-                        layer_type,
+def read_layer_metadata(layer_type,
                         uri,
                         layer_name,
                         layer_zoom,
@@ -170,7 +169,7 @@ def read_layer_metadata(pysc,
 
     options = options or kwargs or {}
 
-    _construct_catalog(pysc, uri, options)
+    _construct_catalog(get_spark_context(), uri, options)
     cached = _mapped_cached[uri]
 
     if layer_type == LayerType.SPATIAL:
@@ -180,8 +179,7 @@ def read_layer_metadata(pysc,
 
     return Metadata.from_dict(json.loads(metadata))
 
-def get_layer_ids(pysc,
-                  uri,
+def get_layer_ids(uri,
                   options=None,
                   **kwargs):
     """Returns a list of all of the layer ids in the selected catalog as dicts that contain the
@@ -207,14 +205,13 @@ def get_layer_ids(pysc,
 
     options = options or kwargs or {}
 
-    _construct_catalog(pysc, uri, options)
+    _construct_catalog(get_spark_context(), uri, options)
     cached = _mapped_cached[uri]
 
     return list(cached.reader.layerIds())
 
 @deprecated
-def read(pysc,
-         layer_type,
+def read(layer_type,
          uri,
          layer_name,
          layer_zoom,
@@ -223,11 +220,10 @@ def read(pysc,
          **kwargs):
     """Deprecated in favor of :meth:`~geopyspark.geotrellis.catalog.query`."""
 
-    return query(pysc, layer_type, uri, layer_name, layer_zoom, options=options,
+    return query(layer_type, uri, layer_name, layer_zoom, options=options,
                  num_partitions=num_partitions)
 
-def read_value(pysc,
-               layer_type,
+def read_value(layer_type,
                uri,
                layer_name,
                layer_zoom,
@@ -267,14 +263,14 @@ def read_value(pysc,
         :class:`~geopyspark.geotrellis.Tile`
     """
 
-    if not _in_bounds(pysc, layer_type, uri, layer_name, layer_zoom, col, row):
+    if not _in_bounds(layer_type, uri, layer_name, layer_zoom, col, row):
         return None
     else:
         options = options or kwargs or {}
         zdt = zdt or ""
 
         if uri not in _mapped_cached:
-            _construct_catalog(pysc, uri, options)
+            _construct_catalog(get_spark_context(), uri, options)
 
         cached = _mapped_cached[uri]
 
@@ -289,8 +285,7 @@ def read_value(pysc,
 
         return multibandtile_decoder(values)
 
-def query(pysc,
-          layer_type,
+def query(layer_type,
           uri,
           layer_name,
           layer_zoom,
@@ -350,6 +345,8 @@ def query(pysc,
 
     options = options or kwargs or {}
 
+    pysc = get_spark_context()
+
     _construct_catalog(pysc, uri, options)
 
     cached = _mapped_cached[uri]
@@ -360,7 +357,7 @@ def query(pysc,
 
     if not query_geom:
         srdd = cached.reader.read(key, layer_name, layer_zoom, num_partitions)
-        return TiledRasterLayer(pysc, layer_type, srdd)
+        return TiledRasterLayer(layer_type, srdd)
 
     else:
         time_intervals = time_intervals or []
@@ -398,7 +395,7 @@ def query(pysc,
         else:
             raise TypeError("Could not query intersection", query_geom)
 
-        return TiledRasterLayer(pysc, layer_type, srdd)
+        return TiledRasterLayer(layer_type, srdd)
 
 def write(uri,
           layer_name,

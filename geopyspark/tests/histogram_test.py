@@ -30,7 +30,7 @@ class HistogramTest(BaseTestClass):
 
     tile = Tile(arr, 'FLOAT', -500)
     rdd = BaseTestClass.pysc.parallelize([(spatial_key, tile)])
-    tiled = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, metadata)
+    tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, metadata)
     hist = tiled.get_histogram()
 
     def test_min(self):
@@ -53,7 +53,7 @@ class HistogramTest(BaseTestClass):
 
         tile2 = Tile(arr2, 'FLOAT', -500)
         rdd2 = BaseTestClass.pysc.parallelize([(self.spatial_key, tile2)])
-        tiled2 = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd2, self.metadata)
+        tiled2 = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd2, self.metadata)
         hist2 = tiled2.get_histogram()
 
         self.assertEqual(hist2.mode(), 1.0)
@@ -97,7 +97,7 @@ class HistogramTest(BaseTestClass):
 
         tile2 = Tile(arr2, 'INT', -500)
         rdd2 = BaseTestClass.pysc.parallelize([(self.spatial_key, tile2)])
-        tiled2 = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd2,
+        tiled2 = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd2,
                                                  metadata2)
 
         hist2 = tiled2.get_histogram()
@@ -113,7 +113,7 @@ class HistogramTest(BaseTestClass):
 
         tile2 = Tile(arr2, 'FLOAT', -500)
         rdd2 = BaseTestClass.pysc.parallelize([(self.spatial_key, tile2)])
-        tiled2 = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd2,
+        tiled2 = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd2,
                                                  self.metadata)
 
         hist2 = tiled2.get_histogram()

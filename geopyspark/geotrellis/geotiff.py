@@ -1,7 +1,7 @@
 """This module contains functions that create ``RasterLayer`` from files."""
 
 from functools import reduce
-from geopyspark import map_key_input
+from geopyspark import map_key_input, get_spark_context
 from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.layer import RasterLayer
 
@@ -9,8 +9,7 @@ from geopyspark.geotrellis.layer import RasterLayer
 __all__ = ['get']
 
 
-def get(pysc,
-        layer_type,
+def get(layer_type,
         uri,
         crs=None,
         max_tile_size=None,
@@ -63,20 +62,21 @@ def get(pysc,
     """
 
     inputs = {k:v for k, v in locals().items() if v is not None}
+    pysc = get_spark_context()
 
     geotiff_rdd = pysc._gateway.jvm.geopyspark.geotrellis.io.geotiff.GeoTiffRDD
 
     key = map_key_input(LayerType(inputs.pop('layer_type')).value, False)
 
     if isinstance(uri, list):
-        srdd = geotiff_rdd.get(inputs.pop('pysc')._jsc.sc(),
+        srdd = geotiff_rdd.get(pysc._jsc.sc(),
                                key,
                                inputs.pop('uri'),
                                inputs)
     else:
-        srdd = geotiff_rdd.get(inputs.pop('pysc')._jsc.sc(),
+        srdd = geotiff_rdd.get(pysc._jsc.sc(),
                                key,
                                [inputs.pop('uri')],
                                inputs)
 
-    return RasterLayer(pysc, layer_type, srdd)
+    return RasterLayer(layer_type, srdd)

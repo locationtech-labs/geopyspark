@@ -37,7 +37,7 @@ class HillshadeTest(BaseTestClass):
                     'extent': extent,
                     'tileLayout': {'tileCols': 6, 'tileRows': 6, 'layoutCols': 1, 'layoutRows': 1}}}
 
-    raster_rdd = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, metadata)
+    raster_rdd = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, metadata)
 
     @pytest.fixture(autouse=True)
     def tearDown(self):

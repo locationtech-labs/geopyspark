@@ -2,6 +2,7 @@
 PNGs, and GeoTiffs.
 """
 import struct
+from geopyspark import get_spark_context
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
@@ -87,7 +88,7 @@ class ColorMap(object):
         self.cmap = cmap
 
     @classmethod
-    def build(cls, pysc, breaks=None, colors=None,
+    def build(cls, breaks=None, colors=None,
               no_data_color=0x00000000, fallback=0x00000000,
               classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
         """Given breaks and colors, build a ``ColorMap`` object.
@@ -115,6 +116,8 @@ class ColorMap(object):
             :class:`~geopyspark.geotrellis.color.ColorMap`
         """
 
+        pysc = get_spark_context()
+
         if isinstance(breaks, dict):
             return ColorMap.from_break_map(pysc, breaks, no_data_color, fallback, classification_strategy)
 
@@ -136,7 +139,7 @@ class ColorMap(object):
             raise ValueError("Could not construct ColorMap from the given breaks", breaks)
 
     @classmethod
-    def from_break_map(cls, pysc, break_map,
+    def from_break_map(cls, break_map,
                        no_data_color=0x00000000, fallback=0x00000000,
                        classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
         """Converts a dictionary mapping from tile values to colors to a ColorMap.
@@ -158,6 +161,8 @@ class ColorMap(object):
             :class:`~geopyspark.geotrellis.color.ColorMap`
         """
 
+        pysc = get_spark_context()
+
         if all(isinstance(x, int) for x in break_map.keys()):
             fn = pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMap
             strat = ClassificationStrategy(classification_strategy).value
@@ -170,7 +175,7 @@ class ColorMap(object):
             raise TypeError("Break map keys must be either int or float.")
 
     @classmethod
-    def from_colors(cls, pysc, breaks, color_list,
+    def from_colors(cls, breaks, color_list,
                     no_data_color=0x00000000, fallback=0x00000000,
                     classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
         """Converts lists of values and colors to a ``ColorMap``.
@@ -195,6 +200,8 @@ class ColorMap(object):
             :class:`~geopyspark.geotrellis.color.ColorMap`
         """
 
+        pysc = get_spark_context()
+
         if all(isinstance(x, int) for x in breaks):
             fn = pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaks
             strat = ClassificationStrategy(classification_strategy).value
@@ -206,7 +213,7 @@ class ColorMap(object):
             return cls(fn(arr, color_list, no_data_color, fallback, strat))
 
     @classmethod
-    def from_histogram(cls, pysc, histogram, color_list,
+    def from_histogram(cls, histogram, color_list,
                        no_data_color=0x00000000, fallback=0x00000000,
                        classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
         """Converts a wrapped GeoTrellis histogram into a ``ColorMap``.
@@ -231,12 +238,14 @@ class ColorMap(object):
             :class:`~geopyspark.geotrellis.color.ColorMap`
         """
 
+        pysc = get_spark_context()
+
         fn = pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromHistogram
         strat = ClassificationStrategy(classification_strategy).value
         return cls(fn(histogram.scala_histogram, color_list, no_data_color, fallback, strat))
 
     @staticmethod
-    def nlcd_colormap(pysc):
+    def nlcd_colormap():
         """Returns a color map for NLCD tiles.
 
         Args:
@@ -246,4 +255,4 @@ class ColorMap(object):
             :class:`~geopyspark.geotrellis.color.ColorMap`
         """
 
-        return ColorMap.from_break_map(pysc, nlcd_color_map)
+        return ColorMap.from_break_map(nlcd_color_map)

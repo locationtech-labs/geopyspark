@@ -1,9 +1,11 @@
 import io
 import numpy as np
 
+from geopyspark import get_spark_context
 from geopyspark.geotrellis.color import ColorMap
 from geopyspark.geotrellis.layer import Pyramid
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
+
 
 __all__ = ['TileRender', 'TMS']
 
@@ -52,6 +54,7 @@ class TileRender(object):
     class Java:
         implements = ["geopyspark.geotrellis.tms.TileRender"]
 
+
 class TileCompositer(object):
     """A Python implementation of the Scala geopyspark.geotrellis.tms.TileCompositer
     interface.  Permits a callback from Scala to Python to allow for custom
@@ -84,6 +87,7 @@ class TileCompositer(object):
         Returns:
             [bytes] representing an image
         """
+
         try:
             cells = [multibandtile_decoder(scala_array).cells for scala_array in all_scala_arrays]
             image = self.composite_function(cells)
@@ -96,6 +100,7 @@ class TileCompositer(object):
 
     class Java:
         implements = ["geopyspark.geotrellis.tms.TileCompositer"]
+
 
 class TMS(object):
     """Provides a TMS server for raster data.
@@ -112,6 +117,7 @@ class TMS(object):
         pysc (SparkContext)
         server (JavaObject): The Java TMSServer instance
     """
+
     def __init__(self, pysc, server):
         self.pysc = pysc
         self.server = server
@@ -148,6 +154,7 @@ class TMS(object):
                 different tile sizes.  Returns bytes representing the resulting
                 image.
         """
+
         def makeReader(arg):
             if isinstance(arg, Pyramid):
                 reader = pysc._gateway.jvm.geopyspark.geotrellis.tms.TileReaders.createSpatialRddReader(
