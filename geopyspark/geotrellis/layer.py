@@ -638,6 +638,9 @@ class TiledRasterLayer(CachableLayer):
             ``RasterLayer`` to access the various Scala methods.
         is_floating_point_layer (bool): Whether the data within the ``TiledRasterLayer`` is floating
             point or not.
+        layer_metadata (:class:`~geopyspark.geotrellis.Metadata`): The layer metadata associated
+            with this layer.
+        zoom_level (int): The zoom level of the layer. Can be ``None``.
     """
 
     __slots__ = ['pysc', 'layer_type', 'srdd']
@@ -647,19 +650,10 @@ class TiledRasterLayer(CachableLayer):
         self.pysc = pysc
         self.layer_type = layer_type
         self.srdd = srdd
+
         self.is_floating_point_layer = self.srdd.isFloatingPointLayer()
-
-    @property
-    def layer_metadata(self):
-        """Layer metadata associated with this layer."""
-
-        return Metadata.from_dict(json.loads(self.srdd.layerMetadata()))
-
-    @property
-    def zoom_level(self):
-        """The zoom level of the Layer. Can be ``None``."""
-
-        return self.srdd.getZoom()
+        self.layer_metadata = Metadata.from_dict(json.loads(self.srdd.layerMetadata()))
+        self.zoom_level = self.srdd.getZoom()
 
     @classmethod
     def from_numpy_rdd(cls, pysc, layer_type, numpy_rdd, metadata):
