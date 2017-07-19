@@ -123,38 +123,30 @@ class TMS(object):
         self.handshake = handshake
 
     @classmethod
-    def build(cls, pysc, *args, **kwargs):
+    def build(cls, pysc, source, display):
         """Builds a TMS server from one or more layers.
 
-        This function takes a SparkContext, a list of sources, and a display
-        method and creates a TMS server to display the desired content.  The
-        sources are supplied as a comma-separated list following the
-        SparkContext where URIs may be given for catalog sources, and Pyramid
-        objects may be passed for RDD-based sources.  The URIs currently
-        supported are formatted as 's3://path/to/catalog'.
-
-        It will also be necessary to provide a means to display the tile inputs.
-        This comes either in the form of a color map, a render function (taking 
-        a single tile input and returning an image), or a composite function 
-        (taking a list of tiles and returning a single image).  The first two 
-        are provided via the 'render' keyword argument, the latter by the 
-        'composite' keyword argument.  For the sake of clarity, only one of 
-        these arguments may be provided at once.
+        This function takes a SparkContext, a source or list of sources, and a
+        display method and creates a TMS server to display the desired content.
+        The display method is supplied as a ColorMap (only available when there
+        is a single source), or a callable object which takes either a single
+        tile input (when there is a single source) or a list of tiles (for
+        multiple sources) and returns the bytes representing an image file for
+        that tile.
 
         Args:
             pysc (SparkContext): The Spark context
-
-            One or more unnamed arguments of type
-                Pyramid: A pyramided RDD
-                (string, string): The URI of the catalog paired with the layer
-                    name; i.e., ("s3://bucket/root", "layer_name")
-
-            Exactly one of the following keyword arguments:
-                render (ColorMap, callable): A color map or function from
-                    np.array to PIL.Image object that will be used for display.
-                    Takes only the first supplied tile source as input
-                composite (callable): A function from a list of np.array to
-                    PIL.Image
+            source (tuple, Pyramid, list): The tile sources to render.  Tuple
+                inputs are (string, string) pairs where the first component is
+                the URI of a catalog and the second is the layer name.  A list
+                input may be any combination of tuples and Pyramids.
+            display (ColorMap, callable): Method for mapping tiles to images.
+                ColorMap may only be applied to single input source.  Callable
+                will take a single numpy array for a single source, or a list
+                of numpy arrays for multiple sources.  In the case of multiple
+                inputs, resampling may be required if the tile sources have
+                different tile sizes.  Returns bytes representing the resulting
+                image.
         """
         def makeReader(arg):
             if isinstance(arg, Pyramid):
@@ -166,24 +158,25 @@ class TMS(object):
 
             return reader
 
-        if 'render' in kwargs and 'composite' not in kwargs:
-            renderer = kwargs['render']
-            if callable(renderer):
-                display = TileRender(renderer)
-            elif isinstance(renderer, ColorMap):
-                display = pysc._jvm.geopyspark.geotrellis.tms.RenderSinglebandFromCM.apply(renderer.cmap)
+        if isinstance(source, list) and len(source) == 1:
+            source = source[0]
+
+        if isinstance(display, ColorMap):
+            if isinstance(source, list):
+                raise ValueError("May only apply color maps to a single input source")
             else:
-                raise ValueError("'render' keyword argument must either be a function or a ColorMap")
-            reader = makeReader(args[0])
-            route = pysc._jvm.geopyspark.geotrellis.tms.TMSServerRoutes.renderingTileRoute(reader, display)
-        elif 'render' not in kwargs and 'composite' in kwargs:
-            composite = kwargs['composite']
-            if not callable(composite):
-                raise ValueError("'composite' keyword argument must be a function!")
-            readers = [makeReader(arg) for arg in args]
-            route = pysc._jvm.geopyspark.geotrellis.tms.TMSServerRoutes.compositingTileRoute(readers, TileCompositer(composite))
+                reader = makeReader(source)
+                wrapped_display = pysc._jvm.geopyspark.geotrellis.tms.RenderSinglebandFromCM.apply(display.cmap)
+                route = pysc._jvm.geopyspark.geotrellis.tms.TMSServerRoutes.renderingTileRoute(reader, wrapped_display)
+        elif callable(display):
+            if isinstance(source, list):
+                readers = [makeReader(arg) for arg in source]
+                route = pysc._jvm.geopyspark.geotrellis.tms.TMSServerRoutes.compositingTileRoute(readers, TileCompositer(display))
+            else:
+                reader = makeReader(source)
+                route = pysc._jvm.geopyspark.geotrellis.tms.TMSServerRoutes.renderingTileRoute(reader, TileRender(display))
         else:
-            raise ValueError("Must specify exactly one of the following keyword parameters: 'render' or 'composite'")
+            raise ValueError("Display method must be callable or a ColorMap")
 
         server = pysc._jvm.geopyspark.geotrellis.tms.TMSServer.createServer(route)
         return cls(pysc, server)
