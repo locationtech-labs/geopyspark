@@ -115,26 +115,25 @@ class ColorMap(object):
             :class:`~geopyspark.geotrellis.color.ColorMap`
         """
 
-        if isinstance(colors, str):
-            color_list = get_colors_from_matplotlib(colors)
-        elif isinstance(colors, list) and all(isinstance(c, int) for c in colors):
-            color_list = colors
-        else:
-            try:
-                from colortools import Color
-                if isinstance(colors, list) and all(isinstance(c, Color) for c in colors):
-                    color_list = get_colors_from_colors(colors)
-                else:
-                    color_list = None
-            except:
-                color_list = None
-
         if isinstance(breaks, dict):
             return ColorMap.from_break_map(pysc, breaks, no_data_color, fallback, classification_strategy)
-        elif isinstance(breaks, list) and isinstance(color_list, list):
+
+        if isinstance(colors, str):
+            color_list = get_colors_from_matplotlib(colors)
+        elif isinstance(colors, list):
+            if all(isinstance(c, int) for c in colors):
+                color_list = colors
+            else:
+                color_list = get_colors_from_colors(colors)
+        else:
+            raise ValueError("Could not construct ColorMap from the given colors", colors)
+
+        if isinstance(breaks, list):
             return ColorMap.from_colors(pysc, breaks, color_list, no_data_color, fallback, classification_strategy)
-        elif isinstance(breaks, Histogram) and isinstance(color_list, list):
+        elif isinstance(breaks, Histogram):
             return ColorMap.from_histogram(pysc, breaks, color_list, no_data_color, fallback, classification_strategy)
+        else:
+            raise ValueError("Could not construct ColorMap from the given breaks", breaks)
 
     @classmethod
     def from_break_map(cls, pysc, break_map,
