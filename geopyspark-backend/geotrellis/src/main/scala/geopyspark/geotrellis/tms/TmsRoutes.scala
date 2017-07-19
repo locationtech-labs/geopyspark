@@ -16,12 +16,15 @@ import akka.http.scaladsl.server.{Route, Directives}
 import akka.http.scaladsl.unmarshalling.Unmarshaller._
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
+import cats.Applicative
+import cats.implicits._
 import org.apache.spark.rdd._
 import org.apache.spark.{SparkConf, SparkContext}
 import spray.json._
 import spray.json.DefaultJsonProtocol
 
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -52,154 +55,51 @@ trait TMSServerRoute extends Directives with AkkaSystem.LoggerExecutor {
   }
 }
 
-class ValueReaderRoute(
-  valueReader: ValueReader[LayerId],
-  catalog: String,
-  rf: TileRender
-) extends TMSServerRoute {
+object TMSServerRoutes {
 
-  val reader = valueReader
-  val layers = TrieMap.empty[Int, Reader[SpatialKey, Tile]]
-  def root: Route =
-    pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
-      val key = SpatialKey(x, y)
-      complete {
-        Future {
-          val reader = layers.getOrElseUpdate(zoom, valueReader.reader[SpatialKey, Tile](LayerId(catalog, zoom)))
-          val tile: Tile = reader(key)
-          val bytes: Array[Byte] = time(s"Rendering tile @ $key (zoom=$zoom)"){ rf.render(tile) }
-          HttpEntity(`image/png`, bytes)
+  private class RenderingTileRoute(reader: TileReader, renderer: TileRender) extends TMSServerRoute {
+    def root: Route = 
+      pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
+        val tileFuture = reader.retrieve(zoom, x, y)
+        complete {
+          tileFuture.map(_.map{tile =>
+            if (renderer.requiresEncoding()) {
+              renderer.renderEncoded(geopyspark.geotrellis.PythonTranslator.toPython(MultibandTile(tile)))
+            } else {
+              renderer.render(MultibandTile(tile))
+            }
+          })
         }
       }
-    }
-}
 
-class ExternalTMSServerRoute(patternURL: String) extends TMSServerRoute {
-  def root: Route =
-    pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
-      val newUrl = patternURL.replace("{z}", zoom.toString)
-                             .replace("{x}", x.toString)
-                             .replace("{y}", y.toString)
-      redirect(newUrl, StatusCodes.SeeOther)
-    }
-}
-
-
-sealed trait AggregatorCommand
-case class QueueRequest(zoom: Int, x: Int, y: Int, pr: Promise[Option[HttpResponse]]) extends AggregatorCommand
-case object DumpRequests extends AggregatorCommand
-
-object RequestAggregator {
-  def props = Props(new RequestAggregator)
-}
-
-class RequestAggregator extends Actor {
-  val requests = scala.collection.mutable.ListBuffer.empty[QueueRequest]
-  val logger = Logger.getLogger(this.getClass)
-
-  def receive = {
-    case qr @ QueueRequest(zoom, x, y, pr) =>
-      requests += qr
-    case DumpRequests =>
-      sender ! FulfillRequests(requests.toSeq)
-      requests.clear
-    case _ => logger.error("Unexpected message!")
+    override def startup() = reader.startup()
+    override def shutdown() = reader.shutdown()
   }
 
-  def queueRequest(qr: QueueRequest): Unit = {
-    val QueueRequest(zoom, x, y, pr) = qr
-  }
-}
-
-sealed trait FulfillerCommand
-case object Initialize extends FulfillerCommand
-case class FulfillRequests(reqs: Seq[QueueRequest]) extends AggregatorCommand
-
-object RDDLookup {
-  val interval = 150 milliseconds
-  def props(levels: scala.collection.mutable.Map[Int, RDD[(SpatialKey, Tile)]], rf: TileRender, aggregator: ActorRef) = Props(new RDDLookup(levels, rf, aggregator))
-}
-
-class RDDLookup(
-  levels: scala.collection.mutable.Map[Int, RDD[(SpatialKey, Tile)]],
-  rf: TileRender,
-  aggregator: ActorRef
-)(implicit ec: ExecutionContext) extends Actor {
-  def receive = {
-    case Initialize =>
-      context.system.scheduler.scheduleOnce(RDDLookup.interval, aggregator, DumpRequests)
-    case FulfillRequests(requests) =>
-      fulfillRequests(requests)
-      context.system.scheduler.scheduleOnce(RDDLookup.interval, aggregator, DumpRequests)
-  }
-
-  def fulfillRequests(requests: Seq[QueueRequest]) = {
-    if (requests nonEmpty) {
-      requests
-        .groupBy{ case QueueRequest(zoom, _, _, _) => zoom }
-        .foreach{ case (zoom, reqs) => {
-          levels.get(zoom) match {
-            case Some(rdd) =>
-              val kps = reqs.map{ case QueueRequest(_, x, y, promise) => (SpatialKey(x, y), promise) }
-              val keys = reqs.map{ case QueueRequest(_, x, y, _) => SpatialKey(x, y) }.toSet
-              val results = rdd.filter{ elem => keys.contains(elem._1) }.collect()
-              kps.foreach{ case (key, promise) => {
-                promise success (results
-                  .find{ case (rddKey, _) => rddKey == key }
-                  .map{ case (_, tile) =>
-                        HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`image/png`), rf.render(tile))) 
-                      }
-                )
-              }}
-            case None =>
-              reqs.foreach{ case QueueRequest(_, _, _, promise) => promise success None }
-          }
-        }}
-    }
-  }
-}
-
-class SpatialRddRoute(
-  levels: scala.collection.mutable.Map[Int, RDD[(SpatialKey, Tile)]],
-  rf: TileRender,
-  system: ActorSystem
-) extends TMSServerRoute {
-  import java.util.UUID
-
-  implicit val executionContext: ExecutionContext = system.dispatchers.lookup("custom-blocking-dispatcher")  
-
-  private var _aggregator: ActorRef = null
-  private var _fulfiller: ActorRef = null
-
-  override def startup() = {
-    if (_aggregator != null)
-      throw new IllegalStateException("Cannot start: TMS server already running")
-
-    _aggregator = system.actorOf(RequestAggregator.props, UUID.randomUUID.toString)
-    _fulfiller = system.actorOf(RDDLookup.props(levels, rf, aggregator), UUID.randomUUID.toString)
-    _fulfiller ! Initialize
-  }
-
-  override def shutdown() = {
-    if (_aggregator == null)
-      throw new IllegalStateException("Cannot stop: TMS server not running")
-
-    system.stop(_aggregator)
-    system.stop(_fulfiller)
-    _aggregator = null
-    _fulfiller = null
-  }
-
-  def aggregator = _aggregator
-  def fulfiller = _fulfiller
-
-  def root: Route =
-    pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
-      val callback = Promise[Option[HttpResponse]]()
-      aggregator ! QueueRequest(zoom, x, y, callback)
-      complete {
-        callback.future
+  private class CompositingTileRoute(readers: List[TileReader], compositer: TileCompositer) extends TMSServerRoute {
+    def root: Route = 
+      pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
+        val tileFutures: List[Future[Option[Tile]]] = readers.map(_.retrieve(zoom, x, y))
+        val futureTiles: Future[Option[Array[Tile]]] = tileFutures.sequence.map(_.sequence).map(_.map(_.toArray))
+        complete {
+          futureTiles.map(
+            _.map(array =>
+              if (compositer.requiresEncoding()) {
+                compositer.compositeEncoded(array.map{tile => geopyspark.geotrellis.PythonTranslator.toPython(MultibandTile(tile))})
+              } else {
+                compositer.composite(array.map(MultibandTile(_))) 
+              }
+            )
+          )
+        }
       }
-    }
+
+    override def startup() = readers.foreach(_.startup())
+    override def shutdown() = readers.foreach(_.shutdown())
+  }
+
+  def renderingTileRoute(reader: TileReader, renderer: TileRender): TMSServerRoute = new RenderingTileRoute(reader, renderer)
+
+  def compositingTileRoute(readers: java.util.ArrayList[TileReader], compositer: TileCompositer): TMSServerRoute = new CompositingTileRoute(readers.toList, compositer)
 
 }

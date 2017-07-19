@@ -13,6 +13,7 @@ libraryDependencies ++= Seq(
   "org.locationtech.geotrellis" %% "geotrellis-s3"         % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-s3-testkit" % "1.0.0",
   "org.locationtech.geotrellis" %% "geotrellis-spark"      % Version.geotrellis,
+  "org.typelevel"               %% "cats"                  % "0.9.0",
   "com.typesafe.akka"     %% "akka-actor"                        % Version.akka,
   "com.typesafe.akka"     %% "akka-http-experimental"            % Version.akka,
   "com.typesafe.akka"     %% "akka-http-spray-json-experimental" % Version.akka,
@@ -26,6 +27,7 @@ assemblyMergeStrategy in assembly := {
   case "META-INF\\MANIFEST.MF" => MergeStrategy.discard
   case "META-INF/ECLIPSEF.RSA" => MergeStrategy.discard
   case "META-INF/ECLIPSEF.SF" => MergeStrategy.discard
+  case x if x.startsWith("META-INF/services") => MergeStrategy.concat
   case _ => MergeStrategy.first
 }
 
