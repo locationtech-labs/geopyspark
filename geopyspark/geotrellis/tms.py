@@ -5,7 +5,7 @@ from geopyspark.geotrellis.color import ColorMap
 from geopyspark.geotrellis.layer import Pyramid
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
 
-__all__ = ['TileRender', 'TMSServer']
+__all__ = ['TileRender', 'TMS']
 
 
 class TileRender(object):
