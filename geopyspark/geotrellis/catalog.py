@@ -149,7 +149,6 @@ def read_layer_metadata(layer_type,
     """Reads the metadata from a saved layer without reading in the whole layer.
 
     Args:
-        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
             of the geotiffs are. This is represented by either constants within ``LayerType`` or by
             a string.
@@ -186,7 +185,6 @@ def get_layer_ids(uri,
     name and zoom of a given layer.
 
     Args:
-        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         options (dict, optional): Additional parameters for reading the layer for specific backends.
@@ -240,7 +238,6 @@ def read_value(layer_type,
         When requesting a tile that does not exist, ``None`` will be returned.
 
     Args:
-        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
             of the geotiffs are. This is represented by either constants within ``LayerType`` or by
             a string.
@@ -304,7 +301,6 @@ def query(layer_type,
         been set, or if the querried region contains the entire layer.
 
     Args:
-        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
             of the geotiffs are. This is represented by either constants within ``LayerType`` or by
             a string.

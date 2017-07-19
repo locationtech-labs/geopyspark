@@ -11,7 +11,6 @@ def rasterize(geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=
     """Rasterizes a Shapely geometries.
 
     Args:
-        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         geoms ([shapely.geometry]): List of shapely geometries to rasterize.
         crs (str or int): The CRS of the input geometry.
         zoom (int): The zoom level of the output raster.

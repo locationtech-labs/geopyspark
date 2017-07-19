@@ -22,7 +22,6 @@ def get(layer_type,
     or ``S3``.
 
     Args:
-        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
             of the geotiffs are. This is represented by either constants within ``LayerType`` or by
             a string.

@@ -94,7 +94,6 @@ class ColorMap(object):
         """Given breaks and colors, build a ``ColorMap`` object.
 
         Args:
-            pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
             breaks (dict or list or :class:`~geopyspark.geotrellis.Histogram`): If a ``dict`` then a
                 mapping from tile values to colors, the latter represented as integers
                 e.g., 0xff000080 is red at half opacity. If a ``list`` then tile values that
@@ -145,7 +144,6 @@ class ColorMap(object):
         """Converts a dictionary mapping from tile values to colors to a ColorMap.
 
         Args:
-            pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
             break_map (dict): A mapping from tile values to colors, the latter
                 represented as integers e.g., 0xff000080 is red at half opacity.
             no_data_color(int, optional): A color to replace NODATA values with
@@ -181,7 +179,6 @@ class ColorMap(object):
         """Converts lists of values and colors to a ``ColorMap``.
 
         Args:
-            pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
             breaks (list): The tile values that specify breaks in the color
                 mapping.
             color_list ([int]): The colors corresponding to the values in the
@@ -219,7 +216,6 @@ class ColorMap(object):
         """Converts a wrapped GeoTrellis histogram into a ``ColorMap``.
 
         Args:
-            pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
             histogram (:class:`~geopyspark.geotrellis.Histogram`): A ``Histogram`` instance;
                 specifies breaks
             color_list ([int]): The colors corresponding to the values in the
@@ -247,9 +243,6 @@ class ColorMap(object):
     @staticmethod
     def nlcd_colormap():
         """Returns a color map for NLCD tiles.
-
-        Args:
-            pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
 
         Returns:
             :class:`~geopyspark.geotrellis.color.ColorMap`

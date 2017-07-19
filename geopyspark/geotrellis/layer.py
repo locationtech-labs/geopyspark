@@ -204,7 +204,6 @@ class RasterLayer(CachableLayer):
     modified to fit a certain layout. See :ref:`raster_rdd` for more information.
 
     Args:
-        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
             of the geotiffs are. This is represented by either constants within ``LayerType`` or by
             a string.
@@ -233,7 +232,6 @@ class RasterLayer(CachableLayer):
         """Create a ``RasterLayer`` from a numpy RDD.
 
         Args:
-            pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
             layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
                 of the geotiffs are. This is represented by either constants within ``LayerType`` or by
                 a string.
@@ -598,7 +596,6 @@ class TiledRasterLayer(CachableLayer):
     a larger layout. For more information, see :ref:`tiled-raster-rdd`.
 
     Args:
-        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
             of the geotiffs are. This is represented by either constants within ``LayerType`` or by
             a string.
@@ -636,7 +633,6 @@ class TiledRasterLayer(CachableLayer):
         """Create a ``TiledRasterLayer`` from a numpy RDD.
 
         Args:
-            pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
             layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
                 of the geotiffs are. This is represented by either constants within ``LayerType`` or by
                 a string.
