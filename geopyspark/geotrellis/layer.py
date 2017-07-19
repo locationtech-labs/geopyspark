@@ -1130,7 +1130,7 @@ class TiledRasterLayer(CachableLayer):
             This can only be used on ``LayerType.SPATIAL`` ``TiledRasterLayer``\s.
 
         Returns:
-            :obj:`~geopyspark.geotrellis.Tile`
+            :class:`~geopyspark.geotrellis.Tile`
         """
 
         if self.layer_type != LayerType.SPATIAL:

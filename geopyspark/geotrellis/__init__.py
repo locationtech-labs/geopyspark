@@ -23,8 +23,8 @@ def deprecated(func):
     return new_func
 
 
-Tile = namedtuple("Tile", 'cells cell_type no_data_value')
-"""Represents a raster in GeoPySpark.
+class Tile(namedtuple("Tile", 'cells cell_type no_data_value')):
+    """Represents a raster in GeoPySpark.
 
     Note:
         All rasters in GeoPySpark are represented as having multiple bands, even if the original
@@ -33,12 +33,76 @@ Tile = namedtuple("Tile", 'cells cell_type no_data_value')
     Args:
         cells (nd.array): The raster data itself. It is contained within a NumPy array.
         data_type (str): The data type of the values within ``data`` if they were in Scala.
-        no_data_value: The value that represents no data in raster. This can be
+        no_data_value: The value that represents no data value in the raster. This can be
             represented by a variety of types depending on the value type of the raster.
 
-    Returns:
-        :obj:`~geopyspark.geotrellis.Tile`
-"""
+    Attributes:
+        cells (nd.array): The raster data itself. It is contained within a NumPy array.
+        data_type (str): The data type of the values within ``data`` if they were in Scala.
+        no_data_value: The value that represents no data value in the raster. This can be
+            represented by a variety of types depending on the value type of the raster.
+    """
+
+    __slots__ = []
+
+    @staticmethod
+    def dtype_to_cell_type(dtype):
+        """Converts a ``np.dtype`` to the corresponding GeoPySpark ``cell_type``.
+
+        Note:
+            ``bool``, ``complex64``, ``complex128``, and ``complex256``, are currently not
+            supported ``np.dtype``\s.
+
+        Args:
+            dtype (np.dtype): The ``dtype`` of the numpy array.
+
+        Returns:
+            str. The GeoPySpark ``cell_type`` equivalent of the ``dtype``.
+
+        Raises:
+            TypeError: If the given ``dtype`` is not a supported data type.
+        """
+
+        name = dtype.name
+
+        if name == 'int8':
+            return 'BYTE'
+        elif name == 'uint8':
+            return 'UBYTE'
+        elif name == 'int16':
+            return 'SHORT'
+        elif name == 'uint16':
+            return 'USHORT'
+        elif name == 'int32':
+            return 'INT'
+        elif name in ['uint32', 'float16', 'float32']:
+            return 'FLOAT'
+        elif name in ['int64', 'uint64', 'float64']:
+            return 'DOUBLE'
+        else:
+            raise TypeError(name, "Is not a supported data type.")
+
+    @classmethod
+    def from_numpy_array(cls, numpy_array, no_data_value=None):
+        """Creates an instance of ``Tile`` from a numpy array.
+
+        Args:
+            numpy_array (np.array): The numpy array to be used to represent the cell values
+                of the ``Tile``.
+
+                Note:
+                    GeoPySpark does not support arrays with the following data types: ``bool``,
+                    ``complex64``, ``complex128``, and ``complex256``.
+
+            no_data_value (optional): The value that represents no data value in the raster.
+                This can be represented by a variety of types depending on the value type of
+                the raster. If not given, then the value will be ``None``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.Tile`
+        """
+
+        return cls(numpy_array, cls.dtype_to_cell_type(numpy_array.dtype), no_data_value)
 
 
 class Log(object):
