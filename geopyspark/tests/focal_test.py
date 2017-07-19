@@ -18,10 +18,12 @@ class FocalTest(BaseTestClass):
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 0.0]]])
 
-    layer = [(SpatialKey(0, 0), Tile(cells, 'FLOAT', -1.0)),
-             (SpatialKey(1, 0), Tile(cells, 'FLOAT', -1.0,)),
-             (SpatialKey(0, 1), Tile(cells, 'FLOAT', -1.0,)),
-             (SpatialKey(1, 1), Tile(cells, 'FLOAT', -1.0,))]
+    tile = Tile.from_numpy_array(cells, -1.0)
+
+    layer = [(SpatialKey(0, 0), tile),
+             (SpatialKey(1, 0), tile),
+             (SpatialKey(0, 1), tile),
+             (SpatialKey(1, 1), tile)]
     rdd = BaseTestClass.pysc.parallelize(layer)
 
     extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 33.0, 'ymax': 33.0}

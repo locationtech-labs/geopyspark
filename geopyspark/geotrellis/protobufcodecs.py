@@ -34,7 +34,7 @@ def from_pb_tile(tile, no_data_value=None, data_type=None):
         tile (ProtoTile): The ``ProtoTile`` instance to be converted.
 
     Returns:
-        :obj:`~geopyspark.geotrellis.Tile`
+        :class:`~geopyspark.geotrellis.Tile`
     """
 
     if not data_type:
@@ -66,7 +66,7 @@ def tile_decoder(proto_bytes):
         proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
 
     Returns:
-        :obj:`~geopyspark.geotrellis.Tile`
+        :class:`~geopyspark.geotrellis.Tile`
     """
 
     tile = ProtoTile.FromString(proto_bytes)
@@ -85,7 +85,7 @@ def from_pb_multibandtile(multibandtile):
         multibandtile (ProtoTile): The ``ProtoMultibandTile`` instance to be converted.
 
     Returns:
-        :obj:`~geopyspark.geotrellis.Tile`
+        :class:`~geopyspark.geotrellis.Tile`
     """
 
     cell_type = _mapped_data_types[multibandtile.tiles[0].cellType.dataType]
@@ -105,7 +105,7 @@ def multibandtile_decoder(proto_bytes):
         proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
 
     Returns:
-        :obj:`~geopyspark.geotrellis.Tile`
+        :class:`~geopyspark.geotrellis.Tile`
     """
 
     return from_pb_multibandtile(ProtoMultibandTile.FromString(proto_bytes))
@@ -253,7 +253,7 @@ def tuple_decoder(proto_bytes, key_decoder):
     """Deserializes ``ProtoTuple`` bytes into Python.
 
     Note:
-        The value of the tuple is always assumed to be a :ref:`Tile <raster>`,
+        The value of the tuple is always assumed to be a :class:`~geopyspark.geotrellis.Tile`
         thus, only the decoding method of the key is required.
 
     Args:
@@ -349,7 +349,7 @@ def to_pb_tile(obj):
     """Converts an instance of ``Tile`` to ``ProtoTile``.
 
     Args:
-        obj (:obj:`~geopyspark.geotrellis.Tile`): An instance of ``Tile``.
+        obj (:class:`~geopyspark.geotrellis.Tile`): An instance of ``Tile``.
 
     Returns:
         ProtoTile
@@ -408,7 +408,7 @@ def tile_encoder(obj):
     """Encodes a ``TILE`` into ``ProtoTile`` bytes.
 
     Args:
-        obj (:obj:`~geopyspark.geotrellis.Tile`): An instance of ``Tile``.
+        obj (:class:`~geopyspark.geotrellis.Tile`): An instance of ``Tile``.
 
     Returns:
         bytes
@@ -421,7 +421,7 @@ def to_pb_multibandtile(obj):
     """Converts an instance of ``Tile`` to ``ProtoMultibandTile``.
 
     Args:
-        obj (:obj:`~geopyspark.geotrellis.Tile`): An instance of ``Tile``.
+        obj (:class:`~geopyspark.geotrellis.Tile`): An instance of ``Tile``.
 
     Returns:
         ProtoMultibandTile
@@ -445,7 +445,7 @@ def multibandtile_encoder(obj):
     """Encodes a ``TILE`` into ``ProtoMultibandTile`` bytes.
 
     Args:
-        obj (:obj:`~geopyspark.geotrellis.Tile`): An instance of ``Tile``.
+        obj (:class:`~geopyspark.geotrellis.Tile`): An instance of ``Tile``.
 
     Returns:
         bytes
@@ -626,7 +626,7 @@ def tuple_encoder(obj, key_encoder):
     """Encodes a tuple into ``ProtoTuple`` bytes.
 
     Note:
-        The value of the tuple is always assumed to be a :ref:`Tile <raster>`,
+        The value of the tuple is always assumed to be a :class:`~geopyspark.geotrellis.Tile`,
         thus, only the encoding method of the key is required.
 
     Args:

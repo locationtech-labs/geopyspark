@@ -24,9 +24,9 @@ mapped_data_types = {
 
 class ShortTileSchemaTest(BaseTestClass):
     tiles = [
-        Tile(np.int16([0, 0, 1, 1]).reshape(2, 2), 'SHORT', -32768),
-        Tile(np.int16([1, 2, 3, 4]).reshape(2, 2), 'SHORT', -32768),
-        Tile(np.int16([5, 6, 7, 8]).reshape(2, 2), 'SHORT', -32768)
+        Tile.from_numpy_array(np.int16([0, 0, 1, 1]).reshape(2, 2), -32768),
+        Tile.from_numpy_array(np.int16([1, 2, 3, 4]).reshape(2, 2), -32768),
+        Tile.from_numpy_array(np.int16([5, 6, 7, 8]).reshape(2, 2), -32768)
     ]
 
     sc = BaseTestClass.pysc._jsc.sc()
@@ -59,9 +59,9 @@ class ShortTileSchemaTest(BaseTestClass):
 
 class UShortTileSchemaTest(BaseTestClass):
     tiles = [
-        Tile(np.uint16([0, 0, 1, 1]).reshape(2, 2), 'USHORT', 0),
-        Tile(np.uint16([1, 2, 3, 4]).reshape(2, 2), 'USHORT', 0),
-        Tile(np.uint16([5, 6, 7, 8]).reshape(2, 2), 'USHORT', 0)
+        Tile.from_numpy_array(np.uint16([0, 0, 1, 1]).reshape(2, 2), 0),
+        Tile.from_numpy_array(np.uint16([1, 2, 3, 4]).reshape(2, 2), 0),
+        Tile.from_numpy_array(np.uint16([5, 6, 7, 8]).reshape(2, 2), 0)
     ]
 
     sc = BaseTestClass.pysc._jsc.sc()
@@ -94,9 +94,9 @@ class UShortTileSchemaTest(BaseTestClass):
 
 class ByteTileSchemaTest(BaseTestClass):
     tiles = [
-        Tile(np.int8([0, 0, 1, 1]).reshape(2, 2), 'BYTE', -128),
-        Tile(np.int8([1, 2, 3, 4]).reshape(2, 2), 'BYTE', -128),
-        Tile(np.int8([5, 6, 7, 8]).reshape(2, 2), 'BYTE', -128)
+        Tile.from_numpy_array(np.int8([0, 0, 1, 1]).reshape(2, 2), -128),
+        Tile.from_numpy_array(np.int8([1, 2, 3, 4]).reshape(2, 2), -128),
+        Tile.from_numpy_array(np.int8([5, 6, 7, 8]).reshape(2, 2), -128)
     ]
 
     sc = BaseTestClass.pysc._jsc.sc()
@@ -129,9 +129,9 @@ class ByteTileSchemaTest(BaseTestClass):
 
 class UByteTileSchemaTest(BaseTestClass):
     tiles = [
-        Tile(np.uint8([0, 0, 1, 1]).reshape(2, 2), 'UBYTE', 0),
-        Tile(np.uint8([1, 2, 3, 4]).reshape(2, 2), 'UBYTE', 0),
-        Tile(np.uint8([5, 6, 7, 8]).reshape(2, 2), 'UBYTE', 0)
+        Tile.from_numpy_array(np.uint8([0, 0, 1, 1]).reshape(2, 2), 0),
+        Tile.from_numpy_array(np.uint8([1, 2, 3, 4]).reshape(2, 2), 0),
+        Tile.from_numpy_array(np.uint8([5, 6, 7, 8]).reshape(2, 2), 0)
     ]
 
     sc = BaseTestClass.pysc._jsc.sc()
@@ -164,9 +164,9 @@ class UByteTileSchemaTest(BaseTestClass):
 
 class IntTileSchemaTest(BaseTestClass):
     tiles = [
-        Tile(np.int32([0, 0, 1, 1]).reshape(2, 2), 'INT', -2147483648),
-        Tile(np.int32([1, 2, 3, 4]).reshape(2, 2), 'INT', -2147483648),
-        Tile(np.int32([5, 6, 7, 8]).reshape(2, 2), 'INT', -2147483648)
+        Tile.from_numpy_array(np.int32([0, 0, 1, 1]).reshape(2, 2), -2147483648),
+        Tile.from_numpy_array(np.int32([1, 2, 3, 4]).reshape(2, 2), -2147483648),
+        Tile.from_numpy_array(np.int32([5, 6, 7, 8]).reshape(2, 2), -2147483648)
     ]
 
     sc = BaseTestClass.pysc._jsc.sc()
@@ -199,9 +199,9 @@ class IntTileSchemaTest(BaseTestClass):
 
 class DoubleTileSchemaTest(BaseTestClass):
     tiles = [
-        Tile(np.double([0, 0, 1, 1]).reshape(2, 2), 'DOUBLE', True),
-        Tile(np.double([1, 2, 3, 4]).reshape(2, 2), 'DOUBLE', True),
-        Tile(np.double([5, 6, 7, 8]).reshape(2, 2), 'DOUBLE', True)
+        Tile.from_numpy_array(np.double([0, 0, 1, 1]).reshape(2, 2), True),
+        Tile.from_numpy_array(np.double([1, 2, 3, 4]).reshape(2, 2), True),
+        Tile.from_numpy_array(np.double([5, 6, 7, 8]).reshape(2, 2), True)
     ]
 
     sc = BaseTestClass.pysc._jsc.sc()
@@ -233,9 +233,9 @@ class DoubleTileSchemaTest(BaseTestClass):
 
 class FloatTileSchemaTest(BaseTestClass):
     tiles = [
-        Tile(np.float32([0, 0, 1, 1]).reshape(2, 2), 'FLOAT', True),
-        Tile(np.float32([1, 2, 3, 4]).reshape(2, 2), 'FLOAT', True),
-        Tile(np.float32([5, 6, 7, 8]).reshape(2, 2), 'FLOAT', True)
+        Tile.from_numpy_array(np.float32([0, 0, 1, 1]).reshape(2, 2), True),
+        Tile.from_numpy_array(np.float32([1, 2, 3, 4]).reshape(2, 2), True),
+        Tile.from_numpy_array(np.float32([5, 6, 7, 8]).reshape(2, 2), True)
     ]
 
     sc = BaseTestClass.pysc._jsc.sc()
