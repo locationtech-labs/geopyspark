@@ -11,6 +11,13 @@ from pyspark import RDD, SparkConf, SparkContext
 from pyspark.serializers import AutoBatchedSerializer
 
 
+def get_spark_context():
+    if SparkContext._active_spark_context:
+        return SparkContext._active_spark_context
+    else:
+        raise RuntimeError("SparkContext must be initialized")
+
+
 def map_key_input(key_type, is_boundable):
     """Gets the mapped GeoTrellis type from the ``key_type``.
 
@@ -37,7 +44,7 @@ def map_key_input(key_type, is_boundable):
         else:
             raise Exception("Could not find key type that matches", key_type)
 
-def create_python_rdd(pysc, jrdd, serializer):
+def create_python_rdd(jrdd, serializer):
     """Creates a Python RDD from a RDD from Scala.
 
     Args:
@@ -48,6 +55,8 @@ def create_python_rdd(pysc, jrdd, serializer):
     Returns:
         RDD
     """
+
+    pysc = get_spark_context()
 
     if isinstance(serializer, AutoBatchedSerializer):
         return RDD(jrdd, pysc, serializer)
