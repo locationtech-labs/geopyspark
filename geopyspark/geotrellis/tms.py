@@ -22,7 +22,7 @@ class TileRender(object):
         """Default constructor.
 
         Args:
-            render_function (np.array => bytes): A function to convert a numpy 
+            render_function (np.array => bytes): A function to convert a numpy
                 array to a collection of bytes giving a binary image file.
 
         Returns:
