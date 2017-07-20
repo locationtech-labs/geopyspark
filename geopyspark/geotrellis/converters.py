@@ -9,7 +9,8 @@ class CellTypeConverter(object):
         return isinstance(obj, CellType)
 
     def convert(self, obj, gateway_client):
-        return gateway_client.jvm.geotrellis.raster.CellType.fromName(obj.value)
+        JavaCellType = JavaClass("geotrellis.raster.CellType", gateway_client)
+        return JavaCellType.fromName(obj.value)
 
 class RasterizerOptionsConverter(object):
     def can_convert(self, object):
