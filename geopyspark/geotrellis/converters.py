@@ -28,13 +28,11 @@ class LayoutTypeConverter(object):
 
     def convert(self, obj, gateway_client):
         if isinstance(obj, GlobalLayout):
-            cls = JavaClass("geopyspark.geotrellis.GlobalLayout$", gateway_client)
-            return cls().apply(obj.tile_size, obj.zoom, obj.threshold)
+            return gateway_client.jvm.geopyspark.geotrellis.GlobalLayout(obj.tile_size, obj.zoom, obj.threshold)
         elif isinstance(obj, LocalLayout):
-            cls = JavaClass("geopyspark.geotrellis.LocalLayout$", gateway_client)
-            return cls().apply(obj.tile_size)
+            return gateway_client.jvm.geopyspark.geotrellis.LocalLayout(obj.tile_size)
         else:
-            raise TypeError("Could not convert {} to geotrellis.raster.LayouType".format(obj.sampleType))
+            raise TypeError("Could not convert {} to geotrellis.raster.LayoutType".format(obj.sampleType))
 
 register_input_converter(RasterizerOptionsConverter(), prepend=True)
 register_input_converter(LayoutTypeConverter(), prepend=True)

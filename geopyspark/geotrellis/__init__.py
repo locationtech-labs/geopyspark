@@ -509,7 +509,7 @@ class Metadata(object):
 
 
 __all__ = ["Tile", "Extent", "ProjectedExtent", "TemporalProjectedExtent", "SpatialKey", "SpaceTimeKey",
-           "Metadata", "TileLayout", "LayoutDefinition", "Bounds", "RasterizerOptions"]
+           "Metadata", "TileLayout", "GlobalLayout", "LocalLayout", "LayoutDefinition", "Bounds", "RasterizerOptions"]
 
 from . import catalog
 from . import color
