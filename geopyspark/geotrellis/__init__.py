@@ -234,6 +234,45 @@ class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent inst
                     'proj4': self.proj4}
 
 
+GlobalLayout = namedtuple("GlobalLayout", 'tile_size zoom threshold')
+"""
+TileLayout type that spans global CRS extent.
+When passed in place of LayoutDefinition it signifies that a LayoutDefinition instance 
+should be constructed such that it fits the global CRS extent.
+The cell resolution of resulting layout will be one of resolutions implied by power of 2 pyramid for that CRS.
+Tiling to this layout will likely result in either up-sampling or down-sampling the source raster.
+
+Args:
+    tile_size (int): The number of columns and row pixels in each tile.
+    zoom (int, optional): Override the zoom level in power of 2 pyramid.
+    threshold(float, optional): The percentage difference between a cell size and a zoom level
+                                and the resolution difference between that zoom level and the next
+                                that is tolerated to snap to the lower-resolution zoom level.
+                                For example, if this paramter is 0.1, that means we're willing to downsample
+                                rasters with a higher resolution in order to fit them to some zoom level Z,
+                                if the difference is resolution is less than or equal to 10% the difference
+                                between the resolutions of zoom level Z and zoom level Z+1.
+
+Returns:
+    :obj:`~geopyspark.geotrellis.GlobalLayout`
+"""
+GlobalLayout.__new__.__defaults__ = (256, None, 0.1)
+
+LocalLayout = namedtuple("LayoutDefinition", 'tile_size')
+"""
+TileLayout type that snaps the layer extent.
+When passed in place of LayoutDefinition it signifies that a LayoutDefinition instances
+should be constructed over the envelope of the layer pixels with given tile size.
+Resulting TileLayout will match the cell resolution of the source rasters.  
+
+Args:
+    tile_size (int): The number of columns and row pixels in each tile.
+
+Returns:
+    :obj:`~geopyspark.geotrellis.LocalLayout`
+"""
+LocalLayout.__new__.__defaults__ = (256)
+
 TileLayout = namedtuple("TileLayout", 'layoutCols layoutRows tileCols tileRows')
 """
 Describes the grid in which the rasters within a Layer should be laid out.

@@ -2,7 +2,8 @@
 from py4j.java_gateway import JavaClass
 from py4j.protocol import register_input_converter
 
-from geopyspark.geotrellis import RasterizerOptions
+from geopyspark.geotrellis import RasterizerOptions, GlobalLayout, LocalLayout
+
 
 class RasterizerOptionsConverter(object):
     def can_convert(self, object):
@@ -21,4 +22,19 @@ class RasterizerOptionsConverter(object):
         return JavaRasterizerOptions().apply(object.includePartial, sample_instance)
 
 
+class LayoutTypeConverter(object):
+    def can_convert(self, object):
+        return isinstance(object, GlobalLayout) or isinstance(object, LocalLayout)
+
+    def convert(self, obj, gateway_client):
+        if isinstance(obj, GlobalLayout):
+            cls = JavaClass("geopyspark.geotrellis.GlobalLayout$", gateway_client)
+            return cls().apply(obj.tile_size, obj.zoom, obj.threshold)
+        elif isinstance(obj, LocalLayout):
+            cls = JavaClass("geopyspark.geotrellis.LocalLayout$", gateway_client)
+            return cls().apply(obj.tile_size)
+        else:
+            raise TypeError("Could not convert {} to geotrellis.raster.LayouType".format(obj.sampleType))
+
 register_input_converter(RasterizerOptionsConverter(), prepend=True)
+register_input_converter(LayoutTypeConverter(), prepend=True)
