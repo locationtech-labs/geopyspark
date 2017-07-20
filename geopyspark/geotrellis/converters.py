@@ -2,10 +2,19 @@
 from py4j.java_gateway import JavaClass
 from py4j.protocol import register_input_converter
 
-from geopyspark.geotrellis import RasterizerOptions, GlobalLayout, LocalLayout
+from geopyspark.geotrellis import RasterizerOptions, GlobalLayout, LocalLayout, CellType
 from geopyspark.geotrellis.constants import ResampleMethod
 
 
+class CellTypeConverter(object):
+    def can_convert(self, obj):
+        return isinstance(obj, CellType)
+
+    def convert(self, obj, gateway_client):
+        JavaCellType = JavaClass("geotrellis.raster.CellType", gateway_client)
+        return JavaCellType.fromName(obj.value)
+
+      
 class RasterizerOptionsConverter(object):
     def can_convert(self, object):
         return isinstance(object, RasterizerOptions)
@@ -69,6 +78,7 @@ class ResampleMethodConverter(object):
         return sample.__getattr__("MODULE$")
 
 
+register_input_converter(CellTypeConverter(), prepend=True)
 register_input_converter(RasterizerOptionsConverter(), prepend=True)
 register_input_converter(LayoutTypeConverter(), prepend=True)
 register_input_converter(ResampleMethodConverter(), prepend=True)
