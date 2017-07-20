@@ -71,9 +71,9 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
     PythonTranslator.toPython[(TemporalProjectedExtent, Array[Byte]), ProtoTuple](pngRDD)
 
   def toGeoTiffRDD(
-                    tags: Tags,
-                    geotiffOptions: GeoTiffOptions
-                  ): JavaRDD[Array[Byte]] = {
+    tags: Tags,
+    geotiffOptions: GeoTiffOptions
+  ): JavaRDD[Array[Byte]] = {
     val geotiffRDD = rdd.map { x =>
       (x._1, MultibandGeoTiff(x._2, x._1.extent, x._1.crs, tags, geotiffOptions).toByteArray)
     }
@@ -87,9 +87,8 @@ object TemporalRasterRDD {
     TemporalRasterRDD(
       PythonTranslator.fromPython[
         (TemporalProjectedExtent, MultibandTile), ProtoTuple
-        ](javaRDD, ProtoTuple.parseFrom))
+      ](javaRDD, ProtoTuple.parseFrom))
 
   def apply(rdd: RDD[(TemporalProjectedExtent, MultibandTile)]): TemporalRasterRDD =
     new TemporalRasterRDD(rdd)
 }
-

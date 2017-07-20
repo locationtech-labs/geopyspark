@@ -37,12 +37,12 @@ abstract class TileRDD[K: ClassTag] {
   def toPngRDD(pngRDD: RDD[(K, Array[Byte])]): JavaRDD[Array[Byte]]
 
   def toGeoTiffRDD(
-                    storageMethod: StorageMethod,
-                    compression: String,
-                    colorSpace: Int,
-                    headTags: java.util.Map[String, String],
-                    bandTags: java.util.ArrayList[java.util.Map[String, String]]
-                  ): JavaRDD[Array[Byte]] = {
+    storageMethod: StorageMethod,
+    compression: String,
+    colorSpace: Int,
+    headTags: java.util.Map[String, String],
+    bandTags: java.util.ArrayList[java.util.Map[String, String]]
+  ): JavaRDD[Array[Byte]] = {
     val tags =
       if (headTags.isEmpty || bandTags.isEmpty)
         Tags.empty
@@ -60,13 +60,13 @@ abstract class TileRDD[K: ClassTag] {
   }
 
   def toGeoTiffRDD(
-                    storageMethod: StorageMethod,
-                    compression: String,
-                    colorSpace: Int,
-                    colorMap: ColorMap,
-                    headTags: java.util.Map[String, String],
-                    bandTags: java.util.ArrayList[java.util.Map[String, String]]
-                  ): JavaRDD[Array[Byte]] = {
+    storageMethod: StorageMethod,
+    compression: String,
+    colorSpace: Int,
+    colorMap: ColorMap,
+    headTags: java.util.Map[String, String],
+    bandTags: java.util.ArrayList[java.util.Map[String, String]]
+  ): JavaRDD[Array[Byte]] = {
     val tags =
       if (headTags.isEmpty || bandTags.isEmpty)
         Tags.empty
@@ -86,10 +86,10 @@ abstract class TileRDD[K: ClassTag] {
   def toGeoTiffRDD(tags: Tags, geotiffOptions: GeoTiffOptions): JavaRDD[Array[Byte]]
 
   def reclassify(
-                  intMap: java.util.Map[Int, Int],
-                  boundaryType: String,
-                  replaceNoDataWith: Int
-                ): TileRDD[_] = {
+    intMap: java.util.Map[Int, Int],
+    boundaryType: String,
+    replaceNoDataWith: Int
+  ): TileRDD[_] = {
     val scalaMap = intMap.asScala.toMap
 
     val boundary = getBoundary(boundaryType)
@@ -121,10 +121,10 @@ abstract class TileRDD[K: ClassTag] {
   }
 
   def reclassifyDouble(
-                        doubleMap: java.util.Map[Double, Double],
-                        boundaryType: String,
-                        replaceNoDataWith: Double
-                      ): TileRDD[_] = {
+    doubleMap: java.util.Map[Double, Double],
+    boundaryType: String,
+    replaceNoDataWith: Double
+  ): TileRDD[_] = {
     val scalaMap = doubleMap.asScala.toMap
 
     val boundary = getBoundary(boundaryType)
@@ -151,14 +151,14 @@ abstract class TileRDD[K: ClassTag] {
 
     minMaxs.foldLeft(minMaxs(0)) {
       (acc, elem) =>
-        (math.min(acc._1, elem._1), math.max(acc._2, elem._2))
+      (math.min(acc._1, elem._1), math.max(acc._2, elem._2))
     }
   }
 
   /** Compute the quantile breaks per band.
-    * TODO: This just works for single bands right now.
-    *       make it work with multiband.
-    */
+   * TODO: This just works for single bands right now.
+   *       make it work with multiband.
+   */
   def quantileBreaks(n: Int): Array[Double] =
     rdd
       .histogram
@@ -166,9 +166,9 @@ abstract class TileRDD[K: ClassTag] {
       .quantileBreaks(n)
 
   /** Compute the quantile breaks per band.
-    * TODO: This just works for single bands right now.
-    *       make it work with multiband.
-    */
+   * TODO: This just works for single bands right now.
+   *       make it work with multiband.
+   */
   def quantileBreaksExactInt(n: Int): Array[Int] =
     rdd
       .mapValues(_.band(0))
@@ -207,10 +207,10 @@ object TileRDD {
   }
 
   def getStorageMethod(
-                        storageMethod: String,
-                        rowsPerStrip: Int,
-                        tileDimensions: java.util.ArrayList[Int]
-                      ): StorageMethod =
+    storageMethod: String,
+    rowsPerStrip: Int,
+    tileDimensions: java.util.ArrayList[Int]
+  ): StorageMethod =
     (storageMethod, rowsPerStrip) match {
       case (STRIPED, 0) => Striped()
       case (STRIPED, x) => Striped(x)
