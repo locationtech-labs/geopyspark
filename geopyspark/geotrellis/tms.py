@@ -110,26 +110,25 @@ class TMS(object):
     the TMS class.
 
     Args:
-        pysc (SparkContext)
         server (JavaObject): The Java TMSServer instance
 
     Attributes:
-        pysc (SparkContext)
+        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         server (JavaObject): The Java TMSServer instance
     """
 
-    def __init__(self, pysc, server):
-        self.pysc = pysc
+    def __init__(self, server):
+        self.pysc = get_spark_context()
         self.server = server
         self.handshake = ''
-        pysc._gateway.start_callback_server()
+        self.pysc._gateway.start_callback_server()
 
     def set_handshake(self, handshake):
         self.server.set_handshake(handshake)
         self.handshake = handshake
 
     @classmethod
-    def build(cls, pysc, source, display):
+    def build(cls, source, display):
         """Builds a TMS server from one or more layers.
 
         This function takes a SparkContext, a source or list of sources, and a
@@ -141,7 +140,6 @@ class TMS(object):
         that tile.
 
         Args:
-            pysc (SparkContext): The Spark context
             source (tuple, Pyramid, list): The tile sources to render.  Tuple
                 inputs are (string, string) pairs where the first component is
                 the URI of a catalog and the second is the layer name.  A list
@@ -154,6 +152,8 @@ class TMS(object):
                 different tile sizes.  Returns bytes representing the resulting
                 image.
         """
+
+        pysc = get_spark_context()
 
         def makeReader(arg):
             if isinstance(arg, Pyramid):
@@ -188,4 +188,4 @@ class TMS(object):
             raise ValueError("Display method must be callable or a ColorMap")
 
         server = pysc._jvm.geopyspark.geotrellis.tms.TMSServer.createServer(route)
-        return cls(pysc, server)
+        return cls(server)
