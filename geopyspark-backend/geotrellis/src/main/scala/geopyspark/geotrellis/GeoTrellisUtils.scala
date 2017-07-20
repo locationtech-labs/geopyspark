@@ -4,6 +4,7 @@ import geotrellis.proj4._
 import geotrellis.raster._
 import geotrellis.raster.mapalgebra.focal._
 import geotrellis.raster.render._
+import geotrellis.raster.resample.ResampleMethod
 import geotrellis.vector._
 import geotrellis.spark._
 import geotrellis.spark.reproject._
@@ -36,12 +37,10 @@ object GeoTrellisUtils {
     (stringMap, intMap)
   }
 
-  def getReprojectOptions(resampleMethod: String): Reproject.Options = {
+  def getReprojectOptions(resampleMethod: ResampleMethod): Reproject.Options = {
     import Reproject.Options
 
-    val method = TileRDD.getResampleMethod(resampleMethod)
-
-    Options(geotrellis.raster.reproject.Reproject.Options(method=method))
+    Options(geotrellis.raster.reproject.Reproject.Options(method=resampleMethod))
   }
 
   def getNeighborhood(

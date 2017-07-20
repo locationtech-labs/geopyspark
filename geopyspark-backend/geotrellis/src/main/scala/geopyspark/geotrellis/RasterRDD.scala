@@ -98,8 +98,8 @@ abstract class RasterRDD[K](implicit ev0: ClassTag[K], ev1: Component[K, Project
     withRDD(rdd.map { x => (x._1, x._2.convert(CellType.fromName(newType))) })
 
   protected def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: Option[CRS]): String
-  protected def cutTiles(layerMetadata: String, resampleMethod: String): TiledRasterRDD[_]
-  protected def tileToLayout(tileLayerMetadata: String, resampleMethod: String): TiledRasterRDD[_]
-  protected def reproject(target_crs: String, resampleMethod: String): RasterRDD[_]
+  protected def cutTiles(layerMetadata: String, resampleMethod: ResampleMethod): TiledRasterRDD[_]
+  protected def tileToLayout(tileLayerMetadata: String, resampleMethod: ResampleMethod): TiledRasterRDD[_]
+  protected def reproject(target_crs: String, resampleMethod: ResampleMethod): RasterRDD[_]
   protected def withRDD(result: RDD[(K, MultibandTile)]): RasterRDD[K]
 }

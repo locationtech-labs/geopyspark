@@ -54,12 +54,11 @@ class SpatialTiledRasterRDD(
   def resample_to_power_of_two(
     col_power: Int,
     row_power: Int,
-    resampleMethod: String
+    resampleMethod: ResampleMethod
   ): TiledRasterRDD[SpatialKey] = {
-    val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
     val cols = 1<<col_power
     val rows = 1<<row_power
-    val rdd2 = rdd.mapValues({ tile => tile.resample(cols, rows, method) })
+    val rdd2 = rdd.mapValues({ tile => tile.resample(cols, rows, resampleMethod) })
 
     val metadata = rdd.metadata
     val layout = LayoutDefinition(
@@ -95,9 +94,8 @@ class SpatialTiledRasterRDD(
 
   def tileToLayout(
     layoutDefinition: LayoutDefinition,
-    resampleMethod: String
+    resampleMethod: ResampleMethod
   ): TiledRasterRDD[SpatialKey] = {
-    val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
     val mapKeyTransform =
       MapKeyTransform(
         layoutDefinition.extent,
@@ -112,7 +110,7 @@ class SpatialTiledRasterRDD(
     )
 
     val tileLayer =
-      MultibandTileLayerRDD(projectedRDD.tileToLayout(retiledLayerMetadata, method), retiledLayerMetadata)
+      MultibandTileLayerRDD(projectedRDD.tileToLayout(retiledLayerMetadata, resampleMethod), retiledLayerMetadata)
 
     SpatialTiledRasterRDD(None, tileLayer)
   }
@@ -120,11 +118,10 @@ class SpatialTiledRasterRDD(
   def pyramid(
     startZoom: Int,
     endZoom: Int,
-    resampleMethod: String
+    resampleMethod: ResampleMethod
   ): Array[TiledRasterRDD[SpatialKey]] = {
     require(! rdd.metadata.bounds.isEmpty, "Can not pyramid an empty RDD")
 
-    val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
     val scheme = ZoomedLayoutScheme(rdd.metadata.crs, rdd.metadata.tileRows)
     val part = rdd.partitioner.getOrElse(new HashPartitioner(rdd.partitions.length))
 
@@ -134,7 +131,7 @@ class SpatialTiledRasterRDD(
         scheme,
         startZoom,
         endZoom,
-        Pyramid.Options(resampleMethod=method, partitioner=part)
+        Pyramid.Options(resampleMethod=resampleMethod, partitioner=part)
       )
 
     leveledList.map{ x => SpatialTiledRasterRDD(Some(x._1), x._2) }.toArray
