@@ -41,12 +41,14 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
     new TemporalTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(md, resampleMethod), md))
   }
 
-  def tileToLayout(
-    layoutType: LayoutType,
-    rm: ResampleMethod,
-    force_crs: String,
-    force_cellType: String
-  ): TiledRasterRDD[_] = ???
+  def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[SpaceTimeKey] ={
+    val sms = RasterSummary.collect[TemporalProjectedExtent, SpaceTimeKey](rdd)
+    require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
+    val sm = sms.head
+    val (metadata, zoom) = sm.toTileLayerMetadata(layoutType)
+    val tiled = rdd.tileToLayout(metadata, resampleMethod)
+    new TemporalTiledRasterRDD(zoom, MultibandTileLayerRDD(tiled, metadata))
+  }
 
   def reproject(targetCRS: String, resampleMethod: ResampleMethod): TemporalRasterRDD = {
     val crs = TileRDD.getCRS(targetCRS).get

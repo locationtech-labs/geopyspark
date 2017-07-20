@@ -69,30 +69,7 @@ abstract class RasterRDD[K](implicit ev0: ClassTag[K], ev1: Component[K, Project
     collectMetadata(layoutScheme, TileRDD.getCRS(crs))
   }
 
-  /** Collect [[RasterSummary]] from unstructred rasters, grouped by CRS */
-  def collectRasterSummary[
-    K2: SpatialComponent: Boundable
-  ](implicit ev: (K => TilerKeyMethods[K, K2])): Seq[RasterSummary[K2]] = {
-
-    rdd
-      .map { case (key, grid) =>
-        val ProjectedExtent(extent, crs) = key.getComponent[ProjectedExtent]
-        // Bounds are return to set the non-spatial dimensions of the KeyBounds;
-        // the spatial KeyBounds are set outside this call.
-        val boundsKey = key.translate(SpatialKey(0,0))
-        val cellSize = CellSize(extent, grid.cols, grid.rows)
-        HashMap(crs -> RasterSummary(crs, grid.cellType, cellSize, extent, KeyBounds(boundsKey, boundsKey), 1))
-      }
-      .reduce { (m1, m2) => m1.merged(m2){ case ((k,v1), (_,v2)) => (k,v1 combine v2) } }
-      .values.toSeq
-  }
-
-  def tileToLayout(
-    layoutType: LayoutType,
-    rm: ResampleMethod,
-    force_crs: String,
-    force_cellType: String
-  ): TiledRasterRDD[_]
+  def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[_]
 
   def convertDataType(newType: String): RasterRDD[_] =
     withRDD(rdd.map { x => (x._1, x._2.convert(CellType.fromName(newType))) })
