@@ -3,6 +3,7 @@ from py4j.java_gateway import JavaClass
 from py4j.protocol import register_input_converter
 
 from geopyspark.geotrellis import RasterizerOptions, GlobalLayout, LocalLayout
+from geopyspark.geotrellis.constants import ResampleMethod
 
 
 class RasterizerOptionsConverter(object):
@@ -34,5 +35,40 @@ class LayoutTypeConverter(object):
         else:
             raise TypeError("Could not convert {} to geotrellis.raster.LayoutType".format(obj.sampleType))
 
+
+class ResampleMethodConverter(object):
+    def can_convert(self, object):
+        return isinstance(object, ResampleMethod)
+
+    def convert(self, obj, gateway_client):
+        name = obj.value
+
+        if name == 'NearestNeighbor':
+            sample = JavaClass("geotrellis.raster.resample.NearestNeighbor$", gateway_client)
+        elif name == 'Bilinear':
+            sample = JavaClass("geotrellis.raster.resample.Bilinear$", gateway_client)
+        elif name == 'CubicConvolution':
+            sample = JavaClass("geotrellis.raster.resample.CubicConvolution$", gateway_client)
+        elif name == 'CubicSpline':
+            sample = JavaClass("geotrellis.raster.resample.CubicSpline$", gateway_client)
+        elif name == 'Lanczos':
+            sample = JavaClass("geotrellis.raster.resample.Lanczos$", gateway_client)
+        elif name == 'Average':
+            sample = JavaClass("geotrellis.raster.resample.Average$", gateway_client)
+        elif name == 'Mode':
+            sample = JavaClass("geotrellis.raster.resample.Mode$", gateway_client)
+        elif name == 'Median':
+            sample = JavaClass("geotrellis.raster.resample.Median$", gateway_client)
+        elif name == 'Max':
+            sample = JavaClass("geotrellis.raster.resample.Max$", gateway_client)
+        elif name == 'Min':
+            sample = JavaClass("geotrellis.raster.resample.Min$", gateway_client)
+        else:
+            raise TypeError(name, "Could not be converted to a GeoTrellis ResampleMethod.")
+
+        return sample.__getattr__("MODULE$")
+
+
 register_input_converter(RasterizerOptionsConverter(), prepend=True)
 register_input_converter(LayoutTypeConverter(), prepend=True)
+register_input_converter(ResampleMethodConverter(), prepend=True)
