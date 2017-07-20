@@ -519,7 +519,7 @@ class RasterLayer(CachableLayer):
             target_crs = str(target_crs)
 
         return RasterLayer(self.pysc, self.layer_type,
-                           self.srdd.reproject(target_crs, ResampleMethod(resample_method).value))
+                           self.srdd.reproject(target_crs, ResampleMethod(resample_method)))
 
     def cut_tiles(self, layer_metadata, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to layout. May result in duplicate keys.
@@ -538,7 +538,7 @@ class RasterLayer(CachableLayer):
         if isinstance(layer_metadata, Metadata):
             layer_metadata = layer_metadata.to_dict()
 
-        srdd = self.srdd.cutTiles(json.dumps(layer_metadata), ResampleMethod(resample_method).value)
+        srdd = self.srdd.cutTiles(json.dumps(layer_metadata), ResampleMethod(resample_method))
         return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
     def tile_to_layout(self, layer_metadata, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
@@ -559,7 +559,7 @@ class RasterLayer(CachableLayer):
             layer_metadata = layer_metadata.to_dict()
 
         srdd = self.srdd.tileToLayout(json.dumps(layer_metadata),
-                                      ResampleMethod(resample_method).value)
+                                      ResampleMethod(resample_method))
         return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
     def reclassify(self, value_map, data_type,
@@ -934,10 +934,10 @@ class TiledRasterLayer(CachableLayer):
 
         if extent and layout:
             srdd = self.srdd.reproject(extent, layout, target_crs,
-                                       ResampleMethod(resample_method).value)
+                                       ResampleMethod(resample_method))
         elif not extent and not layout:
             srdd = self.srdd.reproject(LayoutScheme(scheme).value, tile_size, resolution_threshold,
-                                       target_crs, ResampleMethod(resample_method).value)
+                                       target_crs, ResampleMethod(resample_method))
         else:
             raise TypeError("Could not collect reproject Layer with {} and {}".format(extent, layout))
 
@@ -994,7 +994,7 @@ class TiledRasterLayer(CachableLayer):
 
         srdd = self.srdd.tileToLayout(layout_definition.extent._asdict(),
                                       layout_definition.tileLayout._asdict(),
-                                      ResampleMethod(resample_method).value)
+                                      ResampleMethod(resample_method))
 
         return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
@@ -1035,7 +1035,7 @@ class TiledRasterLayer(CachableLayer):
         else:
             raise ValueError("No start_zoom given.")
 
-        result = self.srdd.pyramid(start_zoom, end_zoom, ResampleMethod(resample_method).value)
+        result = self.srdd.pyramid(start_zoom, end_zoom, ResampleMethod(resample_method))
 
         return Pyramid([TiledRasterLayer(self.pysc, self.layer_type, srdd) for srdd in result])
 
@@ -1062,7 +1062,7 @@ class TiledRasterLayer(CachableLayer):
             ValueError: If the given ``resample_method`` is not known.
         """
 
-        resample_method = ResampleMethod(resample_method).value
+        resample_method = ResampleMethod(resample_method)
         new_srdd = self.srdd.resample_to_power_of_two(col_power, row_power, resample_method)
         new_layer = TiledRasterLayer(self.pysc, self.layer_type, new_srdd)
 

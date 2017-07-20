@@ -76,7 +76,7 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
   def resample_to_power_of_two(
     col_power: Int,
     row_power: Int,
-    resampleMethod: String
+    resampleMethod: ResampleMethod
   ): TiledRasterRDD[K]
 
   def layerMetadata: String = rdd.metadata.toJson.prettyPrint
@@ -98,7 +98,7 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
     extent: java.util.Map[String, Double],
     layout: java.util.Map[String, Int],
     crs: String,
-    resampleMethod: String
+    resampleMethod: ResampleMethod
   ): TiledRasterRDD[K] = {
     val layoutDefinition = Right(LayoutDefinition(extent.toExtent, layout.toTileLayout))
 
@@ -110,7 +110,7 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
     tileSize: Int,
     resolutionThreshold: Double,
     crs: String,
-    resampleMethod: String
+    resampleMethod: ResampleMethod
   ): TiledRasterRDD[K] = {
     val _crs = TileRDD.getCRS(crs).get
 
@@ -132,7 +132,7 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
   def tileToLayout(
     extent: java.util.Map[String, Double],
     tileLayout: java.util.Map[String, Int],
-    resampleMethod: String
+    resampleMethod: ResampleMethod
   ): TiledRasterRDD[K] =
     tileToLayout(
       LayoutDefinition(extent.toExtent, tileLayout.toTileLayout),
@@ -140,13 +140,13 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
 
   protected def tileToLayout(
     layoutDefinition: LayoutDefinition,
-    resampleMethod: String
+    resampleMethod: ResampleMethod
   ): TiledRasterRDD[K]
 
   def pyramid(
     startZoom: Int,
     endZoom: Int,
-    resampleMethod: String
+    resampleMethod: ResampleMethod
   ): Array[_] // Array[TiledRasterRDD[K]]
 
   def focal(

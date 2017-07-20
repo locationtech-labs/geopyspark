@@ -55,12 +55,11 @@ class TemporalTiledRasterRDD(
   def resample_to_power_of_two(
     col_power: Int,
     row_power: Int,
-    resampleMethod: String
+    resampleMethod: ResampleMethod
   ): TiledRasterRDD[SpaceTimeKey] = {
-    val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
     val cols = 1<<col_power
     val rows = 1<<row_power
-    val rdd2 = rdd.mapValues({ tile => tile.resample(cols, rows, method) })
+    val rdd2 = rdd.mapValues({ tile => tile.resample(cols, rows, resampleMethod) })
 
     val metadata = rdd.metadata
     val layout = LayoutDefinition(
@@ -102,9 +101,8 @@ class TemporalTiledRasterRDD(
 
   def tileToLayout(
     layoutDefinition: LayoutDefinition,
-    resampleMethod: String
+    resampleMethod: ResampleMethod
   ): TiledRasterRDD[SpaceTimeKey] = {
-    val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
     val mapKeyTransform =
       MapKeyTransform(
         layoutDefinition.extent,
@@ -128,7 +126,7 @@ class TemporalTiledRasterRDD(
     )
 
     val tileLayer =
-      MultibandTileLayerRDD(temporalRDD.tileToLayout(retiledLayerMetadata, method), retiledLayerMetadata)
+      MultibandTileLayerRDD(temporalRDD.tileToLayout(retiledLayerMetadata, resampleMethod), retiledLayerMetadata)
 
     TemporalTiledRasterRDD(None, tileLayer)
   }
@@ -136,11 +134,10 @@ class TemporalTiledRasterRDD(
   def pyramid(
     startZoom: Int,
     endZoom: Int,
-    resampleMethod: String
+    resampleMethod: ResampleMethod
   ): Array[TiledRasterRDD[SpaceTimeKey]] = {
     require(! rdd.metadata.bounds.isEmpty, "Can not pyramid an empty RDD")
 
-    val method: ResampleMethod = TileRDD.getResampleMethod(resampleMethod)
     val scheme = ZoomedLayoutScheme(rdd.metadata.crs, rdd.metadata.tileRows)
     val part = rdd.partitioner.getOrElse(new HashPartitioner(rdd.partitions.length))
 
@@ -150,7 +147,7 @@ class TemporalTiledRasterRDD(
         scheme,
         startZoom,
         endZoom,
-        Pyramid.Options(resampleMethod=method, partitioner=part)
+        Pyramid.Options(resampleMethod=resampleMethod, partitioner=part)
       )
 
     leveledList.map{ x => TemporalTiledRasterRDD(Some(x._1), x._2) }.toArray

@@ -31,16 +31,14 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
     }
   }.toJson.compactPrint
 
-  def cutTiles(layerMetadata: String, resampleMethod: String): TiledRasterRDD[SpatialKey] = {
+  def cutTiles(layerMetadata: String, resampleMethod: ResampleMethod): TiledRasterRDD[SpatialKey] = {
     val md = layerMetadata.parseJson.convertTo[TileLayerMetadata[SpatialKey]]
-    val rm = TileRDD.getResampleMethod(resampleMethod)
-    new SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.cutTiles(md, rm), md))
+    new SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.cutTiles(md, resampleMethod), md))
   }
 
-  def tileToLayout(tileLayerMetadata: String, resampleMethod: String): TiledRasterRDD[SpatialKey] = {
+  def tileToLayout(tileLayerMetadata: String, resampleMethod: ResampleMethod): TiledRasterRDD[SpatialKey] = {
     val md = tileLayerMetadata.parseJson.convertTo[TileLayerMetadata[SpatialKey]]
-    val rm = TileRDD.getResampleMethod(resampleMethod)
-    new SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(md, rm), md))
+    new SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(md, resampleMethod), md))
   }
 
   def tileToLayout(
@@ -57,10 +55,9 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
     new SpatialTiledRasterRDD(None, MultibandTileLayerRDD(tiled, md))
   }
 
-  def reproject(targetCRS: String, resampleMethod: String): ProjectedRasterRDD = {
+  def reproject(targetCRS: String, resampleMethod: ResampleMethod): ProjectedRasterRDD = {
     val crs = TileRDD.getCRS(targetCRS).get
-    val resample = TileRDD.getResampleMethod(resampleMethod)
-    new ProjectedRasterRDD(rdd.reproject(crs, resample))
+    new ProjectedRasterRDD(rdd.reproject(crs, resampleMethod))
   }
 
   def reclassify(reclassifiedRDD: RDD[(ProjectedExtent, MultibandTile)]): RasterRDD[ProjectedExtent] =
