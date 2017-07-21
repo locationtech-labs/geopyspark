@@ -3,7 +3,7 @@ import unittest
 import rasterio
 import pytest
 
-from geopyspark.geotrellis import Tile
+from geopyspark.geotrellis import Tile, LayoutDefinition
 from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -12,6 +12,7 @@ from geopyspark.tests.base_test_class import BaseTestClass
 class TileLayerMetadataTest(BaseTestClass):
     extent = BaseTestClass.extent
     layout = BaseTestClass.layout
+    layout_def = LayoutDefinition(extent, layout)
     rdd = BaseTestClass.rdd
     projected_extent = BaseTestClass.projected_extent
     cols = BaseTestClass.cols
@@ -21,12 +22,8 @@ class TileLayerMetadataTest(BaseTestClass):
         yield
         BaseTestClass.pysc._gateway.close()
 
-    def test_collection_invalid(self):
-        with pytest.raises(TypeError):
-            self.rdd.collect_metadata(self.extent)
-
     def test_collection_avro_rdd(self):
-        result = self.rdd.collect_metadata(self.extent, self.layout)
+        result = self.rdd.collect_metadata(layout=self.layout_def)
 
         self.assertEqual(result.extent, self.extent)
         self.assertEqual(result.layout_definition.extent, self.extent)
@@ -41,7 +38,7 @@ class TileLayerMetadataTest(BaseTestClass):
         rasterio_rdd = self.pysc.parallelize([(self.projected_extent, tile_dict)])
         raster_rdd = RasterLayer.from_numpy_rdd(self.pysc, LayerType.SPATIAL, rasterio_rdd)
 
-        result = raster_rdd.collect_metadata(extent=self.extent, layout=self.layout)
+        result = raster_rdd.collect_metadata(layout=self.layout_def)
 
         self.assertEqual(result.extent, self.extent)
         self.assertEqual(result.layout_definition.extent, self.extent)

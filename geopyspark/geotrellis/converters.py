@@ -2,7 +2,7 @@
 from py4j.java_gateway import JavaClass
 from py4j.protocol import register_input_converter
 
-from geopyspark.geotrellis import RasterizerOptions, GlobalLayout, LocalLayout, CellType
+from geopyspark.geotrellis import RasterizerOptions, GlobalLayout, LocalLayout, CellType, LayoutDefinition
 from geopyspark.geotrellis.constants import ResampleMethod
 
 
@@ -14,7 +14,7 @@ class CellTypeConverter(object):
         JavaCellType = JavaClass("geotrellis.raster.CellType", gateway_client)
         return JavaCellType.fromName(obj.value)
 
-      
+
 class RasterizerOptionsConverter(object):
     def can_convert(self, object):
         return isinstance(object, RasterizerOptions)
@@ -80,7 +80,29 @@ class ResampleMethodConverter(object):
         return sample.__getattr__("MODULE$")
 
 
+class LayoutDefinitionConverter:
+    def can_convert(self, object):
+        return isinstance(object, LayoutDefinition)
+
+    def convert(self, obj, gateway_client):
+        python_extent = obj.extent
+        python_tile_layout = obj.tileLayout
+
+        ScalaExtent = JavaClass("geotrellis.vector.Extent", gateway_client)
+        ScalaTileLayout = JavaClass("geotrellis.raster.TileLayout", gateway_client)
+        ScalaLayoutDefinition = JavaClass("geotrellis.spark.tiling.LayoutDefinition", gateway_client)
+
+        extent = ScalaExtent(python_extent.xmin, python_extent.ymin, python_extent.xmax, python_extent.ymax)
+        tile_layout = ScalaTileLayout(python_tile_layout.layoutCols,
+                                      python_tile_layout.layoutRows,
+                                      python_tile_layout.tileCols,
+                                      python_tile_layout.tileRows)
+
+        return ScalaLayoutDefinition(extent, tile_layout)
+
+
 register_input_converter(CellTypeConverter(), prepend=True)
 register_input_converter(RasterizerOptionsConverter(), prepend=True)
 register_input_converter(LayoutTypeConverter(), prepend=True)
 register_input_converter(ResampleMethodConverter(), prepend=True)
+register_input_converter(LayoutDefinitionConverter(), prepend=True)

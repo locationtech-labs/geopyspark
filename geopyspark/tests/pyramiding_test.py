@@ -4,7 +4,7 @@ import rasterio
 import numpy as np
 import pytest
 
-from geopyspark.geotrellis import Extent, ProjectedExtent, TileLayout, Tile
+from geopyspark.geotrellis import Extent, ProjectedExtent, TileLayout, Tile, LayoutDefinition
 from geopyspark.geotrellis.constants import LayerType, LayoutScheme
 from geopyspark.geotrellis.layer import Pyramid, RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -54,7 +54,8 @@ class PyramidingTest(BaseTestClass):
         new_extent = Extent(-20037508.342789244, -20037508.342789244, 20037508.342789244,
                             20037508.342789244)
 
-        metadata = raster_rdd.collect_metadata(extent=new_extent, layout=tile_layout)
+        layout_def = LayoutDefinition(new_extent, tile_layout)
+        metadata = raster_rdd.collect_metadata(layout=layout_def)
         laid_out = raster_rdd.tile_to_layout(metadata)
 
         result = laid_out.pyramid(start_zoom=5, end_zoom=1)
@@ -75,7 +76,8 @@ class PyramidingTest(BaseTestClass):
         new_extent = Extent(-20037508.342789244, -20037508.342789244, 20037508.342789244,
                             20037508.342789244)
 
-        metadata = raster_rdd.collect_metadata(extent=new_extent, layout=tile_layout)
+        layout_def = LayoutDefinition(new_extent, tile_layout)
+        metadata = raster_rdd.collect_metadata(layout=layout_def)
         laid_out = raster_rdd.tile_to_layout(metadata)
         reprojected = laid_out.reproject(3857, scheme=LayoutScheme.ZOOM)
 

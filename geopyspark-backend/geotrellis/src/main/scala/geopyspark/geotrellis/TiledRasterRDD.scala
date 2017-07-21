@@ -95,15 +95,11 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
   protected def mask(geometries: Seq[MultiPolygon]): TiledRasterRDD[K]
 
   def reproject(
-    extent: java.util.Map[String, Double],
-    layout: java.util.Map[String, Int],
+    layoutDefinition: LayoutDefinition,
     crs: String,
     resampleMethod: ResampleMethod
-  ): TiledRasterRDD[K] = {
-    val layoutDefinition = Right(LayoutDefinition(extent.toExtent, layout.toTileLayout))
-
-    reproject(layoutDefinition, TileRDD.getCRS(crs).get, getReprojectOptions(resampleMethod))
-  }
+  ): TiledRasterRDD[K] =
+    reproject(Right(layoutDefinition), TileRDD.getCRS(crs).get, getReprojectOptions(resampleMethod))
 
   def reproject(
     scheme: String,

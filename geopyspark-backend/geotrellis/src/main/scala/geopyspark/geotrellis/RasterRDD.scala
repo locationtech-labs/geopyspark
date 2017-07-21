@@ -50,13 +50,10 @@ abstract class RasterRDD[K](implicit ev0: ClassTag[K], ev1: Component[K, Project
     withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(bands.asScala) })
 
   def collectMetadata(
-    extent: java.util.Map[String, Double],
-    layout: java.util.Map[String, Int],
+    layoutDefinition: LayoutDefinition,
     crs: String
   ): String = {
-    val layoutDefinition = Right(LayoutDefinition(extent.toExtent, layout.toTileLayout))
-
-    collectMetadata(layoutDefinition, TileRDD.getCRS(crs))
+    collectMetadata(Right(layoutDefinition), TileRDD.getCRS(crs))
   }
 
   def collectMetadata(tileSize: String, crs: String): String = {
