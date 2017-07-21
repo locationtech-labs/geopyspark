@@ -94,36 +94,9 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
 
   protected def mask(geometries: Seq[MultiPolygon]): TiledRasterRDD[K]
 
-  def reproject(
-    layoutDefinition: LayoutDefinition,
-    crs: String,
-    resampleMethod: ResampleMethod
-  ): TiledRasterRDD[K] =
-    reproject(Right(layoutDefinition), TileRDD.getCRS(crs).get, getReprojectOptions(resampleMethod))
-
-  def reproject(
-    scheme: String,
-    tileSize: Int,
-    resolutionThreshold: Double,
-    crs: String,
-    resampleMethod: ResampleMethod
-  ): TiledRasterRDD[K] = {
-    val _crs = TileRDD.getCRS(crs).get
-
-    val layoutScheme =
-      scheme match {
-        case FLOAT => FloatingLayoutScheme(tileSize)
-        case ZOOM => ZoomedLayoutScheme(_crs, tileSize, resolutionThreshold)
-      }
-
-    reproject(Left(layoutScheme), _crs, getReprojectOptions(resampleMethod))
-  }
-
-  protected def reproject(
-    layout: Either[LayoutScheme, LayoutDefinition],
-    crs: CRS,
-    options: Reproject.Options
-  ): TiledRasterRDD[K]
+  protected def reproject(target_crs: String, resampleMethod: ResampleMethod): TiledRasterRDD[K]
+  protected def reproject(target_crs: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[K]
+  def reproject(targetCRS: String, layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterRDD[K]
 
   def tileToLayout(
     layOutDefinition: LayoutDefinition,

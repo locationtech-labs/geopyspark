@@ -8,6 +8,7 @@ import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.json._
 import geotrellis.spark.tiling.{FloatingLayoutScheme, LayoutDefinition, LayoutScheme, ZoomedLayoutScheme}
+import geotrellis.spark.reproject._
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd.RDD
 import protos.tupleMessages.ProtoTuple
@@ -39,6 +40,22 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
   def tileToLayout(layerMetadata: String, resampleMethod: ResampleMethod): TiledRasterRDD[SpaceTimeKey] = {
     val md = layerMetadata.parseJson.convertTo[TileLayerMetadata[SpaceTimeKey]]
     new TemporalTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(md, resampleMethod), md))
+  }
+
+  def tileToLayout(layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterRDD[SpaceTimeKey] = {
+    val sms = RasterSummary.collect[TemporalProjectedExtent, SpaceTimeKey](rdd)
+    require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
+    val sm = sms.head
+
+    val metadata = TileLayerMetadata[SpaceTimeKey](
+      sm.cellType,
+      layoutDefinition,
+      sm.extent,
+      sm.crs,
+      sm.bounds.setSpatialBounds(layoutDefinition.mapTransform(sm.extent))
+    )
+
+    TemporalTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata, resampleMethod), metadata))
   }
 
   def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[SpaceTimeKey] ={
@@ -73,6 +90,16 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
         val (_, reprojected) = tiled.reproject(crs, FloatingLayoutScheme(tileSize), resampleMethod)
         new TemporalTiledRasterRDD(None, reprojected)
     }
+  }
+
+  def reproject(
+    targetCRS: String,
+    layoutDefinition: LayoutDefinition,
+    resampleMethod: ResampleMethod
+  ): TiledRasterRDD[SpaceTimeKey] = {
+    val tiled = tileToLayout(layoutDefinition, resampleMethod).rdd
+    val (zoom, reprojected) = TileRDDReproject(tiled, TileRDD.getCRS(targetCRS).get, Right(layoutDefinition), resampleMethod)
+    TemporalTiledRasterRDD(Some(zoom), reprojected)
   }
 
   def reclassify(reclassifiedRDD: RDD[(TemporalProjectedExtent, MultibandTile)]): RasterRDD[TemporalProjectedExtent] =

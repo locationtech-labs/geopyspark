@@ -66,15 +66,18 @@ abstract class RasterRDD[K](implicit ev0: ClassTag[K], ev1: Component[K, Project
     collectMetadata(layoutScheme, TileRDD.getCRS(crs))
   }
 
-  def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[_]
-
   def convertDataType(newType: String): RasterRDD[_] =
     withRDD(rdd.map { x => (x._1, x._2.convert(CellType.fromName(newType))) })
 
   protected def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: Option[CRS]): String
   protected def cutTiles(layerMetadata: String, resampleMethod: ResampleMethod): TiledRasterRDD[_]
+
   protected def tileToLayout(tileLayerMetadata: String, resampleMethod: ResampleMethod): TiledRasterRDD[_]
-  protected def reproject(target_crs: String, resampleMethod: ResampleMethod): RasterRDD[_]
-  protected def reproject(target_crs: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[_]
+  def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[_]
+  protected def tileToLayout(layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterRDD[_]
+
+  protected def reproject(targetCRS: String, resampleMethod: ResampleMethod): RasterRDD[K]
+  protected def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[_]
+  protected def reproject(targetCRS: String, layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterRDD[_]
   protected def withRDD(result: RDD[(K, MultibandTile)]): RasterRDD[K]
 }
