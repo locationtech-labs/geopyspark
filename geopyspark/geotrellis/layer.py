@@ -14,7 +14,7 @@ ensure_pyspark()
 from pyspark.storagelevel import StorageLevel
 
 from geopyspark import map_key_input, create_python_rdd
-from geopyspark.geotrellis import Metadata, Tile, GlobalLayout, LocalLayout, LayoutDefinition
+from geopyspark.geotrellis import Metadata, Tile, LocalLayout, GlobalLayout, LayoutDefinition
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
                                              Neighborhood as nb,
@@ -996,7 +996,7 @@ class TiledRasterLayer(CachableLayer):
 
         return [multibandtile_decoder(tile) for tile in array_of_tiles]
 
-    def tile_to_layout(self, layout_definition, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
+    def tile_to_layout(self, layout, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to a given layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
@@ -1010,7 +1010,23 @@ class TiledRasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        srdd = self.srdd.tileToLayout(layout_definition, ResampleMethod(resample_method))
+        resample_method = ResampleMethod(resample_method)
+
+        if isinstance(layout, LayoutDefinition):
+            srdd = self.srdd.tileToLayout(layout, resample_method)
+
+        elif isinstance(layout, Metadata):
+            srdd = self.srdd.tileToLayout(layout.layout_definition, resample_method)
+
+        elif isinstance(layout, TiledRasterLayer):
+            metadata = layout.layer_metadata
+            srdd = self.srdd.tileToLayout(metadata.layout_definition, resample_method)
+
+        elif isinstance(layout, (LocalLayout, GlobalLayout)):
+            srdd = self.srdd.tileToLayout(layout, resample_method)
+
+        else:
+            raise ValueError("Could not retile from the given layout", layout)
 
         return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 

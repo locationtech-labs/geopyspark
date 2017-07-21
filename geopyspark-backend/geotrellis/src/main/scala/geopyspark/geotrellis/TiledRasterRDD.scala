@@ -126,18 +126,21 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
   ): TiledRasterRDD[K]
 
   def tileToLayout(
-    extent: java.util.Map[String, Double],
-    tileLayout: java.util.Map[String, Int],
+    layOutDefinition: LayoutDefinition,
+    resampleMethod: ResampleMethod
+  ): TiledRasterRDD[K]
+
+  def tileToLayout(
+    layoutType: LayoutType,
     resampleMethod: ResampleMethod
   ): TiledRasterRDD[K] =
     tileToLayout(
-      LayoutDefinition(extent.toExtent, tileLayout.toTileLayout),
-      resampleMethod)
-
-  protected def tileToLayout(
-    layoutDefinition: LayoutDefinition,
-    resampleMethod: ResampleMethod
-  ): TiledRasterRDD[K]
+      layoutType.layoutDefinition(
+        rdd.metadata.crs,
+        rdd.metadata.extent,
+        rdd.metadata.cellSize),
+      resampleMethod
+    )
 
   def pyramid(
     startZoom: Int,
