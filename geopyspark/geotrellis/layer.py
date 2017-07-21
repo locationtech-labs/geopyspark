@@ -559,13 +559,15 @@ class RasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
+        resample_method = ResampleMethod(resample_method)
+
         if isinstance(layout, Metadata):
             layer_metadata = layout.to_dict()
-            srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), ResampleMethod(resample_method))
+            srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
         elif isinstance(layout, TiledRasterLayer):
             layer_metadata = layout.layer_metadata
-            srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), ResampleMethod(resample_method))
-        elif isinstance(layout, GlobalLayout) or isinstance(layout, LocalLayout):
+            srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
+        elif isinstance(layout, (LocalLayout, GlobalLayout)):
             srdd = self.srdd.tileToLayout(layout, resample_method)
         else:
             raise TypeError("%s can not be converted to raster layout." % layout)
