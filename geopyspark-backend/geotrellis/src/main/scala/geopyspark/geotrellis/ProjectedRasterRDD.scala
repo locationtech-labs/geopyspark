@@ -7,6 +7,7 @@ import geotrellis.raster.io.geotiff.{GeoTiffOptions, MultibandGeoTiff, Tags}
 import geotrellis.raster.resample.ResampleMethod
 import geotrellis.spark._
 import geotrellis.spark.io._
+import geotrellis.spark.reproject._
 import geotrellis.spark.tiling._
 import geotrellis.vector._
 import org.apache.spark.api.java.JavaRDD
@@ -42,6 +43,22 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
     new SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(md, resampleMethod), md))
   }
 
+  def tileToLayout(layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterRDD[SpatialKey] = {
+    val sms = RasterSummary.collect[ProjectedExtent, SpatialKey](rdd)
+    require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
+    val sm = sms.head
+
+    val metadata = TileLayerMetadata[SpatialKey](
+      sm.cellType,
+      layoutDefinition,
+      sm.extent,
+      sm.crs,
+      sm.bounds.setSpatialBounds(layoutDefinition.mapTransform(sm.extent))
+    )
+
+    SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata, resampleMethod), metadata))
+  }
+
   def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[SpatialKey] = {
     val sms = RasterSummary.collect[ProjectedExtent, SpatialKey](rdd)
     require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
@@ -74,6 +91,16 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
         val (_, reprojected) = tiled.reproject(crs, FloatingLayoutScheme(tileSize), resampleMethod)
         new SpatialTiledRasterRDD(None, reprojected)
     }
+  }
+
+  def reproject(
+    target_crs: String,
+    layoutDefinition: LayoutDefinition,
+    resampleMethod: ResampleMethod
+  ): TiledRasterRDD[SpatialKey] = {
+    val tiled = tileToLayout(layoutDefinition, resampleMethod).rdd
+    val (zoom, reprojected) = TileRDDReproject(tiled, TileRDD.getCRS(target_crs).get, Right(layoutDefinition), resampleMethod)
+    SpatialTiledRasterRDD(Some(zoom), reprojected)
   }
 
   def reclassify(reclassifiedRDD: RDD[(ProjectedExtent, MultibandTile)]): RasterRDD[ProjectedExtent] =
