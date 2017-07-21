@@ -96,6 +96,7 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
 
   protected def reproject(target_crs: String, resampleMethod: ResampleMethod): TiledRasterRDD[K]
   protected def reproject(target_crs: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[K]
+  def reproject(targetCRS: String, layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterRDD[K]
 
   def tileToLayout(
     layOutDefinition: LayoutDefinition,

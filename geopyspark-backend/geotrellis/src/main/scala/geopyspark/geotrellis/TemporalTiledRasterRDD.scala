@@ -116,6 +116,11 @@ class TemporalTiledRasterRDD(
     }
   }
 
+  def reproject(targetCRS: String, layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TemporalTiledRasterRDD = {
+    val (zoom, reprojected) = TileRDDReproject(rdd, TileRDD.getCRS(targetCRS).get, Right(layoutDefinition), resampleMethod)
+    TemporalTiledRasterRDD(Some(zoom), reprojected)
+  }
+
   def tileToLayout(
     layoutDefinition: LayoutDefinition,
     resampleMethod: ResampleMethod
