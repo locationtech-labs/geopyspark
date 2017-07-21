@@ -83,13 +83,30 @@ class SpatialTiledRasterRDD(
     PythonTranslator.toPython[MultibandTile, ProtoMultibandTile](tiles)
   }
 
-  def reproject(
-    layout: Either[LayoutScheme, LayoutDefinition],
-    crs: CRS,
-    options: Reproject.Options
-  ): TiledRasterRDD[SpatialKey] = {
-    val (zoom, reprojected) = TileRDDReproject(rdd, crs, layout, options)
-    SpatialTiledRasterRDD(Some(zoom), reprojected)
+  def reproject(targetCRS: String, resampleMethod: ResampleMethod): SpatialTiledRasterRDD = {
+    val crs = TileRDD.getCRS(targetCRS).get
+    val (zoom, reprojected) = rdd.reproject(crs, rdd.metadata.layout, resampleMethod)
+    new SpatialTiledRasterRDD(Some(zoom), reprojected)
+  }
+
+  def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): SpatialTiledRasterRDD = {
+    val crs = TileRDD.getCRS(targetCRS).get
+    val tiled = tileToLayout(LocalLayout(256), resampleMethod).rdd
+    layoutType match {
+      case GlobalLayout(tileSize, null, threshold) =>
+        val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
+        val (zoom, reprojected) = tiled.reproject(crs, scheme, resampleMethod)
+        SpatialTiledRasterRDD(Some(zoom), reprojected)
+
+      case GlobalLayout(tileSize, zoom, threshold) =>
+        val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
+        val (_, reprojected) = tiled.reproject(crs, scheme.levelForZoom(zoom).layout, resampleMethod)
+        SpatialTiledRasterRDD(Some(zoom), reprojected)
+
+      case LocalLayout(tileSize) =>
+        val (_, reprojected) = tiled.reproject(crs, FloatingLayoutScheme(tileSize), resampleMethod)
+        SpatialTiledRasterRDD(None, reprojected)
+    }
   }
 
   def tileToLayout(
