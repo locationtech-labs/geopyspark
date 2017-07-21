@@ -14,7 +14,7 @@ ensure_pyspark()
 from pyspark.storagelevel import StorageLevel
 
 from geopyspark import map_key_input, create_python_rdd
-from geopyspark.geotrellis import Metadata, Tile, GlobalLayout, LocalLayout, LayoutDefinition
+from geopyspark.geotrellis import Metadata, Tile, LocalLayout, GlobalLayout, LayoutDefinition
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
                                              Neighborhood as nb,
@@ -996,12 +996,17 @@ class TiledRasterLayer(CachableLayer):
 
         return [multibandtile_decoder(tile) for tile in array_of_tiles]
 
-    def tile_to_layout(self, layout_definition, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
+    def tile_to_layout(self, layout, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to a given layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layout_definition (:obj:`~geopyspark.geotrellis.LayoutDefinition`): Specify the
-                ``LayoutDefinition`` to cut to.
+            layout (
+                :obj:`~geopyspark.geotrellis.LayoutDefinition` or
+                :class:`~geopyspark.geotrellis.Metadata` or
+                :class:`~geopyspark.geotrellis.TiledRasterLayer` or
+                :obj:`~geopyspark.geotrellis.GlobalLayout` or
+                :obj:`~geopyspark.geotrellis.LocalLayout`
+            ): Target raster layout for the tiling operation.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use for the reprojection. If none is specified, then
                 ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
@@ -1010,7 +1015,29 @@ class TiledRasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        srdd = self.srdd.tileToLayout(layout_definition, ResampleMethod(resample_method))
+        resample_method = ResampleMethod(resample_method)
+
+        if isinstance(layout, LayoutDefinition):
+            srdd = self.srdd.tileToLayout(layout, resample_method)
+
+        elif isinstance(layout, Metadata):
+            if self.layer_metadata.crs != layout.crs:
+                raise ValueError("The layout needs to have the same crs as the TiledRasterLayer")
+
+            srdd = self.srdd.tileToLayout(layout.layout_definition, resample_method)
+
+        elif isinstance(layout, TiledRasterLayer):
+            if self.layer_metadata.crs != layout.crs:
+                raise ValueError("The layout needs to have the same crs as the TiledRasterLayer")
+
+            metadata = layout.layer_metadata
+            srdd = self.srdd.tileToLayout(metadata.layout_definition, resample_method)
+
+        elif isinstance(layout, (LocalLayout, GlobalLayout)):
+            srdd = self.srdd.tileToLayout(layout, resample_method)
+
+        else:
+            raise TypeError("Could not retile from the given layout", layout)
 
         return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
