@@ -321,7 +321,7 @@ class RasterLayer(CachableLayer):
 
         return create_python_rdd(self.pysc, result, ser)
 
-    def to_tiled_layer(self, extent=None, layout=None, crs=None, tile_size=256,
+    def to_tiled_layer(self, layout=None, crs=None, tile_size=256,
                        resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Converts this ``RasterLayer`` to a ``TiledRasterLayer``.
 
@@ -346,8 +346,7 @@ class RasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.RasterLayer`
         """
 
-        return self.tile_to_layout(self.collect_metadata(extent, layout, crs, tile_size),
-                                   resample_method)
+        return self.tile_to_layout(self.collect_metadata(layout, crs, tile_size), resample_method)
 
     def bands(self, band):
         """Select a subsection of bands from the ``Tile``\s within the layer.
@@ -458,7 +457,7 @@ class RasterLayer(CachableLayer):
             return RasterLayer(self.pysc, self.layer_type,
                                self.srdd.convertDataType(new_type))
 
-    def collect_metadata(self, extent=None, layout=None, crs=None, tile_size=256):
+    def collect_metadata(self, layout=None, crs=None, tile_size=256):
         """Iterate over the RDD records and generates layer metadata desribing the contained
         rasters.
 
@@ -480,24 +479,16 @@ class RasterLayer(CachableLayer):
             TypeError: If either ``extent`` and ``layout`` is not defined but the other is.
         """
 
-        if extent and not isinstance(extent, dict):
-            extent = extent._asdict()
-
-        if layout and not isinstance(layout, dict):
-            layout = layout._asdict()
-
         if not crs:
             crs = ""
 
         if isinstance(crs, int):
             crs = str(crs)
 
-        if extent and layout:
-            json_metadata = self.srdd.collectMetadata(extent, layout, crs)
-        elif not extent and not layout:
-            json_metadata = self.srdd.collectMetadata(str(tile_size), crs)
+        if layout:
+            json_metadata = self.srdd.collectMetadata(layout, crs)
         else:
-            raise TypeError("Could not collect metadata with {} and {}".format(extent, layout))
+            json_metadata = self.srdd.collectMetadata(str(tile_size), crs)
 
         return Metadata.from_dict(json.loads(json_metadata))
 
@@ -928,7 +919,7 @@ class TiledRasterLayer(CachableLayer):
             return TiledRasterLayer(self.pysc, self.layer_type,
                                     self.srdd.convertDataType(CellType(new_type).value))
 
-    def reproject(self, target_crs, extent=None, layout=None, scheme=LayoutScheme.FLOAT, tile_size=256,
+    def reproject(self, target_crs, layout=None, scheme=LayoutScheme.FLOAT, tile_size=256,
                   resolution_threshold=0.1, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Reproject Layer as tiled raster layer, samples surrounding tiles.
 
@@ -959,23 +950,14 @@ class TiledRasterLayer(CachableLayer):
             TypeError: If either ``extent`` or ``layout`` is defined but the other is not.
         """
 
-        if extent and not isinstance(extent, dict):
-            extent = extent._asdict()
-
-        if layout and not isinstance(layout, dict):
-            layout = layout._asdict()
-
         if isinstance(target_crs, int):
             target_crs = str(target_crs)
 
-        if extent and layout:
-            srdd = self.srdd.reproject(extent, layout, target_crs,
-                                       ResampleMethod(resample_method))
-        elif not extent and not layout:
+        if layout:
+            srdd = self.srdd.reproject(layout, target_crs, ResampleMethod(resample_method))
+        else:
             srdd = self.srdd.reproject(LayoutScheme(scheme).value, tile_size, resolution_threshold,
                                        target_crs, ResampleMethod(resample_method))
-        else:
-            raise TypeError("Could not collect reproject Layer with {} and {}".format(extent, layout))
 
         return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
@@ -1028,9 +1010,7 @@ class TiledRasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        srdd = self.srdd.tileToLayout(layout_definition.extent._asdict(),
-                                      layout_definition.tileLayout._asdict(),
-                                      ResampleMethod(resample_method))
+        srdd = self.srdd.tileToLayout(layout_definition, ResampleMethod(resample_method))
 
         return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
