@@ -547,8 +547,9 @@ class RasterLayer(CachableLayer):
         Args:
             layout (
                 :class:`~geopyspark.geotrellis.Metadata` or
+                :class:`~geopyspark.geotrellis.TiledRasterLayer` or
                 :obj:`~geopyspark.geotrellis.GlobalLayout` or
-                :obj:`~geopyspark.geotrellis.LocalLayout`
+                :obj:`~geopyspark.geotrellis.LocalLayout`, optional
             ): Target raster layout for the tiling operation.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The cell resample method to used during the tiling operation.
