@@ -2,7 +2,7 @@ import os
 import unittest
 import pytest
 
-from geopyspark.geotrellis import LayoutDefinition
+from geopyspark.geotrellis import LayoutDefinition, LocalLayout, GlobalLayout
 from geopyspark.geotrellis.constants import LayoutScheme
 from geopyspark.tests.base_test_class import BaseTestClass
 
@@ -42,9 +42,7 @@ class ReprojectTest(BaseTestClass):
         self.assertEqual(layout_definition, new_metadata.layout_definition)
 
     def test_same_crs_zoom(self):
-        result = self.laid_out_rdd.reproject("EPSG:4326",
-                                             scheme=LayoutScheme.ZOOM,
-                                             tile_size=self.cols)
+        result = self.laid_out_rdd.reproject("EPSG:4326", layout=LocalLayout(self.cols))
         new_metadata = result.layer_metadata
 
         self.assertTrue("+datum=WGS84" in new_metadata.crs)
@@ -56,16 +54,13 @@ class ReprojectTest(BaseTestClass):
         self.assertEqual(self.expected_crs, new_metadata.crs)
 
     def test_different_crs_zoom(self):
-        result = self.laid_out_rdd.reproject("EPSG:4324",
-                                             scheme=LayoutScheme.ZOOM,
-                                             tile_size=self.cols)
+        result = self.laid_out_rdd.reproject("EPSG:4324", layout=GlobalLayout(tile_size=self.cols))
         new_metadata = result.layer_metadata
 
         self.assertEqual(self.expected_crs, new_metadata.crs)
 
     def test_different_crs_float(self):
-        result = self.laid_out_rdd.reproject("EPSG:4324",
-                                             tile_size=self.cols)
+        result = self.laid_out_rdd.reproject("EPSG:4324", layout=LocalLayout(self.cols))
         new_metadata = result.layer_metadata
 
         self.assertEqual(self.expected_crs, new_metadata.crs)

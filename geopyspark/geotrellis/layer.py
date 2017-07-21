@@ -1032,7 +1032,7 @@ class TiledRasterLayer(CachableLayer):
             srdd = self.srdd.tileToLayout(layout.layout_definition, resample_method)
 
         elif isinstance(layout, TiledRasterLayer):
-            if self.layer_metadata.crs != layout.crs:
+            if self.layer_metadata.crs != layout.layer_metadata.crs:
                 raise ValueError("The layout needs to have the same crs as the TiledRasterLayer")
 
             metadata = layout.layer_metadata
