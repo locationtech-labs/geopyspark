@@ -94,6 +94,31 @@ def _to_geotiff_rdd(pysc, srdd, storage_method, rows_per_strip, tile_dimensions,
                                  band_tags or [])
 
 
+def _reproject(target_crs, layout, resample_method, layer):
+    resample_method = ResampleMethod(resample_method)
+
+    if isinstance(layout, (LocalLayout, GlobalLayout, LayoutDefinition)):
+        srdd = layer.srdd.reproject(target_crs, layout, resample_method)
+        return TiledRasterLayer(layer.pysc, layer.layer_type, srdd)
+
+    elif isinstance(layout, Metadata):
+        if layer.layout_metadata.crs != layout.crs:
+            raise ValueError("The layout and the layer need to be in the same CRS")
+
+        srdd = layer.srdd.reproject(target_crs, json.dumps(layout.to_dict()), resample_method)
+        return TiledRasterLayer(layer.pysc, layer.layer_type, srdd)
+
+    elif isinstance(layout, TiledRasterLayer):
+        if layer.layout_metadata.crs != layout.crs:
+            raise ValueError("The layout and the layer need to be in the same CRS")
+
+        metadata = layout.layer_metadata
+        srdd = layer.srdd.reproject(target_crs, json.dumps(metadata.to_dict()), resample_method)
+        return TiledRasterLayer(layer.pysc, layer.layer_type, srdd)
+    else:
+        raise TypeError("%s can not be used as target layout." % layout)
+
+
 class CachableLayer(object):
     """
     Base class for class that wraps a Scala RDD instance through a py4j reference.
@@ -521,20 +546,8 @@ class RasterLayer(CachableLayer):
         if layout is None:
             srdd = self.srdd.reproject(target_crs, resample_method)
             return RasterLayer(self.pysc, self.layer_type, srdd)
-        elif isinstance(layout, (LocalLayout, GlobalLayout)):
-            srdd = self.srdd.reproject(target_crs, layout, resample_method)
-            return TiledRasterLayer(self.pysc, self.layer_type, srdd)
-        elif isinstance(layout, LayoutDefinition):
-            # TODO: Reproject to layout definition, assume its extent matches target CRS
-            return NotImplemented
-        elif isinstance(layout, Metadata):
-            # TODO: Reproject to metadata, throw if target_crs and metadata CRS do not match
-            return NotImplemented
-        elif isinstance(layout, TiledRasterLayer):
-            # TODO: Reproject to metadata in tiled raster, check that target crs and metadata crs agree
-            return NotImplemented
         else:
-            raise TypeError("%s can not be used as target layout." % layout)
+            return _reproject(target_crs, layout, resample_method, self)
 
     def cut_tiles(self, layer_metadata, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to layout. May result in duplicate keys.
@@ -919,47 +932,39 @@ class TiledRasterLayer(CachableLayer):
             return TiledRasterLayer(self.pysc, self.layer_type,
                                     self.srdd.convertDataType(CellType(new_type).value))
 
-    def reproject(self, target_crs, layout=None, scheme=LayoutScheme.FLOAT, tile_size=256,
-                  resolution_threshold=0.1, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
-        """Reproject Layer as tiled raster layer, samples surrounding tiles.
+    def reproject(self, target_crs, layout=None, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
+        """Reproject rasters to ``target_crs``.
+        When layout is ``None``, the reproject does not sample past tile boundary.
+        When layout is given the reproject will tile the rasters and produce a tiled layer.
 
         Args:
-            target_crs (str or int): The CRS to reproject to. Can either be the EPSG code,
-                well-known name, or a PROJ.4 projection string.
-            extent (:class:`~geopyspark.geotrellis.Extent`, optional): Specify the layout
-                extent, must also specify ``layout``.
-            layout (:obj:`~geopyspark.geotrellis.TileLayout`, optional): Specify the tile layout,
-                must also specify ``extent``.
-            scheme (str or :class:`~geopyspark.geotrellis.constants.LayoutScheme`, optional): Which
-                scheme should be used. If not specified, then ``LayoutScheme.FLOAT`` is used.
-            tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
-            resolution_threshold (double, optional): The percent difference between a cell size
-                and a zoom level along with the resolution difference between the zoom level and
-                the next one that is tolerated to snap to the lower-resolution zoom.
+            target_crs (str or int): Target CRS of reprojection.
+                Either EPSG code, well-known name, or a PROJ.4 string.
+            layout (
+                :obj:`~geopyspark.geotrellis.LayoutDefinition` or
+                :class:`~geopyspark.geotrellis.Metadata` or
+                :class:`~geopyspark.geotrellis.TiledRasterLayer` or
+                :obj:`~geopyspark.geotrellis.GlobalLayout` or
+                :obj:`~geopyspark.geotrellis.LocalLayout`, optional
+            ): Target raster layout for the tiling operation.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use for the reprojection. If none is specified, then
                 ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
 
-        Note:
-            ``extent`` and ``layout`` must both be defined if they are to be used.
-
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
-
-        Raises:
-            TypeError: If either ``extent`` or ``layout`` is defined but the other is not.
         """
+
+        resample_method = ResampleMethod(resample_method)
 
         if isinstance(target_crs, int):
             target_crs = str(target_crs)
 
-        if layout:
-            srdd = self.srdd.reproject(layout, target_crs, ResampleMethod(resample_method))
+        if layout is None:
+            srdd = self.srdd.reproject(target_crs, resample_method)
+            return TiledRasterLayer(self.pysc, self.layer_type, srdd)
         else:
-            srdd = self.srdd.reproject(LayoutScheme(scheme).value, tile_size, resolution_threshold,
-                                       target_crs, ResampleMethod(resample_method))
-
-        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
+            return _reproject(target_crs, layout, resample_method, self)
 
     def repartition(self, num_partitions):
         return TiledRasterLayer(self.pysc, self.layer_type, self.srdd.repartition(num_partitions))
