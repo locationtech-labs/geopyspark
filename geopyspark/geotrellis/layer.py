@@ -1021,9 +1021,15 @@ class TiledRasterLayer(CachableLayer):
             srdd = self.srdd.tileToLayout(layout, resample_method)
 
         elif isinstance(layout, Metadata):
+            if self.layer_metadata.crs != layout.crs:
+                raise ValueError("The layout needs to have the same crs as the TiledRasterLayer")
+
             srdd = self.srdd.tileToLayout(layout.layout_definition, resample_method)
 
         elif isinstance(layout, TiledRasterLayer):
+            if self.layer_metadata.crs != layout.crs:
+                raise ValueError("The layout needs to have the same crs as the TiledRasterLayer")
+
             metadata = layout.layer_metadata
             srdd = self.srdd.tileToLayout(metadata.layout_definition, resample_method)
 
@@ -1031,7 +1037,7 @@ class TiledRasterLayer(CachableLayer):
             srdd = self.srdd.tileToLayout(layout, resample_method)
 
         else:
-            raise ValueError("Could not retile from the given layout", layout)
+            raise TypeError("Could not retile from the given layout", layout)
 
         return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
