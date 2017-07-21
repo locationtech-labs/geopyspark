@@ -41,18 +41,13 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
     new SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(md, resampleMethod), md))
   }
 
-  def tileToLayout(
-    layoutType: LayoutType,
-    rm: ResampleMethod,
-    force_crs: String,
-    force_cellType: String
-  ): TiledRasterRDD[SpatialKey] = {
-    val sms = collectRasterSummary[SpatialKey]
+  def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[SpatialKey] = {
+    val sms = RasterSummary.collect[ProjectedExtent, SpatialKey](rdd)
     require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
     val sm = sms.head
-    val md = sm.toTileLayerMetadata(layoutType)
-    val tiled = rdd.tileToLayout(md, rm)
-    new SpatialTiledRasterRDD(None, MultibandTileLayerRDD(tiled, md))
+    val (metadata, zoom) = sm.toTileLayerMetadata(layoutType)
+    val tiled = rdd.tileToLayout(metadata, resampleMethod)
+    new SpatialTiledRasterRDD(zoom, MultibandTileLayerRDD(tiled, metadata))
   }
 
   def reproject(targetCRS: String, resampleMethod: ResampleMethod): ProjectedRasterRDD = {

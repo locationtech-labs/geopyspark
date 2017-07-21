@@ -14,7 +14,7 @@ ensure_pyspark()
 from pyspark.storagelevel import StorageLevel
 
 from geopyspark import map_key_input, create_python_rdd
-from geopyspark.geotrellis import Metadata, Tile
+from geopyspark.geotrellis import Metadata, Tile, GlobalLayout, LocalLayout
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
                                              Neighborhood as nb,
@@ -541,25 +541,37 @@ class RasterLayer(CachableLayer):
         srdd = self.srdd.cutTiles(json.dumps(layer_metadata), ResampleMethod(resample_method))
         return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
-    def tile_to_layout(self, layer_metadata, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
+    def tile_to_layout(self, layout=LocalLayout(), resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layer_metadata (:class:`~geopyspark.geotrellis.Metadata`): The
-                ``Metadata`` of the ``RasterLayer`` instance.
+            layout (
+                :class:`~geopyspark.geotrellis.Metadata` or
+                :class:`~geopyspark.geotrellis.TiledRasterLayer` or
+                :obj:`~geopyspark.geotrellis.GlobalLayout` or
+                :obj:`~geopyspark.geotrellis.LocalLayout`, optional
+            ): Target raster layout for the tiling operation.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
-                The resample method to use for the reprojection. If none is specified, then
-                ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
+                The cell resample method to used during the tiling operation.
+                Default is``ResampleMethods.NEAREST_NEIGHBOR``.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        if isinstance(layer_metadata, Metadata):
-            layer_metadata = layer_metadata.to_dict()
+        resample_method = ResampleMethod(resample_method)
 
-        srdd = self.srdd.tileToLayout(json.dumps(layer_metadata),
-                                      ResampleMethod(resample_method))
+        if isinstance(layout, Metadata):
+            layer_metadata = layout.to_dict()
+            srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
+        elif isinstance(layout, TiledRasterLayer):
+            layer_metadata = layout.layer_metadata
+            srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
+        elif isinstance(layout, (LocalLayout, GlobalLayout)):
+            srdd = self.srdd.tileToLayout(layout, resample_method)
+        else:
+            raise TypeError("%s can not be converted to raster layout." % layout)
+
         return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
     def reclassify(self, value_map, data_type,

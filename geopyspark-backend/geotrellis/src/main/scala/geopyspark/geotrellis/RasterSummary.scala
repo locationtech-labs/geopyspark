@@ -1,10 +1,15 @@
 package geopyspark.geotrellis
 
 import geotrellis.proj4.CRS
-import geotrellis.raster.{CellSize, CellType}
-import geotrellis.spark.tiling.{LayoutDefinition, ZoomedLayoutScheme}
-import geotrellis.spark.{Boundable, Bounds, KeyBounds, SpatialComponent, TileLayerMetadata}
-import geotrellis.vector.Extent
+import geotrellis.raster.{CellSize, CellType, MultibandTile}
+import geotrellis.spark.tiling.{LayoutDefinition, TilerKeyMethods, ZoomedLayoutScheme}
+import geotrellis.spark._
+import geotrellis.util._
+import geotrellis.vector.{Extent, ProjectedExtent}
+import org.apache.spark.rdd.RDD
+
+import scala.collection.immutable.HashMap
+import scala.reflect.ClassTag
 
 case class RasterSummary[K](
   crs: CRS,
@@ -28,8 +33,32 @@ case class RasterSummary[K](
   }
 
   def toTileLayerMetadata(layoutType: LayoutType)(implicit ev: SpatialComponent[K]) = {
-    val ld: LayoutDefinition = layoutType.layoutDefinition(crs, extent, cellSize)
+    val (ld, zoom) = layoutType.layoutDefinitionWithZoom(crs, extent, cellSize)
     val dataBounds: Bounds[K] = bounds.setSpatialBounds(ld.mapTransform(extent))
-    TileLayerMetadata[K](cellType, ld, extent, crs, dataBounds)
+    TileLayerMetadata[K](cellType, ld, extent, crs, dataBounds) -> zoom
+  }
+}
+
+object RasterSummary {
+  /** Collect [[RasterSummary]] from unstructred rasters, grouped by CRS */
+  def collect[K, K2](rdd: RDD[(K, MultibandTile)])
+   (implicit
+    ev: ClassTag[K],
+    ev0: K => TilerKeyMethods[K, K2],
+    ev1: GetComponent[K, ProjectedExtent],
+    ev2: SpatialComponent[K2],
+    ev3: Boundable[K2]
+   ): Seq[RasterSummary[K2]] = {
+    rdd
+      .map { case (key, grid) =>
+        val ProjectedExtent(extent, crs) = key.getComponent[ProjectedExtent]
+        // Bounds are return to set the non-spatial dimensions of the KeyBounds;
+        // the spatial KeyBounds are set outside this call.
+        val boundsKey = key.translate(SpatialKey(0,0))
+        val cellSize = CellSize(extent, grid.cols, grid.rows)
+        HashMap(crs -> RasterSummary(crs, grid.cellType, cellSize, extent, KeyBounds(boundsKey, boundsKey), 1))
+      }
+      .reduce { (m1, m2) => m1.merged(m2){ case ((k,v1), (_,v2)) => (k,v1 combine v2) } }
+      .values.toSeq
   }
 }
