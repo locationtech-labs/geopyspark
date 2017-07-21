@@ -73,12 +73,6 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
   /** Encode RDD as Avro bytes and return it with avro schema used */
   def toProtoRDD(): JavaRDD[Array[Byte]]
 
-  def resample_to_power_of_two(
-    col_power: Int,
-    row_power: Int,
-    resampleMethod: ResampleMethod
-  ): TiledRasterRDD[K]
-
   def layerMetadata: String = rdd.metadata.toJson.prettyPrint
 
   def mask(wkbs: java.util.ArrayList[Array[Byte]]): TiledRasterRDD[K] = {
@@ -115,11 +109,7 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
       resampleMethod
     )
 
-  def pyramid(
-    startZoom: Int,
-    endZoom: Int,
-    resampleMethod: ResampleMethod
-  ): Array[_] // Array[TiledRasterRDD[K]]
+  def pyramid(resampleMethod: ResampleMethod): Array[_] // Array[TiledRasterRDD[K]]
 
   def focal(
     operation: String,

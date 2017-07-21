@@ -1046,7 +1046,7 @@ class TiledRasterLayer(CachableLayer):
 
         return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
-    def pyramid(self, end_zoom, start_zoom=None, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
+    def pyramid(self, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Creates a ``Pyramid`` instance.
 
         Note:
@@ -1054,67 +1054,26 @@ class TiledRasterLayer(CachableLayer):
             multiples of 2.
 
         Args:
-            end_zoom (int): The zoom level where pyramiding should end. Represents
-                the level that is most zoomed out.
-            start_zoom (int, Optional): The zoom level where pyramiding should begin. Represents
-                the level that is most zoomed in. If None, then will use the zoom level from
-                :meth:`~geopyspark.geotrellis.rdd.TiledRasterLayer.zoom_level`.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
-                The resample method to use for the reprojection. If none is specified, then
-                ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
+                The resample method to use when building the pyramid.
+                Default is ``ResampleMethods.NEAREST_NEIGHBOR``.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.Pyramid`.
 
         Raises:
-            ValueError: If the col and row count is not a power of 2.
-        """
-
-        num_cols = self.layer_metadata.tile_layout.tileCols
-        num_rows = self.layer_metadata.tile_layout.tileRows
-
-        if (num_cols & (num_cols - 1)) != 0 or (num_rows & (num_rows - 1)) != 0:
-            raise ValueError("Tiles dimensions must powers of 2.  Consider `pyramid_non_power_of_two`.")
-
-        if start_zoom:
-            start_zoom = start_zoom
-        elif self.zoom_level:
-            start_zoom = self.zoom_level
-        else:
-            raise ValueError("No start_zoom given.")
-
-        result = self.srdd.pyramid(start_zoom, end_zoom, ResampleMethod(resample_method))
-
-        return Pyramid([TiledRasterLayer(self.pysc, self.layer_type, srdd) for srdd in result])
-
-    def pyramid_non_power_of_two(self, col_power, row_power, end_zoom, start_zoom=None, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
-        """Creates a ``Pyramid`` instance. This will work even if the tiles' sizes are not
-        multiples of 2.
-
-        Args:
-            col_power (int): The number of tile columns will be two to the power of this number
-            row_power (int): The number of tile columns will be two to the power of this number
-            end_zoom (int): The zoom level where pyramiding should end. Represents
-                the level that is most zoomed out.
-            start_zoom (int, Optional): The zoom level where pyramiding should begin. Represents
-                the level that is most zoomed in. If None, then will use the zoom level from
-                :meth:`~geopyspark.geotrellis.rdd.TiledRasterLayer.zoom_level`.
-            resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
-                The resample method to use for the reprojection. If none is specified, then
-                ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
-
-        Returns:
-            :class:`~geopyspark.geotrellis.layer.Pyramid`.
-
-        Raises:
-            ValueError: If the given ``resample_method`` is not known.
+            ValueError: If this layer layout is not of ``GlobalLayout`` type.
         """
 
         resample_method = ResampleMethod(resample_method)
-        new_srdd = self.srdd.resample_to_power_of_two(col_power, row_power, resample_method)
-        new_layer = TiledRasterLayer(self.pysc, self.layer_type, new_srdd)
+        num_cols = self.layer_metadata.tile_layout.tileCols
+        num_rows = self.layer_metadata.tile_layout.tileRows
+        invalid_layout = (num_cols & (num_cols - 1)) != 0 or (num_rows & (num_rows - 1)) != 0
+        if self.zoom_level is None or invalid_layout:
+            raise ValueError("Pyramid of ``LocalLayout`` layer not supported.")
 
-        return new_layer.pyramid(end_zoom=end_zoom, start_zoom=start_zoom, resample_method=resample_method)
+        result = self.srdd.pyramid(resample_method)
+        return Pyramid([TiledRasterLayer(self.pysc, self.layer_type, srdd) for srdd in result])
 
     def focal(self, operation, neighborhood=None, param_1=None, param_2=None, param_3=None):
         """Performs the given focal operation on the layers contained in the Layer.

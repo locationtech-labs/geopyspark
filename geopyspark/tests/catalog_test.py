@@ -18,7 +18,7 @@ class CatalogTest(BaseTestClass):
     metadata = rdd.collect_metadata()
     laid_out = rdd.tile_to_layout(metadata)
     reprojected = laid_out.reproject(target_crs="EPSG:3857", layout=GlobalLayout(zoom=11))
-    result = reprojected.pyramid(start_zoom=11, end_zoom=1)
+    result = reprojected.pyramid()
 
     dir_path = geotiff_test_path("catalog/")
     uri = "file://{}".format(dir_path)

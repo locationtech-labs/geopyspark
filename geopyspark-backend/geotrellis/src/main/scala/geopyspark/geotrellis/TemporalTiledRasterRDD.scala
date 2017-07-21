@@ -153,26 +153,17 @@ class TemporalTiledRasterRDD(
     TemporalTiledRasterRDD(None, tileLayer)
   }
 
-  def pyramid(
-    startZoom: Int,
-    endZoom: Int,
-    resampleMethod: ResampleMethod
-  ): Array[TiledRasterRDD[SpaceTimeKey]] = {
+  def pyramid(resampleMethod: ResampleMethod): Array[TiledRasterRDD[SpaceTimeKey]] = {
     require(! rdd.metadata.bounds.isEmpty, "Can not pyramid an empty RDD")
-
+    require(zoomLevel.isDefined, "Pyramid of LocalLayout layer not supported.")
     val scheme = ZoomedLayoutScheme(rdd.metadata.crs, rdd.metadata.tileRows)
     val part = rdd.partitioner.getOrElse(new HashPartitioner(rdd.partitions.length))
-
-    val leveledList =
-      Pyramid.levelStream(
-        rdd,
-        scheme,
-        startZoom,
-        endZoom,
-        Pyramid.Options(resampleMethod=resampleMethod, partitioner=part)
-      )
-
-    leveledList.map{ x => TemporalTiledRasterRDD(Some(x._1), x._2) }.toArray
+    Pyramid.levelStream(
+      rdd, scheme, this.zoomLevel.get, 0,
+      Pyramid.Options(resampleMethod=resampleMethod, partitioner=part)
+    ).map{ x =>
+      TemporalTiledRasterRDD(Some(x._1), x._2)
+    }.toArray
   }
 
   def focal(

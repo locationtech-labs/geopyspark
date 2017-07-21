@@ -17,29 +17,6 @@ class PyramidingTest(BaseTestClass):
         yield
         BaseTestClass.pysc._gateway.close()
 
-    def test_non_power_of_two(self):
-        arr = np.zeros((1, 17, 17))
-        epsg_code = 3857
-        extent = Extent(0.0, 0.0, 10.0, 10.0)
-
-        tile = Tile(arr, 'FLOAT', False)
-        projected_extent = ProjectedExtent(extent, epsg_code)
-
-        rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
-        tile_layout = TileLayout(1, 1, 17, 17)
-
-        metadata = raster_rdd.collect_metadata(tile_size=17, crs=3857)
-        laid_out = raster_rdd.tile_to_layout(metadata)
-
-        result = laid_out.pyramid_non_power_of_two(col_power=10, row_power=10, end_zoom=2, start_zoom=9)
-
-        self.assertTrue(isinstance(result, Pyramid))
-        self.assertEqual(result.levels[2].layer_metadata.tile_layout.tileCols, 1<<10)
-        self.assertEqual(result.levels[2].layer_metadata.tile_layout.tileRows, 1<<10)
-        self.assertEqual(result.levels[9].layer_metadata.tile_layout.tileCols, 1<<10)
-        self.assertEqual(result.levels[9].layer_metadata.tile_layout.tileRows, 1<<10)
-
     def test_correct_base(self):
         arr = np.zeros((1, 16, 16))
         epsg_code = 3857
@@ -53,13 +30,10 @@ class PyramidingTest(BaseTestClass):
         tile_layout = TileLayout(32, 32, 16, 16)
         new_extent = Extent(-20037508.342789244, -20037508.342789244, 20037508.342789244,
                             20037508.342789244)
-
         layout_def = LayoutDefinition(new_extent, tile_layout)
-        metadata = raster_rdd.collect_metadata(layout=layout_def)
-        laid_out = raster_rdd.tile_to_layout(metadata)
 
-        result = laid_out.pyramid(start_zoom=5, end_zoom=1)
-
+        laid_out = raster_rdd.tile_to_layout(GlobalLayout(tile_size=16))
+        result = laid_out.pyramid()
         self.pyramid_building_check(result)
 
     # collect_metadata needs to be updated for this to work
@@ -104,7 +78,7 @@ class PyramidingTest(BaseTestClass):
         laid_out = raster_rdd.tile_to_layout(metadata)
 
         with pytest.raises(ValueError):
-            laid_out.pyramid(start_zoom=12, end_zoom=1)
+            laid_out.pyramid()
 
     def test_pyramid_class(self):
         arr = np.zeros((1, 16, 16))
@@ -117,15 +91,12 @@ class PyramidingTest(BaseTestClass):
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
         raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
         tile_layout = TileLayout(1, 1, 16, 16)
+        reprojected = raster_rdd.reproject(3857, GlobalLayout(tile_size=16))
 
-        metadata = raster_rdd.collect_metadata(tile_size=16)
-        laid_out = raster_rdd.tile_to_layout(metadata)
-        reprojected = laid_out.reproject(3857, layout=GlobalLayout(zoom=laid_out.zoom_level))
-
-        result = reprojected.pyramid(end_zoom=1, start_zoom=12)
+        result = reprojected.pyramid()
         hist = result.get_histogram()
 
-        self.assertEqual(result.max_zoom, 12)
+        self.assertEqual(result.max_zoom, reprojected.zoom_level)
         self.assertTrue(set(result.levels.keys()).issuperset(range(1, 13)))
         self.assertEqual(hist.mean(), 0.0)
         self.assertEqual(hist.min_max(), (0.0, 0.0))

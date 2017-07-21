@@ -51,30 +51,6 @@ class SpatialTiledRasterRDD(
   val rdd: RDD[(SpatialKey, MultibandTile)] with Metadata[TileLayerMetadata[SpatialKey]]
 ) extends TiledRasterRDD[SpatialKey] {
 
-  def resample_to_power_of_two(
-    col_power: Int,
-    row_power: Int,
-    resampleMethod: ResampleMethod
-  ): TiledRasterRDD[SpatialKey] = {
-    val cols = 1<<col_power
-    val rows = 1<<row_power
-    val rdd2 = rdd.mapValues({ tile => tile.resample(cols, rows, resampleMethod) })
-
-    val metadata = rdd.metadata
-    val layout = LayoutDefinition(
-      metadata.extent,
-      TileLayout(
-        metadata.layout.tileLayout.layoutCols,
-        metadata.layout.tileLayout.layoutRows,
-        cols,
-        rows
-      )
-    )
-    val metadata2 = metadata.copy(layout = layout)
-
-    SpatialTiledRasterRDD(None, ContextRDD(rdd2, metadata2))
-  }
-
   def lookup(
     col: Int,
     row: Int
@@ -137,26 +113,17 @@ class SpatialTiledRasterRDD(
     SpatialTiledRasterRDD(None, tileLayer)
   }
 
-  def pyramid(
-    startZoom: Int,
-    endZoom: Int,
-    resampleMethod: ResampleMethod
-  ): Array[TiledRasterRDD[SpatialKey]] = {
+  def pyramid(resampleMethod: ResampleMethod): Array[TiledRasterRDD[SpatialKey]] = {
     require(! rdd.metadata.bounds.isEmpty, "Can not pyramid an empty RDD")
-
+    require(zoomLevel.isDefined, "Pyramid of LocalLayout layer not supported.")
     val scheme = ZoomedLayoutScheme(rdd.metadata.crs, rdd.metadata.tileRows)
     val part = rdd.partitioner.getOrElse(new HashPartitioner(rdd.partitions.length))
-
-    val leveledList =
-      Pyramid.levelStream(
-        rdd,
-        scheme,
-        startZoom,
-        endZoom,
-        Pyramid.Options(resampleMethod=resampleMethod, partitioner=part)
-      )
-
-    leveledList.map{ x => SpatialTiledRasterRDD(Some(x._1), x._2) }.toArray
+    Pyramid.levelStream(
+      rdd, scheme, this.zoomLevel.get, 0,
+      Pyramid.Options(resampleMethod=resampleMethod, partitioner=part)
+    ).map{ x =>
+      SpatialTiledRasterRDD(Some(x._1), x._2)
+    }.toArray
   }
 
   def focal(
