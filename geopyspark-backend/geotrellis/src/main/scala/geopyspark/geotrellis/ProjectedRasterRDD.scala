@@ -1,5 +1,6 @@
 package geopyspark.geotrellis
 
+import GeoTrellisUtils._
 import geotrellis.proj4._
 import geotrellis.raster._
 import geotrellis.raster.io.geotiff.{GeoTiffOptions, MultibandGeoTiff, Tags}
@@ -53,6 +54,26 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
   def reproject(targetCRS: String, resampleMethod: ResampleMethod): ProjectedRasterRDD = {
     val crs = TileRDD.getCRS(targetCRS).get
     new ProjectedRasterRDD(rdd.reproject(crs, resampleMethod))
+  }
+
+  def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[SpatialKey] = {
+    val crs = TileRDD.getCRS(targetCRS).get
+    val tiled = tileToLayout(LocalLayout(256), resampleMethod).rdd
+    layoutType match {
+      case GlobalLayout(tileSize, null, threshold) =>
+        val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
+        val (zoom, reprojected) = tiled.reproject(crs, scheme, resampleMethod)
+        new SpatialTiledRasterRDD(Some(zoom), reprojected)
+
+      case GlobalLayout(tileSize, zoom, threshold) =>
+        val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
+        val (_, reprojected) = tiled.reproject(crs, scheme.levelForZoom(zoom).layout, resampleMethod)
+        new SpatialTiledRasterRDD(Some(zoom), reprojected)
+
+      case LocalLayout(tileSize) =>
+        val (_, reprojected) = tiled.reproject(crs, FloatingLayoutScheme(tileSize), resampleMethod)
+        new SpatialTiledRasterRDD(None, reprojected)
+    }
   }
 
   def reclassify(reclassifiedRDD: RDD[(ProjectedExtent, MultibandTile)]): RasterRDD[ProjectedExtent] =

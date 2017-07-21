@@ -7,7 +7,7 @@ import geotrellis.raster.resample.ResampleMethod
 import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.json._
-import geotrellis.spark.tiling.{LayoutDefinition, LayoutScheme}
+import geotrellis.spark.tiling.{FloatingLayoutScheme, LayoutDefinition, LayoutScheme, ZoomedLayoutScheme}
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd.RDD
 import protos.tupleMessages.ProtoTuple
@@ -53,6 +53,26 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
   def reproject(targetCRS: String, resampleMethod: ResampleMethod): TemporalRasterRDD = {
     val crs = TileRDD.getCRS(targetCRS).get
     new TemporalRasterRDD(rdd.reproject(crs, resampleMethod))
+  }
+
+  def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[SpaceTimeKey] = {
+    val crs = TileRDD.getCRS(targetCRS).get
+    val tiled = tileToLayout(LocalLayout(256), resampleMethod).rdd
+    layoutType match {
+      case GlobalLayout(tileSize, null, threshold) =>
+        val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
+        val (zoom, reprojected) = tiled.reproject(crs, scheme, resampleMethod)
+        new TemporalTiledRasterRDD(Some(zoom), reprojected)
+
+      case GlobalLayout(tileSize, zoom, threshold) =>
+        val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
+        val (_, reprojected) = tiled.reproject(crs, scheme.levelForZoom(zoom).layout, resampleMethod)
+        new TemporalTiledRasterRDD(Some(zoom), reprojected)
+
+      case LocalLayout(tileSize) =>
+        val (_, reprojected) = tiled.reproject(crs, FloatingLayoutScheme(tileSize), resampleMethod)
+        new TemporalTiledRasterRDD(None, reprojected)
+    }
   }
 
   def reclassify(reclassifiedRDD: RDD[(TemporalProjectedExtent, MultibandTile)]): RasterRDD[TemporalProjectedExtent] =
