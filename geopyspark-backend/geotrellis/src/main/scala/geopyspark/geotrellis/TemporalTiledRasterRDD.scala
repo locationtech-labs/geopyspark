@@ -155,11 +155,19 @@ class TemporalTiledRasterRDD(
 
   def pyramid(resampleMethod: ResampleMethod): Array[TiledRasterRDD[SpaceTimeKey]] = {
     require(! rdd.metadata.bounds.isEmpty, "Can not pyramid an empty RDD")
-    require(zoomLevel.isDefined, "Pyramid of LocalLayout layer not supported.")
-    val scheme = ZoomedLayoutScheme(rdd.metadata.crs, rdd.metadata.tileRows)
     val part = rdd.partitioner.getOrElse(new HashPartitioner(rdd.partitions.length))
+    val (baseZoom, scheme) =
+      zoomLevel match {
+        case Some(zoom) =>
+          zoom -> ZoomedLayoutScheme(rdd.metadata.crs, rdd.metadata.tileRows)
+
+        case None =>
+          val zoom = LocalLayoutScheme.inferLayoutLevel(rdd.metadata.layout)
+          zoom -> new LocalLayoutScheme
+      }
+
     Pyramid.levelStream(
-      rdd, scheme, this.zoomLevel.get, 0,
+      rdd, scheme, baseZoom, 0,
       Pyramid.Options(resampleMethod=resampleMethod, partitioner=part)
     ).map{ x =>
       TemporalTiledRasterRDD(Some(x._1), x._2)

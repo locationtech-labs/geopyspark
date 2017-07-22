@@ -4,7 +4,7 @@ import rasterio
 import numpy as np
 import pytest
 
-from geopyspark.geotrellis import Extent, ProjectedExtent, TileLayout, Tile, LayoutDefinition, GlobalLayout
+from geopyspark.geotrellis import Extent, ProjectedExtent, TileLayout, Tile, LayoutDefinition, GlobalLayout, LocalLayout
 from geopyspark.geotrellis.constants import LayerType, LayoutScheme
 from geopyspark.geotrellis.layer import Pyramid, RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -62,7 +62,7 @@ class PyramidingTest(BaseTestClass):
         self.pyramid_building_check(result)
     '''
 
-    def test_wrong_cols_and_rows(self):
+    def test_local_pyramid(self):
         arr = np.zeros((1, 250, 250))
         epsg_code = 3857
         extent = Extent(0.0, 0.0, 10.0, 10.0)
@@ -73,12 +73,21 @@ class PyramidingTest(BaseTestClass):
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
 
         raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        laid_out = raster_rdd.tile_to_layout(LocalLayout(250))
 
-        metadata = raster_rdd.collect_metadata(tile_size=250)
-        laid_out = raster_rdd.tile_to_layout(metadata)
+        # Single tile is at level 0
+        result = laid_out.pyramid()
+        assert result.max_zoom == 0
 
-        with pytest.raises(ValueError):
-            laid_out.pyramid()
+        laid_out = raster_rdd.tile_to_layout(LocalLayout(25))
+        result = laid_out.pyramid()
+
+        assert result.max_zoom == 4
+        assert result.levels[4].layer_metadata.tile_layout.layoutCols == 10
+        assert result.levels[3].layer_metadata.tile_layout.layoutCols == 5
+        assert result.levels[2].layer_metadata.tile_layout.layoutCols == 3
+        assert result.levels[1].layer_metadata.tile_layout.layoutCols == 2
+        assert result.levels[0].layer_metadata.tile_layout.layoutCols == 1
 
     def test_pyramid_class(self):
         arr = np.zeros((1, 16, 16))

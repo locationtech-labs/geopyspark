@@ -1047,11 +1047,7 @@ class TiledRasterLayer(CachableLayer):
         return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
     def pyramid(self, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
-        """Creates a ``Pyramid`` instance.
-
-        Note:
-            This method will only work if the tiles within the layer's layout are sizes of
-            multiples of 2.
+        """Creates a layer ``Pyramid`` where the resolution is halved per level.
 
         Args:
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
@@ -1066,12 +1062,6 @@ class TiledRasterLayer(CachableLayer):
         """
 
         resample_method = ResampleMethod(resample_method)
-        num_cols = self.layer_metadata.tile_layout.tileCols
-        num_rows = self.layer_metadata.tile_layout.tileRows
-        invalid_layout = (num_cols & (num_cols - 1)) != 0 or (num_rows & (num_rows - 1)) != 0
-        if self.zoom_level is None or invalid_layout:
-            raise ValueError("Pyramid of ``LocalLayout`` layer not supported.")
-
         result = self.srdd.pyramid(resample_method)
         return Pyramid([TiledRasterLayer(self.pysc, self.layer_type, srdd) for srdd in result])
 
