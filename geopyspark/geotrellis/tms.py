@@ -150,7 +150,9 @@ class TMS(object):
         """
         def makeReader(arg):
             if isinstance(arg, Pyramid):
-                reader = pysc._gateway.jvm.geopyspark.geotrellis.tms.TileReaders.createSpatialRddReader(arg.levels, pysc._gateway.jvm.geopyspark.geotrellis.tms.AkkaSystem.system)
+                reader = pysc._gateway.jvm.geopyspark.geotrellis.tms.TileReaders.createSpatialRddReader(
+                    {z: lvl.srdd for z, lvl in arg.levels.items()},
+                    pysc._gateway.jvm.geopyspark.geotrellis.tms.AkkaSystem.system())
             elif isinstance(arg, tuple) and isinstance(arg[0], str) and isinstance(arg[1], str):
                 reader = pysc._gateway.jvm.geopyspark.geotrellis.tms.TileReaders.createCatalogReader(arg[0], arg[1])
             else:
