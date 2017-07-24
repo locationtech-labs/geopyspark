@@ -289,7 +289,7 @@ class LocalLayout(namedtuple("LocalLayout", 'tile_cols tile_rows')):
         tile_cols = tile_cols or tile_size or 256
         tile_rows = tile_rows or tile_size or 256
 
-        return super(LocalLayout, cls).__new__(cls, tile_cols, tile_rows)
+        return super(cls, LocalLayout).__new__(cls, tile_cols, tile_rows)
 
 
 TileLayout = namedtuple("TileLayout", 'layoutCols layoutRows tileCols tileRows')
