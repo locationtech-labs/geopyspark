@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from geopyspark.geotrellis import SpatialKey, Tile, ProjectedExtent, Extent, RasterLayer, LocalLayout, TileLayout, \
-    GlobalLayout
+    GlobalLayout, LayoutDefinition
 from shapely.geometry import Point
 from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -28,6 +28,7 @@ class RasterLayerTest(BaseTestClass):
 
     numpy_rdd = BaseTestClass.pysc.parallelize(layer)
     layer = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, numpy_rdd)
+    metadata = layer.collect_metadata(GlobalLayout(5))
 
     def test_tile_to_local_layout(self):
         tiled = self.layer.tile_to_layout(LocalLayout(5))
@@ -40,10 +41,32 @@ class RasterLayerTest(BaseTestClass):
         assert tiled.layer_metadata.tile_layout == TileLayout(128,128,5,5)
         assert tiled.zoom_level == 7
 
+    def test_tile_to_metadata_layout(self):
+        tiled = self.layer.tile_to_layout(layout=self.metadata)
+
+        self.assertEqual(tiled.layer_metadata.extent, Extent(0,0,10,6))
+        self.assertDictEqual(tiled.layer_metadata.to_dict(), self.metadata.to_dict())
+
+    def test_tile_to_tiled_layer_layout(self):
+        extent = Extent(0., 0., 10., 6.)
+        tile_layout = TileLayout(2,2,5,5)
+        layout_definition = LayoutDefinition(extent, tile_layout)
+
+        base = self.layer.tile_to_layout(layout_definition)
+        tiled = self.layer.tile_to_layout(layout=base)
+
+        self.assertDictEqual(tiled.layer_metadata.to_dict(), base.layer_metadata.to_dict())
+
+    def test_tile_to_layout_definition(self):
+        tiled = self.layer.tile_to_layout(layout=self.metadata.layout_definition)
+
+        self.assertDictEqual(tiled.layer_metadata.to_dict(), self.metadata.to_dict())
+
     @pytest.fixture(scope='class', autouse=True)
     def tearDown(self):
         yield
         BaseTestClass.pysc._gateway.close()
+
 
 if __name__ == "__main__":
     unittest.main()

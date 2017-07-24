@@ -513,6 +513,7 @@ class RasterLayer(CachableLayer):
             layout (
                 :class:`~geopyspark.geotrellis.Metadata` or
                 :class:`~geopyspark.geotrellis.TiledRasterLayer` or
+                :obj:`~geopyspark.geotrellis.LayoutDefinition` or
                 :obj:`~geopyspark.geotrellis.GlobalLayout` or
                 :class:`~geopyspark.geotrellis.LocalLayout`, optional
             ): Target raster layout for the tiling operation.
@@ -531,7 +532,9 @@ class RasterLayer(CachableLayer):
             srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
         elif isinstance(layout, TiledRasterLayer):
             layer_metadata = layout.layer_metadata
-            srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
+            srdd = self.srdd.tileToLayout(json.dumps(layer_metadata.to_dict()), resample_method)
+        elif isinstance(layout, LayoutDefinition):
+            srdd = self.srdd.tileToLayout(layout, resample_method)
         elif isinstance(layout, (LocalLayout, GlobalLayout)):
             srdd = self.srdd.tileToLayout(layout, resample_method)
         else:
