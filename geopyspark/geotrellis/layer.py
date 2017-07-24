@@ -346,33 +346,6 @@ class RasterLayer(CachableLayer):
 
         return create_python_rdd(self.pysc, result, ser)
 
-    def to_tiled_layer(self, layout=None, crs=None, tile_size=256,
-                       resample_method=ResampleMethod.NEAREST_NEIGHBOR):
-        """Converts this ``RasterLayer`` to a ``TiledRasterLayer``.
-
-        This method combines :meth:`~geopyspark.geotrellis.rdd.RasterLayer.collect_metadata` and
-        :meth:`~geopyspark.geotrellis.rdd.RasterLayer.tile_to_layout` into one step.
-
-        Args:
-            extent (:class:`~geopyspark.geotrellis.Extent`, optional): Specify layout extent,
-                must also specify layout.
-            layout (:obj:`~geopyspark.geotrellis.TileLayout`, optional): Specify tile layout, must
-                also specify ``extent``.
-            crs (str or int, optional): Ignore CRS from records and use given one instead.
-            tile_size (int, optional): Pixel dimensions of each tile, if not using layout.
-            resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
-                The resample method to use for the reprojection. If none is specified, then
-                ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
-
-        Note:
-            ``extent`` and ``layout`` must both be defined if they are to be used.
-
-        Returns:
-            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
-        """
-
-        return self.tile_to_layout(self.collect_metadata(layout, crs, tile_size), resample_method)
-
     def bands(self, band):
         """Select a subsection of bands from the ``Tile``\s within the layer.
 
