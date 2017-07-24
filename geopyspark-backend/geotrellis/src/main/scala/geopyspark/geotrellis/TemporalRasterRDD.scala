@@ -31,12 +31,6 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
     }
   }.toJson.compactPrint
 
-  def cutTiles(layerMetadata: String, resampleMethod: ResampleMethod): TiledRasterRDD[SpaceTimeKey] = {
-    val md = layerMetadata.parseJson.convertTo[TileLayerMetadata[SpaceTimeKey]]
-    val tiles = rdd.cutTiles[SpaceTimeKey](md, resampleMethod)
-    new TemporalTiledRasterRDD(None, MultibandTileLayerRDD(tiles, md))
-  }
-
   def tileToLayout(layerMetadata: String, resampleMethod: ResampleMethod): TiledRasterRDD[SpaceTimeKey] = {
     val md = layerMetadata.parseJson.convertTo[TileLayerMetadata[SpaceTimeKey]]
     new TemporalTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(md, resampleMethod), md))

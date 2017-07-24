@@ -65,13 +65,6 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         md = self.result.collect_metadata(crs='EPSG:3857')
         self.assertTrue('+proj=merc' in md.crs)
 
-    def test_cut_tiles(self, options=None):
-        md = self.result.collect_metadata(tile_size=100)
-        tiles = self.result.cut_tiles(md)
-        records_before = self.result.srdd.rdd().count()
-        records_after = tiles.srdd.rdd().count()
-        self.assertTrue(records_after > records_before)
-
     def test_reproject(self, options=None):
         tiles = self.result.reproject("EPSG:3857")
         md = tiles.collect_metadata()

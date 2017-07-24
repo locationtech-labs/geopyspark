@@ -549,26 +549,6 @@ class RasterLayer(CachableLayer):
         else:
             return _reproject(target_crs, layout, resample_method, self)
 
-    def cut_tiles(self, layer_metadata, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
-        """Cut tiles to layout. May result in duplicate keys.
-
-        Args:
-            layer_metadata (:class:`~geopyspark.geotrellis.Metadata`): The
-                ``Metadata`` of the ``RasterLayer`` instance.
-            resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
-                The resample method to use for the reprojection. If none is specified, then
-                ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
-
-        Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
-        """
-
-        if isinstance(layer_metadata, Metadata):
-            layer_metadata = layer_metadata.to_dict()
-
-        srdd = self.srdd.cutTiles(json.dumps(layer_metadata), ResampleMethod(resample_method))
-        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
-
     def tile_to_layout(self, layout=LocalLayout(), resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
