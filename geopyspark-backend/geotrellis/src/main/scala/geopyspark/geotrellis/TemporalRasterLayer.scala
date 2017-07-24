@@ -16,7 +16,7 @@ import spray.json._
 
 import scala.util.{Either, Left, Right}
 
-class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) extends RasterRDD[TemporalProjectedExtent] {
+class TemporalRasterLayer(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) extends RasterLayer[TemporalProjectedExtent] {
 
   def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: Option[CRS]): String = {
     (crs, layout) match {
@@ -31,18 +31,12 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
     }
   }.toJson.compactPrint
 
-  def cutTiles(layerMetadata: String, resampleMethod: ResampleMethod): TiledRasterRDD[SpaceTimeKey] = {
+  def tileToLayout(layerMetadata: String, resampleMethod: ResampleMethod): TiledRasterLayer[SpaceTimeKey] = {
     val md = layerMetadata.parseJson.convertTo[TileLayerMetadata[SpaceTimeKey]]
-    val tiles = rdd.cutTiles[SpaceTimeKey](md, resampleMethod)
-    new TemporalTiledRasterRDD(None, MultibandTileLayerRDD(tiles, md))
+    new TemporalTiledRasterLayer(None, MultibandTileLayerRDD(rdd.tileToLayout(md, resampleMethod), md))
   }
 
-  def tileToLayout(layerMetadata: String, resampleMethod: ResampleMethod): TiledRasterRDD[SpaceTimeKey] = {
-    val md = layerMetadata.parseJson.convertTo[TileLayerMetadata[SpaceTimeKey]]
-    new TemporalTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(md, resampleMethod), md))
-  }
-
-  def tileToLayout(layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterRDD[SpaceTimeKey] = {
+  def tileToLayout(layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterLayer[SpaceTimeKey] = {
     val sms = RasterSummary.collect[TemporalProjectedExtent, SpaceTimeKey](rdd)
     require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
     val sm = sms.head
@@ -55,40 +49,40 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
       sm.bounds.setSpatialBounds(layoutDefinition.mapTransform(sm.extent))
     )
 
-    TemporalTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata, resampleMethod), metadata))
+    TemporalTiledRasterLayer(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata, resampleMethod), metadata))
   }
 
-  def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[SpaceTimeKey] ={
+  def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterLayer[SpaceTimeKey] ={
     val sms = RasterSummary.collect[TemporalProjectedExtent, SpaceTimeKey](rdd)
     require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
     val sm = sms.head
     val (metadata, zoom) = sm.toTileLayerMetadata(layoutType)
     val tiled = rdd.tileToLayout(metadata, resampleMethod)
-    new TemporalTiledRasterRDD(zoom, MultibandTileLayerRDD(tiled, metadata))
+    new TemporalTiledRasterLayer(zoom, MultibandTileLayerRDD(tiled, metadata))
   }
 
-  def reproject(targetCRS: String, resampleMethod: ResampleMethod): TemporalRasterRDD = {
-    val crs = TileRDD.getCRS(targetCRS).get
-    new TemporalRasterRDD(rdd.reproject(crs, resampleMethod))
+  def reproject(targetCRS: String, resampleMethod: ResampleMethod): TemporalRasterLayer = {
+    val crs = TileLayer.getCRS(targetCRS).get
+    new TemporalRasterLayer(rdd.reproject(crs, resampleMethod))
   }
 
-  def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[SpaceTimeKey] = {
-    val crs = TileRDD.getCRS(targetCRS).get
+  def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterLayer[SpaceTimeKey] = {
+    val crs = TileLayer.getCRS(targetCRS).get
     val tiled = tileToLayout(LocalLayout(256), resampleMethod).rdd
     layoutType match {
       case GlobalLayout(tileSize, null, threshold) =>
         val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
         val (zoom, reprojected) = tiled.reproject(crs, scheme, resampleMethod)
-        new TemporalTiledRasterRDD(Some(zoom), reprojected)
+        new TemporalTiledRasterLayer(Some(zoom), reprojected)
 
       case GlobalLayout(tileSize, zoom, threshold) =>
         val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
         val (_, reprojected) = tiled.reproject(crs, scheme.levelForZoom(zoom).layout, resampleMethod)
-        new TemporalTiledRasterRDD(Some(zoom), reprojected)
+        new TemporalTiledRasterLayer(Some(zoom), reprojected)
 
       case LocalLayout(tileSize) =>
         val (_, reprojected) = tiled.reproject(crs, FloatingLayoutScheme(tileSize), resampleMethod)
-        new TemporalTiledRasterRDD(None, reprojected)
+        new TemporalTiledRasterLayer(None, reprojected)
     }
   }
 
@@ -96,20 +90,20 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
     targetCRS: String,
     layoutDefinition: LayoutDefinition,
     resampleMethod: ResampleMethod
-  ): TiledRasterRDD[SpaceTimeKey] = {
+  ): TiledRasterLayer[SpaceTimeKey] = {
     val tiled = tileToLayout(layoutDefinition, resampleMethod).rdd
-    val (zoom, reprojected) = TileRDDReproject(tiled, TileRDD.getCRS(targetCRS).get, Right(layoutDefinition), resampleMethod)
-    TemporalTiledRasterRDD(Some(zoom), reprojected)
+    val (zoom, reprojected) = TileRDDReproject(tiled, TileLayer.getCRS(targetCRS).get, Right(layoutDefinition), resampleMethod)
+    TemporalTiledRasterLayer(Some(zoom), reprojected)
   }
 
-  def reclassify(reclassifiedRDD: RDD[(TemporalProjectedExtent, MultibandTile)]): RasterRDD[TemporalProjectedExtent] =
-    TemporalRasterRDD(reclassifiedRDD)
+  def reclassify(reclassifiedRDD: RDD[(TemporalProjectedExtent, MultibandTile)]): RasterLayer[TemporalProjectedExtent] =
+    TemporalRasterLayer(reclassifiedRDD)
 
-  def reclassifyDouble(reclassifiedRDD: RDD[(TemporalProjectedExtent, MultibandTile)]): RasterRDD[TemporalProjectedExtent] =
-    TemporalRasterRDD(reclassifiedRDD)
+  def reclassifyDouble(reclassifiedRDD: RDD[(TemporalProjectedExtent, MultibandTile)]): RasterLayer[TemporalProjectedExtent] =
+    TemporalRasterLayer(reclassifiedRDD)
 
-  def withRDD(result: RDD[(TemporalProjectedExtent, MultibandTile)]): RasterRDD[TemporalProjectedExtent] =
-    TemporalRasterRDD(result)
+  def withRDD(result: RDD[(TemporalProjectedExtent, MultibandTile)]): RasterLayer[TemporalProjectedExtent] =
+    TemporalRasterLayer(result)
 
   def toProtoRDD(): JavaRDD[Array[Byte]] =
     PythonTranslator.toPython[(TemporalProjectedExtent, MultibandTile), ProtoTuple](rdd)
@@ -129,13 +123,14 @@ class TemporalRasterRDD(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) 
   }
 }
 
-object TemporalRasterRDD {
-  def fromProtoEncodedRDD(javaRDD: JavaRDD[Array[Byte]]): TemporalRasterRDD =
-    TemporalRasterRDD(
+
+object TemporalRasterLayer {
+  def fromProtoEncodedRDD(javaRDD: JavaRDD[Array[Byte]]): TemporalRasterLayer =
+    TemporalRasterLayer(
       PythonTranslator.fromPython[
         (TemporalProjectedExtent, MultibandTile), ProtoTuple
       ](javaRDD, ProtoTuple.parseFrom))
 
-  def apply(rdd: RDD[(TemporalProjectedExtent, MultibandTile)]): TemporalRasterRDD =
-    new TemporalRasterRDD(rdd)
+  def apply(rdd: RDD[(TemporalProjectedExtent, MultibandTile)]): TemporalRasterLayer =
+    new TemporalRasterLayer(rdd)
 }

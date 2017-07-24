@@ -38,22 +38,22 @@ import scala.collection.immutable.HashMap
 /**
  * RDD of Rasters, untiled and unsorted
  */
-abstract class RasterRDD[K](implicit ev0: ClassTag[K], ev1: Component[K, ProjectedExtent]) extends TileRDD[K] {
+abstract class RasterLayer[K](implicit ev0: ClassTag[K], ev1: Component[K, ProjectedExtent]) extends TileLayer[K] {
   def rdd: RDD[(K, MultibandTile)]
 
   def toProtoRDD(): JavaRDD[Array[Byte]]
 
-  def bands(band: Int): RasterRDD[K] =
+  def bands(band: Int): RasterLayer[K] =
     withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(band) })
 
-  def bands(bands: java.util.ArrayList[Int]): RasterRDD[K] =
+  def bands(bands: java.util.ArrayList[Int]): RasterLayer[K] =
     withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(bands.asScala) })
 
   def collectMetadata(
     layoutDefinition: LayoutDefinition,
     crs: String
   ): String = {
-    collectMetadata(Right(layoutDefinition), TileRDD.getCRS(crs))
+    collectMetadata(Right(layoutDefinition), TileLayer.getCRS(crs))
   }
 
   def collectMetadata(tileSize: String, crs: String): String = {
@@ -63,21 +63,20 @@ abstract class RasterRDD[K](implicit ev0: ClassTag[K], ev1: Component[K, Project
       else
         Left(FloatingLayoutScheme())
 
-    collectMetadata(layoutScheme, TileRDD.getCRS(crs))
+    collectMetadata(layoutScheme, TileLayer.getCRS(crs))
   }
 
-  def convertDataType(newType: String): RasterRDD[_] =
+  def convertDataType(newType: String): RasterLayer[_] =
     withRDD(rdd.map { x => (x._1, x._2.convert(CellType.fromName(newType))) })
 
   protected def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: Option[CRS]): String
-  protected def cutTiles(layerMetadata: String, resampleMethod: ResampleMethod): TiledRasterRDD[_]
 
-  protected def tileToLayout(tileLayerMetadata: String, resampleMethod: ResampleMethod): TiledRasterRDD[_]
-  def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[_]
-  protected def tileToLayout(layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterRDD[_]
+  protected def tileToLayout(tileLayerMetadata: String, resampleMethod: ResampleMethod): TiledRasterLayer[_]
+  def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterLayer[_]
+  protected def tileToLayout(layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterLayer[_]
 
-  protected def reproject(targetCRS: String, resampleMethod: ResampleMethod): RasterRDD[K]
-  protected def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[_]
-  protected def reproject(targetCRS: String, layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterRDD[_]
-  protected def withRDD(result: RDD[(K, MultibandTile)]): RasterRDD[K]
+  protected def reproject(targetCRS: String, resampleMethod: ResampleMethod): RasterLayer[K]
+  protected def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterLayer[_]
+  protected def reproject(targetCRS: String, layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterLayer[_]
+  protected def withRDD(result: RDD[(K, MultibandTile)]): RasterLayer[K]
 }
