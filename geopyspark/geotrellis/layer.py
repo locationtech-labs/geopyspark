@@ -482,38 +482,22 @@ class RasterLayer(CachableLayer):
             return RasterLayer(self.pysc, self.layer_type,
                                self.srdd.convertDataType(new_type))
 
-    def collect_metadata(self, layout=None, crs=None, tile_size=256):
+    def collect_metadata(self, layout=LocalLayout()):
         """Iterate over the RDD records and generates layer metadata desribing the contained
         rasters.
 
         Args:
-            extent (:class:`~geopyspark.geotrellis.Extent`, optional): Specify layout extent, must
-                also specify ``layout``.
-            layout (:obj:`~geopyspark.geotrellis.TileLayout`, optional): Specify tile layout, must
-                also specify ``extent``.
-            crs (str or int, optional): Ignore CRS from records and use given one instead.
-            tile_size (int, optional): Pixel dimensions of each tile, if not using ``layout``.
-
-        Note:
-            ``extent`` and ``layout`` must both be defined if they are to be used.
+            layout (
+                :obj:`~geopyspark.geotrellis.LayoutDefinition` or
+                :obj:`~geopyspark.geotrellis.GlobalLayout` or
+                :obj:`~geopyspark.geotrellis.LocalLayout`, optional
+            ): Target raster layout for the tiling operation.
 
         Returns:
             :class:`~geopyspark.geotrellis.Metadata`
-
-        Raises:
-            TypeError: If either ``extent`` and ``layout`` is not defined but the other is.
         """
 
-        if not crs:
-            crs = ""
-
-        if isinstance(crs, int):
-            crs = str(crs)
-
-        if layout:
-            json_metadata = self.srdd.collectMetadata(layout, crs)
-        else:
-            json_metadata = self.srdd.collectMetadata(str(tile_size), crs)
+        json_metadata = self.srdd.collectMetadata(layout)
 
         return Metadata.from_dict(json.loads(json_metadata))
 

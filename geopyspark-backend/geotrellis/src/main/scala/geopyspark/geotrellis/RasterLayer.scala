@@ -49,27 +49,11 @@ abstract class RasterLayer[K](implicit ev0: ClassTag[K], ev1: Component[K, Proje
   def bands(bands: java.util.ArrayList[Int]): RasterLayer[K] =
     withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(bands.asScala) })
 
-  def collectMetadata(
-    layoutDefinition: LayoutDefinition,
-    crs: String
-  ): String = {
-    collectMetadata(Right(layoutDefinition), TileLayer.getCRS(crs))
-  }
-
-  def collectMetadata(tileSize: String, crs: String): String = {
-    val layoutScheme =
-      if (tileSize != "")
-        Left(FloatingLayoutScheme(tileSize.toInt))
-      else
-        Left(FloatingLayoutScheme())
-
-    collectMetadata(layoutScheme, TileLayer.getCRS(crs))
-  }
+  def collectMetadata(layoutType: LayoutType): String
+  def collectMetadata(layoutDefinition: LayoutDefinition): String
 
   def convertDataType(newType: String): RasterLayer[_] =
     withRDD(rdd.map { x => (x._1, x._2.convert(CellType.fromName(newType))) })
-
-  protected def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: Option[CRS]): String
 
   protected def tileToLayout(tileLayerMetadata: String, resampleMethod: ResampleMethod): TiledRasterLayer[_]
   def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterLayer[_]

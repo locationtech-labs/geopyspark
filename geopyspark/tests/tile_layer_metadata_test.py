@@ -3,7 +3,7 @@ import unittest
 import rasterio
 import pytest
 
-from geopyspark.geotrellis import Tile, LayoutDefinition
+from geopyspark.geotrellis import Tile, LayoutDefinition, LocalLayout
 from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -45,7 +45,7 @@ class TileLayerMetadataTest(BaseTestClass):
         self.assertEqual(result.layout_definition.tileLayout, self.layout)
 
     def test_collection_floating(self):
-        result = self.rdd.collect_metadata(tile_size=self.cols)
+        result = self.rdd.collect_metadata(LocalLayout(self.cols))
 
         self.assertEqual(result.extent, self.extent)
         self.assertEqual(result.layout_definition.extent, self.extent)

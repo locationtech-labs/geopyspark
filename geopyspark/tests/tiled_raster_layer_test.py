@@ -11,7 +11,7 @@ from geopyspark.tests.base_test_class import BaseTestClass
 class TiledRasterLayerTest(BaseTestClass):
     dir_path = geotiff_test_path("all-ones.tif")
     result = get(BaseTestClass.pysc, LayerType.SPATIAL, dir_path)
-    tiled_layer = result.to_tiled_layer()
+    tiled_layer = result.tile_to_layout()
 
     @pytest.fixture(autouse=True)
     def tearDown(self):

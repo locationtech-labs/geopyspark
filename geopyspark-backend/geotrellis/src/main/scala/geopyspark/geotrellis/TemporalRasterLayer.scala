@@ -18,18 +18,26 @@ import scala.util.{Either, Left, Right}
 
 class TemporalRasterLayer(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) extends RasterLayer[TemporalProjectedExtent] {
 
-  def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: Option[CRS]): String = {
-    (crs, layout) match {
-      case (Some(crs), Right(layoutDefinition)) =>
-        rdd.collectMetadata[SpaceTimeKey](crs, layoutDefinition)
-      case (None, Right(layoutDefinition)) =>
-        rdd.collectMetadata[SpaceTimeKey](layoutDefinition)
-      case (Some(crs), Left(layoutScheme)) =>
-        rdd.collectMetadata[SpaceTimeKey](crs, layoutScheme)._2
-      case (None, Left(layoutScheme)) =>
-        rdd.collectMetadata[SpaceTimeKey](layoutScheme)._2
-    }
-  }.toJson.compactPrint
+  def collectMetadata(layoutType: LayoutType): String = {
+    val sms = RasterSummary.collect[TemporalProjectedExtent, SpaceTimeKey](rdd)
+    require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
+
+    sms.head.toTileLayerMetadata(layoutType)._1.toJson.compactPrint
+  }
+
+  def collectMetadata(layoutDefinition: LayoutDefinition): String = {
+    val sms = RasterSummary.collect[TemporalProjectedExtent, SpaceTimeKey](rdd)
+    require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
+    val sm = sms.head
+
+    TileLayerMetadata[SpaceTimeKey](
+      sm.cellType,
+      layoutDefinition,
+      sm.extent,
+      sm.crs,
+      sm.bounds.setSpatialBounds(layoutDefinition.mapTransform(sm.extent))
+    ).toJson.compactPrint
+  }
 
   def tileToLayout(layerMetadata: String, resampleMethod: ResampleMethod): TiledRasterLayer[SpaceTimeKey] = {
     val md = layerMetadata.parseJson.convertTo[TileLayerMetadata[SpaceTimeKey]]
