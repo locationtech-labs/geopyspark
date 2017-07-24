@@ -90,8 +90,8 @@ class ProjectedRasterLayer(val rdd: RDD[(ProjectedExtent, MultibandTile)]) exten
         val (_, reprojected) = tiled.reproject(crs, scheme.levelForZoom(zoom).layout, resampleMethod)
         new SpatialTiledRasterLayer(Some(zoom), reprojected)
 
-      case LocalLayout(tileSize) =>
-        val (_, reprojected) = tiled.reproject(crs, FloatingLayoutScheme(tileSize), resampleMethod)
+      case LocalLayout(tileCols, tileRows) =>
+        val (_, reprojected) = tiled.reproject(crs, FloatingLayoutScheme(tileCols, tileRows), resampleMethod)
         new SpatialTiledRasterLayer(None, reprojected)
     }
   }

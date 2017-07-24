@@ -110,8 +110,8 @@ class TemporalTiledRasterLayer(
         val (_, reprojected) = tiled.reproject(crs, scheme.levelForZoom(zoom).layout, resampleMethod)
         TemporalTiledRasterLayer(Some(zoom), reprojected)
 
-      case LocalLayout(tileSize) =>
-        val (_, reprojected) = tiled.reproject(crs, FloatingLayoutScheme(tileSize), resampleMethod)
+      case LocalLayout(tileCols, tileRows) =>
+        val (_, reprojected) = tiled.reproject(crs, FloatingLayoutScheme(tileCols, tileRows), resampleMethod)
         TemporalTiledRasterLayer(None, reprojected)
     }
   }
