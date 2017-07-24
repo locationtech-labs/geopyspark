@@ -47,7 +47,7 @@ import scala.reflect._
 import scala.collection.JavaConverters._
 
 
-abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends TileRDD[K] {
+abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag] extends TileLayer[K] {
   import Constants._
 
   type keyType = K
@@ -55,13 +55,13 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
   def rdd: RDD[(K, MultibandTile)] with Metadata[TileLayerMetadata[K]]
   def zoomLevel: Option[Int]
 
-  def repartition(numPartitions: Int): TiledRasterRDD[K] =
+  def repartition(numPartitions: Int): TiledRasterLayer[K] =
     withRDD(rdd.repartition(numPartitions))
 
-  def bands(band: Int): TiledRasterRDD[K] =
+  def bands(band: Int): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(band) })
 
-  def bands(bands: java.util.ArrayList[Int]): TiledRasterRDD[K] =
+  def bands(bands: java.util.ArrayList[Int]): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(bands.asScala) })
 
   def getZoom: Integer =
@@ -75,7 +75,7 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
 
   def layerMetadata: String = rdd.metadata.toJson.prettyPrint
 
-  def mask(wkbs: java.util.ArrayList[Array[Byte]]): TiledRasterRDD[K] = {
+  def mask(wkbs: java.util.ArrayList[Array[Byte]]): TiledRasterLayer[K] = {
     val geometries: Seq[MultiPolygon] = wkbs
       .asScala.map({ wkb => WKB.read(wkb) })
       .flatMap({
@@ -86,21 +86,21 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
     mask(geometries)
   }
 
-  protected def mask(geometries: Seq[MultiPolygon]): TiledRasterRDD[K]
+  protected def mask(geometries: Seq[MultiPolygon]): TiledRasterLayer[K]
 
-  protected def reproject(target_crs: String, resampleMethod: ResampleMethod): TiledRasterRDD[K]
-  protected def reproject(target_crs: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[K]
-  def reproject(targetCRS: String, layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterRDD[K]
+  protected def reproject(target_crs: String, resampleMethod: ResampleMethod): TiledRasterLayer[K]
+  protected def reproject(target_crs: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterLayer[K]
+  def reproject(targetCRS: String, layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterLayer[K]
 
   def tileToLayout(
     layOutDefinition: LayoutDefinition,
     resampleMethod: ResampleMethod
-  ): TiledRasterRDD[K]
+  ): TiledRasterLayer[K]
 
   def tileToLayout(
     layoutType: LayoutType,
     resampleMethod: ResampleMethod
-  ): TiledRasterRDD[K] =
+  ): TiledRasterLayer[K] =
     tileToLayout(
       layoutType.layoutDefinition(
         rdd.metadata.crs,
@@ -109,7 +109,7 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
       resampleMethod
     )
 
-  def pyramid(resampleMethod: ResampleMethod): Array[_] // Array[TiledRasterRDD[K]]
+  def pyramid(resampleMethod: ResampleMethod): Array[_] // Array[TiledRasterLayer[K]]
 
   def focal(
     operation: String,
@@ -117,13 +117,13 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
     param1: Double,
     param2: Double,
     param3: Double
-  ): TiledRasterRDD[K]
+  ): TiledRasterLayer[K]
 
   def costDistance(
     sc: SparkContext,
     wkbs: java.util.ArrayList[Array[Byte]],
     maxDistance: Double
-  ): TiledRasterRDD[K] = {
+  ): TiledRasterLayer[K] = {
     val geometries = wkbs.asScala.map({ wkb => WKB.read(wkb) })
 
     costDistance(sc, geometries, maxDistance)
@@ -133,22 +133,22 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
     sc: SparkContext,
     geometries: Seq[Geometry],
     maxDistance: Double
-  ): TiledRasterRDD[K]
+  ): TiledRasterLayer[K]
 
   def hillshade(sc: SparkContext,
     azimuth: Double,
     altitude: Double,
     zFactor: Double,
     band: Int
-  ): TiledRasterRDD[K]
+  ): TiledRasterLayer[K]
 
-  def localAdd(i: Int): TiledRasterRDD[K] =
+  def localAdd(i: Int): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y + i }) })
 
-  def localAdd(d: Double): TiledRasterRDD[K] =
+  def localAdd(d: Double): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y + d }) })
 
-  def localAdd(other: TiledRasterRDD[K]): TiledRasterRDD[K] =
+  def localAdd(other: TiledRasterLayer[K]): TiledRasterLayer[K] =
     withRDD(rdd.combineValues(other.rdd) {
       case (x: MultibandTile, y: MultibandTile) => {
         val tiles: Vector[Tile] =
@@ -157,7 +157,7 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
       }
     })
 
-  def localAdd(others: ArrayList[TiledRasterRDD[K]]): TiledRasterRDD[K] =
+  def localAdd(others: ArrayList[TiledRasterLayer[K]]): TiledRasterLayer[K] =
     withRDD(rdd.combineValues(others.asScala.map(_.rdd)) { ts =>
       val bandCount = ts.head.bandCount
       val newBands = Array.ofDim[Tile](bandCount)
@@ -167,19 +167,19 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
       MultibandTile(newBands)
     })
 
-  def localSubtract(i: Int): TiledRasterRDD[K] =
+  def localSubtract(i: Int): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y - i }) })
 
-  def reverseLocalSubtract(i: Int): TiledRasterRDD[K] =
+  def reverseLocalSubtract(i: Int): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y.-:(i) }) })
 
-  def localSubtract(d: Double): TiledRasterRDD[K] =
+  def localSubtract(d: Double): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y - d }) })
 
-  def reverseLocalSubtract(d: Double): TiledRasterRDD[K] =
+  def reverseLocalSubtract(d: Double): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y.-:(d) }) })
 
-  def localSubtract(other: TiledRasterRDD[K]): TiledRasterRDD[K] =
+  def localSubtract(other: TiledRasterLayer[K]): TiledRasterLayer[K] =
     withRDD(rdd.combineValues(other.rdd) {
       case (x: MultibandTile, y: MultibandTile) => {
         val tiles: Vector[Tile] =
@@ -188,13 +188,13 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
       }
     })
 
-  def localMultiply(i: Int): TiledRasterRDD[K] =
+  def localMultiply(i: Int): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y * i }) })
 
-  def localMultiply(d: Double): TiledRasterRDD[K] =
+  def localMultiply(d: Double): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y * d }) })
 
-  def localMultiply(other: TiledRasterRDD[K]): TiledRasterRDD[K] =
+  def localMultiply(other: TiledRasterLayer[K]): TiledRasterLayer[K] =
     withRDD(rdd.combineValues(other.rdd) {
       case (x: MultibandTile, y: MultibandTile) => {
         val tiles: Vector[Tile] =
@@ -203,19 +203,19 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
       }
     })
 
-  def localDivide(i: Int): TiledRasterRDD[K] =
+  def localDivide(i: Int): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y / i }) })
 
-  def localDivide(d: Double): TiledRasterRDD[K] =
+  def localDivide(d: Double): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y / d }) })
 
-  def reverseLocalDivide(i: Int): TiledRasterRDD[K] =
+  def reverseLocalDivide(i: Int): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y./:(i) }) })
 
-  def reverseLocalDivide(d: Double): TiledRasterRDD[K] =
+  def reverseLocalDivide(d: Double): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y./:(d) }) })
 
-  def localDivide(other: TiledRasterRDD[K]): TiledRasterRDD[K] =
+  def localDivide(other: TiledRasterLayer[K]): TiledRasterLayer[K] =
     withRDD(rdd.combineValues(other.rdd) {
       case (x: MultibandTile, y: MultibandTile) => {
         val tiles: Vector[Tile] =
@@ -224,10 +224,10 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
       }
     })
 
-  def convertDataType(newType: String): TiledRasterRDD[_] =
+  def convertDataType(newType: String): TiledRasterLayer[_] =
     withRDD(rdd.convert(CellType.fromName(newType)))
 
-  def normalize(oldMin: Double, oldMax: Double, newMin: Double, newMax: Double): TiledRasterRDD[K] =
+  def normalize(oldMin: Double, oldMax: Double, newMin: Double, newMax: Double): TiledRasterLayer[K] =
     withRDD {
       rdd.mapValues { tile =>
         MultibandTile {
@@ -291,5 +291,5 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
 
   def getDoubleHistograms(): Histogram[Double] = rdd.histogram.head
 
-  protected def withRDD(result: RDD[(K, MultibandTile)]): TiledRasterRDD[K]
+  protected def withRDD(result: RDD[(K, MultibandTile)]): TiledRasterLayer[K]
 }

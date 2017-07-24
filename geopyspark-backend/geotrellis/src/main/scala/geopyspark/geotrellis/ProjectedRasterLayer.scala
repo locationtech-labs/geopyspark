@@ -18,7 +18,7 @@ import scala.util.{Either, Left, Right}
 import spray.json._
 
 
-class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends RasterRDD[ProjectedExtent] {
+class ProjectedRasterLayer(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends RasterLayer[ProjectedExtent] {
 
   def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: Option[CRS]): String = {
     (crs, layout) match {
@@ -33,12 +33,12 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
     }
   }.toJson.compactPrint
 
-  def tileToLayout(tileLayerMetadata: String, resampleMethod: ResampleMethod): TiledRasterRDD[SpatialKey] = {
+  def tileToLayout(tileLayerMetadata: String, resampleMethod: ResampleMethod): TiledRasterLayer[SpatialKey] = {
     val md = tileLayerMetadata.parseJson.convertTo[TileLayerMetadata[SpatialKey]]
-    new SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(md, resampleMethod), md))
+    new SpatialTiledRasterLayer(None, MultibandTileLayerRDD(rdd.tileToLayout(md, resampleMethod), md))
   }
 
-  def tileToLayout(layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterRDD[SpatialKey] = {
+  def tileToLayout(layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterLayer[SpatialKey] = {
     val sms = RasterSummary.collect[ProjectedExtent, SpatialKey](rdd)
     require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
     val sm = sms.head
@@ -51,40 +51,40 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
       sm.bounds.setSpatialBounds(layoutDefinition.mapTransform(sm.extent))
     )
 
-    SpatialTiledRasterRDD(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata, resampleMethod), metadata))
+    SpatialTiledRasterLayer(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata, resampleMethod), metadata))
   }
 
-  def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[SpatialKey] = {
+  def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterLayer[SpatialKey] = {
     val sms = RasterSummary.collect[ProjectedExtent, SpatialKey](rdd)
     require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
     val sm = sms.head
     val (metadata, zoom) = sm.toTileLayerMetadata(layoutType)
     val tiled = rdd.tileToLayout(metadata, resampleMethod)
-    new SpatialTiledRasterRDD(zoom, MultibandTileLayerRDD(tiled, metadata))
+    new SpatialTiledRasterLayer(zoom, MultibandTileLayerRDD(tiled, metadata))
   }
 
-  def reproject(targetCRS: String, resampleMethod: ResampleMethod): ProjectedRasterRDD = {
-    val crs = TileRDD.getCRS(targetCRS).get
-    new ProjectedRasterRDD(rdd.reproject(crs, resampleMethod))
+  def reproject(targetCRS: String, resampleMethod: ResampleMethod): ProjectedRasterLayer = {
+    val crs = TileLayer.getCRS(targetCRS).get
+    new ProjectedRasterLayer(rdd.reproject(crs, resampleMethod))
   }
 
-  def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterRDD[SpatialKey] = {
-    val crs = TileRDD.getCRS(targetCRS).get
+  def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterLayer[SpatialKey] = {
+    val crs = TileLayer.getCRS(targetCRS).get
     val tiled = tileToLayout(LocalLayout(256), resampleMethod).rdd
     layoutType match {
       case GlobalLayout(tileSize, null, threshold) =>
         val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
         val (zoom, reprojected) = tiled.reproject(crs, scheme, resampleMethod)
-        new SpatialTiledRasterRDD(Some(zoom), reprojected)
+        new SpatialTiledRasterLayer(Some(zoom), reprojected)
 
       case GlobalLayout(tileSize, zoom, threshold) =>
         val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
         val (_, reprojected) = tiled.reproject(crs, scheme.levelForZoom(zoom).layout, resampleMethod)
-        new SpatialTiledRasterRDD(Some(zoom), reprojected)
+        new SpatialTiledRasterLayer(Some(zoom), reprojected)
 
       case LocalLayout(tileSize) =>
         val (_, reprojected) = tiled.reproject(crs, FloatingLayoutScheme(tileSize), resampleMethod)
-        new SpatialTiledRasterRDD(None, reprojected)
+        new SpatialTiledRasterLayer(None, reprojected)
     }
   }
 
@@ -92,20 +92,20 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
     target_crs: String,
     layoutDefinition: LayoutDefinition,
     resampleMethod: ResampleMethod
-  ): TiledRasterRDD[SpatialKey] = {
+  ): TiledRasterLayer[SpatialKey] = {
     val tiled = tileToLayout(layoutDefinition, resampleMethod).rdd
-    val (zoom, reprojected) = TileRDDReproject(tiled, TileRDD.getCRS(target_crs).get, Right(layoutDefinition), resampleMethod)
-    SpatialTiledRasterRDD(Some(zoom), reprojected)
+    val (zoom, reprojected) = TileRDDReproject(tiled, TileLayer.getCRS(target_crs).get, Right(layoutDefinition), resampleMethod)
+    SpatialTiledRasterLayer(Some(zoom), reprojected)
   }
 
-  def reclassify(reclassifiedRDD: RDD[(ProjectedExtent, MultibandTile)]): RasterRDD[ProjectedExtent] =
-    ProjectedRasterRDD(reclassifiedRDD)
+  def reclassify(reclassifiedRDD: RDD[(ProjectedExtent, MultibandTile)]): RasterLayer[ProjectedExtent] =
+    ProjectedRasterLayer(reclassifiedRDD)
 
-  def reclassifyDouble(reclassifiedRDD: RDD[(ProjectedExtent, MultibandTile)]): RasterRDD[ProjectedExtent] =
-    ProjectedRasterRDD(reclassifiedRDD)
+  def reclassifyDouble(reclassifiedRDD: RDD[(ProjectedExtent, MultibandTile)]): RasterLayer[ProjectedExtent] =
+    ProjectedRasterLayer(reclassifiedRDD)
 
-  def withRDD(result: RDD[(ProjectedExtent, MultibandTile)]): RasterRDD[ProjectedExtent] =
-    ProjectedRasterRDD(result)
+  def withRDD(result: RDD[(ProjectedExtent, MultibandTile)]): RasterLayer[ProjectedExtent] =
+    ProjectedRasterLayer(result)
 
   def toProtoRDD(): JavaRDD[Array[Byte]] =
     PythonTranslator.toPython[(ProjectedExtent, MultibandTile), ProtoTuple](rdd)
@@ -125,13 +125,14 @@ class ProjectedRasterRDD(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends
   }
 }
 
-object ProjectedRasterRDD {
-  def fromProtoEncodedRDD(javaRDD: JavaRDD[Array[Byte]]): ProjectedRasterRDD =
-    ProjectedRasterRDD(
+
+object ProjectedRasterLayer {
+  def fromProtoEncodedRDD(javaRDD: JavaRDD[Array[Byte]]): ProjectedRasterLayer =
+    ProjectedRasterLayer(
       PythonTranslator.fromPython[
         (ProjectedExtent, MultibandTile), ProtoTuple
       ](javaRDD, ProtoTuple.parseFrom))
 
-  def apply(rdd: RDD[(ProjectedExtent, MultibandTile)]): ProjectedRasterRDD =
-    new ProjectedRasterRDD(rdd)
+  def apply(rdd: RDD[(ProjectedExtent, MultibandTile)]): ProjectedRasterLayer =
+    new ProjectedRasterLayer(rdd)
 }

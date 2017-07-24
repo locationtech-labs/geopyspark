@@ -253,11 +253,11 @@ class RasterLayer(CachableLayer):
 
         if layer_type == LayerType.SPATIAL:
             srdd = \
-                    pysc._gateway.jvm.geopyspark.geotrellis.ProjectedRasterRDD.fromProtoEncodedRDD(
+                    pysc._gateway.jvm.geopyspark.geotrellis.ProjectedRasterLayer.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd)
         else:
             srdd = \
-                    pysc._gateway.jvm.geopyspark.geotrellis.TemporalRasterRDD.fromProtoEncodedRDD(
+                    pysc._gateway.jvm.geopyspark.geotrellis.TemporalRasterLayer.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd)
 
         return cls(pysc, layer_type, srdd)
@@ -710,11 +710,11 @@ class TiledRasterLayer(CachableLayer):
 
         if layer_type == LayerType.SPATIAL:
             srdd = \
-                    pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.fromProtoEncodedRDD(
+                    pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterLayer.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd, json.dumps(metadata))
         else:
             srdd = \
-                    pysc._gateway.jvm.geopyspark.geotrellis.TemporalTiledRasterRDD.fromProtoEncodedRDD(
+                    pysc._gateway.jvm.geopyspark.geotrellis.TemporalTiledRasterLayer.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd, json.dumps(metadata))
 
         return cls(pysc, layer_type, srdd)

@@ -26,7 +26,7 @@ import scala.reflect.{ClassTag, classTag}
 import scala.collection.JavaConverters._
 import scala.util.Try
 
-abstract class TileRDD[K: ClassTag] {
+abstract class TileLayer[K: ClassTag] {
   def rdd: RDD[(K, MultibandTile)]
   def keyClass: Class[_] = classTag[K].runtimeClass
   def keyClassName: String = keyClass.getName
@@ -52,7 +52,7 @@ abstract class TileRDD[K: ClassTag] {
 
     val options = GeoTiffOptions(
       storageMethod,
-      TileRDD.getCompression(compression),
+      TileLayer.getCompression(compression),
       colorSpace,
       None)
 
@@ -76,7 +76,7 @@ abstract class TileRDD[K: ClassTag] {
 
     val options = GeoTiffOptions(
       storageMethod,
-      TileRDD.getCompression(compression),
+      TileLayer.getCompression(compression),
       colorSpace,
       Some(IndexedColorMap.fromColorMap(colorMap)))
 
@@ -89,7 +89,7 @@ abstract class TileRDD[K: ClassTag] {
     intMap: java.util.Map[Int, Int],
     boundaryType: String,
     replaceNoDataWith: Int
-  ): TileRDD[_] = {
+  ): TileLayer[_] = {
     val scalaMap = intMap.asScala.toMap
 
     val boundary = getBoundary(boundaryType)
@@ -124,7 +124,7 @@ abstract class TileRDD[K: ClassTag] {
     doubleMap: java.util.Map[Double, Double],
     boundaryType: String,
     replaceNoDataWith: Double
-  ): TileRDD[_] = {
+  ): TileLayer[_] = {
     val scalaMap = doubleMap.asScala.toMap
 
     val boundary = getBoundary(boundaryType)
@@ -175,11 +175,11 @@ abstract class TileRDD[K: ClassTag] {
       .histogramExactInt
       .quantileBreaks(n)
 
-  protected def reclassify(reclassifiedRDD: RDD[(K, MultibandTile)]): TileRDD[_]
-  protected def reclassifyDouble(reclassifiedRDD: RDD[(K, MultibandTile)]): TileRDD[_]
+  protected def reclassify(reclassifiedRDD: RDD[(K, MultibandTile)]): TileLayer[_]
+  protected def reclassifyDouble(reclassifiedRDD: RDD[(K, MultibandTile)]): TileLayer[_]
 }
 
-object TileRDD {
+object TileLayer {
   import Constants._
 
   def getResampleMethod(resampleMethod: String): ResampleMethod = {
