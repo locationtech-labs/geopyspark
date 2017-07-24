@@ -258,20 +258,38 @@ Returns:
 GlobalLayout.__new__.__defaults__ = (256, None, 0.1)
 
 
-LocalLayout = namedtuple("LayoutDefinition", 'tile_size')
-"""TileLayout type that snaps the layer extent.
+class LocalLayout(namedtuple("LocalLayout", 'tile_cols tile_rows')):
+    """TileLayout type that snaps the layer extent.
 
-When passed in place of LayoutDefinition it signifies that a LayoutDefinition instances should be
-constructed over the envelope of the layer pixels with given tile size. Resulting TileLayout will
-match the cell resolution of the source rasters.
+    When passed in place of LayoutDefinition it signifies that a LayoutDefinition instances should
+    be constructed over the envelope of the layer pixels with given tile size. Resulting TileLayout
+    will match the cell resolution of the source rasters.
 
-Args:
-    tile_size (int): The number of columns and row pixels in each tile.
+    Args:
+        tile_size (int, optional): The number of columns and row pixels in each tile. If this
+            is ``None``, then the sizes of each tile will be set using ``tile_cols`` and
+            ``tile_rows``.
+        tile_cols (int, optional): The number of column pixels in each tile. This supersedes
+            ``tile_size``. Meaning if this and ``tile_size`` are set, then this will be used for
+            the number of colunn pixles. If ``None``, then the number of column pixels will
+            default to 256.
+        tile_rows (int, optional): The number of rows pixels in each tile. This supersedes
+            ``tile_size``. Meaning if this and ``tile_size`` are set, then this will be used for
+            the number of row pixles. If ``None``, then the number of row pixels will
+            default to 256.
 
-Returns:
-    :obj:`~geopyspark.geotrellis.LocalLayout`
-"""
-LocalLayout.__new__.__defaults__ = (256,)
+    Attributes:
+        tile_cols (int): The number of column pixels in each tile
+        tile_rows (int): The number of rows pixels in each tile. This supersedes
+    """
+
+    __slots__ = []
+
+    def __new__(cls, tile_size=None, tile_cols=None, tile_rows=None):
+        tile_cols = tile_cols or tile_size or 256
+        tile_rows = tile_rows or tile_size or 256
+
+        return super(LocalLayout, cls).__new__(cls, tile_cols, tile_rows)
 
 
 TileLayout = namedtuple("TileLayout", 'layoutCols layoutRows tileCols tileRows')

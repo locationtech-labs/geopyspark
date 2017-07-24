@@ -42,7 +42,7 @@ class LayoutTypeConverter(object):
             return JavaGlobalLayout(obj.tile_size, obj.zoom, float(obj.threshold))
         elif isinstance(obj, LocalLayout):
             JavaLocalLayout = JavaClass("geopyspark.geotrellis.LocalLayout", gateway_client)
-            return JavaLocalLayout(obj.tile_size)
+            return JavaLocalLayout(obj.tile_cols, obj.tile_rows)
         else:
             raise TypeError("Could not convert {} to geotrellis.raster.LayoutType".format(obj.sampleType))
 

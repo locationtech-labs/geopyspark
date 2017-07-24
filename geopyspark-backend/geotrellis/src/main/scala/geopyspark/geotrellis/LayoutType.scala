@@ -7,8 +7,6 @@ import geotrellis.vector.Extent
 
 /** Strategy for selecting LayoutScheme before metadata is collected */
 sealed trait LayoutType {
-  def tileSize: Int
-
   /** Produce the [[LayoutDefinition]] and zoom level, if applicable, for given raster */
   def layoutDefinitionWithZoom(crs: CRS, extent: Extent, cellSize: CellSize): (LayoutDefinition, Option[Int])
 
@@ -32,9 +30,15 @@ case class GlobalLayout(tileSize: Int, zoom: Integer, threshold: Double)  extend
 }
 
 /** @see [[geotrellis.spark.tiling.FloatingLayoutScheme]] */
-case class LocalLayout(tileSize: Int) extends LayoutType {
+case class LocalLayout(tileCols: Int, tileRows: Int) extends LayoutType {
   def layoutDefinitionWithZoom(crs: CRS, extent: Extent, cellSize: CellSize) = {
-    val scheme = new FloatingLayoutScheme(tileSize, tileSize)
+    val scheme = new FloatingLayoutScheme(tileCols, tileRows)
     scheme.levelFor(extent, cellSize).layout -> None
   }
+}
+
+
+object LocalLayout {
+  def apply(tileSize: Int): LocalLayout =
+    LocalLayout(tileSize, tileSize)
 }
