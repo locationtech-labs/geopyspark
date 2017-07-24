@@ -20,18 +20,26 @@ import spray.json._
 
 class ProjectedRasterLayer(val rdd: RDD[(ProjectedExtent, MultibandTile)]) extends RasterLayer[ProjectedExtent] {
 
-  def collectMetadata(layout: Either[LayoutScheme, LayoutDefinition], crs: Option[CRS]): String = {
-    (crs, layout) match {
-      case (Some(crs), Right(layoutDefinition)) =>
-        rdd.collectMetadata[SpatialKey](crs, layoutDefinition)
-      case (None, Right(layoutDefinition)) =>
-        rdd.collectMetadata[SpatialKey](layoutDefinition)
-      case (Some(crs), Left(layoutScheme)) =>
-        rdd.collectMetadata[SpatialKey](crs, layoutScheme)._2
-      case (None, Left(layoutScheme)) =>
-        rdd.collectMetadata[SpatialKey](layoutScheme)._2
-    }
-  }.toJson.compactPrint
+  def collectMetadata(layoutType: LayoutType): String = {
+    val sms = RasterSummary.collect[ProjectedExtent, SpatialKey](rdd)
+    require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
+
+    sms.head.toTileLayerMetadata(layoutType)._1.toJson.compactPrint
+  }
+
+  def collectMetadata(layoutDefinition: LayoutDefinition): String = {
+    val sms = RasterSummary.collect[ProjectedExtent, SpatialKey](rdd)
+    require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
+    val sm = sms.head
+
+    TileLayerMetadata[SpatialKey](
+      sm.cellType,
+      layoutDefinition,
+      sm.extent,
+      sm.crs,
+      sm.bounds.setSpatialBounds(layoutDefinition.mapTransform(sm.extent))
+    ).toJson.compactPrint
+  }
 
   def tileToLayout(tileLayerMetadata: String, resampleMethod: ResampleMethod): TiledRasterLayer[SpatialKey] = {
     val md = tileLayerMetadata.parseJson.convertTo[TileLayerMetadata[SpatialKey]]

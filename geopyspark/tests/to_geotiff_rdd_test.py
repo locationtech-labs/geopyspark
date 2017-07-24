@@ -55,7 +55,7 @@ class ToGeoTiffTest(BaseTestClass):
                 self.assertEqual(src.compression, rasterio.enums.Compression.deflate)
 
     def test_to_geotiff_rdd_tiledrasterlayer(self):
-        tiled_rdd = self.rdd.to_tiled_layer()
+        tiled_rdd = self.rdd.tile_to_layout()
         tiled_collected = tiled_rdd.to_numpy_rdd().first()[1]
 
         geotiff_rdd = tiled_rdd.to_geotiff_rdd()
