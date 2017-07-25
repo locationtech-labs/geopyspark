@@ -23,6 +23,26 @@ def deprecated(func):
     return new_func
 
 
+def crs_to_proj4(pysc, crs):
+    """Converts a given CRS to a Proj4 string.
+
+    Args:
+        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
+        crs (str or int): Target CRS of reprojection. Either EPSG code, well-known name, or a
+            PROJ.4 string. If ``None``, no reproject will be perfomed.
+
+    Returns:
+        str
+    """
+
+    if not isinstance(crs, str):
+        crs = str(crs)
+
+    scala_crs = pysc._gateway.jvm.geopyspark.geotrellis.TileLayer.getCRS(crs).get()
+
+    return scala_crs.toProj4String()
+
+
 class Tile(namedtuple("Tile", 'cells cell_type no_data_value')):
     """Represents a raster in GeoPySpark.
 
@@ -232,6 +252,64 @@ class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent inst
         else:
             return {'extent': self.extent._asdict(), 'instant': self.instant, 'epsg': self.epsg,
                     'proj4': self.proj4}
+
+
+GlobalLayout = namedtuple("GlobalLayout", 'tile_size zoom threshold')
+"""TileLayout type that spans global CRS extent.
+
+When passed in place of LayoutDefinition it signifies that a LayoutDefinition instance should be
+constructed such that it fits the global CRS extent. The cell resolution of resulting layout will
+be one of resolutions implied by power of 2 pyramid for that CRS. Tiling to this layout will
+likely result in either up-sampling or down-sampling the source raster.
+
+Args:
+    tile_size (int): The number of columns and row pixels in each tile.
+    zoom (int, optional): Override the zoom level in power of 2 pyramid.
+    threshold(float, optional): The percentage difference between a cell size and a zoom level and
+        the resolution difference between that zoom level and the next that is tolerated to snap to
+        the lower-resolution zoom level. For example, if this paramter is 0.1, that means we're
+        willing to downsample rasters with a higher resolution in order to fit them to some zoom
+        level Z, if the difference is resolution is less than or equal to 10% the difference between
+        the resolutions of zoom level Z and zoom level Z+1.
+
+Returns:
+    :obj:`~geopyspark.geotrellis.GlobalLayout`
+"""
+GlobalLayout.__new__.__defaults__ = (256, None, 0.1)
+
+
+class LocalLayout(namedtuple("LocalLayout", 'tile_cols tile_rows')):
+    """TileLayout type that snaps the layer extent.
+
+    When passed in place of LayoutDefinition it signifies that a LayoutDefinition instances should
+    be constructed over the envelope of the layer pixels with given tile size. Resulting TileLayout
+    will match the cell resolution of the source rasters.
+
+    Args:
+        tile_size (int, optional): The number of columns and row pixels in each tile. If this
+            is ``None``, then the sizes of each tile will be set using ``tile_cols`` and
+            ``tile_rows``.
+        tile_cols (int, optional): The number of column pixels in each tile. This supersedes
+            ``tile_size``. Meaning if this and ``tile_size`` are set, then this will be used for
+            the number of colunn pixles. If ``None``, then the number of column pixels will
+            default to 256.
+        tile_rows (int, optional): The number of rows pixels in each tile. This supersedes
+            ``tile_size``. Meaning if this and ``tile_size`` are set, then this will be used for
+            the number of row pixles. If ``None``, then the number of row pixels will
+            default to 256.
+
+    Attributes:
+        tile_cols (int): The number of column pixels in each tile
+        tile_rows (int): The number of rows pixels in each tile. This supersedes
+    """
+
+    __slots__ = []
+
+    def __new__(cls, tile_size=None, tile_cols=None, tile_rows=None):
+        tile_cols = tile_cols or tile_size or 256
+        tile_rows = tile_rows or tile_size or 256
+
+        return super(cls, LocalLayout).__new__(cls, tile_cols, tile_rows)
 
 
 TileLayout = namedtuple("TileLayout", 'layoutCols layoutRows tileCols tileRows')
@@ -469,7 +547,7 @@ class Metadata(object):
 
 
 __all__ = ["Tile", "Extent", "ProjectedExtent", "TemporalProjectedExtent", "SpatialKey", "SpaceTimeKey",
-           "Metadata", "TileLayout", "LayoutDefinition", "Bounds", "RasterizerOptions"]
+           "Metadata", "TileLayout", "GlobalLayout", "LocalLayout", "LayoutDefinition", "Bounds", "RasterizerOptions"]
 
 from . import catalog
 from . import color

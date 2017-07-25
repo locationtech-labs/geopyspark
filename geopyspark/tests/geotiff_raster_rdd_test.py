@@ -61,29 +61,11 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         self.assertTrue('+proj=longlat' in md.crs)
         self.assertTrue('+datum=WGS84' in md.crs)
 
-    def test_collect_metadata_crs_override(self, options=None):
-        md = self.result.collect_metadata(crs='EPSG:3857')
-        self.assertTrue('+proj=merc' in md.crs)
-
-    def test_cut_tiles(self, options=None):
-        md = self.result.collect_metadata(tile_size=100)
-        tiles = self.result.cut_tiles(md)
-        records_before = self.result.srdd.rdd().count()
-        records_after = tiles.srdd.rdd().count()
-        self.assertTrue(records_after > records_before)
-
     def test_reproject(self, options=None):
         tiles = self.result.reproject("EPSG:3857")
         md = tiles.collect_metadata()
         self.assertTrue('+proj=merc' in md.crs)
 
-    def test_to_tiled_raster(self):
-        md = self.result.collect_metadata()
-        tiled = self.result.tile_to_layout(md)
-        converted = self.result.to_tiled_layer()
-
-        self.assertDictEqual(tiled.layer_metadata.to_dict(),
-                             converted.layer_metadata.to_dict())
     '''
 
     def test_to_int(self):

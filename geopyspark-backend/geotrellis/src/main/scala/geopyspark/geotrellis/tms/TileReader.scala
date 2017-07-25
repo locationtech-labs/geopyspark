@@ -1,5 +1,6 @@
 package geopyspark.geotrellis.tms
 
+import geopyspark.geotrellis.TiledRasterLayer
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
@@ -52,9 +53,9 @@ object TileReaders {
     val requests = scala.collection.mutable.ListBuffer.empty[QueueRequest]
 
     def receive = {
-      case qr @ QueueRequest(zoom, x, y, pr) => 
+      case qr @ QueueRequest(zoom, x, y, pr) =>
         requests += qr
-      case DumpRequests => 
+      case DumpRequests =>
         sender ! FulfillRequests(requests.toSeq)
         requests.clear
       case _ => println("Unexpected message!")
@@ -71,19 +72,19 @@ object TileReaders {
 
   private object RDDLookup {
     val interval = 150 milliseconds
-    def props(levels: scala.collection.mutable.Map[Int, RDD[(SpatialKey, Tile)]], 
+    def props(levels: scala.collection.Map[Int, RDD[(SpatialKey, Tile)]],
               aggregator: ActorRef
             ) = Props(new RDDLookup(levels, aggregator))
   }
 
   private class RDDLookup(
-    levels: scala.collection.mutable.Map[Int, RDD[(SpatialKey, Tile)]], 
+    levels: scala.collection.Map[Int, RDD[(SpatialKey, Tile)]],
     aggregator: ActorRef
   )(implicit ec: ExecutionContext) extends Actor {
     def receive = {
       case Initialize =>
         context.system.scheduler.scheduleOnce(RDDLookup.interval, aggregator, DumpRequests)
-      case FulfillRequests(requests) => 
+      case FulfillRequests(requests) =>
         fulfillRequests(requests)
         context.system.scheduler.scheduleOnce(RDDLookup.interval, aggregator, DumpRequests)
     }
@@ -101,7 +102,7 @@ object TileReaders {
                 kps.foreach{ case (key, promise) => {
                   promise success (
                     results
-                      .find{ case (rddKey, _) => rddKey == key } 
+                      .find{ case (rddKey, _) => rddKey == key }
                       .map{ case (_, tile) => tile }
                   )
                 }}
@@ -114,19 +115,19 @@ object TileReaders {
   }
 
   private class SpatialRddTileReader(
-    levels: scala.collection.mutable.Map[Int, RDD[(SpatialKey, Tile)]],
+    levels: scala.collection.Map[Int, RDD[(SpatialKey, Tile)]],
     system: ActorSystem
   ) extends TileReader {
 
     import java.util.UUID
 
-    implicit val executionContext: ExecutionContext = system.dispatchers.lookup("custom-blocking-dispatcher")  
+    implicit val executionContext: ExecutionContext = system.dispatchers.lookup("custom-blocking-dispatcher")
 
     private var _aggregator: ActorRef = null
     private var _fulfiller: ActorRef = null
 
     override def startup() = {
-      if (_aggregator != null) 
+      if (_aggregator != null)
         throw new IllegalStateException("Cannot start: TMS server already running")
 
       _aggregator = system.actorOf(RequestAggregator.props, UUID.randomUUID.toString)
@@ -149,7 +150,7 @@ object TileReaders {
 
     def retrieve(zoom: Int, x: Int, y: Int) = {
       val callback = Promise[Option[Tile]]()
-      aggregator ! QueueRequest(zoom, x, y, callback) 
+      aggregator ! QueueRequest(zoom, x, y, callback)
       callback.future
     }
   }
@@ -170,8 +171,13 @@ object TileReaders {
   }
 
   def createSpatialRddReader(
-    levels: java.util.HashMap[Int, RDD[(SpatialKey, Tile)]],
+    levels: java.util.HashMap[Int, TiledRasterLayer[SpatialKey]],
     system: ActorSystem
-  ): TileReader = new SpatialRddTileReader(levels, system)
+  ): TileReader = {
+    val tiles = levels.mapValues{ layer =>
+      layer.rdd.mapValues { mb => mb.bands(0) }
+    }
+    new SpatialRddTileReader(tiles, system)
+  }
 
 }

@@ -2,7 +2,7 @@
 from enum import Enum, IntEnum
 
 
-__all__ = ['NO_DATA_INT', 'LayerType', 'LayoutScheme', 'IndexingMethod', 'ResampleMethod', 'TimeUnit',
+__all__ = ['NO_DATA_INT', 'LayerType', 'IndexingMethod', 'ResampleMethod', 'TimeUnit',
            'Operation', 'Neighborhood', 'ClassificationStrategy', 'CellType', 'ColorRamp']
 
 
@@ -26,16 +26,6 @@ class LayerType(Enum):
     and :class:`~geopyspark.geotrellis.SpaceTimeKey` are examples of this type of ``K``.
     """
     SPACETIME = 'spacetime'
-
-
-class LayoutScheme(Enum):
-    """How the tiles within a Layer should be laid out."""
-
-    """Layout scheme to match resolution of the closest level of TMS pyramid."""
-    ZOOM = 'zoom'
-
-    """Layout scheme to match resolution of source rasters."""
-    FLOAT = 'float'
 
 
 class IndexingMethod(Enum):
