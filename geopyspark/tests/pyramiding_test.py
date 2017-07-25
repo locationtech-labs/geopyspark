@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from geopyspark.geotrellis import Extent, ProjectedExtent, TileLayout, Tile, LayoutDefinition, GlobalLayout, LocalLayout
-from geopyspark.geotrellis.constants import LayerType, LayoutScheme
+from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.layer import Pyramid, RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
 

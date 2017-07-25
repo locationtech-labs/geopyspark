@@ -6,7 +6,7 @@ from shapely.geometry import box
 
 from geopyspark.geotrellis import Extent, SpatialKey, GlobalLayout
 from geopyspark.geotrellis.catalog import read, read_value, query, read_layer_metadata, get_layer_ids
-from geopyspark.geotrellis.constants import LayerType, LayoutScheme
+from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.tests.python_test_utils import geotiff_test_path

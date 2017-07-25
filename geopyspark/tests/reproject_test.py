@@ -3,7 +3,6 @@ import unittest
 import pytest
 
 from geopyspark.geotrellis import LayoutDefinition, LocalLayout, GlobalLayout
-from geopyspark.geotrellis.constants import LayoutScheme
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
