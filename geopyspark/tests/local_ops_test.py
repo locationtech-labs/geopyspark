@@ -33,7 +33,7 @@ class LocalOpertaionsTest(BaseTestClass):
 
         tile = Tile(arr, 'FLOAT', -500)
         rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
-        tiled = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, self.metadata)
+        tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, self.metadata)
 
         result = tiled + 1
         actual = result.to_numpy_rdd().first()[1].cells
@@ -48,7 +48,7 @@ class LocalOpertaionsTest(BaseTestClass):
 
         tile = Tile(arr, 'FLOAT', -500)
         rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
-        tiled = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, self.metadata)
+        tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, self.metadata)
 
         result = 5.0 - tiled
         actual = result.to_numpy_rdd().first()[1].cells
@@ -68,7 +68,7 @@ class LocalOpertaionsTest(BaseTestClass):
 
         tile = Tile(arr, 'FLOAT', float('nan'))
         rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
-        tiled = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, self.metadata)
+        tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, self.metadata)
 
         result = 5.0 * tiled
         actual = result.to_numpy_rdd().first()[1].cells
@@ -97,8 +97,8 @@ class LocalOpertaionsTest(BaseTestClass):
         rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
         rdd2 = BaseTestClass.pysc.parallelize([(self.spatial_key, tile2)])
 
-        tiled = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, self.metadata)
-        tiled2 = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd2, self.metadata)
+        tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, self.metadata)
+        tiled2 = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd2, self.metadata)
 
         result = tiled / tiled2
         actual = result.to_numpy_rdd().first()[1].cells
@@ -114,7 +114,7 @@ class LocalOpertaionsTest(BaseTestClass):
         tile = Tile(arr, 'INT', -500)
         rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
 
-        tiled = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, self.metadata)
+        tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, self.metadata)
 
         result = (tiled + tiled) / 2
         actual = result.to_numpy_rdd().first()[1].cells

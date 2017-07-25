@@ -44,7 +44,7 @@ class GeoTiffIOTest(object):
 
 class Multiband(GeoTiffIOTest, BaseTestClass):
     dir_path = geotiff_test_path("one-month-tiles-multiband/")
-    result = get(BaseTestClass.pysc, LayerType.SPATIAL, dir_path)
+    result = get(LayerType.SPATIAL, dir_path)
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
@@ -78,7 +78,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
 
         tile = {'data': arr, 'no_data_value': float('nan')}
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterRDD.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         converted = raster_rdd.convert_data_type(INT32)
         arr = converted.to_numpy_rdd().first()[1]['data']
@@ -102,7 +102,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
 
         tile = Tile(arr, 'FLOAT',float('nan'))
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         converted = raster_rdd.convert_data_type(CellType.UINT8, no_data_value=-1)
         tile = converted.to_numpy_rdd().first()
@@ -122,7 +122,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
 
         tile = Tile(arr, 'SHORT', -32768)
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
-        raster_layer = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_layer = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         actual_tile = raster_layer.to_numpy_rdd().first()[1]
 

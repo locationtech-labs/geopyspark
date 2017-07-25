@@ -26,7 +26,7 @@ class PyramidingTest(BaseTestClass):
         projected_extent = ProjectedExtent(extent, epsg_code)
 
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
         tile_layout = TileLayout(32, 32, 16, 16)
         new_extent = Extent(-20037508.342789244, -20037508.342789244, 20037508.342789244,
                             20037508.342789244)
@@ -47,7 +47,7 @@ class PyramidingTest(BaseTestClass):
         projected_extent = ProjectedExtent(extent, epsg_code)
 
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
         tile_layout = TileLayout(32, 32, 16, 16)
         new_extent = Extent(-20037508.342789244, -20037508.342789244, 20037508.342789244,
                             20037508.342789244)
@@ -72,7 +72,7 @@ class PyramidingTest(BaseTestClass):
 
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
 
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
         laid_out = raster_rdd.tile_to_layout(LocalLayout(250))
 
         # Single tile is at level 0
@@ -98,7 +98,7 @@ class PyramidingTest(BaseTestClass):
         projected_extent = ProjectedExtent(extent, epsg_code)
 
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
         tile_layout = TileLayout(1, 1, 16, 16)
         reprojected = raster_rdd.tile_to_layout(layout=GlobalLayout(tile_size=16), target_crs=3857)
 

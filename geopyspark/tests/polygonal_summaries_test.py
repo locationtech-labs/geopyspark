@@ -38,7 +38,7 @@ class CostDistanceTest(BaseTestClass):
                     'extent': extent,
                     'tileLayout': {'tileCols': 5, 'tileRows': 5, 'layoutCols': 2, 'layoutRows': 2}}}
 
-    tiled_rdd = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, metadata)
+    tiled_rdd = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, metadata)
 
     @pytest.fixture(autouse=True)
     def tearDown(self):

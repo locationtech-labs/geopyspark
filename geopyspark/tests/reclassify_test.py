@@ -26,7 +26,7 @@ class ReclassifyTest(BaseTestClass):
         tile = Tile(arr, 'FLOAT', -500)
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         value_map = {(0, 1): 1}
 
@@ -39,7 +39,7 @@ class ReclassifyTest(BaseTestClass):
         tile = Tile(arr, 'FLOAT', -500)
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         value_map = {'apple, orange, banana': 1}
 
@@ -52,7 +52,7 @@ class ReclassifyTest(BaseTestClass):
         tile = Tile(arr, 'FLOAT', -500)
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         value_map = {0: 1}
 
@@ -68,7 +68,7 @@ class ReclassifyTest(BaseTestClass):
         tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         value_map = {1: 10, 3: 17}
 
@@ -89,7 +89,7 @@ class ReclassifyTest(BaseTestClass):
         tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         value_map = {2: 20}
 
@@ -111,7 +111,7 @@ class ReclassifyTest(BaseTestClass):
         tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         value_map = {3: 10, 4: 20}
 
@@ -132,7 +132,7 @@ class ReclassifyTest(BaseTestClass):
 
         tile = Tile(arr, 'FLOAT', float('nan'))
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         value_map = {2.0: 5.0}
 
@@ -152,7 +152,7 @@ class ReclassifyTest(BaseTestClass):
         tile = Tile(arr, 'INT', NO_DATA_INT)
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         value_map = {0: NO_DATA_INT}
 
@@ -168,7 +168,7 @@ class ReclassifyTest(BaseTestClass):
         tile = Tile(arr, 'FLOAT', float('nan'))
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         value_map = {0.0: float('nan')}
 
@@ -185,7 +185,7 @@ class ReclassifyTest(BaseTestClass):
         tile = Tile(arr, 'INT', NO_DATA_INT)
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         value_map = {1: 0}
 
@@ -201,7 +201,7 @@ class ReclassifyTest(BaseTestClass):
         tile = Tile(arr, 'FLOAT', float('nan'))
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         value_map = {1.0: 0.0}
 

@@ -1,4 +1,5 @@
 import shapely.wkb
+from geopyspark import get_spark_context
 from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
@@ -6,11 +7,10 @@ from geopyspark.geotrellis.layer import TiledRasterLayer
 __all__ = ['euclidean_distance']
 
 
-def euclidean_distance(pysc, geometry, source_crs, zoom, cell_type=CellType.FLOAT64):
+def euclidean_distance(geometry, source_crs, zoom, cell_type=CellType.FLOAT64):
     """Calculates the Euclidean distance of a Shapely geometry.
 
     Args:
-        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         geometry (shapely.geometry): The input geometry to compute the Euclidean distance
             for.
         source_crs (str or int): The CRS of the input geometry.
@@ -29,9 +29,11 @@ def euclidean_distance(pysc, geometry, source_crs, zoom, cell_type=CellType.FLOA
     if isinstance(source_crs, int):
         source_crs = str(source_crs)
 
+    pysc = get_spark_context()
+
     srdd = pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterLayer.euclideanDistance(pysc._jsc.sc(),
                                                                                              shapely.wkb.dumps(geometry),
                                                                                              source_crs,
                                                                                              CellType(cell_type).value,
                                                                                              zoom)
-    return TiledRasterLayer(pysc, LayerType.SPATIAL, srdd)
+    return TiledRasterLayer(LayerType.SPATIAL, srdd)

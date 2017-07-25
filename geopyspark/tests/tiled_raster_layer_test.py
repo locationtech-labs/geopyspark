@@ -10,7 +10,7 @@ from geopyspark.tests.base_test_class import BaseTestClass
 
 class TiledRasterLayerTest(BaseTestClass):
     dir_path = geotiff_test_path("all-ones.tif")
-    result = get(BaseTestClass.pysc, LayerType.SPATIAL, dir_path)
+    result = get(LayerType.SPATIAL, dir_path)
     tiled_layer = result.tile_to_layout()
 
     @pytest.fixture(autouse=True)
@@ -38,7 +38,7 @@ class TiledRasterLayerTest(BaseTestClass):
         self.assertDictEqual(actual.to_dict(), expected.to_dict())
 
     def test_tile_to_layout_with_reproject(self):
-        proj4 = crs_to_proj4(BaseTestClass.pysc, 3857)
+        proj4 = crs_to_proj4(3857)
         actual = self.result.tile_to_layout(layout=GlobalLayout(), target_crs=proj4).layer_metadata.crs
 
         self.assertEqual(proj4, actual)

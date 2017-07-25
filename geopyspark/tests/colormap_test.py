@@ -29,7 +29,7 @@ class ColormapTest(BaseTestClass):
         self.assertEqual(result[0], 0x440154ff)
 
     def test_nlcd(self):
-        result = ColorMap.nlcd_colormap(BaseTestClass.pysc)
+        result = ColorMap.nlcd_colormap()
         self.assertEqual(result.cmap.map(0), 0x00000000)
         self.assertEqual((0x0ffffffff + 1 + result.cmap.map(51)), 0xbaa65cff)
         self.assertEqual((0x0ffffffff + 1 + result.cmap.map(92)), 0xb6d8f5ff)
@@ -39,7 +39,7 @@ class ColormapTest(BaseTestClass):
         break_map = {}
         for i in range(len(color_list)):
             break_map[i] = color_list[i]
-        result = ColorMap.from_break_map(BaseTestClass.pysc, break_map)
+        result = ColorMap.from_break_map(break_map)
         self.assertTrue(isinstance(result, ColorMap))
         self.assertEqual(result.cmap.map(3), color_list[3])
 
@@ -48,7 +48,7 @@ class ColormapTest(BaseTestClass):
         break_map = {}
         for i in range(len(color_list)):
             break_map[float(i)] = color_list[i]
-        result = ColorMap.from_break_map(BaseTestClass.pysc, break_map)
+        result = ColorMap.from_break_map(break_map)
         self.assertTrue(isinstance(result, ColorMap))
         self.assertEqual(result.cmap.map(3), color_list[3])
 
@@ -58,19 +58,19 @@ class ColormapTest(BaseTestClass):
         for i in range(len(color_list)):
             break_map[str(i)] = color_list[i]
         with pytest.raises(TypeError):
-            result = ColorMap.from_break_map(BaseTestClass.pysc, break_map)
+            result = ColorMap.from_break_map(break_map)
 
     def test_from_colors_int(self):
         color_list = self.color_list
         breaks = range(len(color_list))
-        result = ColorMap.from_colors(BaseTestClass.pysc, breaks, color_list)
+        result = ColorMap.from_colors(breaks, color_list)
         self.assertTrue(isinstance(result, ColorMap))
         self.assertEqual(result.cmap.map(3), color_list[3])
 
     def test_from_colors_float(self):
         color_list = self.color_list
         breaks = map(float, range(len(color_list)))
-        result = ColorMap.from_colors(BaseTestClass.pysc, breaks, color_list)
+        result = ColorMap.from_colors(breaks, color_list)
         self.assertTrue(isinstance(result, ColorMap))
         self.assertEqual(result.cmap.mapDouble(3.0), color_list[2]) # XXX
 
@@ -91,11 +91,11 @@ class ColormapTest(BaseTestClass):
                          [4.0, 6.0, 7.0, 0.0]]], dtype=float)
         tile = Tile(arr, 'FLOAT', -500)
         rdd = BaseTestClass.pysc.parallelize([(spatial_key, tile)])
-        tiled = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, metadata)
+        tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, metadata)
         hist = tiled.get_histogram()
 
         color_list = self.color_list
-        result = ColorMap.from_histogram(BaseTestClass.pysc, hist, color_list)
+        result = ColorMap.from_histogram(hist, color_list)
         self.assertTrue(isinstance(result, ColorMap))
 
     def test_build_map(self):
@@ -103,21 +103,21 @@ class ColormapTest(BaseTestClass):
         break_map = {}
         for i in range(len(color_list)):
             break_map[i] = color_list[i]
-        result = ColorMap.build(BaseTestClass.pysc, breaks=break_map)
+        result = ColorMap.build(breaks=break_map)
         self.assertTrue(isinstance(result, ColorMap))
         self.assertEqual(result.cmap.map(3), color_list[3])
 
     def test_build_int_list(self):
         color_list = self.color_list
         breaks = list(range(len(color_list)))
-        result = ColorMap.build(BaseTestClass.pysc, breaks=breaks, colors=color_list)
+        result = ColorMap.build(breaks=breaks, colors=color_list)
         self.assertTrue(isinstance(result, ColorMap))
         self.assertEqual(result.cmap.map(3), color_list[3])
 
     def test_build_color_list(self):
         color_list = [Color('red'), Color('green'), Color('blue')] # XXX
         breaks = list(range(len(color_list)))
-        result = ColorMap.build(BaseTestClass.pysc, breaks=breaks, colors=color_list)
+        result = ColorMap.build(breaks=breaks, colors=color_list)
         self.assertTrue(isinstance(result, ColorMap))
         self.assertEqual(result.cmap.map(2), struct.unpack(">L", bytes(color_list[2].rgba))[0])
 
@@ -125,7 +125,7 @@ class ColormapTest(BaseTestClass):
                         reason="Python 3.4 or greater needed for matplotlib")
     def test_build_color_string(self):
         breaks = list(range(42))
-        result = ColorMap.build(BaseTestClass.pysc, breaks=breaks, colors='viridis')
+        result = ColorMap.build(breaks=breaks, colors='viridis')
         self.assertTrue(isinstance(result, ColorMap))
         self.assertEqual(result.cmap.map(0), 0x440154ff)
 
@@ -146,11 +146,11 @@ class ColormapTest(BaseTestClass):
                          [4.0, 6.0, 7.0, 0.0]]], dtype=float)
         tile = Tile(arr, 'FLOAT', -500)
         rdd = BaseTestClass.pysc.parallelize([(spatial_key, tile)])
-        tiled = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, metadata)
+        tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, metadata)
         hist = tiled.get_histogram()
 
         color_list = self.color_list
-        result = ColorMap.build(BaseTestClass.pysc, breaks=hist, colors=color_list)
+        result = ColorMap.build(breaks=hist, colors=color_list)
         self.assertTrue(isinstance(result, ColorMap))
 
 if __name__ == "__main__":

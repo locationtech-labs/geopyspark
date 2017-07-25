@@ -55,14 +55,14 @@ class BandSelectionTest(BaseTestClass):
                     'extent': extent,
                     'tileLayout': {'tileCols': 5, 'tileRows': 5, 'layoutCols': 2, 'layoutRows': 2}}}
 
-    tiled_raster_rdd = TiledRasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd, metadata)
+    tiled_raster_rdd = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, metadata)
 
     layer2 = [(ProjectedExtent(Extent(0, 0, 1, 1), 3857), Tile(bands, 'FLOAT', -1.0)),
               (ProjectedExtent(Extent(1, 0, 2, 1), 3857), Tile(bands, 'FLOAT', -1.0)),
               (ProjectedExtent(Extent(0, 1, 1, 2), 3857), Tile(bands, 'FLOAT', -1.0)),
               (ProjectedExtent(Extent(1, 1, 2, 2), 3857), Tile(bands, 'FLOAT', -1.0))]
     rdd2 = BaseTestClass.pysc.parallelize(layer2)
-    raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd2)
+    raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd2)
 
     @pytest.fixture(autouse=True)
     def tearDown(self):

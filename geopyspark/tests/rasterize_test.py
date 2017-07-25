@@ -22,8 +22,7 @@ class RasterizeTest(BaseTestClass):
     def test_whole_area(self):
         polygon = Polygon([(0, 11), (11, 11), (11, 0), (0, 0)])
 
-        raster_rdd = rasterize(BaseTestClass.pysc,
-                               [polygon],
+        raster_rdd = rasterize([polygon],
                                "EPSG:3857",
                                11,
                                1)
@@ -36,8 +35,7 @@ class RasterizeTest(BaseTestClass):
     def test_whole_area_integer_crs(self):
         polygon = Polygon([(0, 11), (11, 11), (11, 0), (0, 0)])
 
-        raster_rdd = rasterize(BaseTestClass.pysc,
-                               [polygon],
+        raster_rdd = rasterize([polygon],
                                3857,
                                11,
                                1)

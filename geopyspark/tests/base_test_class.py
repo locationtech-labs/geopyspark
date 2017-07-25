@@ -31,7 +31,7 @@ class BaseTestClass(unittest.TestCase):
 
     dir_path = geotiff_test_path("all-ones.tif")
 
-    rdd = get(pysc, LayerType.SPATIAL, dir_path)
+    rdd = get(LayerType.SPATIAL, dir_path)
     value = rdd.to_numpy_rdd().collect()[0]
 
     projected_extent = value[0]

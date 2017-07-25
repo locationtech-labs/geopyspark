@@ -48,7 +48,7 @@ class EuclideanDistanceTest(BaseTestClass):
             x, y = gridToMap(layoutDefinition, spatialKey, px, py)
             return geom.distance(Point(x, y))
 
-        tiled = euclidean_distance(BaseTestClass.pysc, self.pts_wm, 3857, 7)
+        tiled = euclidean_distance(self.pts_wm, 3857, 7)
         result = tiled.stitch().cells[0]
 
         arr = np.zeros((256,256), dtype=float)

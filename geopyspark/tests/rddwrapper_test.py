@@ -24,7 +24,7 @@ class LayerWrapperTest(BaseTestClass):
         tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         self.assertEqual(raster_rdd.is_cached, False)
 
@@ -42,7 +42,7 @@ class LayerWrapperTest(BaseTestClass):
         tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         self.assertEqual(raster_rdd.is_cached, False)
 
@@ -57,7 +57,7 @@ class LayerWrapperTest(BaseTestClass):
         tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
         self.assertEqual(raster_rdd.count(), 1)
         self.assertTrue(raster_rdd.getNumPartitions() >= 1)

@@ -1,4 +1,5 @@
 import shapely.wkb
+from geopyspark import get_spark_context
 from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
@@ -6,11 +7,10 @@ from geopyspark.geotrellis.layer import TiledRasterLayer
 __all__ = ['rasterize']
 
 
-def rasterize(pysc, geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=None, num_partitions=None):
+def rasterize(geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=None, num_partitions=None):
     """Rasterizes a Shapely geometries.
 
     Args:
-        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         geoms ([shapely.geometry]): List of shapely geometries to rasterize.
         crs (str or int): The CRS of the input geometry.
         zoom (int): The zoom level of the output raster.
@@ -26,6 +26,7 @@ def rasterize(pysc, geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, op
     if isinstance(crs, int):
         crs = str(crs)
 
+    pysc = get_spark_context()
     wkb_geoms = [shapely.wkb.dumps(g) for g in geoms]
     srdd = pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterLayer.rasterizeGeometry(pysc._jsc.sc(),
                                                                                              wkb_geoms,
@@ -35,4 +36,4 @@ def rasterize(pysc, geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, op
                                                                                              CellType(cell_type).value,
                                                                                              options,
                                                                                              num_partitions)
-    return TiledRasterLayer(pysc, LayerType.SPATIAL, srdd)
+    return TiledRasterLayer(LayerType.SPATIAL, srdd)

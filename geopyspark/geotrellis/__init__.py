@@ -4,6 +4,7 @@ import warnings
 import functools
 from shapely.geometry import box
 
+from geopyspark import get_spark_context
 from geopyspark.geotrellis.constants import CellType, NO_DATA_INT
 
 
@@ -23,11 +24,10 @@ def deprecated(func):
     return new_func
 
 
-def crs_to_proj4(pysc, crs):
+def crs_to_proj4(crs):
     """Converts a given CRS to a Proj4 string.
 
     Args:
-        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         crs (str or int): Target CRS of reprojection. Either EPSG code, well-known name, or a
             PROJ.4 string. If ``None``, no reproject will be perfomed.
 
@@ -38,6 +38,7 @@ def crs_to_proj4(pysc, crs):
     if not isinstance(crs, str):
         crs = str(crs)
 
+    pysc = get_spark_context()
     scala_crs = pysc._gateway.jvm.geopyspark.geotrellis.TileLayer.getCRS(crs).get()
 
     return scala_crs.toProj4String()

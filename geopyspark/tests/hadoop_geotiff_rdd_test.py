@@ -50,12 +50,10 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
 
     def read_singleband_geotrellis(self, options=None):
         if options is None:
-            result = get(BaseTestClass.pysc,
-                         LayerType.SPATIAL,
+            result = get(LayerType.SPATIAL,
                          self.dir_path)
         else:
-            result = get(BaseTestClass.pysc,
-                         LayerType.SPATIAL,
+            result = get(LayerType.SPATIAL,
                          self.dir_path,
                          max_tile_size=256)
 
@@ -85,6 +83,7 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
             self.assertTrue((x.cells == y['cells']).all())
             self.assertEqual(x.no_data_value, y['no_data_value'])
+
 
 if __name__ == "__main__":
     unittest.main()

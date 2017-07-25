@@ -25,7 +25,7 @@ class MinMaxTest(BaseTestClass):
         tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
         min_max = raster_rdd.get_min_max()
 
         self.assertEqual((0.0, 0.0), min_max)
@@ -38,7 +38,7 @@ class MinMaxTest(BaseTestClass):
         tile = Tile(arr, 'INT', -500)
 
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
         min_max = raster_rdd.get_min_max()
 
         self.assertEqual((1.0, 4.0), min_max)
@@ -51,10 +51,11 @@ class MinMaxTest(BaseTestClass):
 
         tile = Tile(arr, 'FLOAT', float('nan'))
         rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
         min_max = raster_rdd.get_min_max()
 
         self.assertEqual((0.0, 2.0), min_max)
+
 
 if __name__ == "__main__":
     unittest.main()
