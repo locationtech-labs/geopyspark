@@ -60,5 +60,6 @@ script:
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
   - pytest -k "schema" geopyspark/tests/schema_tests/
   - pytest -k "tiled_layer" geopyspark/tests/tiled_layer_tests/
-  - pytest -k "not schema" -k "not tiled_layer" geopyspark/tests/*test.py
+  - pytest -k "io" geopyspark/tests/io_tests/
+  - pytest -k "not schema" -k "not tiled_layer" -k "not io" geopyspark/tests/*test.py
   - pylint geopyspark
