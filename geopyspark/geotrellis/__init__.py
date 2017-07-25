@@ -23,6 +23,15 @@ def deprecated(func):
     return new_func
 
 
+def crs_to_proj4(pysc, crs):
+    if not isinstance(crs, str):
+        crs = str(crs)
+
+    scala_crs = pysc._gateway.jvm.geopyspark.geotrellis.TileLayer.getCRS(crs).get()
+
+    return scala_crs.toProj4String()
+
+
 class Tile(namedtuple("Tile", 'cells cell_type no_data_value')):
     """Represents a raster in GeoPySpark.
 

@@ -100,7 +100,7 @@ class PyramidingTest(BaseTestClass):
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
         raster_rdd = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, rdd)
         tile_layout = TileLayout(1, 1, 16, 16)
-        reprojected = raster_rdd.reproject(3857, GlobalLayout(tile_size=16))
+        reprojected = raster_rdd.tile_to_layout(layout=GlobalLayout(tile_size=16), target_crs=3857)
 
         result = reprojected.pyramid()
         hist = result.get_histogram()

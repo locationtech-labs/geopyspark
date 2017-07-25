@@ -14,7 +14,7 @@ ensure_pyspark()
 from pyspark.storagelevel import StorageLevel
 
 from geopyspark import map_key_input, create_python_rdd
-from geopyspark.geotrellis import Metadata, Tile, LocalLayout, GlobalLayout, LayoutDefinition
+from geopyspark.geotrellis import Metadata, Tile, LocalLayout, GlobalLayout, LayoutDefinition, crs_to_proj4
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
                                              Neighborhood as nb,
@@ -94,22 +94,21 @@ def _to_geotiff_rdd(pysc, srdd, storage_method, rows_per_strip, tile_dimensions,
 
 
 def _reproject(target_crs, layout, resample_method, layer):
-    resample_method = ResampleMethod(resample_method)
 
     if isinstance(layout, (LocalLayout, GlobalLayout, LayoutDefinition)):
         srdd = layer.srdd.reproject(target_crs, layout, resample_method)
         return TiledRasterLayer(layer.pysc, layer.layer_type, srdd)
 
     elif isinstance(layout, Metadata):
-        if layer.layout_metadata.crs != layout.crs:
-            raise ValueError("The layout and the layer need to be in the same CRS")
+        if layout.crs != target_crs:
+            raise ValueError("The layout needs to be in the same CRS as the target_crs")
 
         srdd = layer.srdd.reproject(target_crs, json.dumps(layout.to_dict()), resample_method)
         return TiledRasterLayer(layer.pysc, layer.layer_type, srdd)
 
     elif isinstance(layout, TiledRasterLayer):
-        if layer.layout_metadata.crs != layout.crs:
-            raise ValueError("The layout and the layer need to be in the same CRS")
+        if layout.layout_metadata.crs != target_crs:
+            raise ValueError("The layout needs to be in the same CRS as the target_crs")
 
         metadata = layout.layer_metadata
         srdd = layer.srdd.reproject(target_crs, json.dumps(metadata.to_dict()), resample_method)
@@ -473,7 +472,7 @@ class RasterLayer(CachableLayer):
 
         return Metadata.from_dict(json.loads(json_metadata))
 
-    def reproject(self, target_crs, layout=None, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
+    def reproject(self, target_crs, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Reproject rasters to ``target_crs``.
         When layout is ``None``, the reproject does not sample past tile boundary.
         When layout is given the reproject will tile the rasters and produce a tiled layer.
@@ -499,13 +498,11 @@ class RasterLayer(CachableLayer):
         if isinstance(target_crs, int):
             target_crs = str(target_crs)
 
-        if layout is None:
-            srdd = self.srdd.reproject(target_crs, resample_method)
-            return RasterLayer(self.pysc, self.layer_type, srdd)
-        else:
-            return _reproject(target_crs, layout, resample_method, self)
+        srdd = self.srdd.reproject(target_crs, resample_method)
 
-    def tile_to_layout(self, layout=LocalLayout(), resample_method=ResampleMethod.NEAREST_NEIGHBOR):
+        return RasterLayer(self.pysc, self.layer_type, srdd)
+
+    def tile_to_layout(self, layout=LocalLayout(), target_crs=None, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
@@ -524,22 +521,28 @@ class RasterLayer(CachableLayer):
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
+        if target_crs:
+            target_crs = crs_to_proj4(self.pysc, target_crs)
+
         resample_method = ResampleMethod(resample_method)
 
-        if isinstance(layout, Metadata):
-            layer_metadata = layout.to_dict()
-            srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
-        elif isinstance(layout, TiledRasterLayer):
-            layer_metadata = layout.layer_metadata
-            srdd = self.srdd.tileToLayout(json.dumps(layer_metadata.to_dict()), resample_method)
-        elif isinstance(layout, LayoutDefinition):
-            srdd = self.srdd.tileToLayout(layout, resample_method)
-        elif isinstance(layout, (LocalLayout, GlobalLayout)):
-            srdd = self.srdd.tileToLayout(layout, resample_method)
+        if target_crs:
+            return _reproject(target_crs, layout, resample_method, self)
         else:
-            raise TypeError("%s can not be converted to raster layout." % layout)
+            if isinstance(layout, Metadata):
+                layer_metadata = layout.to_dict()
+                srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
+            elif isinstance(layout, TiledRasterLayer):
+                layer_metadata = layout.layer_metadata
+                srdd = self.srdd.tileToLayout(json.dumps(layer_metadata.to_dict()), resample_method)
+            elif isinstance(layout, LayoutDefinition):
+                srdd = self.srdd.tileToLayout(layout, resample_method)
+            elif isinstance(layout, (LocalLayout, GlobalLayout)):
+                srdd = self.srdd.tileToLayout(layout, resample_method)
+            else:
+                raise TypeError("%s can not be converted to raster layout." % layout)
 
-        return TiledRasterLayer(self.pysc, self.layer_type, srdd)
+            return TiledRasterLayer(self.pysc, self.layer_type, srdd)
 
     def reclassify(self, value_map, data_type,
                    classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO,
@@ -896,8 +899,7 @@ class TiledRasterLayer(CachableLayer):
 
         resample_method = ResampleMethod(resample_method)
 
-        if isinstance(target_crs, int):
-            target_crs = str(target_crs)
+        target_crs = crs_to_proj4(self.pysc, target_crs)
 
         if layout is None:
             srdd = self.srdd.reproject(target_crs, resample_method)
