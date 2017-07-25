@@ -3,7 +3,7 @@ import pytest
 
 from geopyspark.geotrellis.constants import LayerType
 from geopyspark.tests.python_test_utils import geotiff_test_path
-from geopyspark.geotrellis import Extent, LayoutDefinition, GlobalLayout
+from geopyspark.geotrellis import Extent, LayoutDefinition, GlobalLayout, crs_to_proj4
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.tests.base_test_class import BaseTestClass
 
@@ -36,6 +36,16 @@ class TiledRasterLayerTest(BaseTestClass):
         expected = self.tiled_layer.layer_metadata
 
         self.assertDictEqual(actual.to_dict(), expected.to_dict())
+
+    def test_tile_to_layout_with_reproject(self):
+        proj4 = crs_to_proj4(BaseTestClass.pysc, 3857)
+        actual = self.result.tile_to_layout(layout=GlobalLayout(), target_crs=proj4).layer_metadata.crs
+
+        self.assertEqual(proj4, actual)
+
+    def test_tile_to_layout_bad_crs(self):
+        with pytest.raises(ValueError):
+            self.result.tile_to_layout(layout=self.tiled_layer, target_crs=3857)
 
 
 if __name__ == "__main__":
