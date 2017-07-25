@@ -1,6 +1,6 @@
 package geopyspark.geotrellis.tms
 
-import geopyspark.geotrellis.TiledRasterRDD
+import geopyspark.geotrellis.TiledRasterLayer
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
@@ -171,7 +171,7 @@ object TileReaders {
   }
 
   def createSpatialRddReader(
-    levels: java.util.HashMap[Int, TiledRasterRDD[SpatialKey]],
+    levels: java.util.HashMap[Int, TiledRasterLayer[SpatialKey]],
     system: ActorSystem
   ): TileReader = {
     val tiles = levels.mapValues{ layer =>

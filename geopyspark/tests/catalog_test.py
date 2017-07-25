@@ -6,7 +6,7 @@ from shapely.geometry import box
 
 from geopyspark.geotrellis import Extent, SpatialKey, GlobalLayout
 from geopyspark.geotrellis.catalog import read, read_value, query, read_layer_metadata, get_layer_ids
-from geopyspark.geotrellis.constants import LayerType, LayoutScheme
+from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.tests.python_test_utils import geotiff_test_path
@@ -16,8 +16,7 @@ class CatalogTest(BaseTestClass):
     rdd = get(BaseTestClass.pysc, LayerType.SPATIAL, geotiff_test_path("srtm_52_11.tif"))
 
     metadata = rdd.collect_metadata()
-    laid_out = rdd.tile_to_layout(metadata)
-    reprojected = laid_out.reproject(target_crs="EPSG:3857", layout=GlobalLayout(zoom=11))
+    reprojected = rdd.tile_to_layout(layout=GlobalLayout(zoom=11), target_crs="EPSG:3857")
     result = reprojected.pyramid()
 
     dir_path = geotiff_test_path("catalog/")
