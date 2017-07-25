@@ -3,7 +3,7 @@ export PYSPARK_PYTHON := ipython
 export ASSEMBLED="assembled"
 
 JAR-PATH := geopyspark/jars
-ASSEMBLYNAME := geotrellis-backend-assembly-0.1.0.jar
+ASSEMBLYNAME := geotrellis-backend-assembly-0.2.0.jar
 BUILD-ASSEMBLY := geopyspark-backend/geotrellis/target/scala-2.11/${ASSEMBLYNAME}
 DIST-ASSEMBLY := ${JAR-PATH}/${ASSEMBLYNAME}
 WHEELNAME := geopyspark-0.1.0-py3-none-any.whl
