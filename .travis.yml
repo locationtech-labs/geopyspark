@@ -59,5 +59,6 @@ script:
   - export SPARK_HOME=./spark-2.1.1-bin-hadoop2.7/
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
   - pytest -k "schema" geopyspark/tests/schema_tests/
-  - pytest -k "not schema" geopyspark/tests/*test.py
+  - pytest -k "tiled_layer" geopyspark/tests/tiled_layer_tests/
+  - pytest -k "not schema" -k "not tiled_layer" geopyspark/tests/*test.py
   - pylint geopyspark

@@ -26,6 +26,7 @@ setup_args = dict(
         'geopyspark.command',
         'geopyspark.tests',
         'geopyspark.tests.schema_tests',
+        'geopyspark.tests.tiled_layer_tests',
         'geopyspark.jars',
     ],
     entry_points={
