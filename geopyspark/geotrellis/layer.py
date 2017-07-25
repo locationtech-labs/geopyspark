@@ -474,23 +474,17 @@ class RasterLayer(CachableLayer):
 
     def reproject(self, target_crs, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Reproject rasters to ``target_crs``.
-        When layout is ``None``, the reproject does not sample past tile boundary.
-        When layout is given the reproject will tile the rasters and produce a tiled layer.
+        The reproject does not sample past tile boundary.
 
         Args:
             target_crs (str or int): Target CRS of reprojection.
                 Either EPSG code, well-known name, or a PROJ.4 string.
-            layout (
-                :obj:`~geopyspark.geotrellis.GlobalLayout` or
-                :class:`~geopyspark.geotrellis.LocalLayout`, optional
-            ): Target raster layout when reprojecting.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use for the reprojection. If none is specified, then
                 ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.RasterLayer` or
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
         """
 
         resample_method = ResampleMethod(resample_method)
@@ -513,6 +507,8 @@ class RasterLayer(CachableLayer):
                 :obj:`~geopyspark.geotrellis.GlobalLayout` or
                 :class:`~geopyspark.geotrellis.LocalLayout`, optional
             ): Target raster layout for the tiling operation.
+            target_crs (str or int, optional): Target CRS of reprojection. Either EPSG code,
+                well-known name, or a PROJ.4 string. If ``None``, no reproject will be perfomed.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The cell resample method to used during the tiling operation.
                 Default is``ResampleMethods.NEAREST_NEIGHBOR``.
@@ -874,19 +870,11 @@ class TiledRasterLayer(CachableLayer):
 
     def reproject(self, target_crs, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Reproject rasters to ``target_crs``.
-        When layout is ``None``, the reproject does not sample past tile boundary.
-        When layout is given the reproject will tile the rasters and produce a tiled layer.
+        The reproject does not sample past tile boundary.
 
         Args:
             target_crs (str or int): Target CRS of reprojection.
                 Either EPSG code, well-known name, or a PROJ.4 string.
-            layout (
-                :obj:`~geopyspark.geotrellis.LayoutDefinition` or
-                :class:`~geopyspark.geotrellis.Metadata` or
-                :class:`~geopyspark.geotrellis.TiledRasterLayer` or
-                :obj:`~geopyspark.geotrellis.GlobalLayout` or
-                :class:`~geopyspark.geotrellis.LocalLayout`, optional
-            ): Target raster layout for the tiling operation.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use for the reprojection. If none is specified, then
                 ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
@@ -946,6 +934,8 @@ class TiledRasterLayer(CachableLayer):
                 :obj:`~geopyspark.geotrellis.GlobalLayout` or
                 :class:`~geopyspark.geotrellis.LocalLayout`
             ): Target raster layout for the tiling operation.
+            target_crs (str or int, optional): Target CRS of reprojection. Either EPSG code,
+                well-known name, or a PROJ.4 string. If ``None``, no reproject will be perfomed.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use for the reprojection. If none is specified, then
                 ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
