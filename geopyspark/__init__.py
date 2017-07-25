@@ -117,8 +117,8 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
     configuration = os.path.join(current_location, 'command', 'geopyspark.conf')
 
     if os.path.isfile(configuration):
-        with open(os.path.join(configuration)) as conf:
-            possible_jars.append(os.path.relpath(conf.read(), cwd))
+        with open(os.path.join(configuration)) as config_file:
+            possible_jars.append(os.path.relpath(config_file.read(), cwd))
 
     jar = os.path.abspath(resource_filename('geopyspark.jars', JAR))
     jar_dir = os.path.dirname(jar)
