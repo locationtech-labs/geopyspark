@@ -98,14 +98,14 @@ def _reproject(target_crs, layout, resample_method, layer):
 
     if isinstance(layout, (LocalLayout, GlobalLayout, LayoutDefinition)):
         srdd = layer.srdd.reproject(target_crs, layout, resample_method)
-        return TiledRasterLayer(layer.pysc, layer.layer_type, srdd)
+        return TiledRasterLayer(layer.layer_type, srdd)
 
     elif isinstance(layout, Metadata):
         if layout.crs != target_crs:
             raise ValueError("The layout needs to be in the same CRS as the target_crs")
 
         srdd = layer.srdd.reproject(target_crs, json.dumps(layout.to_dict()), resample_method)
-        return TiledRasterLayer(layer.pysc, layer.layer_type, srdd)
+        return TiledRasterLayer(layer.layer_type, srdd)
 
     elif isinstance(layout, TiledRasterLayer):
         if layout.layer_metadata.crs != target_crs:
@@ -113,7 +113,7 @@ def _reproject(target_crs, layout, resample_method, layer):
 
         metadata = layout.layer_metadata
         srdd = layer.srdd.reproject(target_crs, json.dumps(metadata.to_dict()), resample_method)
-        return TiledRasterLayer(layer.pysc, layer.layer_type, srdd)
+        return TiledRasterLayer(layer.layer_type, srdd)
     else:
         raise TypeError("%s can not be used as target layout." % layout)
 
@@ -518,7 +518,7 @@ class RasterLayer(CachableLayer):
         resample_method = ResampleMethod(resample_method)
 
         if target_crs:
-            target_crs = crs_to_proj4(self.pysc, target_crs)
+            target_crs = crs_to_proj4(target_crs)
             return _reproject(target_crs, layout, resample_method, self)
 
         if isinstance(layout, Metadata):
@@ -939,7 +939,7 @@ class TiledRasterLayer(CachableLayer):
         resample_method = ResampleMethod(resample_method)
 
         if target_crs:
-            target_crs = crs_to_proj4(self.pysc, target_crs)
+            target_crs = crs_to_proj4(target_crs)
             return _reproject(target_crs, layout, resample_method, self)
 
         if isinstance(layout, LayoutDefinition):

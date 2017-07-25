@@ -118,7 +118,7 @@ class ColorMap(object):
         pysc = get_spark_context()
 
         if isinstance(breaks, dict):
-            return ColorMap.from_break_map(pysc, breaks, no_data_color, fallback, classification_strategy)
+            return ColorMap.from_break_map(breaks, no_data_color, fallback, classification_strategy)
 
         if isinstance(colors, str):
             color_list = get_colors_from_matplotlib(colors)
@@ -131,9 +131,9 @@ class ColorMap(object):
             raise ValueError("Could not construct ColorMap from the given colors", colors)
 
         if isinstance(breaks, list):
-            return ColorMap.from_colors(pysc, breaks, color_list, no_data_color, fallback, classification_strategy)
+            return ColorMap.from_colors(breaks, color_list, no_data_color, fallback, classification_strategy)
         elif isinstance(breaks, Histogram):
-            return ColorMap.from_histogram(pysc, breaks, color_list, no_data_color, fallback, classification_strategy)
+            return ColorMap.from_histogram(breaks, color_list, no_data_color, fallback, classification_strategy)
         else:
             raise ValueError("Could not construct ColorMap from the given breaks", breaks)
 

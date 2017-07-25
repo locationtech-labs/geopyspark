@@ -27,7 +27,7 @@ class RasterLayerTest(BaseTestClass):
     ]
 
     numpy_rdd = BaseTestClass.pysc.parallelize(layer)
-    layer = RasterLayer.from_numpy_rdd(BaseTestClass.pysc, LayerType.SPATIAL, numpy_rdd)
+    layer = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, numpy_rdd)
     metadata = layer.collect_metadata(GlobalLayout(5))
 
     def test_tile_to_local_layout(self):
