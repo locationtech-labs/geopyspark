@@ -28,8 +28,8 @@ if 'SPARK_HOME' not in os.environ.keys():
     subprocess.call(['tar', '-xvf', 'spark-2.1.1-bin-hadoop2.7.tgz'])
     os.environ['SPARK_HOME'] = './spark-2.1.1-bin-hadoop2.7/'
 
-jar = 'geotrellis-backend-assembly-0.1.0.jar'
-url = 'https://github.com/locationtech-labs/geopyspark/releases/download/v0.1.0/'
+jar = 'geotrellis-backend-assembly-0.2.0.jar'
+url = 'https://github.com/locationtech-labs/geopyspark/releases/download/v0.2.0-RC1/'
 subprocess.call(['curl', '-L', url+jar, '-o', '../geopyspark/jars/' + jar])
 sys.path.insert(0, path.abspath('../'))
 
