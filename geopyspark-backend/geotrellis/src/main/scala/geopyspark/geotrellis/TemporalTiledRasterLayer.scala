@@ -296,6 +296,18 @@ object TemporalTiledRasterLayer {
     TemporalTiledRasterLayer(None, tileLayer)
   }
 
+  def fromProtoEncodedRDD(
+    javaRDD: JavaRDD[Array[Byte]],
+    zoomLevel: Int,
+    metadata: String
+  ): TemporalTiledRasterLayer = {
+    val md = metadata.parseJson.convertTo[TileLayerMetadata[SpaceTimeKey]]
+    val tileLayer = MultibandTileLayerRDD(
+      PythonTranslator.fromPython[(SpaceTimeKey, MultibandTile), ProtoTuple](javaRDD, ProtoTuple.parseFrom), md)
+
+    TemporalTiledRasterLayer(Some(zoomLevel), tileLayer)
+  }
+
   def apply(
     zoomLevel: Option[Int],
     rdd: RDD[(SpaceTimeKey, MultibandTile)] with Metadata[TileLayerMetadata[SpaceTimeKey]]

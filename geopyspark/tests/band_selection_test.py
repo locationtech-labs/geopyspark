@@ -55,7 +55,7 @@ class BandSelectionTest(BaseTestClass):
                     'extent': extent,
                     'tileLayout': {'tileCols': 5, 'tileRows': 5, 'layoutCols': 2, 'layoutRows': 2}}}
 
-    tiled_raster_rdd = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, metadata)
+    tiled_raster_rdd = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, metadata, 5)
 
     layer2 = [(ProjectedExtent(Extent(0, 0, 1, 1), 3857), Tile(bands, 'FLOAT', -1.0)),
               (ProjectedExtent(Extent(1, 0, 2, 1), 3857), Tile(bands, 'FLOAT', -1.0)),
@@ -132,10 +132,11 @@ class BandSelectionTest(BaseTestClass):
         self.assertTrue((expected == actual.cells).all())
 
     def test_map_tiles_lambda_tiled(self):
-        actual = self.tiled_raster_rdd.map_tiles(lambda tile: Tile(tile.cells[0], tile.cell_type,
-                                                                   tile.no_data_value)).to_numpy_rdd().first()[1]
+        mapped_layer = self.tiled_raster_rdd.map_tiles(lambda tile: Tile(tile.cells[0], tile.cell_type, tile.no_data_value))
+        actual = mapped_layer.to_numpy_rdd().first()[1]
         expected = np.array([self.band_1])
 
+        self.assertEqual(mapped_layer.zoom_level, self.tiled_raster_rdd.zoom_level)
         self.assertTrue((expected == actual.cells).all())
 
     def test_map_cells_func_raster(self):
@@ -182,11 +183,13 @@ class BandSelectionTest(BaseTestClass):
         self.assertTrue((expected == actual.cells).all())
 
     def test_map_cells_lambda_tiled(self):
-        actual = self.tiled_raster_rdd.map_cells(lambda cells, nd: cells + nd).to_numpy_rdd().first()[1]
+        mapped_layer = self.tiled_raster_rdd.map_cells(lambda cells, nd: cells + nd)
+        actual = mapped_layer.to_numpy_rdd().first()[1]
 
         self.assertTrue((0.0 == actual.cells[0, :]).all())
         self.assertTrue((self.band_1 == actual.cells[1, :]).all())
         self.assertTrue((self.band_2 == actual.cells[2, :]).all())
+        self.assertEqual(mapped_layer.zoom_level, self.tiled_raster_rdd.zoom_level)
 
 if __name__ == "__main__":
     unittest.main()

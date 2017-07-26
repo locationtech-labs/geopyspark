@@ -325,6 +325,18 @@ object SpatialTiledRasterLayer {
     SpatialTiledRasterLayer(None, tileLayer)
   }
 
+  def fromProtoEncodedRDD(
+    javaRDD: JavaRDD[Array[Byte]],
+    zoomLevel: Int,
+    metadata: String
+  ): SpatialTiledRasterLayer = {
+    val md = metadata.parseJson.convertTo[TileLayerMetadata[SpatialKey]]
+    val tileLayer = MultibandTileLayerRDD(
+      PythonTranslator.fromPython[(SpatialKey, MultibandTile), ProtoTuple](javaRDD, ProtoTuple.parseFrom), md)
+
+    SpatialTiledRasterLayer(Some(zoomLevel), tileLayer)
+  }
+
   def apply(
     zoomLevel: Option[Int],
     rdd: RDD[(SpatialKey, MultibandTile)] with Metadata[TileLayerMetadata[SpatialKey]]

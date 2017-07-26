@@ -629,7 +629,7 @@ class TiledRasterLayer(CachableLayer):
         self.zoom_level = self.srdd.getZoom()
 
     @classmethod
-    def from_numpy_rdd(cls, layer_type, numpy_rdd, metadata):
+    def from_numpy_rdd(cls, layer_type, numpy_rdd, metadata, zoom_level=None):
         """Create a ``TiledRasterLayer`` from a numpy RDD.
 
         Args:
@@ -642,6 +642,8 @@ class TiledRasterLayer(CachableLayer):
                 numpy array.
             metadata (:class:`~geopyspark.geotrellis.Metadata`): The ``Metadata`` of
                 the ``TiledRasterLayer`` instance.
+            zoom_level(int, optional): The ``zoom_level`` the resulting `TiledRasterLayer` should
+                have. If ``None``, then the returned layer's ``zoom_level`` will be ``None``.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
@@ -655,14 +657,25 @@ class TiledRasterLayer(CachableLayer):
         if isinstance(metadata, Metadata):
             metadata = metadata.to_dict()
 
+        spatial_tiled_raster_layer = pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterLayer
+        temporal_tiled_raster_layer = pysc._gateway.jvm.geopyspark.geotrellis.TemporalTiledRasterLayer
+
         if layer_type == LayerType.SPATIAL:
-            srdd = \
-                    pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterLayer.fromProtoEncodedRDD(
-                        reserialized_rdd._jrdd, json.dumps(metadata))
+            if zoom_level:
+                srdd = spatial_tiled_raster_layer.fromProtoEncodedRDD(reserialized_rdd._jrdd,
+                                                                      zoom_level,
+                                                                      json.dumps(metadata))
+            else:
+                srdd = spatial_tiled_raster_layer.fromProtoEncodedRDD(reserialized_rdd._jrdd,
+                                                                      json.dumps(metadata))
         else:
-            srdd = \
-                    pysc._gateway.jvm.geopyspark.geotrellis.TemporalTiledRasterLayer.fromProtoEncodedRDD(
-                        reserialized_rdd._jrdd, json.dumps(metadata))
+            if zoom_level:
+                srdd = temporal_tiled_raster_layer.fromProtoEncodedRDD(reserialized_rdd._jrdd,
+                                                                       zoom_level,
+                                                                       json.dumps(metadata))
+            else:
+                srdd = temporal_tiled_raster_layer.fromProtoEncodedRDD(reserialized_rdd._jrdd,
+                                                                       json.dumps(metadata))
 
         return cls(layer_type, srdd)
 
@@ -751,7 +764,8 @@ class TiledRasterLayer(CachableLayer):
 
         return TiledRasterLayer.from_numpy_rdd(self.layer_type,
                                                python_rdd.mapValues(lambda tile: func(tile)),
-                                               self.layer_metadata)
+                                               self.layer_metadata,
+                                               self.zoom_level)
 
     def map_cells(self, func):
         """Maps over the cells of each ``Tile`` within the layer with a given function.
@@ -778,7 +792,8 @@ class TiledRasterLayer(CachableLayer):
 
         return TiledRasterLayer.from_numpy_rdd(self.layer_type,
                                                python_rdd.mapValues(lambda tile: tile_func(*tile)),
-                                               self.layer_metadata)
+                                               self.layer_metadata,
+                                               self.zoom_level)
 
     def to_geotiff_rdd(self,
                        storage_method=StorageMethod.STRIPED,
