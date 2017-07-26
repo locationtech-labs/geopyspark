@@ -73,7 +73,11 @@ abstract class LayerWriterWrapper {
     spatialRDD: TiledRasterLayer[SpatialKey],
     indexStrategy: String
   ): Unit = {
-    val id = LayerId(layerName, spatialRDD.getZoom)
+    val id =
+      spatialRDD.zoomLevel match {
+        case Some(zoom) => LayerId(layerName, zoom)
+        case None => LayerId(layerName, 0)
+      }
     val indexMethod = getSpatialIndexMethod(indexStrategy)
     layerWriter.write(id, spatialRDD.rdd, indexMethod)
   }
@@ -84,7 +88,11 @@ abstract class LayerWriterWrapper {
     timeString: String,
     indexStrategy: String
   ): Unit = {
-    val id = LayerId(layerName, temporalRDD.getZoom)
+    val id =
+      temporalRDD.zoomLevel match {
+        case Some(zoom) => LayerId(layerName, zoom)
+        case None => LayerId(layerName, 0)
+      }
     val indexMethod = getTemporalIndexMethod(timeString, indexStrategy)
     layerWriter.write(id, temporalRDD.rdd, indexMethod)
   }
