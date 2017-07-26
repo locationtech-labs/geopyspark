@@ -12,7 +12,7 @@ import shapely.wkb
 from geopyspark import map_key_input, get_spark_context
 from geopyspark.geotrellis.constants import LayerType, IndexingMethod
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
-from geopyspark.geotrellis import Metadata, Extent, deprecated
+from geopyspark.geotrellis import Metadata, Extent, deprecated, Log
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
@@ -285,7 +285,7 @@ def read_value(layer_type,
 def query(layer_type,
           uri,
           layer_name,
-          layer_zoom,
+          layer_zoom=None,
           query_geom=None,
           time_intervals=None,
           query_proj=None,
@@ -307,7 +307,8 @@ def query(layer_type,
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be querried.
-        layer_zoom (int): The zoom level of the layer that is to be querried.
+        layer_zoom (int, optional): The zoom level of the layer that is to be querried.
+            If ``None``, then the ``layer_zoom`` will be set to 0.
         query_geom (bytes or shapely.geometry or :class:`~geopyspark.geotrellis.Extent`, Optional):
             The desired spatial area to be returned. Can either be a string, a shapely geometry, or
             instance of ``Extent``, or a WKB verson of the geometry.
@@ -340,6 +341,7 @@ def query(layer_type,
     """
 
     options = options or kwargs or {}
+    layer_zoom = layer_zoom or 0
 
     pysc = get_spark_context()
 
@@ -395,7 +397,7 @@ def query(layer_type,
 
 def write(uri,
           layer_name,
-          tiled_raster_rdd,
+          tiled_raster_layer,
           index_strategy=IndexingMethod.ZORDER,
           time_unit=None,
           options=None,
@@ -407,7 +409,7 @@ def write(uri,
             the tile layer to written to. The shape of this string varies depending on backend.
         layer_name (str): The name of the new, tile layer.
         layer_zoom (int): The zoom level the layer should be saved at.
-        tiled_raster_rdd (:class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`): The
+        tiled_raster_layer (:class:`~geopyspark.geotrellis.layer.TiledRasterLayer`): The
             ``TiledRasterLayer`` to be saved.
         index_strategy (str or :class:`~geopyspark.geotrellis.constants.IndexingMethod`): The
             method used to orginize the saved data. Depending on the type of data within the layer,
@@ -423,19 +425,22 @@ def write(uri,
             be in camel case. If both options and keywords are set, then the options will be used.
     """
 
+    if not tiled_raster_layer.zoom_level:
+        Log.warn(tiled_raster_layer.pysc, "The given layer doesn't not have a zoom_level. Writing to zoom 0.")
+
     options = options or kwargs or {}
     time_unit = time_unit or ""
 
-    _construct_catalog(tiled_raster_rdd.pysc, uri, options)
+    _construct_catalog(tiled_raster_layer.pysc, uri, options)
 
     cached = _mapped_cached[uri]
 
-    if tiled_raster_rdd.layer_type == LayerType.SPATIAL:
+    if tiled_raster_layer.layer_type == LayerType.SPATIAL:
         cached.writer.writeSpatial(layer_name,
-                                   tiled_raster_rdd.srdd,
+                                   tiled_raster_layer.srdd,
                                    IndexingMethod(index_strategy).value)
     else:
         cached.writer.writeTemporal(layer_name,
-                                    tiled_raster_rdd.srdd,
+                                    tiled_raster_layer.srdd,
                                     time_unit,
                                     IndexingMethod(index_strategy).value)
