@@ -657,7 +657,7 @@ def tuple_encoder(obj, key_encoder):
     elif key_encoder == "SpatialKey":
         tup.spatialKey.CopyFrom(to_pb_spatial_key(obj[0]))
     else:
-        tup.spaceTimeKey = to_pb_space_time_key(obj[0])
+        tup.spaceTimeKey.CopyFrom(to_pb_space_time_key(obj[0]))
 
     return tup.SerializeToString()
 
