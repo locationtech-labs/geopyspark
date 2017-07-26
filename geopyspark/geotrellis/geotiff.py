@@ -22,7 +22,7 @@ def get(layer_type,
     or ``S3``.
 
     Args:
-        layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
+        layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`): What the layer type
             of the geotiffs are. This is represented by either constants within ``LayerType`` or by
             a string.
 
@@ -57,7 +57,7 @@ def get(layer_type,
                 ``mock`` should only be used in unit tests and debugging.
 
     Returns:
-        :class:`~geopyspark.geotrellis.rdd.RasterLayer`
+        :class:`~geopyspark.geotrellis.layer.RasterLayer`
     """
 
     inputs = {k:v for k, v in locals().items() if v is not None}

@@ -9,8 +9,8 @@ def cost_distance(friction_layer, geometries, max_distance):
     """Performs cost distance of a TileLayer.
 
     Args:
-        friction_layer(:class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`):
-            Tiled raster of a friction surface to traverse.
+        friction_layer(:class:`~geopyspark.geotrellis.layer.TiledRasterLayer`):
+            ``TiledRasterLayer`` of a friction surface to traverse.
         geometries (list):
             A list of shapely geometries to be used as a starting point.
 
@@ -21,7 +21,7 @@ def cost_distance(friction_layer, geometries, max_distance):
             stops. This value can be an ``int`` or ``float``.
 
     Returns:
-        :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+        :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
     """
 
     wkbs = [shapely.wkb.dumps(g) for g in geometries]

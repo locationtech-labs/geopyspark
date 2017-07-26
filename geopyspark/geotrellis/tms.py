@@ -136,16 +136,16 @@ class TMS(object):
         that tile.
 
         Args:
-            source (tuple, Pyramid, list): The tile sources to render.  Tuple
-                inputs are (string, string) pairs where the first component is
-                the URI of a catalog and the second is the layer name.  A list
-                input may be any combination of tuples and Pyramids.
+            source (tuple or orlist or :class:`~geopyspark.geotrellis.layer.Pyramid`): The tile
+                sources to render. Tuple inputs are (str, str) pairs where the first component is
+                the URI of a catalog and the second is the layer name. A list
+                input may be any combination of tuples and ``Pyramid``\s.
             display (ColorMap, callable): Method for mapping tiles to images.
-                ColorMap may only be applied to single input source.  Callable
+                ColorMap may only be applied to single input source. Callable
                 will take a single numpy array for a single source, or a list
-                of numpy arrays for multiple sources.  In the case of multiple
+                of numpy arrays for multiple sources. In the case of multiple
                 inputs, resampling may be required if the tile sources have
-                different tile sizes.  Returns bytes representing the resulting
+                different tile sizes. Returns bytes representing the resulting
                 image.
         """
 
