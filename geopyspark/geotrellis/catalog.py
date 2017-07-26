@@ -395,7 +395,7 @@ def query(layer_type,
 
 def write(uri,
           layer_name,
-          tiled_raster_rdd,
+          tiled_raster_layer,
           index_strategy=IndexingMethod.ZORDER,
           time_unit=None,
           options=None,
@@ -407,7 +407,7 @@ def write(uri,
             the tile layer to written to. The shape of this string varies depending on backend.
         layer_name (str): The name of the new, tile layer.
         layer_zoom (int): The zoom level the layer should be saved at.
-        tiled_raster_rdd (:class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`): The
+        tiled_raster_layer (:class:`~geopyspark.geotrellis.layer.TiledRasterLayer`): The
             ``TiledRasterLayer`` to be saved.
         index_strategy (str or :class:`~geopyspark.geotrellis.constants.IndexingMethod`): The
             method used to orginize the saved data. Depending on the type of data within the layer,
@@ -423,19 +423,22 @@ def write(uri,
             be in camel case. If both options and keywords are set, then the options will be used.
     """
 
+    if not tiled_raster_layer.zoom_level:
+        raise ValueError("The given layer does not have a zoom_level", tiled_raster_layer)
+
     options = options or kwargs or {}
     time_unit = time_unit or ""
 
-    _construct_catalog(tiled_raster_rdd.pysc, uri, options)
+    _construct_catalog(tiled_raster_layer.pysc, uri, options)
 
     cached = _mapped_cached[uri]
 
-    if tiled_raster_rdd.layer_type == LayerType.SPATIAL:
+    if tiled_raster_layer.layer_type == LayerType.SPATIAL:
         cached.writer.writeSpatial(layer_name,
-                                   tiled_raster_rdd.srdd,
+                                   tiled_raster_layer.srdd,
                                    IndexingMethod(index_strategy).value)
     else:
         cached.writer.writeTemporal(layer_name,
-                                    tiled_raster_rdd.srdd,
+                                    tiled_raster_layer.srdd,
                                     time_unit,
                                     IndexingMethod(index_strategy).value)
