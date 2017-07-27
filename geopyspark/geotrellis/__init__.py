@@ -421,7 +421,8 @@ class Metadata(object):
             values in the class.
         crs (str or int): The ``CRS`` of the data. Can either be the EPSG code, well-known name, or
             a PROJ.4 projection string.
-        cell_type (str): The data type of the cells of the rasters.
+        cell_type (str or :class:`~geopyspark.geotrellis.constants.CellType`): The data type of the
+            cells of the rasters.
         extent (:class:`~geopyspark.geotrellis.Extent`): The ``Extent`` that covers
             the all of the rasters.
         layout_definition (:obj:`~geopyspark.geotrellis.LayoutDefinition`): The
@@ -445,7 +446,12 @@ class Metadata(object):
     def __init__(self, bounds, crs, cell_type, extent, layout_definition):
         self.bounds = bounds
         self.crs = crs
-        self.cell_type = cell_type
+
+        if isinstance(cell_type, CellType):
+            self.cell_type = CellType(cell_type).value
+        else:
+            self.cell_type = cell_type
+
         self.extent = extent
         self.tile_layout = layout_definition.tileLayout
         self.layout_definition = layout_definition
