@@ -23,7 +23,7 @@ class CatalogTest(BaseTestClass):
     uri = "file://{}".format(dir_path)
     layer_name = "catalog-test"
 
-    @pytest.fixture(scope='class', autouse=True)
+    @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
         BaseTestClass.pysc._gateway.close()
