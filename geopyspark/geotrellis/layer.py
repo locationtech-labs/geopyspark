@@ -118,6 +118,13 @@ def _reproject(target_crs, layout, resample_method, layer):
         raise TypeError("%s can not be used as target layout." % layout)
 
 
+def _to_spatial_layer(layer):
+    if layer.layer_type == LayerType.SPATIAL:
+        raise ValueError("The given already has a layer_type of LayerType.SPATIAL")
+
+    return layer.srdd.toSpatialLayer()
+
+
 class CachableLayer(object):
     """
     Base class for class that wraps a Scala RDD instance through a py4j reference.
@@ -343,6 +350,19 @@ class RasterLayer(CachableLayer):
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
         return create_python_rdd(result, ser)
+
+    def to_spatial_layer(self):
+        """Converts a ``RasterLayer`` with a ``layout_type`` of ``LayoutType.SPACETIME`` to a
+        ``RasterLayer`` with a ``layout_type`` of ``LayoutType.SPATIAL``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.RasterLayer`
+
+        Raises:
+            ValueError: If the layer already has a ``layout_type`` of ``LayoutType.SPATIAL``.
+        """
+
+        return RasterLayer(LayerType.SPATIAL, _to_spatial_layer(self))
 
     def bands(self, band):
         """Select a subsection of bands from the ``Tile``\s within the layer.
@@ -713,6 +733,19 @@ class TiledRasterLayer(CachableLayer):
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
         return create_python_rdd(result, ser)
+
+    def to_spatial_layer(self):
+        """Converts a ``TiledRasterLayer`` with a ``layout_type`` of ``LayoutType.SPACETIME`` to a
+        ``TiledRasterLayer`` with a ``layout_type`` of ``LayoutType.SPATIAL``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
+
+        Raises:
+            ValueError: If the layer already has a ``layout_type`` of ``LayoutType.SPATIAL``.
+        """
+
+        return TiledRasterLayer(LayerType.SPATIAL, _to_spatial_layer(self))
 
     def bands(self, band):
         """Select a subsection of bands from the ``Tile``\s within the layer.

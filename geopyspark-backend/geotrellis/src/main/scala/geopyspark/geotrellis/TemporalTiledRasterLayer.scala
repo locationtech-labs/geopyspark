@@ -281,6 +281,15 @@ class TemporalTiledRasterLayer(
 
     PythonTranslator.toPython[(SpaceTimeKey, Array[Byte]), ProtoTuple](geotiffRDD)
   }
+
+  def toSpatialLayer(): SpatialTiledRasterLayer = {
+    val spatialRDD = rdd.map { x => (x._1.spatialKey, x._2) }
+    val bounds = rdd.metadata.bounds.get
+    val spatialMetadata =
+      rdd.metadata.copy(bounds = Bounds(bounds.minKey.spatialKey, bounds.maxKey.spatialKey))
+
+    SpatialTiledRasterLayer(zoomLevel, ContextRDD(spatialRDD, spatialMetadata))
+  }
 }
 
 

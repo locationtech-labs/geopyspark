@@ -129,6 +129,9 @@ class TemporalRasterLayer(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]
 
     PythonTranslator.toPython[(TemporalProjectedExtent, Array[Byte]), ProtoTuple](geotiffRDD)
   }
+
+  def toSpatialLayer(): ProjectedRasterLayer =
+    ProjectedRasterLayer(rdd.map { x => (x._1.projectedExtent, x._2) })
 }
 
 
