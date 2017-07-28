@@ -230,7 +230,7 @@ def from_pb_space_time_key(pb_space_time_key):
         pb_space_time_key (ProtoSpaceTimeKey): An instance of ``ProtoSpaceTimeKey``.
 
     Returns:
-        :obj:`~geopyspark.geotrellis.SpaceTimeKey`
+        :class:`~geopyspark.geotrellis.SpaceTimeKey`
     """
 
     return SpaceTimeKey(col=pb_space_time_key.col, row=pb_space_time_key.row,
@@ -243,7 +243,7 @@ def space_time_key_decoder(proto_bytes):
         proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
 
     Returns:
-        :obj:`~geopyspark.geotrellis.SpaceTimeKey`
+        :class:`~geopyspark.geotrellis.SpaceTimeKey`
     """
 
     pb_space_time_key = keyMessages_pb2.ProtoSpaceTimeKey.FromString(proto_bytes)
@@ -596,7 +596,7 @@ def to_pb_space_time_key(obj):
     """Converts an instance of ``SpaceTimeKey`` to ``ProtoSpaceTimeKey``.
 
     Args:
-        obj (:obj:`~geopyspark.geotrellis.SpaceTimeKey`): An instance of ``SpaceTimeKey``.
+        obj (:class:`~geopyspark.geotrellis.SpaceTimeKey`): An instance of ``SpaceTimeKey``.
 
     Returns:
         ProtoSpaceTimeKey
@@ -614,7 +614,7 @@ def space_time_key_encoder(obj):
     """Encodes a ``SpaceTimeKey`` into ``ProtoSpaceTimeKey`` bytes.
 
     Args:
-        obj (:obj:`~geopyspark.geotrellis.SpaceTimeKey`): An instance of ``SpaceTimeKey``.
+        obj (:class:`~geopyspark.geotrellis.SpaceTimeKey`): An instance of ``SpaceTimeKey``.
 
     Returns:
         bytes
