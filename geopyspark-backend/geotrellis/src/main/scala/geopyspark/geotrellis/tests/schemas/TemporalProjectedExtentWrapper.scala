@@ -13,6 +13,9 @@ import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.api.java.JavaRDD
 
+import java.time.Instant
+
+
 object TemporalProjectedExtentWrapper extends Wrapper2[TemporalProjectedExtent, ProtoTemporalProjectedExtent]{
   def testOut(sc: SparkContext): JavaRDD[Array[Byte]] =
     PythonTranslator.toPython[TemporalProjectedExtent, ProtoTemporalProjectedExtent](testRdd(sc))
@@ -21,9 +24,9 @@ object TemporalProjectedExtentWrapper extends Wrapper2[TemporalProjectedExtent, 
 
   def testRdd(sc: SparkContext): RDD[TemporalProjectedExtent] = {
     val arr = Array(
-      TemporalProjectedExtent(Extent(0, 0, 1, 1), CRS.fromEpsgCode(2004), 0.toLong),
-      TemporalProjectedExtent(Extent(1, 2, 3, 4), CRS.fromEpsgCode(2004), 1.toLong),
-      TemporalProjectedExtent(Extent(5, 6, 7, 8), CRS.fromEpsgCode(2004), 2.toLong))
+      TemporalProjectedExtent(Extent(0, 0, 1, 1), CRS.fromEpsgCode(2004), Instant.parse("2016-08-24T09:00:00Z").toEpochMilli),
+      TemporalProjectedExtent(Extent(1, 2, 3, 4), CRS.fromEpsgCode(2004), Instant.parse("2016-08-24T09:00:00Z").toEpochMilli),
+      TemporalProjectedExtent(Extent(5, 6, 7, 8), CRS.fromEpsgCode(2004), Instant.parse("2016-08-24T09:00:00Z").toEpochMilli))
     sc.parallelize(arr)
   }
 }

@@ -9,6 +9,9 @@ import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.api.java.JavaRDD
 
+import java.time.Instant
+
+
 object SpaceTimeKeyWrapper extends Wrapper2[SpaceTimeKey, ProtoSpaceTimeKey] {
   def testOut(sc: SparkContext): JavaRDD[Array[Byte]] =
     PythonTranslator.toPython[SpaceTimeKey, ProtoSpaceTimeKey](testRdd(sc))
@@ -17,9 +20,9 @@ object SpaceTimeKeyWrapper extends Wrapper2[SpaceTimeKey, ProtoSpaceTimeKey] {
 
   def testRdd(sc: SparkContext): RDD[SpaceTimeKey] = {
     val arr = Array(
-      SpaceTimeKey(7, 3, 5.toLong),
-      SpaceTimeKey(9, 4, 10.toLong),
-      SpaceTimeKey(11, 5, 15.toLong))
+      SpaceTimeKey(7, 3,Instant.parse("2016-08-24T09:00:00Z").toEpochMilli),
+      SpaceTimeKey(9, 4,Instant.parse("2016-08-24T09:00:00Z").toEpochMilli),
+      SpaceTimeKey(11, 5, Instant.parse("2016-08-24T09:00:00Z").toEpochMilli))
     sc.parallelize(arr)
   }
 }

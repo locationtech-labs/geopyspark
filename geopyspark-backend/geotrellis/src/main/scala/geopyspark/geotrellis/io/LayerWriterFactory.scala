@@ -45,7 +45,8 @@ abstract class LayerWriterWrapper {
 
   private def getTemporalIndexMethod(
     timeString: String,
-    indexStrategy: String) =
+    indexStrategy: String
+  ) =
     (indexStrategy, timeString) match {
       case ("zorder", "millis") => ZCurveKeyIndexMethod.byMilliseconds(1)
       case ("zorder", "seconds") => ZCurveKeyIndexMethod.bySecond

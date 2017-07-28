@@ -1,8 +1,10 @@
 import unittest
+import datetime
 import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
+from geopyspark.geotrellis import SpaceTimeKey
 from geopyspark.geotrellis.protobuf import keyMessages_pb2
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geotrellis.protobufcodecs import (spatial_key_decoder,
@@ -49,10 +51,12 @@ class SpatialKeySchemaTest(BaseTestClass):
 
 
 class SpaceTimeKeySchemaTest(BaseTestClass):
+    time = datetime.datetime.strptime("2016-08-24T09:00:00Z", '%Y-%m-%dT%H:%M:%SZ')
+
     expected_keys = [
-        {'col': 7, 'row': 3, 'instant': 5},
-        {'col': 9, 'row': 4, 'instant': 10},
-        {'col': 11, 'row': 5, 'instant': 15}
+        SpaceTimeKey(7, 3, time)._asdict(),
+        SpaceTimeKey(9, 4, time)._asdict(),
+        SpaceTimeKey(11, 5, time)._asdict(),
     ]
 
     sc = BaseTestClass.pysc._jsc.sc()
