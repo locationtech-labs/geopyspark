@@ -329,10 +329,9 @@ def query(layer_type,
                 All other types are restricted to ``Polygon`` and ``MulitPolygon``.
 
             If not specified, then the entire layer will be read.
-        time_intervals (list, optional): A list of ``datetime.datetime`` instanaces that represent
-            the time intervals to query.  This parameter is only used when querying spatial-temporal
-            data. The default value is, ``None``. If ``None``, then only the spatial area will be
-            querried.
+        time_intervals (``[datetime.datetime]``, optional): A list of the time intervals to query.
+            This parameter is only used when querying spatial-temporal data. The default value is,
+            ``None``. If ``None``, then only the spatial area will be querried.
         options (dict, optional): Additional parameters for querying the tile for specific backends.
             The dictioanry is only used for ``Cassandra`` and ``HBase``, no other backend requires
             this to be set.
@@ -424,8 +423,9 @@ def write(uri,
             only certain methods are available. Can either be a string or a ``IndexingMethod``
             attribute.  The default method used is, ``IndexingMethod.ZORDER``.
         time_unit (str or :class:`~geopyspark.geotrellis.constants.TimeUnit`, optional): Which time
-            unit should be used when saving spatial-temporal data.  While this is set to ``None``
-            as default, it must be set if saving spatial-temporal data.
+            unit should be used when saving spatial-temporal data. This controls the resolution of
+            each index. Meaning, what time intervals are used to seperate each record. While this is
+            set to ``None`` as default, it must be set if saving spatial-temporal data.
             Depending on the indexing method chosen, different time units are used.
         options (dict, optional): Additional parameters for writing the layer for specific
             backends. The dictioanry is only used for ``Cassandra`` and ``HBase``, no other backend

@@ -9,13 +9,6 @@ from geopyspark import get_spark_context
 from geopyspark.geotrellis.constants import CellType, NO_DATA_INT
 
 
-_EPOCH = datetime.datetime.utcfromtimestamp(0)
-
-
-def _convert_to_unix_time(date_time):
-    return int((date_time - _EPOCH).total_seconds() * 1000)
-
-
 def deprecated(func):
     """This is a decorator which can be used to mark functions
     as deprecated. It will result in a warning being emmitted
@@ -235,21 +228,15 @@ class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent inst
 
     Args:
         extent (:class:`~geopyspark.geotrellis.Extent`): The area the raster represents.
-        instant (``datetime.datetime``): The time stamp of the raster. This is
-            an instance of ``datetime.datetime`` that references the correct date and time.
+        instant (``datetime.datetime``): The time stamp of the raster.
         epsg (int, optional): The EPSG code of the CRS.
         proj4 (str, optional): The Proj.4 string representation of the CRS.
 
     Attributes:
         extent (:class:`~geopyspark.geotrellis.Extent`): The area the raster represents.
-        instant (int): The time stamp of the raster. This is an ``int`` which represents the
-            timestamp in miliseconds.
+        instant (``datetime.datetime``): The time stamp of the raster.
         epsg (int, optional): The EPSG code of the CRS.
         proj4 (str, optional): The Proj.4 string representation of the CRS.
-
-    Note:
-        The ``instant`` attribute is in milliseconds since the 1970 epoch. Thus, it may be
-        different than the timestamp given by the ``datetime.datetime`` instance.
 
     Note:
         Either ``epsg`` or ``proj4`` must be defined.
@@ -258,9 +245,6 @@ class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent inst
     __slots__ = []
 
     def __new__(cls, extent, instant, epsg=None, proj4=None):
-        if isinstance(instant, datetime.datetime):
-            instant = _convert_to_unix_time(instant)
-
         return super(TemporalProjectedExtent, cls).__new__(cls, extent, instant, epsg, proj4)
 
     def _asdict(self):
@@ -373,40 +357,20 @@ Returns:
 """
 
 
-class SpaceTimeKey(namedtuple("SpaceTimeKey", 'col row instant')):
-    """
-    Represents the position of a raster within a grid.
-    This grid is a 3D plane where raster positions are represented by a pair of coordinates as well
-    as a z value that represents time.
+SpaceTimeKey = namedtuple("SpaceTimeKey", 'col row instant')
+"""
+Represents the position of a raster within a grid.
+This grid is a 3D plane where raster positions are represented by a pair of coordinates as well
+as a z value that represents time.
 
-    Args:
-        col (int): The column of the grid, the numbers run east to west.
-        row (int): The row of the grid, the numbers run north to south.
-        instant (``datetime.datetime``): The time stamp of the raster. This is
-            an instance of ``datetime.datetime`` that references the correct date and time.
+Args:
+    col (int): The column of the grid, the numbers run east to west.
+    row (int): The row of the grid, the numbers run north to south.
+    instant (``datetime.datetime``): The time stamp of the raster.
 
-    Args:
-        col (int): The column of the grid, the numbers run east to west.
-        row (int): The row of the grid, the numbers run north to south.
-        instant (int): The time stamp of the raster. This is an ``int`` which represents the
-            timestamp in miliseconds.
-
-    Note:
-        The ``instant`` attribute is in milliseconds since the 1970 epoch. Thus, it may be
-        different than the timestamp given by the ``datetime.datetime`` instance.
-
-    Returns:
-        :class:`~geopyspark.geotrellis.SpaceTimeKey`
-    """
-
-    __slots__ = []
-
-    def __new__(cls, col, row, instant):
-        if isinstance(instant, datetime.datetime):
-            instant = _convert_to_unix_time(instant)
-
-        return super(SpaceTimeKey, cls).__new__(cls, col, row, instant)
-
+Returns:
+    :obj:`~geopyspark.geotrellis.SpaceTimeKey`
+"""
 
 RasterizerOptions = namedtuple("RasterizeOption", 'includePartial sampleType')
 """Represents options available to geometry rasterizer

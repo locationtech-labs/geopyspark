@@ -1,5 +1,6 @@
 """Contains the various encoding/decoding methods to bring values to/from Python from Scala."""
 from functools import partial
+import datetime
 import numpy as np
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
@@ -23,6 +24,13 @@ _mapped_data_types = {
     6: 'FLOAT',
     7: 'DOUBLE'
 }
+
+_EPOCH = datetime.datetime.utcfromtimestamp(0)
+
+
+def _convert_to_unix_time(date_time):
+    return int((date_time - _EPOCH).total_seconds() * 1000)
+
 
 # DECODERS
 
@@ -176,14 +184,16 @@ def from_pb_temporal_projected_extent(pb_temporal_projected_extent):
         :class:`~geopyspark.geotrellis.TemporalProjectedExtent`
     """
 
+    instant = datetime.datetime.utcfromtimestamp(pb_temporal_projected_extent.instant / 1000)
+
     if pb_temporal_projected_extent.crs.epsg is not 0:
         return TemporalProjectedExtent(extent=from_pb_extent(pb_temporal_projected_extent.extent),
                                        epsg=pb_temporal_projected_extent.crs.epsg,
-                                       instant=pb_temporal_projected_extent.instant)
+                                       instant=instant)
     else:
         return TemporalProjectedExtent(extent=from_pb_extent(pb_temporal_projected_extent.extent),
                                        proj4=pb_temporal_projected_extent.crs.proj4,
-                                       instant=pb_temporal_projected_extent.instant)
+                                       instant=instant)
 
 def temporal_projected_extent_decoder(proto_bytes):
     """Deserializes ``ProtoTemporalProjectedExtent`` bytes into Python.
@@ -230,11 +240,11 @@ def from_pb_space_time_key(pb_space_time_key):
         pb_space_time_key (ProtoSpaceTimeKey): An instance of ``ProtoSpaceTimeKey``.
 
     Returns:
-        :class:`~geopyspark.geotrellis.SpaceTimeKey`
+        :obj:`~geopyspark.geotrellis.SpaceTimeKey`
     """
 
     return SpaceTimeKey(col=pb_space_time_key.col, row=pb_space_time_key.row,
-                        instant=pb_space_time_key.instant)
+                        instant=datetime.datetime.utcfromtimestamp(pb_space_time_key.instant / 1000))
 
 def space_time_key_decoder(proto_bytes):
     """Deserializes ``ProtoSpaceTime`` bytes into Python.
@@ -243,7 +253,7 @@ def space_time_key_decoder(proto_bytes):
         proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
 
     Returns:
-        :class:`~geopyspark.geotrellis.SpaceTimeKey`
+        :obj:`~geopyspark.geotrellis.SpaceTimeKey`
     """
 
     pb_space_time_key = keyMessages_pb2.ProtoSpaceTimeKey.FromString(proto_bytes)
@@ -546,7 +556,7 @@ def to_pb_temporal_projected_extent(obj):
 
     tpex.extent.CopyFrom(ex)
     tpex.crs.CopyFrom(crs)
-    tpex.instant = obj.instant
+    tpex.instant = _convert_to_unix_time(obj.instant)
 
     return tpex
 
@@ -596,7 +606,7 @@ def to_pb_space_time_key(obj):
     """Converts an instance of ``SpaceTimeKey`` to ``ProtoSpaceTimeKey``.
 
     Args:
-        obj (:class:`~geopyspark.geotrellis.SpaceTimeKey`): An instance of ``SpaceTimeKey``.
+        obj (:obj:`~geopyspark.geotrellis.SpaceTimeKey`): An instance of ``SpaceTimeKey``.
 
     Returns:
         ProtoSpaceTimeKey
@@ -606,7 +616,7 @@ def to_pb_space_time_key(obj):
 
     space_time_key.col = obj.col
     space_time_key.row = obj.row
-    space_time_key.instant = obj.instant
+    space_time_key.instant = _convert_to_unix_time(obj.instant)
 
     return space_time_key
 
@@ -614,7 +624,7 @@ def space_time_key_encoder(obj):
     """Encodes a ``SpaceTimeKey`` into ``ProtoSpaceTimeKey`` bytes.
 
     Args:
-        obj (:class:`~geopyspark.geotrellis.SpaceTimeKey`): An instance of ``SpaceTimeKey``.
+        obj (:obj:`~geopyspark.geotrellis.SpaceTimeKey`): An instance of ``SpaceTimeKey``.
 
     Returns:
         bytes
