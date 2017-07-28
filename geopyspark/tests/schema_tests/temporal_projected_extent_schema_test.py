@@ -1,4 +1,5 @@
 import unittest
+import datetime
 import pytest
 
 from pyspark import RDD
@@ -12,10 +13,19 @@ from geopyspark.tests.base_test_class import BaseTestClass
 
 
 class TemporalProjectedExtentSchemaTest(BaseTestClass):
+    extents = [
+        Extent(0.0, 0.0, 1.0, 1.0),
+        Extent(1.0, 2.0, 3.0, 4.0),
+        Extent(5.0, 6.0, 7.0, 8.0),
+    ]
+
+    time = datetime.datetime.strptime("2016-08-24T09:00:00Z", '%Y-%m-%dT%H:%M:%SZ')
+
     expected_tpextents = [
-        {'epsg': 2004, 'extent': {'xmax': 1.0, 'xmin': 0.0, 'ymax': 1.0, 'ymin': 0.0}, 'instant': 0, 'proj4': None},
-        {'epsg': 2004, 'extent': {'xmax': 3.0, 'xmin': 1.0, 'ymax': 4.0, 'ymin': 2.0}, 'instant': 1, 'proj4': None},
-        {'epsg': 2004, 'extent': {'xmax': 7.0, 'xmin': 5.0, 'ymax': 8.0, 'ymin': 6.0}, 'instant': 2, 'proj4': None}]
+        TemporalProjectedExtent(epsg=2004, extent=extents[0], instant=time)._asdict(),
+        TemporalProjectedExtent(epsg=2004, extent=extents[1], instant=time)._asdict(),
+        TemporalProjectedExtent(epsg=2004, extent=extents[2], instant=time)._asdict()
+    ]
 
     sc = BaseTestClass.pysc._jsc.sc()
     ew = BaseTestClass.pysc._jvm.geopyspark.geotrellis.tests.schemas.TemporalProjectedExtentWrapper

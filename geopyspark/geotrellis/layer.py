@@ -589,7 +589,7 @@ class TiledRasterLayer(CachableLayer):
     """Wraps a RDD of tiled, GeoTrellis rasters.
 
     Represents a RDD that contains ``(K, V)``. Where ``K`` is either
-    :class:`~geopyspark.geotrellis.SpatialKey` or :class:`~geopyspark.geotrellis.SpaceTimeKey`
+    :class:`~geopyspark.geotrellis.SpatialKey` or :obj:`~geopyspark.geotrellis.SpaceTimeKey`
     depending on the ``layer_type`` of the RDD, and ``V`` being a :ref:`raster`.
 
     The data held within the layer is tiled. This means that the rasters have been modified to fit
@@ -638,7 +638,7 @@ class TiledRasterLayer(CachableLayer):
                 a string.
             numpy_rdd (pyspark.RDD): A PySpark RDD that contains tuples of either
                 :class:`~geopyspark.geotrellis.SpatialKey` or
-                :class:`~geopyspark.geotrellis.SpaceTimeKey` and rasters that are represented by a
+                :obj:`~geopyspark.geotrellis.SpaceTimeKey` and rasters that are represented by a
                 numpy array.
             metadata (:class:`~geopyspark.geotrellis.Metadata`): The ``Metadata`` of
                 the ``TiledRasterLayer`` instance.

@@ -10,7 +10,7 @@ from shapely.wkt import dumps
 import shapely.wkb
 
 from geopyspark import map_key_input, get_spark_context
-from geopyspark.geotrellis.constants import LayerType, IndexingMethod
+from geopyspark.geotrellis.constants import LayerType, IndexingMethod, TimeUnit
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
 from geopyspark.geotrellis import Metadata, Extent, deprecated, Log
 from geopyspark.geotrellis.layer import TiledRasterLayer
@@ -247,9 +247,9 @@ def read_value(layer_type,
         layer_zoom (int): The zoom level of the layer that is to be read.
         col (int): The col number of the tile within the layout. Cols run east to west.
         row (int): The row number of the tile within the layout. Row run north to south.
-        zdt (str): The Zone-Date-Time string of the tile. The string must be in a valid date-time
-            format. This parameter is only used when querying spatial-temporal data. The default
-            value is, None. If None, then only the spatial area will be queried.
+        zdt (``datetime.datetime``): The time stamp of the tile if the data is spatial-temporal.
+            This is represented as a ``datetime.datetime.`` instance.  The default value is,
+            ``None``. If ``None``, then only the spatial area will be queried.
         options (dict, optional): Additional parameters for reading the tile for specific backends.
             The dictionary is only used for ``Cassandra`` and ``HBase``, no other backend requires
             this to be set.
@@ -264,7 +264,11 @@ def read_value(layer_type,
         return None
     else:
         options = options or kwargs or {}
-        zdt = zdt or ""
+
+        if zdt:
+            zdt = zdt.isoformat()
+        else:
+            zdt = ""
 
         if uri not in _mapped_cached:
             _construct_catalog(get_spark_context(), uri, options)
@@ -325,10 +329,9 @@ def query(layer_type,
                 All other types are restricted to ``Polygon`` and ``MulitPolygon``.
 
             If not specified, then the entire layer will be read.
-        time_intervals (list, optional): A list of strings that time intervals to query.
-            The strings must be in a valid date-time format. This parameter is only used when
-            querying spatial-temporal data. The default value is, None. If None, then only the
-            spatial area will be querried.
+        time_intervals (``[datetime.datetime]``, optional): A list of the time intervals to query.
+            This parameter is only used when querying spatial-temporal data. The default value is,
+            ``None``. If ``None``, then only the spatial area will be querried.
         options (dict, optional): Additional parameters for querying the tile for specific backends.
             The dictioanry is only used for ``Cassandra`` and ``HBase``, no other backend requires
             this to be set.
@@ -358,7 +361,11 @@ def query(layer_type,
         return TiledRasterLayer(layer_type, srdd)
 
     else:
-        time_intervals = time_intervals or []
+        if time_intervals:
+            time_intervals = [time.isoformat() for time in time_intervals]
+        else:
+            time_intervals = []
+
         query_proj = query_proj or ""
 
         if isinstance(query_proj, int):
@@ -415,8 +422,10 @@ def write(uri,
             method used to orginize the saved data. Depending on the type of data within the layer,
             only certain methods are available. Can either be a string or a ``IndexingMethod``
             attribute.  The default method used is, ``IndexingMethod.ZORDER``.
-        time_unit (str, optional): Which time unit should be used when saving spatial-temporal data.
-            While this is set to None as default, it must be set if saving spatial-temporal data.
+        time_unit (str or :class:`~geopyspark.geotrellis.constants.TimeUnit`, optional): Which time
+            unit should be used when saving spatial-temporal data. This controls the resolution of
+            each index. Meaning, what time intervals are used to seperate each record. While this is
+            set to ``None`` as default, it must be set if saving spatial-temporal data.
             Depending on the indexing method chosen, different time units are used.
         options (dict, optional): Additional parameters for writing the layer for specific
             backends. The dictioanry is only used for ``Cassandra`` and ``HBase``, no other backend
@@ -442,5 +451,5 @@ def write(uri,
     else:
         cached.writer.writeTemporal(layer_name,
                                     tiled_raster_layer.srdd,
-                                    time_unit,
+                                    TimeUnit(time_unit).value,
                                     IndexingMethod(index_strategy).value)

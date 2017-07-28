@@ -1,14 +1,17 @@
 import unittest
+import datetime
 import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
+from geopyspark.geotrellis import SpaceTimeKey
 from geopyspark.geotrellis.protobuf import keyMessages_pb2
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geotrellis.protobufcodecs import (spatial_key_decoder,
                                                   spatial_key_encoder,
                                                   space_time_key_decoder,
-                                                  space_time_key_encoder)
+                                                  space_time_key_encoder,
+                                                  _convert_to_unix_time)
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
@@ -49,10 +52,12 @@ class SpatialKeySchemaTest(BaseTestClass):
 
 
 class SpaceTimeKeySchemaTest(BaseTestClass):
+    time = datetime.datetime.strptime("2016-08-24T09:00:00Z", '%Y-%m-%dT%H:%M:%SZ')
+
     expected_keys = [
-        {'col': 7, 'row': 3, 'instant': 5},
-        {'col': 9, 'row': 4, 'instant': 10},
-        {'col': 11, 'row': 5, 'instant': 15}
+        SpaceTimeKey(7, 3, time)._asdict(),
+        SpaceTimeKey(9, 4, time)._asdict(),
+        SpaceTimeKey(11, 5, time)._asdict(),
     ]
 
     sc = BaseTestClass.pysc._jsc.sc()
@@ -83,7 +88,7 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
 
             proto_space_time_key.col = x['col']
             proto_space_time_key.row = x['row']
-            proto_space_time_key.instant = x['instant']
+            proto_space_time_key.instant = _convert_to_unix_time(x['instant'])
 
             actual_encoded.append(proto_space_time_key.SerializeToString())
 
@@ -97,7 +102,7 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
 
             proto_space_time_key.col = x['col']
             proto_space_time_key.row = x['row']
-            proto_space_time_key.instant = x['instant']
+            proto_space_time_key.instant = _convert_to_unix_time(x['instant'])
 
             actual_encoded.append(proto_space_time_key.SerializeToString())
 

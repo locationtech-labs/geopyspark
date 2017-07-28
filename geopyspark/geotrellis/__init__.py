@@ -2,6 +2,7 @@
 from collections import namedtuple
 import warnings
 import functools
+import datetime
 from shapely.geometry import box
 
 from geopyspark import get_spark_context
@@ -227,13 +228,13 @@ class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent inst
 
     Args:
         extent (:class:`~geopyspark.geotrellis.Extent`): The area the raster represents.
-        instance (int): The time stamp of the raster.
+        instant (``datetime.datetime``): The time stamp of the raster.
         epsg (int, optional): The EPSG code of the CRS.
         proj4 (str, optional): The Proj.4 string representation of the CRS.
 
     Attributes:
         extent (:class:`~geopyspark.geotrellis.Extent`): The area the raster represents.
-        instance (int): The time stamp of the raster.
+        instant (``datetime.datetime``): The time stamp of the raster.
         epsg (int, optional): The EPSG code of the CRS.
         proj4 (str, optional): The Proj.4 string representation of the CRS.
 
@@ -365,12 +366,11 @@ as a z value that represents time.
 Args:
     col (int): The column of the grid, the numbers run east to west.
     row (int): The row of the grid, the numbers run north to south.
-    instance (int): The time stamp of the raster.
+    instant (``datetime.datetime``): The time stamp of the raster.
 
 Returns:
     :obj:`~geopyspark.geotrellis.SpaceTimeKey`
 """
-
 
 RasterizerOptions = namedtuple("RasterizeOption", 'includePartial sampleType')
 """Represents options available to geometry rasterizer
