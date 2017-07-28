@@ -891,6 +891,9 @@ class TiledRasterLayer(CachableLayer):
 
         resample_method = ResampleMethod(resample_method)
 
+        if isinstance(target_crs, int):
+            target_crs = str(target_crs)
+
         srdd = self.srdd.reproject(target_crs, resample_method)
 
         return TiledRasterLayer(self.layer_type, srdd)
