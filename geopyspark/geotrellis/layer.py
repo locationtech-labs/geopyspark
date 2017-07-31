@@ -104,7 +104,7 @@ def _reproject(target_crs, layout, resample_method, layer):
         if layout.crs != target_crs:
             raise ValueError("The layout needs to be in the same CRS as the target_crs")
 
-        srdd = layer.srdd.reproject(target_crs, json.dumps(layout.to_dict()), resample_method)
+        srdd = layer.srdd.reproject(target_crs, layout.layout_definition, resample_method)
         return TiledRasterLayer(layer.layer_type, srdd)
 
     elif isinstance(layout, TiledRasterLayer):
@@ -112,7 +112,7 @@ def _reproject(target_crs, layout, resample_method, layer):
             raise ValueError("The layout needs to be in the same CRS as the target_crs")
 
         metadata = layout.layer_metadata
-        srdd = layer.srdd.reproject(target_crs, json.dumps(metadata.to_dict()), resample_method)
+        srdd = layer.srdd.reproject(target_crs, layout.layer_metadata.layout_definition, resample_method)
         return TiledRasterLayer(layer.layer_type, srdd)
     else:
         raise TypeError("%s can not be used as target layout." % layout)
