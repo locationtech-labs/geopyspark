@@ -1,4 +1,6 @@
 import io
+import numpy as np
+import socket
 
 from geopyspark import get_spark_context, _ensure_callback_gateway_initialized
 from geopyspark.geotrellis.color import ColorMap
@@ -118,10 +120,48 @@ class TMS(object):
         self.pysc = get_spark_context()
         self.server = server
         self.handshake = ''
+        self.bound = False
+        self._port = None
+        self.pysc._gateway.start_callback_server()
 
     def set_handshake(self, handshake):
         self.server.set_handshake(handshake)
         self.handshake = handshake
+
+    def bind(self, host, requested_port=None):
+        try:
+            if requested_port:
+                self.server.bind(host, requested_port)
+            else:
+                self.server.bind(host)
+            self.bound = True
+            self._port = self.server.port()
+            self._host = [l for l in
+                         ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1],
+                          [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in
+                            [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]])
+                         if l][0][0]
+        except:
+            raise RuntimeError("Error binding to " + "{} on port {}".format(self._host, self._port) if requested_port else self._host)
+
+    def unbind(self):
+        self.server.unbind()
+        self._port = None
+
+    @property
+    def host(self):
+        return self._host
+
+    @property
+    def port(self):
+        return self._port
+
+    @property
+    def url_pattern(self):
+        if not self.bound:
+            raise ValueError("Cannot generate URL for unbound TMS server")
+        else:
+            return "http://{}:{}/tile/{{z}}/{{x}}/{{y}}.png".format(self._host, self._port)
 
     @classmethod
     def build(cls, source, display):
