@@ -92,6 +92,7 @@ class SpatialTiledRasterLayer(
 
   def tileToLayout(
     layoutDefinition: LayoutDefinition,
+    zoom: Option[Int],
     resampleMethod: ResampleMethod
   ): TiledRasterLayer[SpatialKey] = {
     val mapKeyTransform =
@@ -110,7 +111,17 @@ class SpatialTiledRasterLayer(
     val tileLayer =
       MultibandTileLayerRDD(projectedRDD.tileToLayout(retiledLayerMetadata, resampleMethod), retiledLayerMetadata)
 
-    SpatialTiledRasterLayer(None, tileLayer)
+    SpatialTiledRasterLayer(zoom, tileLayer)
+  }
+
+  def tileToLayout(
+    layoutType: LayoutType,
+    resampleMethod: ResampleMethod
+  ): TiledRasterLayer[SpatialKey] = {
+    val (layoutDefinition, zoom) =
+      layoutType.layoutDefinitionWithZoom(rdd.metadata.crs, rdd.metadata.extent, rdd.metadata.cellSize)
+
+    tileToLayout(layoutDefinition, zoom, resampleMethod)
   }
 
   def pyramid(resampleMethod: ResampleMethod): Array[TiledRasterLayer[SpatialKey]] = {

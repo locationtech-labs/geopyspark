@@ -123,6 +123,7 @@ class TemporalTiledRasterLayer(
 
   def tileToLayout(
     layoutDefinition: LayoutDefinition,
+    zoom: Option[Int],
     resampleMethod: ResampleMethod
   ): TiledRasterLayer[SpaceTimeKey] = {
     val mapKeyTransform =
@@ -150,7 +151,17 @@ class TemporalTiledRasterLayer(
     val tileLayer =
       MultibandTileLayerRDD(temporalRDD.tileToLayout(retiledLayerMetadata, resampleMethod), retiledLayerMetadata)
 
-    TemporalTiledRasterLayer(None, tileLayer)
+    TemporalTiledRasterLayer(zoom, tileLayer)
+  }
+
+  def tileToLayout(
+    layoutType: LayoutType,
+    resampleMethod: ResampleMethod
+  ): TiledRasterLayer[SpaceTimeKey] = {
+    val (layoutDefinition, zoom) =
+      layoutType.layoutDefinitionWithZoom(rdd.metadata.crs, rdd.metadata.extent, rdd.metadata.cellSize)
+
+    tileToLayout(layoutDefinition, zoom, resampleMethod)
   }
 
   def pyramid(resampleMethod: ResampleMethod): Array[TiledRasterLayer[SpaceTimeKey]] = {
