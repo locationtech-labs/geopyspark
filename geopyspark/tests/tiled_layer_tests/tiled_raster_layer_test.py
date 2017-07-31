@@ -37,6 +37,11 @@ class TiledRasterLayerTest(BaseTestClass):
 
         self.assertDictEqual(actual.to_dict(), expected.to_dict())
 
+    def test_tile_to_layout_global_layout(self):
+        actual = self.tiled_layer.tile_to_layout(layout=GlobalLayout(zoom=5))
+
+        self.assertEqual(actual.zoom_level, 5)
+
     def test_tile_to_layout_with_reproject(self):
         proj4 = crs_to_proj4(3857)
         actual = self.result.tile_to_layout(layout=GlobalLayout(), target_crs=proj4).layer_metadata.crs

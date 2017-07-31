@@ -93,21 +93,21 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag] exten
   def reproject(targetCRS: String, layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterLayer[K]
 
   def tileToLayout(
-    layOutDefinition: LayoutDefinition,
+    layoutDefinition: LayoutDefinition,
     resampleMethod: ResampleMethod
-  ): TiledRasterLayer[K]
+  ): TiledRasterLayer[K] =
+    tileToLayout(layoutDefinition, None, resampleMethod)
 
   def tileToLayout(
     layoutType: LayoutType,
     resampleMethod: ResampleMethod
-  ): TiledRasterLayer[K] =
-    tileToLayout(
-      layoutType.layoutDefinition(
-        rdd.metadata.crs,
-        rdd.metadata.extent,
-        rdd.metadata.cellSize),
-      resampleMethod
-    )
+  ): TiledRasterLayer[K]
+
+  def tileToLayout(
+    layOutDefinition: LayoutDefinition,
+    zoom: Option[Int],
+    resampleMethod: ResampleMethod
+  ): TiledRasterLayer[K]
 
   def pyramid(resampleMethod: ResampleMethod): Array[_] // Array[TiledRasterLayer[K]]
 
