@@ -1,6 +1,6 @@
 import io
-import numpy as np
 import socket
+import numpy as np
 
 from geopyspark import get_spark_context, _ensure_callback_gateway_initialized
 from geopyspark.geotrellis.color import ColorMap
@@ -137,10 +137,10 @@ class TMS(object):
             self.bound = True
             self._port = self.server.port()
             self._host = [l for l in
-                         ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1],
-                          [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in
-                            [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]])
-                         if l][0][0]
+                          ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1],
+                           [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in
+                             [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]])
+                          if l][0][0]
         except:
             raise RuntimeError("Error binding to " + "{} on port {}".format(self._host, self._port) if requested_port else self._host)
 
