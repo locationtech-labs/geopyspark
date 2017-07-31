@@ -2,6 +2,8 @@
 class.
 """
 
+from geopyspark import get_spark_context
+import json
 
 __all__ = ['Histogram']
 
@@ -23,6 +25,14 @@ class Histogram(object):
 
     def __init__(self, scala_histogram):
         self.scala_histogram = scala_histogram
+
+    @classmethod
+    def from_dict(cls, d):
+        """Encodes histogram as a dictionary"""
+        pysc = get_spark_context()
+        histogram_json = json.dumps(d)
+        scala_histogram = pysc._gateway.jvm.geopyspark.geotrellis.Json.readHistogram(histogram_json)
+        return cls(scala_histogram)
 
     def min(self):
         """The smallest value of the histogram.
@@ -174,3 +184,10 @@ class Histogram(object):
         """
 
         return Histogram(self.scala_histogram.merge(other_histogram.scala_histogram))
+
+    def to_dict(self):
+        """Encodes histogram as a dictionary"""
+
+        pysc = get_spark_context()
+        histogram_json = pysc._gateway.jvm.geopyspark.geotrellis.Json.writeHistogram(self.scala_histogram)
+        return json.loads(histogram_json)

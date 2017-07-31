@@ -2,7 +2,7 @@ import unittest
 import pytest
 import numpy as np
 
-from geopyspark.geotrellis import SpatialKey, Tile
+from geopyspark.geotrellis import SpatialKey, Tile, Histogram
 from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -123,6 +123,14 @@ class HistogramTest(BaseTestClass):
 
         self.assertEqual(merged.values(), [1.0, 2.0, 3.0, 4.0])
         self.assertEqual(merged.mean(), 1.75)
+
+    def test_dict_methods(self):
+        dict_hist = self.hist.to_dict()
+        # value produced by histogram of doubles
+        self.assertEqual(dict_hist['maxBucketCount'], 80)
+
+        rebuilt_hist = Histogram.from_dict(dict_hist)
+        self.assertEqual(self.hist.min_max(), rebuilt_hist.min_max())
 
 
 if __name__ == "__main__":
