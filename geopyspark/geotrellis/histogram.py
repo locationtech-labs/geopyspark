@@ -2,8 +2,8 @@
 class.
 """
 
-from geopyspark import get_spark_context
 import json
+from geopyspark import get_spark_context
 
 __all__ = ['Histogram']
 
