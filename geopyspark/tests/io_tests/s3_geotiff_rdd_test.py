@@ -17,7 +17,7 @@ class S3GeoTiffIOTest(object):
         cmp = (a == b)  # result must be array of matching cells
         diff = np.argwhere(cmp == False)
         if np.size(diff) > 0:
-            raise Exception("Tiles differ at: ", diff)
+            raise Exception("Tiles differ at: ", np.size(diff), diff)
         return True
 
     def get_filepaths(self, dir_path):
