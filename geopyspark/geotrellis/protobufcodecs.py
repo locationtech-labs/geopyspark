@@ -6,7 +6,7 @@ from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
 from geopyspark.geotrellis import (Extent, ProjectedExtent, TemporalProjectedExtent, SpatialKey,
-                                   SpaceTimeKey, Tile)
+                                   SpaceTimeKey, Tile, _convert_to_unix_time)
 
 from geopyspark.geotrellis.protobuf.tileMessages_pb2 import ProtoTile, ProtoMultibandTile, ProtoCellType
 from geopyspark.geotrellis.protobuf import keyMessages_pb2
@@ -24,12 +24,6 @@ _mapped_data_types = {
     6: 'FLOAT',
     7: 'DOUBLE'
 }
-
-_EPOCH = datetime.datetime.utcfromtimestamp(0)
-
-
-def _convert_to_unix_time(date_time):
-    return int((date_time - _EPOCH).total_seconds() * 1000)
 
 
 # DECODERS
