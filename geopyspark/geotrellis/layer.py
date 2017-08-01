@@ -1112,12 +1112,19 @@ class TiledRasterLayer(CachableLayer):
         """Stitch all of the rasters within the Layer into one raster.
 
         Args:
-            path (str): The path of the geotiff to save.
-            crop_bounds (list, optional): bounds with which to crop the raster before saving.
-            crop_dimensions (list, optional): cols and rows of the image to save
+            path (str): The path of the geotiff to save. The path must be on the local file system.
+            crop_bounds (:class:`~geopyspark.geotrellis.Extent`, optional): The sub ``Extent`` with
+                which to crop the raster before saving. If ``None``, then the whole raster will be
+                saved.
+            crop_dimensions (tuple(int) or list(int), optional): cols and rows of the image to save
+                represented as either a tuple or list. If ``None`` then all cols and rows of the
+                raster will be save.
 
         Note:
             This can only be used on ``LayerType.SPATIAL`` ``TiledRasterLayer``\s.
+
+        Note:
+            If ``crop_dimensions`` is set then ``crop_bounds`` must also be set.
         """
 
         if self.layer_type != LayerType.SPATIAL:
@@ -1125,13 +1132,13 @@ class TiledRasterLayer(CachableLayer):
 
         if crop_bounds:
             if crop_dimensions:
-                self.srdd.save_stitched(path, list(crop_bounds), list(crop_dimensions))
+                self.srdd.saveStitched(path, crop_bounds._asdict(), list(crop_dimensions))
             else:
-                self.srdd.save_stitched(path, list(crop_bounds))
+                self.srdd.saveStitched(path, crop_bounds._asdict())
         elif crop_dimensions:
             raise Exception("crop_dimensions requires crop_bounds")
         else:
-            self.srdd.save_stitched(path)
+            self.srdd.saveStitched(path)
 
     def mask(self, geometries):
         """Masks the ``TiledRasterLayer`` so that only values that intersect the geometries will

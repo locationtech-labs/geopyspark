@@ -192,36 +192,36 @@ class SpatialTiledRasterLayer(
     PythonTranslator.toPython[Tile, ProtoTile](contextRDD.stitch.tile)
   }
 
-  def save_stitched(path: String): Unit =
-    _save_stitched(path, None, None)
+  def saveStitched(path: String): Unit =
+    saveStitched(path, None, None)
 
-  def save_stitched(path: String, cropBounds: ArrayList[Double]): Unit =
-    _save_stitched(path, Some(cropBounds), None)
+  def saveStitched(path: String, cropBounds: java.util.Map[String, Double]): Unit =
+    saveStitched(path, Some(cropBounds), None)
 
-  def save_stitched(path: String, cropBounds: ArrayList[Double], cropDimensions: ArrayList[Int]): Unit =
-    _save_stitched(path, Some(cropBounds), Some(cropDimensions))
+  def saveStitched(
+    path: String,
+    cropBounds: java.util.Map[String, Double],
+    cropDimensions: ArrayList[Int]
+  ): Unit =
+    saveStitched(path, Some(cropBounds), Some(cropDimensions))
 
-  private def _save_stitched(path: String, cropBounds: Option[ArrayList[Double]], cropDimensions: Option[ArrayList[Int]]): Unit = {
-
+  def saveStitched(
+    path: String,
+    cropBounds: Option[java.util.Map[String, Double]],
+    cropDimensions: Option[ArrayList[Int]]
+  ): Unit = {
     val contextRDD = ContextRDD(
       rdd.map({ case (k, v) => (k, v.band(0)) }),
       rdd.metadata
     )
+
     val stitched: Raster[Tile] = contextRDD.stitch()
 
     val adjusted = {
-      val cropExtent =
-        cropBounds.map { b =>
-          val bounds = b.asScala.toArray
-          Extent(bounds(0), bounds(1), bounds(2), bounds(3))
-        }
-
       val cropped =
-        cropExtent match {
-          case Some(extent) =>
-            stitched.crop(extent)
-          case None =>
-            stitched
+        cropBounds match {
+          case Some(extent) => stitched.crop(extent.toExtent)
+          case None => stitched
         }
 
       val resampled =
