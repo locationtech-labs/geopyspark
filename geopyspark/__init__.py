@@ -1,14 +1,13 @@
 import os
 import glob
 from pkg_resources import resource_filename
-from py4j.java_gateway import JavaClass
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
 from geopyspark.geopyspark_constants import JAR
-
 from pyspark import RDD, SparkConf, SparkContext
 from pyspark.serializers import AutoBatchedSerializer
+from py4j.java_gateway import JavaClass
 
 
 def get_spark_context():
