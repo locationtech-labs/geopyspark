@@ -1198,20 +1198,33 @@ class TiledRasterLayer(CachableLayer):
         min_max = self.srdd.getMinMax()
         return (min_max._1(), min_max._2())
 
-    def normalize(self, old_min, old_max, new_min, new_max):
+    def normalize(self, new_min, new_max, old_min=None, old_max=None):
         """Finds the min value that is contained within the given geometry.
 
+        Note:
+            If ``old_max - old_min <= 0`` or ``new_max - new_min <= 0``, then the normalization
+            will fail.
+
         Args:
-            old_min (float): Old minimum.
-            old_max (float): Old maximum.
-            new_min (float): New minimum to normalize to.
-            new_max (float): New maximum to normalize to.
+            old_min (int or float, optional): Old minimum. If not given, then the minimum value
+                of this layer will be used.
+            old_max (int or float, optional): Old maximum. If not given, then the minimum value
+                of this layer will be used.
+            new_min (int or float): New minimum to normalize to.
+            new_max (int or float): New maximum to normalize to.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
 
-        srdd = self.srdd.normalize(old_min, old_max, new_min, new_max)
+        if not old_min and not old_max:
+            old_min, old_max = self.get_min_max()
+        elif not old_min:
+            old_min = self.get_min_max()[0]
+        elif not old_max:
+            old_max = self.get_min_max()[1]
+
+        srdd = self.srdd.normalize(float(old_min), float(old_max), float(new_min), float(new_max))
 
         return TiledRasterLayer(self.layer_type, srdd)
 
