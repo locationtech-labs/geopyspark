@@ -4,7 +4,6 @@
 import json
 from collections import namedtuple
 from urllib.parse import urlparse
-from itertools import groupby
 from shapely.geometry import Polygon, MultiPolygon, Point
 from shapely.wkt import dumps
 import shapely.wkb
@@ -460,68 +459,82 @@ def write(uri,
                                     IndexingMethod(index_strategy).value)
 
 
-class Attributes(object):
-    def __init__(self, store, layer_name, layer_zoom):
-        self.store = store
-        self.layer_name = layer_name
-        self.layer_zoom = layer_zoom
-        self.layer_id = scala_companion("geotrellis.spark.LayerId").apply(layer_name, layer_zoom or 0)
-        self.utils = scala_companion("geopyspark.geotrellis.GeoTrellisUtils")
-
-    def __repr__(self):
-        return "Attributes({}, {}, {})".format(self.store.uri, self.layer_name, self.layer_zoom)
-
-    def __getitem__(self, name):
-        return self.read(name)
-
-    def __setitem__(self, name, value):
-        return self.write(name, value)
-
-    def __delitem__(self, name):
-        return self.delete(name)
-
-    def read(self, name):
-        """Read layer attribute by name as a dict
-
-        Args:
-           name (str) Attribute name
-        """
-        value_json = self.utils.readAttributeStoreJson(
-            self.store.underlying,
-            self.layer_id,
-            name)
-        if value_json:
-            return json.loads(value_json)
-        else:
-            raise KeyError(self.store.uri, self.layer_name, self.layer_zoom, name)
-
-    def write(self, name, value):
-        """Write layer attribute value as a dict
-
-        Args:
-            name (str): Attribute name
-            value (dict): Attribute value
-        """
-        value_json = json.dumps(value)
-        self.utils.writeAttributeStoreJson(
-            self.store.underlying,
-            self.layer_id,
-            name,
-            value_json)
-
-    def delete(self, name):
-        """Delete attribute by name
-
-        Args:
-            name (str): Attribute name
-        """
-        self.store.underlying.delete(self.layer_id, name)
-
-
 class AttributeStore(object):
+    """AttributeStore provides a way to read and write GeoTrellis layer attributes.
+
+    Internally all attribute values are stored as JSON, here they are exposed as dictionaries.
+    Classes often stored have a ``.from_dict`` and ``.to_dict`` methods to bridge the gap::
+
+        import geopyspark as gps
+        store = gps.AttributeStore("s3://azavea-datahub/catalog")
+        hist = store.layer("us-nlcd2011-30m-epsg3857", zoom=7).read("histogram")
+        hist = gps.Histogram.from_dict(hist)
+    """
+
     def __init__(self, uri):
         self.uri = uri
         self.underlying = scala_companion("geotrellis.spark.io.AttributeStore").apply(uri)
+
+    class Attributes(object):
+        """Accessor class for all attributes for a given layer"""
+        def __init__(self, store, layer_name, layer_zoom):
+            self.store = store
+            self.layer_name = layer_name
+            self.layer_zoom = layer_zoom
+            self.layer_id = scala_companion("geotrellis.spark.LayerId").apply(layer_name, layer_zoom or 0)
+            self.utils = scala_companion("geopyspark.geotrellis.GeoTrellisUtils")
+
+        def __repr__(self):
+            return "Attributes({}, {}, {})".format(self.store.uri, self.layer_name, self.layer_zoom)
+
+        def __getitem__(self, name):
+            return self.read(name)
+
+        def __setitem__(self, name, value):
+            return self.write(name, value)
+
+        def __delitem__(self, name):
+            return self.delete(name)
+
+        def read(self, name):
+            """Read layer attribute by name as a dict
+
+            Args:
+                name (str) Attribute name
+
+            Returns:
+                ``dict``: Attribute value
+            """
+            value_json = self.utils.readAttributeStoreJson(
+                self.store.underlying,
+                self.layer_id,
+                name)
+            if value_json:
+                return json.loads(value_json)
+            else:
+                raise KeyError(self.store.uri, self.layer_name, self.layer_zoom, name)
+
+        def write(self, name, value):
+            """Write layer attribute value as a dict
+
+            Args:
+                name (str): Attribute name
+                value (dict): Attribute value
+            """
+            value_json = json.dumps(value)
+            self.utils.writeAttributeStoreJson(
+                self.store.underlying,
+                self.layer_id,
+                name,
+                value_json)
+
+        def delete(self, name):
+            """Delete attribute by name
+
+            Args:
+                name (str): Attribute name
+            """
+            self.store.underlying.delete(self.layer_id, name)
 
     def layer(self, name, zoom=None):
         """Layer Attributes object for given layer
@@ -530,15 +543,19 @@ class AttributeStore(object):
             zoom (int, optional): Layer zoom
 
         Returns:
-            :class:`~geopyspark.geotrellis.catalog.Attributes
+            :class:`~geopyspark.geotrellis.catalog.Attributes`
         """
-        return Attributes(self, name, zoom)
+        return self.Attributes(self, name, zoom)
 
     def layers(self):
-        """List all layers Attributes objects"""
+        """List all layers Attributes objects
+
+        Returns:
+            ``[:class:`~geopyspark.geotrellis.catalog.AttributeStore.Attributes`]``
+        """
         layers = self.underlying.layerIds()
         util = scala_companion("geopyspark.geotrellis.GeoTrellisUtils")
-        return [Attributes(self, l.name(), l.zoom()) for l in util.seqToIterable(layers)]
+        return [self.Attributes(self, l.name(), l.zoom()) for l in util.seqToIterable(layers)]
 
     def delete(self, name, zoom=None):
         """Delete layer and all its attributes
