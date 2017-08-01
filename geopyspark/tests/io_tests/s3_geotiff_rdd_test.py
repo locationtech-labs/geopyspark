@@ -11,6 +11,15 @@ from geopyspark.tests.base_test_class import BaseTestClass
 
 
 class S3GeoTiffIOTest(object):
+    def assertTilesEqual(self, a, b):
+        """compare two numpy arrays that are tiles"""
+        self.assertEqual(a.shape, b.shape)
+        cmp = (a == b)  # result must be array of matching cells
+        diff = np.argwhere(cmp == False)
+        if np.size(diff) > 0:
+            raise Exception("Tiles differ at: ", diff)
+        return True
+
     def get_filepaths(self, dir_path):
         files = []
 
@@ -81,7 +90,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
             print('\n')
             print('This is read in from geotrellis', x.cells.shape)
             print('This is read in from rasterio', y['cells'].shape)
-            self.assertTrue(np.array_equal(x.cells, y['cells']))
+            self.assertTilesEqual(x.cells, y['cells'])
 
     def windowed_result_checker(self, windowed_tiles):
         self.assertEqual(len(windowed_tiles), 4)
