@@ -7,7 +7,7 @@ if sys.version_info < (3, 3):
 
 setup_args = dict(
     name='geopyspark',
-    version='0.2.0-RC3',
+    version='0.2.0-RC4',
     author='Jacob Bouffard, James McClain',
     author_email='jbouffard@azavea.com, jmcclain@azavea.com',
     download_url='http://github.com/locationtech-labs/geopyspark',
