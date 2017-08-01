@@ -7,9 +7,11 @@ import geotrellis.raster.render._
 import geotrellis.raster.resample.ResampleMethod
 import geotrellis.vector._
 import geotrellis.spark._
+import geotrellis.spark.io._
 import geotrellis.spark.reproject._
 import geotrellis.spark.tiling._
-
+import spray.json._
+import spray.json.DefaultJsonProtocol._
 import org.apache.spark.rdd._
 
 import scala.collection.JavaConverters._
@@ -19,6 +21,8 @@ import java.util.Map
 
 object GeoTrellisUtils {
   import  Constants._
+
+  def seqToIterable[T](seq: Seq[T]): java.util.Iterator[T] = seq.toIterator.asJava
 
   def convertToScalaMap(
     javaMap: java.util.Map[String, Any],
@@ -107,5 +111,25 @@ object GeoTrellisUtils {
         mappedLayout("tileCols"),
         mappedLayout("tileRows"))
     }
+  }
+
+  /** Read any attribute store value as JSON object.
+    * Returns null if attribute is not found in the store.
+    */
+  def readAttributeStoreJson(store: AttributeStore, id: LayerId, attributeName: String): String = {
+    try {
+      val json = store.read[JsValue](id, attributeName)
+      return json.compactPrint
+    } catch {
+      case e: AttributeNotFoundError =>
+        return null
+    }
+  }
+
+  /** Write JSON formatted string into catalog */
+  def writeAttributeStoreJson(store: AttributeStore, id: LayerId, attributeName: String, value: String): Unit = {
+    if (value == null) return
+    val json = value.parseJson // ensure we actually have JSON here
+    store.write(id, attributeName, json)
   }
 }

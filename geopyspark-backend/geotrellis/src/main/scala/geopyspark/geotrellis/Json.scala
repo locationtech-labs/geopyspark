@@ -17,10 +17,10 @@ object Json {
 
   def readHistogram(hist: String): Histogram[_] = {
     val json = hist.parseJson
-    json.asJsObject.getFields("maxBucketCount") match {
-      case Seq(JsNumber(maxBucketCount)) =>
+    json match {
+      case js: JsObject =>
         json.convertTo[Histogram[Double]]
-      case Seq() =>
+      case js: JsArray =>
         json.convertTo[Histogram[Int]]
     }
   }
