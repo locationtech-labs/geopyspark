@@ -1,12 +1,20 @@
 """This subpackage contains the code that reads, writes, and processes data using GeoTrellis."""
 from collections import namedtuple
 import warnings
+import datetime
 import functools
 import datetime
 from shapely.geometry import box
 
 from geopyspark import get_spark_context
 from geopyspark.geotrellis.constants import CellType, NO_DATA_INT
+
+
+_EPOCH = datetime.datetime.utcfromtimestamp(0)
+
+
+def _convert_to_unix_time(date_time):
+    return int((date_time - _EPOCH).total_seconds() * 1000)
 
 
 def deprecated(func):
@@ -399,15 +407,12 @@ class Bounds(namedtuple("Bounds", 'minKey maxKey')):
     __slots__ = []
 
     def _asdict(self):
-        if isinstance(self.minKey, dict):
-            min_key_dict = self.minKey
-        else:
-            min_key_dict = self.minKey._asdict()
+        min_key_dict = self.minKey._asdict()
+        max_key_dict = self.maxKey._asdict()
 
-        if isinstance(self.maxKey, dict):
-            max_key_dict = self.maxKey
-        else:
-            max_key_dict = self.maxKey._asdict()
+        if hasattr(self.minKey, 'instant'):
+            min_key_dict['instant'] = _convert_to_unix_time(min_key_dict['instant'])
+            max_key_dict['instant'] = _convert_to_unix_time(max_key_dict['instant'])
 
         return {'minKey': min_key_dict, 'maxKey': max_key_dict}
 
