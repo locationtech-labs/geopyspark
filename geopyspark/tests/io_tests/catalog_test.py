@@ -5,7 +5,7 @@ import pytest
 from shapely.geometry import box
 
 from geopyspark.geotrellis import Extent, SpatialKey, GlobalLayout
-from geopyspark.geotrellis.catalog import read, read_value, query, read_layer_metadata, get_layer_ids
+from geopyspark.geotrellis.catalog import read, read_value, query, read_layer_metadata, get_layer_ids, AttributeStore
 from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -159,6 +159,19 @@ class CatalogTest(BaseTestClass):
 
         self.assertTrue(len(ids) == 11)
 
+    def test_attributestore(self):
+        store = AttributeStore(self.uri)
+        layer_name = "boop-epsg-bop"
+        value = {"first": 113, "second": "44two"}
+        store.layer(layer_name, 34).write("val", value)
+        self.assertEqual(value,
+                         store.layer(layer_name, 34).read("val"))
+
+        self.assertEqual(value,
+                         store.layer(layer_name, 34)["val"])
+        store.layer(layer_name, 34).delete("val")
+        with pytest.raises(KeyError):
+            store.layer(layer_name, 34)["val"]
 
 if __name__ == "__main__":
     unittest.main()

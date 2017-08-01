@@ -1,14 +1,13 @@
 import os
 import glob
 from pkg_resources import resource_filename
-
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
 from geopyspark.geopyspark_constants import JAR
-
 from pyspark import RDD, SparkConf, SparkContext
 from pyspark.serializers import AutoBatchedSerializer
+from py4j.java_gateway import JavaClass
 
 
 def get_spark_context():
@@ -16,6 +15,12 @@ def get_spark_context():
         return SparkContext._active_spark_context
     else:
         raise RuntimeError("SparkContext must be initialized")
+
+
+def scala_companion(class_name, gateway_client=None):
+    """Returns referece to Scala companion object"""
+    gateway_client = gateway_client or get_spark_context()._gateway._gateway_client
+    return JavaClass(class_name + "$", gateway_client).__getattr__("MODULE$")
 
 
 def map_key_input(key_type, is_boundable):

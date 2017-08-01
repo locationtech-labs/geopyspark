@@ -2,14 +2,24 @@ from os import walk, path
 import unittest
 import rasterio
 import pytest
-
+import numpy as np
 from geopyspark.geotrellis.constants import LayerType
+from geopyspark.geotrellis import LocalLayout, SpatialKey
 from geopyspark.tests.python_test_utils import geotiff_test_path
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
 class S3GeoTiffIOTest(object):
+    def assertTilesEqual(self, a, b):
+        """compare two numpy arrays that are tiles"""
+        self.assertEqual(a.shape, b.shape)
+        cmp = (a == b)  # result must be array of matching cells
+        diff = np.argwhere(cmp == False)
+        if np.size(diff) > 0:
+            raise Exception("Tiles differ at: ", np.size(diff), diff)
+        return True
+
     def get_filepaths(self, dir_path):
         files = []
 
@@ -67,26 +77,38 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
                      s3_client=opt['s3Client'],
                      max_tile_size=opt.get('maxTileSize'))
 
-        return [tile[1] for tile in result.to_numpy_rdd().collect()]
+        return result
 
-    def test_whole_tiles(self):
-        geotrellis_tiles = self.read_multiband_geotrellis()
+    def test_segment_tiles(self):
+        # GeoTrellis will read GeoTiff Segments given no window size
+        # Retile them to match Rasterio read and check the cell values
+        geotrellis_tiles = self.read_multiband_geotrellis()\
+                               .tile_to_layout(LocalLayout(512))\
+                               .to_numpy_rdd().collect()
+        # TODO: assert there is only one geotrellis tile
+        geotrellis_tile = dict(geotrellis_tiles)[SpatialKey(0,0)]
+
         rasterio_tiles = self.read_geotiff_rasterio([self.file_path], False)
+        self.assertEquals(len(rasterio_tiles), 1)
+        rasterio_tile = rasterio_tiles[0]
 
-        for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x.cells == y['cells']).all())
+        self.assertTilesEqual(geotrellis_tile.cells, rasterio_tile['cells'])
 
     def windowed_result_checker(self, windowed_tiles):
         self.assertEqual(len(windowed_tiles), 4)
 
     def test_windowed_tiles(self):
         geotrellis_tiles = self.read_multiband_geotrellis({"s3Client": "mock", "maxTileSize": 256})
+        geotrellis_tiles = [tile[1] for tile in geotrellis_tiles.to_numpy_rdd().collect()]
         rasterio_tiles = self.read_geotiff_rasterio([self.file_path], True)
 
         self.windowed_result_checker(geotrellis_tiles)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x.cells == y['cells']).all())
+            print('\n')
+            print('This is read in from geotrellis', x.cells.shape)
+            print('This is read in from rasterio', y['cells'].shape)
+            self.assertTrue(np.array_equal(x.cells, y['cells']))
 
 
 if __name__ == "__main__":
