@@ -11,7 +11,7 @@ import shapely.wkb
 from geopyspark import map_key_input, get_spark_context, scala_companion
 from geopyspark.geotrellis.constants import LayerType, IndexingMethod, TimeUnit
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
-from geopyspark.geotrellis import Metadata, Extent, deprecated, Log
+from geopyspark.geotrellis import Metadata, Extent, deprecated, Log, _convert_to_unix_time
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
@@ -267,11 +267,6 @@ def read_value(layer_type,
     else:
         options = options or kwargs or {}
 
-        if zdt:
-            zdt = zdt.isoformat()
-        else:
-            zdt = ""
-
         if uri not in _mapped_cached:
             _construct_catalog(get_spark_context(), uri, options)
 
@@ -279,12 +274,17 @@ def read_value(layer_type,
 
         key = map_key_input(LayerType(layer_type).value, True)
 
-        values = cached.value_reader.readTile(key,
-                                              layer_name,
-                                              layer_zoom,
-                                              col,
-                                              row,
-                                              zdt)
+        if zdt:
+            values = cached.value_reader.readTile(layer_name,
+                                                  layer_zoom,
+                                                  col,
+                                                  row,
+                                                  _convert_to_unix_time(zdt))
+        else:
+            values = cached.value_reader.readTile(layer_name,
+                                                  layer_zoom,
+                                                  col,
+                                                  row)
 
         return multibandtile_decoder(values)
 
