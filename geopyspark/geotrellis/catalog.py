@@ -365,14 +365,14 @@ def query(layer_type,
 
     else:
         if time_intervals:
-            time_intervals = [time.isoformat() for time in time_intervals]
+            time_intervals = [time.isoformat() + "Z" for time in time_intervals]
         else:
             time_intervals = []
 
         query_proj = query_proj or ""
 
         if isinstance(query_proj, int):
-            query_proj = "EPSG:{}".format(query_proj)
+            query_proj = str(query_proj)
 
         if isinstance(query_geom, (Polygon, MultiPolygon, Point)):
             srdd = cached.reader.query(key,
