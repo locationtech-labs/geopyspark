@@ -116,8 +116,8 @@ class TMS(object):
         server (JavaObject): The Java TMSServer instance
         host (str): The IP address of the host, if bound, else None
         port (int): The port number of the TMS server, if bound, else None
-        url_pattern (string): The URI pattern for the current TMS service, with 
-            {z}, {x}, {y} tokens.  Can be copied directly to services such as 
+        url_pattern (string): The URI pattern for the current TMS service, with
+            {z}, {x}, {y} tokens.  Can be copied directly to services such as
             `geojson.io`.
     """
 
@@ -138,11 +138,11 @@ class TMS(object):
         """Starts up a TMS server.
 
         Args:
-            host (str): The target host.  Typically "0.0.0.0", "localhost", or 
-                "127.0.0.1".  The first will make the TMS service accessible 
+            host (str): The target host.  Typically "0.0.0.0", "localhost", or
+                "127.0.0.1".  The first will make the TMS service accessible
                 from the world.
 
-            requested_port (optional, int): A port number to bind the service 
+            requested_port (optional, int): A port number to bind the service
                 to.  If omitted, a random port.
         """
         try:
@@ -184,7 +184,7 @@ class TMS(object):
 
     @property
     def url_pattern(self):
-        """Returns the URI for the tiles served by the present server.  Contains 
+        """Returns the URI for the tiles served by the present server.  Contains
         {z}, {x}, and {y} tokens to be substituted for the desired zoom and x/y tile position.
 
         Returns:
