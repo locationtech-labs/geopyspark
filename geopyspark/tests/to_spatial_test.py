@@ -63,6 +63,16 @@ class ToSpatialLayerTest(BaseTestClass):
         yield
         BaseTestClass.pysc._gateway.close()
 
+    # This test should be moved to a more appropriate file once more spatial-temporal
+    # tests are made.
+    def test_spatial_metadata(self):
+        metadata = self.raster_rdd.collect_metadata()
+        min_key = metadata.bounds.minKey
+        max_key = metadata.bounds.maxKey
+
+        self.assertEqual(min_key.instant, self.time)
+        self.assertEqual(max_key.instant, self.time)
+
     def test_to_spatial_raster_layer(self):
         actual = [k for k, v in self.raster_rdd.to_spatial_layer().to_numpy_rdd().collect()]
 
