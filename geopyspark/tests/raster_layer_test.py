@@ -20,13 +20,13 @@ def make_raster(x, y, v, cols=4, rows=4, ct=CellType.FLOAT32, crs=4326):
 
 
 class RasterLayerTest(BaseTestClass):
-    layer = [
+    layers = [
         make_raster(0, 0, v=1),
         make_raster(3, 2, v=2),
         make_raster(6, 0, v=3)
     ]
 
-    numpy_rdd = BaseTestClass.pysc.parallelize(layer)
+    numpy_rdd = BaseTestClass.pysc.parallelize(layers)
     layer = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, numpy_rdd)
     metadata = layer.collect_metadata(GlobalLayout(5))
 
@@ -61,6 +61,16 @@ class RasterLayerTest(BaseTestClass):
         tiled = self.layer.tile_to_layout(layout=self.metadata.layout_definition)
 
         self.assertDictEqual(tiled.layer_metadata.to_dict(), self.metadata.to_dict())
+
+    def test_no_data_of_zero(self):
+        no_data_layer = [(t[0], Tile.from_numpy_array(t[1].cells, 1)) for t in self.layers]
+
+        rdd = BaseTestClass.pysc.parallelize(no_data_layer)
+        nd_layer = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
+        nd_metadata = nd_layer.collect_metadata()
+
+        self.assertTrue('ud1' in nd_metadata.cell_type)
+        self.assertEqual(nd_metadata.no_data_value, 1)
 
     @pytest.fixture(scope='class', autouse=True)
     def tearDown(self):
