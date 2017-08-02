@@ -158,14 +158,8 @@ object TileReaders {
   def createCatalogReader(uriString: String, layerName: String): TileReader = {
     val uri = new java.net.URI(uriString)
 
-    // TODO: extend to other backends when SPI facilities are available for ValueReader construction
-
-    if (uri.getScheme != "s3") {
-      throw new IllegalArgumentException("Only S3 URIs are supported at this time")
-    }
-
     val attribStore = AttributeStore(uri)
-    val valueReader = new s3.S3ValueReader(attribStore)
+    val valueReader = ValueReader(uri)
 
     new CatalogTileReader(valueReader, layerName)
   }
