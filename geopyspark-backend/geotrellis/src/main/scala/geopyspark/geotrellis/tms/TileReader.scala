@@ -158,7 +158,6 @@ object TileReaders {
   def createCatalogReader(uriString: String, layerName: String): TileReader = {
     val uri = new java.net.URI(uriString)
 
-    val attribStore = AttributeStore(uri)
     val valueReader = ValueReader(uri)
 
     new CatalogTileReader(valueReader, layerName)
