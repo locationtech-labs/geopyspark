@@ -11,7 +11,7 @@ import shapely.wkb
 from geopyspark import map_key_input, get_spark_context, scala_companion
 from geopyspark.geotrellis.constants import LayerType, IndexingMethod, TimeUnit
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
-from geopyspark.geotrellis import Metadata, Extent, deprecated, Log, _convert_to_unix_time
+from geopyspark.geotrellis import Metadata, Extent, deprecated, Log
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
@@ -267,6 +267,11 @@ def read_value(layer_type,
     else:
         options = options or kwargs or {}
 
+        if zdt:
+            zdt = zdt.isoformat() + 'Z'
+        else:
+            zdt = ''
+
         if uri not in _mapped_cached:
             _construct_catalog(get_spark_context(), uri, options)
 
@@ -274,17 +279,12 @@ def read_value(layer_type,
 
         key = map_key_input(LayerType(layer_type).value, True)
 
-        if zdt:
-            values = cached.value_reader.readTile(layer_name,
-                                                  layer_zoom,
-                                                  col,
-                                                  row,
-                                                  _convert_to_unix_time(zdt))
-        else:
-            values = cached.value_reader.readTile(layer_name,
-                                                  layer_zoom,
-                                                  col,
-                                                  row)
+        values = cached.value_reader.readTile(key,
+                                              layer_name,
+                                              layer_zoom,
+                                              col,
+                                              row,
+                                              zdt)
 
         return multibandtile_decoder(values)
 
@@ -335,6 +335,10 @@ def query(layer_type,
         time_intervals (``[datetime.datetime]``, optional): A list of the time intervals to query.
             This parameter is only used when querying spatial-temporal data. The default value is,
             ``None``. If ``None``, then only the spatial area will be querried.
+        query_proj (int or str, optional): The crs of the querried geometry if it is different
+            than the layer it is being filtered against. If they are different and this is not set,
+            then the returned ``TiledRasterLayer`` could contain incorrect values. If ``None``,
+            then the geometry and layer are assumed to be in the same projection.
         options (dict, optional): Additional parameters for querying the tile for specific backends.
             The dictioanry is only used for ``Cassandra`` and ``HBase``, no other backend requires
             this to be set.

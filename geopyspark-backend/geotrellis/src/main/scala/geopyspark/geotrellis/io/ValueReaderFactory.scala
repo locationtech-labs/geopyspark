@@ -19,7 +19,7 @@ import org.apache.spark._
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd.RDD
 
-import java.time.Instant
+import java.time.ZonedDateTime
 import java.util.ArrayList
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -38,55 +38,36 @@ abstract class ValueReaderWrapper() {
     attributeStore.readHeader[LayerHeader](id).valueClass
 
   def readTile(
+    keyType: String,
     layerName: String,
     zoom: Int,
     col: Int,
     row: Int,
-    zdt: Long
-  ): Array[Byte] =
-    readTile(layerName, zoom, col, row, Some(zdt))
-
-  def readTile(
-    layerName: String,
-    zoom: Int,
-    col: Int,
-    row: Int
-  ): Array[Byte] =
-    readTile(layerName, zoom, col, row, None)
-
-  def readTile(
-    layerName: String,
-    zoom: Int,
-    col: Int,
-    row: Int,
-    zdt: Option[Long]
+    zdt: String
   ): Array[Byte] = {
     val id = LayerId(layerName, zoom)
-    val valueClass: String = getValueClass(id)
+    val valueClass = getValueClass(id)
 
-    (zdt, valueClass) match {
-      case (None, "geotrellis.raster.Tile") => {
+    (keyType, valueClass) match {
+      case ("SpatialKey", "geotrellis.raster.Tile") => {
         val spatialKey = SpatialKey(col, row)
         val result = valueReader.reader[SpatialKey, Tile](id).read(spatialKey)
         PythonTranslator.toPython[MultibandTile, ProtoMultibandTile](MultibandTile(result))
       }
-      case (None, "geotrellis.raster.MultibandTile") => {
+      case ("SpatialKey", "geotrellis.raster.MultibandTile") => {
         val spatialKey = SpatialKey(col, row)
         val result = valueReader.reader[SpatialKey, MultibandTile](id).read(spatialKey)
         PythonTranslator.toPython[MultibandTile, ProtoMultibandTile](result)
       }
-      case (Some(instant), "geotrellis.raster.Tile") => {
-        val spaceKey = SpaceTimeKey(col, row, instant)
+      case ("SpaceTimeKey", "geotrellis.raster.Tile") => {
+        val spaceKey = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
         val result = valueReader.reader[SpaceTimeKey, Tile](id).read(spaceKey)
         PythonTranslator.toPython[MultibandTile, ProtoMultibandTile](MultibandTile(result))
       }
-      case (Some(instant), "geotrellis.raster.MultibandTile") => {
-        val spaceKey = SpaceTimeKey(col, row, instant)
+      case ("SpaceTimeKey", "geotrellis.raster.MultibandTile") => {
+        val spaceKey = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
         val result = valueReader.reader[SpaceTimeKey, MultibandTile](id).read(spaceKey)
         PythonTranslator.toPython[MultibandTile, ProtoMultibandTile](result)
-      }
-      case (_, _) => {
-        throw new Exception("Could not retrieve the tile.")
       }
     }
   }
