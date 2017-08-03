@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 from shapely.geometry import Polygon, MultiPolygon, Point
 from shapely.wkt import dumps
 import shapely.wkb
+import pytz
 
 from geopyspark import map_key_input, get_spark_context, scala_companion
 from geopyspark.geotrellis.constants import LayerType, IndexingMethod, TimeUnit
@@ -268,7 +269,7 @@ def read_value(layer_type,
         options = options or kwargs or {}
 
         if zdt:
-            zdt = zdt.isoformat() + 'Z'
+            zdt = zdt.astimezone(pytz.utc).isoformat()
         else:
             zdt = ''
 
@@ -369,7 +370,7 @@ def query(layer_type,
 
     else:
         if time_intervals:
-            time_intervals = [time.isoformat() + "Z" for time in time_intervals]
+            time_intervals = [time.astimezone(pytz.utc).isoformat() for time in time_intervals]
         else:
             time_intervals = []
 

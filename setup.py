@@ -18,6 +18,7 @@ setup_args = dict(
         'protobuf>=3.3.0',
         'numpy>=1.8',
         'shapely>=1.6b3',
+        'pytz'
     ],
     packages=[
         'geopyspark',
