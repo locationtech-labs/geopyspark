@@ -373,7 +373,7 @@ def to_pb_tile(obj):
     tile.cols = cols
     tile.rows = rows
 
-    if obj.no_data_value:
+    if obj.no_data_value is not None and obj.no_data_value is not False:
         cell_type.hasNoData = True
         cell_type.nd = obj.no_data_value
     else:
