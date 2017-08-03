@@ -43,6 +43,8 @@ import org.apache.spark.rdd._
 import org.apache.spark.SparkContext._
 
 import java.util.ArrayList
+import java.time.ZonedDateTime
+
 import scala.reflect._
 import scala.collection.JavaConverters._
 
@@ -88,6 +90,78 @@ class TemporalTiledRasterLayer(
       result.metadata
     )
     TemporalTiledRasterLayer(zoomLevel, multiBand)
+  }
+
+  private def wkbsToMultiPolygons(wkbs: java.util.ArrayList[Array[Byte]]) = {
+    wkbs
+      .asScala.map({ wkb => WKB.read(wkb) })
+      .flatMap({
+        case p: Polygon => Some(MultiPolygon(p))
+        case m: MultiPolygon => Some(m)
+        case _ => None
+      })
+  }
+
+  private def wkbsToMultiPolygon(wkbs: java.util.ArrayList[Array[Byte]]) =
+    MultiPolygon(
+      wkbsToMultiPolygons(wkbs)
+        .map({ mp => mp.polygons })
+        .foldLeft(List.empty[Polygon])(_ ++ _)
+    )
+
+  def sumSeries(
+    wkbs: java.util.ArrayList[Array[Byte]]
+  ): Array[(ZonedDateTime, Double)] = {
+    val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
+    val metadata = rdd.metadata
+    ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
+      .sumSeries(polygon)
+      .toArray
+      .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
+  }
+
+  def minSeries(
+    wkbs: java.util.ArrayList[Array[Byte]]
+  ): Array[(ZonedDateTime, Double)] = {
+    val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
+    val metadata = rdd.metadata
+    ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
+      .minSeries(polygon)
+      .toArray
+      .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
+  }
+
+  def maxSeries(
+    wkbs: java.util.ArrayList[Array[Byte]]
+  ): Array[(ZonedDateTime, Double)] = {
+    val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
+    val metadata = rdd.metadata
+    ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
+      .maxSeries(polygon)
+      .toArray
+      .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
+  }
+
+  def meanSeries(
+    wkbs: java.util.ArrayList[Array[Byte]]
+  ): Array[(ZonedDateTime, Double)] = {
+    val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
+    val metadata = rdd.metadata
+    ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
+      .meanSeries(polygon)
+      .toArray
+      .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
+  }
+
+  def histogramSeries(
+    wkbs: java.util.ArrayList[Array[Byte]]
+  ): Array[(ZonedDateTime, Histogram[Double])] = {
+    val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
+    val metadata = rdd.metadata
+    ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
+      .histogramSeries(polygon)
+      .toArray
+      .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
   }
 
   def reproject(targetCRS: String, resampleMethod: ResampleMethod): TemporalTiledRasterLayer = {

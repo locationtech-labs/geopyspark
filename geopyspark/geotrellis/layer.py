@@ -1133,6 +1133,36 @@ class TiledRasterLayer(CachableLayer):
         else:
             self.srdd.save_stitched(path)
 
+    def star_series(self, geometries, fn):
+        if not self.layer_type == LayerType.SPACETIME:
+            raise ValueError("Only Spatio-Temporal layers can use this function.")
+
+        if not isinstance(geometries, list):
+            geometries = [geometries]
+        wkbs = [shapely.wkb.dumps(g) for g in geometries]
+
+        return [(t._1(), t._2()) for t in list(fn(wkbs))]
+
+    def histogram_series(self, geometries):
+        fn = self.srdd.histogramSeries
+        return self.star_series(geometries, fn)
+
+    def mean_series(self, geometries):
+        fn = self.srdd.meanSeries
+        return self.star_series(geometries, fn)
+
+    def max_series(self, geometries):
+        fn = self.srdd.maxSeries
+        return self.star_series(geometries, fn)
+
+    def min_series(self, geometries):
+        fn = self.srdd.minSeries
+        return self.star_series(geometries, fn)
+
+    def sum_series(self, geometries):
+        fn = self.srdd.sumSeries
+        return self.star_series(geometries, fn)
+
     def mask(self, geometries):
         """Masks the ``TiledRasterLayer`` so that only values that intersect the geometries will
         be available.
