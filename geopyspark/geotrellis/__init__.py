@@ -505,8 +505,14 @@ class Metadata(object):
             min_key = SpatialKey(**bounds_dict['minKey'])
             max_key = SpatialKey(**bounds_dict['maxKey'])
         else:
-            min_key = SpaceTimeKey(**bounds_dict['minKey'])
-            max_key = SpaceTimeKey(**bounds_dict['maxKey'])
+            scala_min_key = bounds_dict['minKey']
+            scala_max_key = bounds_dict['maxKey']
+
+            scala_min_key['instant'] = datetime.datetime.utcfromtimestamp(scala_min_key['instant'] / 1000)
+            scala_max_key['instant'] = datetime.datetime.utcfromtimestamp(scala_max_key['instant'] / 1000)
+
+            min_key = SpaceTimeKey(**scala_min_key)
+            max_key = SpaceTimeKey(**scala_max_key)
 
         bounds = Bounds(min_key, max_key)
         extent = Extent(**metadata_dict['extent'])
