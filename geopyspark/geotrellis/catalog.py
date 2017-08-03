@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 from shapely.geometry import Polygon, MultiPolygon, Point
 from shapely.wkt import dumps
 import shapely.wkb
+import pytz
 
 from geopyspark import map_key_input, get_spark_context, scala_companion
 from geopyspark.geotrellis.constants import LayerType, IndexingMethod, TimeUnit
@@ -268,9 +269,9 @@ def read_value(layer_type,
         options = options or kwargs or {}
 
         if zdt:
-            zdt = zdt.isoformat()
+            zdt = zdt.astimezone(pytz.utc).isoformat()
         else:
-            zdt = ""
+            zdt = ''
 
         if uri not in _mapped_cached:
             _construct_catalog(get_spark_context(), uri, options)
@@ -335,6 +336,10 @@ def query(layer_type,
         time_intervals (``[datetime.datetime]``, optional): A list of the time intervals to query.
             This parameter is only used when querying spatial-temporal data. The default value is,
             ``None``. If ``None``, then only the spatial area will be querried.
+        query_proj (int or str, optional): The crs of the querried geometry if it is different
+            than the layer it is being filtered against. If they are different and this is not set,
+            then the returned ``TiledRasterLayer`` could contain incorrect values. If ``None``,
+            then the geometry and layer are assumed to be in the same projection.
         options (dict, optional): Additional parameters for querying the tile for specific backends.
             The dictioanry is only used for ``Cassandra`` and ``HBase``, no other backend requires
             this to be set.
@@ -365,14 +370,14 @@ def query(layer_type,
 
     else:
         if time_intervals:
-            time_intervals = [time.isoformat() for time in time_intervals]
+            time_intervals = [time.astimezone(pytz.utc).isoformat() for time in time_intervals]
         else:
             time_intervals = []
 
         query_proj = query_proj or ""
 
         if isinstance(query_proj, int):
-            query_proj = "EPSG:{}".format(query_proj)
+            query_proj = str(query_proj)
 
         if isinstance(query_geom, (Polygon, MultiPolygon, Point)):
             srdd = cached.reader.query(key,

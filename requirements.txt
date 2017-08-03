@@ -4,3 +4,4 @@ shapely>=1.6b3
 rasterio>=1.0a7
 setuptools
 protobuf>=3.3.0
+pytz
