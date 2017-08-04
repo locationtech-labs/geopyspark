@@ -98,7 +98,7 @@ object TileReaders {
               case Some(rdd) =>
                 val kps = reqs.map{ case QueueRequest(_, x, y, promise) => (SpatialKey(x, y), promise) }
                 val keys = reqs.map{ case QueueRequest(_, x, y, _) => SpatialKey(x, y) }.toSet
-                val results = rdd.filter{ elem => keys.contains(elem._1) }.collect()
+                val results = new MultiValueRDDFunctions(rdd).multilookup(keys)
                 kps.foreach{ case (key, promise) => {
                   promise success (
                     results
