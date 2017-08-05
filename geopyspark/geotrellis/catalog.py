@@ -416,8 +416,7 @@ def write(uri,
           tiled_raster_layer,
           index_strategy=IndexingMethod.ZORDER,
           time_unit=None,
-          options=None,
-          **kwargs):
+          attribute_store=None):
     """Writes a tile layer to a specified destination.
 
     Args:
@@ -436,32 +435,28 @@ def write(uri,
             each index. Meaning, what time intervals are used to seperate each record. While this is
             set to ``None`` as default, it must be set if saving spatial-temporal data.
             Depending on the indexing method chosen, different time units are used.
-        options (dict, optional): Additional parameters for writing the layer for specific
-            backends. The dictioanry is only used for ``Cassandra`` and ``HBase``, no other backend
-            requires this to be set.
-        **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
-            be in camel case. If both options and keywords are set, then the options will be used.
     """
 
     if tiled_raster_layer.zoom_level is None:
         Log.warn(tiled_raster_layer.pysc, "The given layer doesn't not have a zoom_level. Writing to zoom 0.")
 
-    options = options or kwargs or {}
+    pysc = tiled_raster_layer.pysc
     time_unit = time_unit or ""
-
-    _construct_catalog(tiled_raster_layer.pysc, uri, options)
-
-    cached = _mapped_cached[uri]
+    attribute_store = attribute_store or AttributeStore(uri)
+    writer = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterWrapper(attribute_store.underlying, uri)
 
     if tiled_raster_layer.layer_type == LayerType.SPATIAL:
-        cached.writer.writeSpatial(layer_name,
-                                   tiled_raster_layer.srdd,
-                                   IndexingMethod(index_strategy).value)
+        writer.writeSpatial(layer_name,
+                            tiled_raster_layer.srdd,
+                            IndexingMethod(index_strategy).value)
+
+    elif tiled_raster_layer.layer_type == LayerType.SPACETIME:
+        writer.writeTemporal(layer_name,
+                             tiled_raster_layer.srdd,
+                             TimeUnit(time_unit).value,
+                             IndexingMethod(index_strategy).value)
     else:
-        cached.writer.writeTemporal(layer_name,
-                                    tiled_raster_layer.srdd,
-                                    TimeUnit(time_unit).value,
-                                    IndexingMethod(index_strategy).value)
+        raise ValueError("Cannot write {} layer".format(tiled_raster_layer.layer_type))
 
 
 class AttributeStore(object):
