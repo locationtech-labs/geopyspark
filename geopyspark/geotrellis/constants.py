@@ -27,6 +27,19 @@ class LayerType(Enum):
     """
     SPACETIME = 'spacetime'
 
+    @classmethod
+    def fromKeyClass(cls, name):
+        if "geotrellis.spark.SpatialKey" == name:
+            return LayerType.SPATIAL
+        elif "geotrellis.spark.SpaceTimeKey" == name:
+            return LayerType.SPACETIME
+        elif "geotrellis.vector.ProjectedExtent" == name:
+            return LayerType.SPATIAL
+        elif "geotrellis.spark.TemporalProjectedExtent" == name:
+            return LayerType.SPACETIME
+        else:
+            raise ValueError("Unrecognized key class type: " + name)
+
 
 class IndexingMethod(Enum):
     """How the wrapped should be indexed when saved."""
