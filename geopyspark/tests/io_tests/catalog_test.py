@@ -88,7 +88,7 @@ class CatalogTest(BaseTestClass):
 
     def test_query2(self):
         intersection = Extent(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520)
-        queried = query(LayerType.SPATIAL, self.uri, self.layer_name,
+        queried = query(self.uri, self.layer_name,
                         11, intersection,
                         query_proj=3857, kwargs={'a': 0})
 
@@ -104,20 +104,20 @@ class CatalogTest(BaseTestClass):
     def test_query4(self):
         intersection = 42
         with pytest.raises(TypeError):
-            queried = query(LayerType.SPATIAL, self.uri, self.layer_name,
+            queried = query(self.uri, self.layer_name,
                             11, query_geom=intersection, numPartitions=2)
             result = queried.to_numpy_rdd().first()[0]
 
     def test_query_partitions(self):
         intersection = box(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520)
-        queried = query(LayerType.SPATIAL, self.uri, self.layer_name,
+        queried = query(self.uri, self.layer_name,
                         11, intersection, numPartitions=2)
 
         self.assertEqual(queried.to_numpy_rdd().first()[0], SpatialKey(1450, 996))
 
     def test_query_crs(self):
         intersection = box(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520)
-        queried = query(LayerType.SPATIAL, self.uri, self.layer_name, 11, intersection,
+        queried = query(self.uri, self.layer_name, 11, intersection,
                         proj_query=3857)
 
         self.assertEqual(queried.to_numpy_rdd().first()[0], SpatialKey(1450, 996))
@@ -130,13 +130,13 @@ class CatalogTest(BaseTestClass):
                                         self.layer_name, 5, options=options)
 
     def test_read_metadata1(self):
-        layer = query(LayerType.SPATIAL, self.uri, self.layer_name, 5)
+        layer = query(self.uri, self.layer_name, 5)
         actual_metadata = layer.layer_metadata
 
         expected_metadata = read_layer_metadata(LayerType.SPATIAL, self.uri,
                                                 self.layer_name, 5, kwargs={'a': 0})
     def test_read_metadata2(self):
-        layer = query(LayerType.SPATIAL, self.uri, self.layer_name, 5)
+        layer = query(self.uri, self.layer_name, 5)
         actual_metadata = layer.layer_metadata
 
         expected_metadata = read_layer_metadata(LayerType.SPATIAL, self.uri,
@@ -144,19 +144,8 @@ class CatalogTest(BaseTestClass):
 
         self.assertEqual(actual_metadata.to_dict(), expected_metadata.to_dict())
 
-    def test_layer_ids1(self):
-        ids = get_layer_ids(self.uri)
-
-        self.assertTrue(len(ids) == 11)
-
-    def test_layer_ids2(self):
-        ids = get_layer_ids(self.uri, options={'a': 0})
-
-        self.assertTrue(len(ids) == 11)
-
-    def test_layer_ids3(self):
-        ids = get_layer_ids(self.uri, kwargs={'a': 0})
-
+    def test_layer_ids(self):
+        ids = AttributeStore(self.uri).layers()
         self.assertTrue(len(ids) == 11)
 
     def test_attributestore(self):

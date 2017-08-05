@@ -290,16 +290,14 @@ def read_value(layer_type,
         return multibandtile_decoder(values)
 
 
-def query(layer_type,
-          uri,
+def query(uri,
           layer_name,
           layer_zoom=None,
           query_geom=None,
           time_intervals=None,
           query_proj=None,
-          options=None,
           num_partitions=None,
-          **kwargs):
+          attribute_store=None):
     """Queries a single, zoom layer from a GeoTrellis catalog given spatial and/or time parameters.
     Unlike read, this method will only return part of the layer that intersects the specified
     region.
@@ -340,75 +338,38 @@ def query(layer_type,
             than the layer it is being filtered against. If they are different and this is not set,
             then the returned ``TiledRasterLayer`` could contain incorrect values. If ``None``,
             then the geometry and layer are assumed to be in the same projection.
-        options (dict, optional): Additional parameters for querying the tile for specific backends.
-            The dictioanry is only used for ``Cassandra`` and ``HBase``, no other backend requires
-            this to be set.
         num_partitions (int, optional): Sets RDD partition count when reading from catalog.
-        **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
-            be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
         :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
     """
+    pysc = get_spark_context()
+    attribute_store = attribute_store or AttributeStore(uri)
 
-    options = options or kwargs or {}
     layer_zoom = layer_zoom or 0
 
-    pysc = get_spark_context()
+    if isinstance(query_geom, Extent):
+        query_geom = query_geom.to_polygon()
 
-    _construct_catalog(pysc, uri, options)
+    if query_geom and not isinstance(query_geom, bytes):
+        query_geom = shapely.wkb.dumps(query_geom)
 
-    cached = _mapped_cached[uri]
+    if isinstance(query_proj, int):
+        query_proj = str(query_proj)
 
-    key = map_key_input(LayerType(layer_type).value, True)
+    time_intervals = time_intervals or []
+    time_intervals = [time.astimezone(pytz.utc).isoformat()
+                      for time in time_intervals]
 
-    num_partitions = num_partitions or pysc.defaultMinPartitions
+    reader = pysc._gateway.jvm.geopyspark.geotrellis.io.Reader(pysc._jsc.sc())
+    srdd = reader.query(attribute_store.underlying, uri,
+                        layer_name, layer_zoom,
+                        query_geom, time_intervals, query_proj,
+                        num_partitions)
 
-    if not query_geom:
-        srdd = cached.reader.read(key, layer_name, layer_zoom, num_partitions)
-        return TiledRasterLayer(layer_type, srdd)
+    layer_type = LayerType.fromKeyClass(srdd.keyClassName())
 
-    else:
-        if time_intervals:
-            time_intervals = [time.astimezone(pytz.utc).isoformat() for time in time_intervals]
-        else:
-            time_intervals = []
-
-        query_proj = query_proj or ""
-
-        if isinstance(query_proj, int):
-            query_proj = str(query_proj)
-
-        if isinstance(query_geom, (Polygon, MultiPolygon, Point)):
-            srdd = cached.reader.query(key,
-                                       layer_name,
-                                       layer_zoom,
-                                       shapely.wkb.dumps(query_geom),
-                                       time_intervals,
-                                       query_proj,
-                                       num_partitions)
-
-        elif isinstance(query_geom, Extent):
-            srdd = cached.reader.query(key,
-                                       layer_name,
-                                       layer_zoom,
-                                       shapely.wkb.dumps(query_geom.to_polygon),
-                                       time_intervals,
-                                       query_proj,
-                                       num_partitions)
-
-        elif isinstance(query_geom, bytes):
-            srdd = cached.reader.query(key,
-                                       layer_name,
-                                       layer_zoom,
-                                       query_geom,
-                                       time_intervals,
-                                       query_proj,
-                                       num_partitions)
-        else:
-            raise TypeError("Could not query intersection", query_geom)
-
-        return TiledRasterLayer(layer_type, srdd)
+    return TiledRasterLayer(layer_type, srdd)
 
 
 def write(uri,
