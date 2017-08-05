@@ -200,10 +200,12 @@ object TileLayer {
   }
 
   def getCRS(crs: String): Option[CRS] = {
-    Try(CRS.fromName(crs))
-      .recover({ case e => CRS.fromString(crs) })
-      .recover({ case e => CRS.fromEpsgCode(crs.toInt) })
-      .toOption
+    Option(crs).flatMap { crs =>
+      Try(CRS.fromName(crs))
+        .recover({ case e => CRS.fromString(crs) })
+        .recover({ case e => CRS.fromEpsgCode(crs.toInt) })
+        .toOption
+    }
   }
 
   def getStorageMethod(
