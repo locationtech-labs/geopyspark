@@ -5,7 +5,7 @@ import pytest
 from shapely.geometry import box
 
 from geopyspark.geotrellis import Extent, SpatialKey, GlobalLayout
-from geopyspark.geotrellis.catalog import read, read_value, query, read_layer_metadata, get_layer_ids, AttributeStore
+from geopyspark.geotrellis.catalog import read, read_value, query, read_layer_metadata, AttributeStore
 from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -30,15 +30,14 @@ class CatalogTest(BaseTestClass):
 
     def test_read(self):
         for x in range(11, 0, -1):
-            actual_layer = query(LayerType.SPATIAL, self.uri, self.layer_name, x)
+            actual_layer = query(self.uri, self.layer_name, x)
             expected_layer = self.result.levels[x]
 
             self.assertDictEqual(actual_layer.layer_metadata.to_dict(),
                                  expected_layer.layer_metadata.to_dict())
 
-    def test_read_value1(self):
-        tiled = read_value(LayerType.SPATIAL,
-                           self.uri,
+    def test_read_value(self):
+        tiled = read_value(self.uri,
                            self.layer_name,
                            11,
                            1450,
@@ -46,31 +45,8 @@ class CatalogTest(BaseTestClass):
 
         self.assertEqual(tiled.cells.shape, (1, 256, 256))
 
-    def test_read_value2(self):
-        tiled = read_value(LayerType.SPATIAL,
-                           self.uri,
-                           self.layer_name,
-                           11,
-                           1450,
-                           966,
-                           options={'a': 0})
-
-        self.assertEqual(tiled.cells.shape, (1, 256, 256))
-
-    def test_read_value3(self):
-        tiled = read_value(LayerType.SPATIAL,
-                           self.uri,
-                           self.layer_name,
-                           11,
-                           1450,
-                           966,
-                           kwargs={'a': 0})
-
-        self.assertEqual(tiled.cells.shape, (1, 256, 256))
-
     def test_bad_read_value(self):
-        tiled = read_value(LayerType.SPATIAL,
-                           self.uri,
+        tiled = read_value(self.uri,
                            self.layer_name,
                            11,
                            1450,
@@ -82,7 +58,7 @@ class CatalogTest(BaseTestClass):
                          reason="test_query_1 causes issues on Travis")
     def test_query1(self):
         intersection = box(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520)
-        queried = query(LayerType.SPATIAL, self.uri, self.layer_name, 11, intersection)
+        queried = query(self.uri, self.layer_name, 11, intersection)
 
         self.assertEqual(queried.to_numpy_rdd().first()[0], SpatialKey(1450, 996))
 
@@ -90,13 +66,13 @@ class CatalogTest(BaseTestClass):
         intersection = Extent(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520)
         queried = query(self.uri, self.layer_name,
                         11, intersection,
-                        query_proj=3857, kwargs={'a': 0})
+                        query_proj=3857)
 
         self.assertEqual(queried.to_numpy_rdd().first()[0], SpatialKey(1450, 996))
 
     def test_query3(self):
         intersection = box(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520).wkb
-        queried = query(LayerType.SPATIAL, self.uri, self.layer_name,
+        queried = query(self.uri, self.layer_name,
                         11, intersection)
 
         self.assertEqual(queried.to_numpy_rdd().first()[0], SpatialKey(1450, 996))
@@ -105,42 +81,38 @@ class CatalogTest(BaseTestClass):
         intersection = 42
         with pytest.raises(TypeError):
             queried = query(self.uri, self.layer_name,
-                            11, query_geom=intersection, numPartitions=2)
+                            11, query_geom=intersection, num_partitions=2)
             result = queried.to_numpy_rdd().first()[0]
 
     def test_query_partitions(self):
         intersection = box(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520)
         queried = query(self.uri, self.layer_name,
-                        11, intersection, numPartitions=2)
+                        11, intersection, num_partitions=2)
 
         self.assertEqual(queried.to_numpy_rdd().first()[0], SpatialKey(1450, 996))
 
     def test_query_crs(self):
         intersection = box(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520)
         queried = query(self.uri, self.layer_name, 11, intersection,
-                        proj_query=3857)
+                        query_proj=3857)
 
         self.assertEqual(queried.to_numpy_rdd().first()[0], SpatialKey(1450, 996))
 
     def test_read_metadata_exception(self):
         uri = "abcxyz://123"
-        options = {'a': 0, 'b': 1}
         with pytest.raises(ValueError):
-            layer = read_layer_metadata(LayerType.SPATIAL, uri,
-                                        self.layer_name, 5, options=options)
+            layer = read_layer_metadata(uri, self.layer_name, 5)
 
     def test_read_metadata1(self):
         layer = query(self.uri, self.layer_name, 5)
         actual_metadata = layer.layer_metadata
 
-        expected_metadata = read_layer_metadata(LayerType.SPATIAL, self.uri,
-                                                self.layer_name, 5, kwargs={'a': 0})
+        expected_metadata = read_layer_metadata(self.uri, self.layer_name, 5)
     def test_read_metadata2(self):
         layer = query(self.uri, self.layer_name, 5)
         actual_metadata = layer.layer_metadata
 
-        expected_metadata = read_layer_metadata(LayerType.SPATIAL, self.uri,
-                                                self.layer_name, 5)
+        expected_metadata = read_layer_metadata(self.uri, self.layer_name, 5)
 
         self.assertEqual(actual_metadata.to_dict(), expected_metadata.to_dict())
 
