@@ -4,6 +4,7 @@ import geopyspark.geotrellis._
 import geopyspark.geotrellis.GeoTrellisUtils._
 
 import protos.tileMessages._
+import protos.keyMessages._
 import protos.tupleMessages._
 
 import geotrellis.proj4._
@@ -320,6 +321,9 @@ class SpatialTiledRasterLayer(
 
     PythonTranslator.toPython[(SpatialKey, Array[Byte]), ProtoTuple](geotiffRDD)
   }
+
+  def collectKeys(): java.util.ArrayList[Array[Byte]] =
+    PythonTranslator.toPython[SpatialKey, ProtoSpatialKey](rdd.keys.collect)
 }
 
 

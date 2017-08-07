@@ -410,7 +410,7 @@ class Bounds(namedtuple("Bounds", 'minKey maxKey')):
         min_key_dict = self.minKey._asdict()
         max_key_dict = self.maxKey._asdict()
 
-        if hasattr(self.minKey, 'instant'):
+        if 'instant' in min_key_dict.keys():
             min_key_dict['instant'] = _convert_to_unix_time(min_key_dict['instant'])
             max_key_dict['instant'] = _convert_to_unix_time(max_key_dict['instant'])
 
@@ -494,8 +494,6 @@ class Metadata(object):
             :class:`~geopyspark.geotrellis.Metadata`
         """
 
-        cls._metadata_dict = metadata_dict
-
         crs = metadata_dict['crs']
         cell_type = metadata_dict['cellType']
 
@@ -530,19 +528,18 @@ class Metadata(object):
             ``dict``
         """
 
-        if not hasattr(self, '_metadata_dict'):
-            self._metadata_dict = {
-                'bounds': self.bounds._asdict(),
-                'crs': self.crs,
-                'cellType': self.cell_type,
-                'extent': self.extent._asdict(),
-                'layoutDefinition': {
-                    'extent': self.layout_definition.extent._asdict(),
-                    'tileLayout': self.tile_layout._asdict()
-                }
+        metadata_dict = {
+            'bounds': self.bounds._asdict(),
+            'crs': self.crs,
+            'cellType': self.cell_type,
+            'extent': self.extent._asdict(),
+            'layoutDefinition': {
+                'extent': self.layout_definition.extent._asdict(),
+                'tileLayout': self.tile_layout._asdict()
             }
+        }
 
-        return self._metadata_dict
+        return metadata_dict
 
     def __repr__(self):
         return "Metadata({}, {}, {}, {}, {}, {}, {})".format(self.bounds, self.cell_type,

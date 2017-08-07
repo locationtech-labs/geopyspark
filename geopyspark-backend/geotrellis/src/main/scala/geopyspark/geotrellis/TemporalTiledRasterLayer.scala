@@ -4,6 +4,7 @@ import geopyspark.geotrellis._
 import geopyspark.geotrellis.GeoTrellisUtils._
 
 import protos.tileMessages._
+import protos.keyMessages._
 import protos.tupleMessages._
 
 import geotrellis.proj4._
@@ -379,6 +380,9 @@ class TemporalTiledRasterLayer(
 
     SpatialTiledRasterLayer(zoomLevel, ContextRDD(spatialRDD, spatialMetadata))
   }
+
+  def collectKeys(): java.util.ArrayList[Array[Byte]] =
+    PythonTranslator.toPython[SpaceTimeKey, ProtoSpaceTimeKey](rdd.keys.collect)
 }
 
 

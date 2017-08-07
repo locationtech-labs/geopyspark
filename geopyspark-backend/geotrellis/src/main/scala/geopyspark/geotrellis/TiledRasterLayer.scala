@@ -73,6 +73,8 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag] exten
   /** Encode RDD as Avro bytes and return it with avro schema used */
   def toProtoRDD(): JavaRDD[Array[Byte]]
 
+  def collectKeys(): java.util.ArrayList[Array[Byte]]
+
   def layerMetadata: String = rdd.metadata.toJson.prettyPrint
 
   def mask(wkbs: java.util.ArrayList[Array[Byte]]): TiledRasterLayer[K] = {
