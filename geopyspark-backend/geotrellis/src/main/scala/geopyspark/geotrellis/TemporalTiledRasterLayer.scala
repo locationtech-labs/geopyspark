@@ -172,20 +172,19 @@ class TemporalTiledRasterLayer(
 
   def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TemporalTiledRasterLayer = {
     val crs = TileLayer.getCRS(targetCRS).get
-    val tiled = tileToLayout(LocalLayout(256), resampleMethod).rdd
     layoutType match {
       case GlobalLayout(tileSize, null, threshold) =>
         val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
-        val (zoom, reprojected) = tiled.reproject(crs, scheme, resampleMethod)
+        val (zoom, reprojected) = rdd.reproject(crs, scheme, resampleMethod)
         TemporalTiledRasterLayer(Some(zoom), reprojected)
 
       case GlobalLayout(tileSize, zoom, threshold) =>
         val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
-        val (_, reprojected) = tiled.reproject(crs, scheme.levelForZoom(zoom).layout, resampleMethod)
+        val (_, reprojected) = rdd.reproject(crs, scheme.levelForZoom(zoom).layout, resampleMethod)
         TemporalTiledRasterLayer(Some(zoom), reprojected)
 
       case LocalLayout(tileCols, tileRows) =>
-        val (_, reprojected) = tiled.reproject(crs, FloatingLayoutScheme(tileCols, tileRows), resampleMethod)
+        val (_, reprojected) = rdd.reproject(crs, FloatingLayoutScheme(tileCols, tileRows), resampleMethod)
         TemporalTiledRasterLayer(None, reprojected)
     }
   }
