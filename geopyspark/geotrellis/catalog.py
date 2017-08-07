@@ -443,7 +443,7 @@ def write(uri,
             be in camel case. If both options and keywords are set, then the options will be used.
     """
 
-    if not tiled_raster_layer.zoom_level:
+    if tiled_raster_layer.zoom_level is None:
         Log.warn(tiled_raster_layer.pysc, "The given layer doesn't not have a zoom_level. Writing to zoom 0.")
 
     options = options or kwargs or {}
