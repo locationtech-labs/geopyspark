@@ -4,9 +4,14 @@ classes are wrappers of their Scala counterparts. These will be used in leau of 
 when performing operations.
 '''
 import json
+import datetime
 import shapely.wkb
 from shapely.geometry import Polygon, MultiPolygon
-from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
+from geopyspark.geotrellis.protobufcodecs import (multibandtile_decoder,
+                                                  projected_extent_decoder,
+                                                  temporal_projected_extent_decoder,
+                                                  spatial_key_decoder,
+                                                  space_time_key_decoder)
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
@@ -485,6 +490,23 @@ class RasterLayer(CachableLayer):
         else:
             return RasterLayer(self.layer_type, self.srdd.convertDataType(new_type))
 
+    def collect_keys(self):
+        """Returns a list of all of the keys in the layer.
+
+        Note:
+            This method should only be called on layers with a smaller number of keys, as a large
+            number could cause memory issues.
+
+        Returns:
+            ``[:obj:`~geopyspark.geotrellis.SpatialKey`]`` or
+            ``[:ob:`~geopyspark.geotrellis.SpaceTimeKey`]``
+        """
+
+        if self.layer_type.value == "spatial":
+            return [projected_extent_decoder(key) for key in self.srdd.collectKeys()]
+        else:
+            return [temporal_projected_extent_decoder(key) for key in self.srdd.collectKeys()]
+
     def collect_metadata(self, layout=LocalLayout()):
         """Iterate over the RDD records and generates layer metadata desribing the contained
         rasters.
@@ -765,6 +787,23 @@ class TiledRasterLayer(CachableLayer):
         """
 
         return TiledRasterLayer(LayerType.SPATIAL, _to_spatial_layer(self, target_time))
+
+    def collect_keys(self):
+        """Returns a list of all of the keys in the layer.
+
+        Note:
+            This method should only be called on layers with a smaller number of keys, as a large
+            number could cause memory issues.
+
+        Returns:
+            ``[:class:`~geopyspark.geotrellis.ProjectedExtent`]`` or
+            ``[:class:`~geopyspark.geotrellis.TemporalProjectedExtent`]``
+        """
+
+        if self.layer_type.value == "spatial":
+            return [spatial_key_decoder(key) for key in self.srdd.collectKeys()]
+        else:
+            return [space_time_key_decoder(key) for key in self.srdd.collectKeys()]
 
     def bands(self, band):
         """Select a subsection of bands from the ``Tile``\s within the layer.
@@ -1167,7 +1206,7 @@ class TiledRasterLayer(CachableLayer):
             geometries = [geometries]
         wkbs = [shapely.wkb.dumps(g) for g in geometries]
 
-        return [(t._1(), t._2()) for t in list(fn(wkbs))]
+        return [(datetime.datetime.utcfromtimestamp(t._1() / 1000), t._2()) for t in list(fn(wkbs))]
 
     def histogram_series(self, geometries):
         fn = self.srdd.histogramSeries

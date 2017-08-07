@@ -13,6 +13,7 @@ import geotrellis.vector._
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd._
 import protos.tupleMessages.ProtoTuple
+import protos.extentMessages.ProtoProjectedExtent
 
 import scala.util.{Either, Left, Right}
 import spray.json._
@@ -131,6 +132,9 @@ class ProjectedRasterLayer(val rdd: RDD[(ProjectedExtent, MultibandTile)]) exten
 
     PythonTranslator.toPython[(ProjectedExtent, Array[Byte]), ProtoTuple](geotiffRDD)
   }
+
+  def collectKeys(): java.util.ArrayList[Array[Byte]] =
+    PythonTranslator.toPython[ProjectedExtent, ProtoProjectedExtent](rdd.keys.collect)
 }
 
 

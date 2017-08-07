@@ -4,6 +4,7 @@ import geopyspark.geotrellis._
 import geopyspark.geotrellis.GeoTrellisUtils._
 
 import protos.tileMessages._
+import protos.keyMessages._
 import protos.tupleMessages._
 
 import geotrellis.proj4._
@@ -111,56 +112,61 @@ class TemporalTiledRasterLayer(
 
   def sumSeries(
     wkbs: java.util.ArrayList[Array[Byte]]
-  ): Array[(ZonedDateTime, Double)] = {
+  ): Array[(Long, Double)] = {
     val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
     val metadata = rdd.metadata
     ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
       .sumSeries(polygon)
       .toArray
+      .map { case (dt, v) => (dt.toInstant.toEpochMilli, v) }
       .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
   }
 
   def minSeries(
     wkbs: java.util.ArrayList[Array[Byte]]
-  ): Array[(ZonedDateTime, Double)] = {
+  ): Array[(Long, Double)] = {
     val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
     val metadata = rdd.metadata
     ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
       .minSeries(polygon)
       .toArray
+      .map { case (dt, v) => (dt.toInstant.toEpochMilli, v) }
       .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
   }
 
   def maxSeries(
     wkbs: java.util.ArrayList[Array[Byte]]
-  ): Array[(ZonedDateTime, Double)] = {
+  ): Array[(Long, Double)] = {
     val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
     val metadata = rdd.metadata
     ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
       .maxSeries(polygon)
       .toArray
+      .map { case (dt, v) => (dt.toInstant.toEpochMilli, v) }
       .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
   }
 
   def meanSeries(
     wkbs: java.util.ArrayList[Array[Byte]]
-  ): Array[(ZonedDateTime, Double)] = {
+  ): Array[(Long, Double)] = {
     val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
     val metadata = rdd.metadata
     ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
       .meanSeries(polygon)
       .toArray
+      .map { case (dt, v) => (dt.toInstant.toEpochMilli, v) }
       .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
   }
 
   def histogramSeries(
     wkbs: java.util.ArrayList[Array[Byte]]
-  ): Array[(ZonedDateTime, Histogram[Double])] = {
+  ): Array[(Long, Histogram[Double])] = {
     val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
     val metadata = rdd.metadata
     ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
       .histogramSeries(polygon)
       .toArray
+      .map { case (dt, v) => (dt.toInstant.toEpochMilli, v) }
       .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
   }
 
@@ -172,20 +178,19 @@ class TemporalTiledRasterLayer(
 
   def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TemporalTiledRasterLayer = {
     val crs = TileLayer.getCRS(targetCRS).get
-    val tiled = tileToLayout(LocalLayout(256), resampleMethod).rdd
     layoutType match {
       case GlobalLayout(tileSize, null, threshold) =>
         val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
-        val (zoom, reprojected) = tiled.reproject(crs, scheme, resampleMethod)
+        val (zoom, reprojected) = rdd.reproject(crs, scheme, resampleMethod)
         TemporalTiledRasterLayer(Some(zoom), reprojected)
 
       case GlobalLayout(tileSize, zoom, threshold) =>
         val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
-        val (_, reprojected) = tiled.reproject(crs, scheme.levelForZoom(zoom).layout, resampleMethod)
+        val (_, reprojected) = rdd.reproject(crs, scheme.levelForZoom(zoom).layout, resampleMethod)
         TemporalTiledRasterLayer(Some(zoom), reprojected)
 
       case LocalLayout(tileCols, tileRows) =>
-        val (_, reprojected) = tiled.reproject(crs, FloatingLayoutScheme(tileCols, tileRows), resampleMethod)
+        val (_, reprojected) = rdd.reproject(crs, FloatingLayoutScheme(tileCols, tileRows), resampleMethod)
         TemporalTiledRasterLayer(None, reprojected)
     }
   }
@@ -390,6 +395,9 @@ class TemporalTiledRasterLayer(
 
     SpatialTiledRasterLayer(zoomLevel, ContextRDD(spatialRDD, spatialMetadata))
   }
+
+  def collectKeys(): java.util.ArrayList[Array[Byte]] =
+    PythonTranslator.toPython[SpaceTimeKey, ProtoSpaceTimeKey](rdd.keys.collect)
 }
 
 
