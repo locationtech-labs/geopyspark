@@ -29,13 +29,13 @@ class LayerType(Enum):
 
     @classmethod
     def fromKeyClass(cls, name):
-        if "geotrellis.spark.SpatialKey" == name:
+        if name == "geotrellis.spark.SpatialKey":
             return LayerType.SPATIAL
-        elif "geotrellis.spark.SpaceTimeKey" == name:
+        elif name == "geotrellis.spark.SpaceTimeKey":
             return LayerType.SPACETIME
-        elif "geotrellis.vector.ProjectedExtent" == name:
+        elif name == "geotrellis.vector.ProjectedExtent":
             return LayerType.SPATIAL
-        elif "geotrellis.spark.TemporalProjectedExtent" == name:
+        elif name == "geotrellis.spark.TemporalProjectedExtent":
             return LayerType.SPACETIME
         else:
             raise ValueError("Unrecognized key class type: " + name)
