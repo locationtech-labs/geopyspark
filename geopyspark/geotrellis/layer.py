@@ -14,7 +14,13 @@ ensure_pyspark()
 from pyspark.storagelevel import StorageLevel
 
 from geopyspark import get_spark_context, map_key_input, create_python_rdd
-from geopyspark.geotrellis import Metadata, Tile, LocalLayout, GlobalLayout, LayoutDefinition, crs_to_proj4
+from geopyspark.geotrellis import (Metadata,
+                                   Tile,
+                                   LocalLayout,
+                                   GlobalLayout,
+                                   LayoutDefinition,
+                                   crs_to_proj4,
+                                   _convert_to_unix_time)
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
                                              Neighborhood as nb,
@@ -118,11 +124,14 @@ def _reproject(target_crs, layout, resample_method, layer):
         raise TypeError("%s can not be used as target layout." % layout)
 
 
-def _to_spatial_layer(layer):
+def _to_spatial_layer(layer, target_time):
     if layer.layer_type == LayerType.SPATIAL:
         raise ValueError("The given already has a layer_type of LayerType.SPATIAL")
 
-    return layer.srdd.toSpatialLayer()
+    if target_time:
+        return layer.srdd.toSpatialLayer(_convert_to_unix_time(target_time))
+    else:
+        return layer.srdd.toSpatialLayer()
 
 
 class CachableLayer(object):
@@ -351,9 +360,14 @@ class RasterLayer(CachableLayer):
 
         return create_python_rdd(result, ser)
 
-    def to_spatial_layer(self):
+    def to_spatial_layer(self, target_time=None):
         """Converts a ``RasterLayer`` with a ``layout_type`` of ``LayoutType.SPACETIME`` to a
         ``RasterLayer`` with a ``layout_type`` of ``LayoutType.SPATIAL``.
+
+        Args:
+            target_time (``datetime.datetime``, optional): The instance of interest. If set, the
+                resulting ``RasterLayer`` will only contain keys that contained the given instance.
+                If ``None``, then all values within the layer will be kept.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.RasterLayer`
@@ -362,7 +376,7 @@ class RasterLayer(CachableLayer):
             ValueError: If the layer already has a ``layout_type`` of ``LayoutType.SPATIAL``.
         """
 
-        return RasterLayer(LayerType.SPATIAL, _to_spatial_layer(self))
+        return RasterLayer(LayerType.SPATIAL, _to_spatial_layer(self, target_time))
 
     def bands(self, band):
         """Select a subsection of bands from the ``Tile``\s within the layer.
@@ -734,9 +748,14 @@ class TiledRasterLayer(CachableLayer):
 
         return create_python_rdd(result, ser)
 
-    def to_spatial_layer(self):
+    def to_spatial_layer(self, target_time=None):
         """Converts a ``TiledRasterLayer`` with a ``layout_type`` of ``LayoutType.SPACETIME`` to a
         ``TiledRasterLayer`` with a ``layout_type`` of ``LayoutType.SPATIAL``.
+
+        Args:
+            target_time (``datetime.datetime``, optional): The instance of interest. If set, the
+                resulting ``TiledRasterLayer`` will only contain keys that contained the given
+                instance. If ``None``, then all values within the layer will be kept.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
@@ -745,7 +764,7 @@ class TiledRasterLayer(CachableLayer):
             ValueError: If the layer already has a ``layout_type`` of ``LayoutType.SPATIAL``.
         """
 
-        return TiledRasterLayer(LayerType.SPATIAL, _to_spatial_layer(self))
+        return TiledRasterLayer(LayerType.SPATIAL, _to_spatial_layer(self, target_time))
 
     def bands(self, band):
         """Select a subsection of bands from the ``Tile``\s within the layer.
