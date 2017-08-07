@@ -22,11 +22,11 @@ object PythonTranslator {
     codec.encode(tile).toByteArray
 
   def toPython[T, M <: GeneratedMessage](
-    tiles: Seq[T]
+    values: Seq[T]
   )(implicit codec: ProtoBufCodec[T, M]): java.util.ArrayList[Array[Byte]] = {
     val array_list: java.util.ArrayList[Array[Byte]] = new java.util.ArrayList()
 
-    tiles
+   values
       .map({ v => codec.encode(v).toByteArray })
       .foreach({ ar => array_list.add(ar) })
 
