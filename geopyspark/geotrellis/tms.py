@@ -1,5 +1,5 @@
+import copy
 import io
-import numpy as np
 
 from geopyspark import get_spark_context
 from geopyspark.geotrellis.color import ColorMap
@@ -121,7 +121,9 @@ class TMS(object):
         self.pysc = get_spark_context()
         self.server = server
         self.handshake = ''
-        self.pysc._gateway.start_callback_server()
+        csp = copy.copy(self.pysc._gateway.callback_server_parameters)
+        csp.port = 0
+        self.pysc._gateway.start_callback_server(callback_server_parameters=csp)
 
     def set_handshake(self, handshake):
         self.server.set_handshake(handshake)
