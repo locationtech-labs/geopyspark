@@ -189,10 +189,10 @@ def query(uri,
     """
     pysc = get_spark_context()
     if uri in _cached_stores:
-        store = _cached_stores[uri]
+        attribute_store = _cached_stores[uri]
     else:
-        store = AttributeStore(uri)
-        _cached_stores[uri] = store
+        attribute_store = AttributeStore(uri)
+        _cached_stores[uri] = attribute_store
 
     layer_zoom = layer_zoom or 0
 
@@ -261,10 +261,10 @@ def write(uri,
     time_unit = time_unit or ""
 
     if uri in _cached_stores:
-        store = _cached_stores[uri]
+        attribute_store = _cached_stores[uri]
     else:
-        store = AttributeStore.build(uri)
-        _cached_stores[uri] = store
+        attribute_store = AttributeStore(uri)
+        _cached_stores[uri] = attribute_store
 
     writer = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterWrapper(
         attribute_store.wrapper.attributeStore(), uri)
