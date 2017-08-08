@@ -38,7 +38,7 @@ def read_layer_metadata(uri,
     if uri in _cached_stores:
         store = _cached_stores[uri]
     else:
-        store = AttributeStore.build(uri)
+        store = AttributeStore(uri)
         _cached_stores[uri] = store
 
     return store.layer(layer_name, layer_zoom).layer_metadata()
@@ -88,7 +88,7 @@ def read_value(uri,
     if uri in _cached_stores:
         store = _cached_stores[uri]
     else:
-        store = AttributeStore.build(uri)
+        store = AttributeStore(uri)
         _cached_stores[uri] = store
 
     reader = ValueReader(uri, layer_name, layer_zoom, store)
@@ -188,7 +188,11 @@ def query(uri,
         :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
     """
     pysc = get_spark_context()
-    attribute_store = attribute_store or AttributeStore.build(uri)
+    if uri in _cached_stores:
+        store = _cached_stores[uri]
+    else:
+        store = AttributeStore(uri)
+        _cached_stores[uri] = store
 
     layer_zoom = layer_zoom or 0
 
@@ -255,7 +259,13 @@ def write(uri,
 
     pysc = tiled_raster_layer.pysc
     time_unit = time_unit or ""
-    attribute_store = attribute_store or AttributeStore(uri)
+
+    if uri in _cached_stores:
+        store = _cached_stores[uri]
+    else:
+        store = AttributeStore.build(uri)
+        _cached_stores[uri] = store
+
     writer = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterWrapper(
         attribute_store.wrapper.attributeStore(), uri)
 
