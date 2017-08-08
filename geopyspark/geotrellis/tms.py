@@ -16,12 +16,12 @@ class TileRender(object):
     rendering functions.
 
     Args:
-        render_function (Tile => bytes): A function to convert geopyspark.geotrellis.Tile
-            to a collection of bytes giving a binary image file.
+        render_function (Tile => PIL.Image): A function to convert geopyspark.geotrellis.Tile
+            to a PIL Image.
 
     Attributes:
-        render_function (numpy.ndarray => bytes): A function to convert a numpy
-            array to a collection of bytes giving a binary image file.
+        render_function (Tile => PIL.Image): A function to convert geopyspark.geotrellis.Tile
+            to a PIL Image.
     """
 
     def __init__(self, render_function):
