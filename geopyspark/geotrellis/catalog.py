@@ -210,9 +210,10 @@ def query(uri,
     if isinstance(query_proj, int):
         query_proj = str(query_proj)
 
-    time_intervals = time_intervals or []
-    time_intervals = [time.astimezone(pytz.utc).isoformat()
-                      for time in time_intervals]
+    if time_intervals:
+        time_intervals = [time.astimezon(pytz.utc).isoformat() for time in time_intervals]
+    else:
+        time_intervals = []
 
     reader = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerReaderWrapper(pysc._jsc.sc())
     scala_store = attribute_store.wrapper.attributeStore()
