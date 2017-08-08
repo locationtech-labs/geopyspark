@@ -99,9 +99,9 @@ class ValueReader(object):
 
     def __init__(self, uri, layer_name, zoom=None, store=None):
         if store:
-            store = AttributeStore.build(store)
+            self.store = AttributeStore.build(store)
         else:
-            store = AttributeStore.cached(uri)
+            self.store = AttributeStore.cached(uri)
 
         self.layer_name = layer_name
         self.zoom = zoom
