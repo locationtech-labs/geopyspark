@@ -35,12 +35,7 @@ def read_layer_metadata(uri,
         :class:`~geopyspark.geotrellis.Metadata`
     """
 
-    if uri in _cached_stores:
-        store = _cached_stores[uri]
-    else:
-        store = AttributeStore(uri)
-        _cached_stores[uri] = store
-
+    store = AttributeStore.cached(uri)
     return store.layer(layer_name, layer_zoom).layer_metadata()
 
 
@@ -62,7 +57,8 @@ def read_value(uri,
                layer_zoom,
                col,
                row,
-               zdt=None):
+               zdt=None,
+               store=None):
     """Reads a single ``Tile`` from a GeoTrellis catalog.
     Unlike other functions in this module, this will not return a ``TiledRasterLayer``, but rather a
     GeoPySpark formatted raster. This is the function to use when creating a tile server.
@@ -85,11 +81,10 @@ def read_value(uri,
         :class:`~geopyspark.geotrellis.Tile`
     """
 
-    if uri in _cached_stores:
-        store = _cached_stores[uri]
+    if store:
+        store = AttributeStore.build(store)
     else:
-        store = AttributeStore(uri)
-        _cached_stores[uri] = store
+        store = AttributeStore.cached(uri)
 
     reader = ValueReader(uri, layer_name, layer_zoom, store)
     return reader.read(col, row, zdt)
@@ -101,9 +96,13 @@ class ValueReader(object):
     """
 
     def __init__(self, uri, layer_name, zoom=None, store=None):
+        if store:
+            store = AttributeStore.build(store)
+        else:
+            store = AttributeStore.cached(uri)
+
         self.layer_name = layer_name
         self.zoom = zoom
-        self.store = store or AttributeStore(uri)
         pysc = get_spark_context()
         scala_store = self.store.wrapper.attributeStore()
         ValueReaderWrapper = pysc._gateway.jvm.geopyspark.geotrellis.io.ValueReaderWrapper
@@ -141,7 +140,7 @@ def query(uri,
           time_intervals=None,
           query_proj=None,
           num_partitions=None,
-          attribute_store=None):
+          store=None):
     """Queries a single, zoom layer from a GeoTrellis catalog given spatial and/or time parameters.
     Unlike read, this method will only return part of the layer that intersects the specified
     region.
@@ -187,13 +186,12 @@ def query(uri,
     Returns:
         :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
     """
-    pysc = get_spark_context()
-    if uri in _cached_stores:
-        attribute_store = _cached_stores[uri]
+    if store:
+        store = AttributeStore.build(store)
     else:
-        attribute_store = AttributeStore(uri)
-        _cached_stores[uri] = attribute_store
+        store = AttributeStore.cached(uri)
 
+    pysc = get_spark_context()
     layer_zoom = layer_zoom or 0
 
     if query_geom is None:
@@ -217,7 +215,7 @@ def query(uri,
         time_intervals = []
 
     reader = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerReaderWrapper(pysc._jsc.sc())
-    scala_store = attribute_store.wrapper.attributeStore()
+    scala_store = store.wrapper.attributeStore()
     srdd = reader.query(scala_store, uri,
                         layer_name, layer_zoom,
                         query_geom, time_intervals, query_proj,
@@ -233,7 +231,7 @@ def write(uri,
           tiled_raster_layer,
           index_strategy=IndexingMethod.ZORDER,
           time_unit=None,
-          attribute_store=None):
+          store=None):
     """Writes a tile layer to a specified destination.
 
     Args:
@@ -257,17 +255,16 @@ def write(uri,
     if tiled_raster_layer.zoom_level is None:
         Log.warn(tiled_raster_layer.pysc, "The given layer doesn't not have a zoom_level. Writing to zoom 0.")
 
+    if store:
+        store = AttributeStore.build(store)
+    else:
+        store = AttributeStore.cached(uri)
+
     pysc = tiled_raster_layer.pysc
     time_unit = time_unit or ""
 
-    if uri in _cached_stores:
-        attribute_store = _cached_stores[uri]
-    else:
-        attribute_store = AttributeStore(uri)
-        _cached_stores[uri] = attribute_store
-
     writer = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterWrapper(
-        attribute_store.wrapper.attributeStore(), uri)
+        store.wrapper.attributeStore(), uri)
 
     if tiled_raster_layer.layer_type == LayerType.SPATIAL:
         writer.writeSpatial(layer_name,
@@ -302,10 +299,9 @@ class AttributeStore(object):
         except Py4JJavaError as err:
             raise ValueError(err.java_exception.getMessage())
 
-
     @classmethod
-    def build(cls, uri):
-        """Builds AttributeStore from URI. Instance of AttributeStore is passed through.
+    def build(cls, store):
+        """Builds AttributeStore from URI or passes an instance through.
 
         Args:
             uri (str or AttributeStore): URI for AttributeStore object or instance.
@@ -314,12 +310,22 @@ class AttributeStore(object):
             :class:`~geopyspark.geotrellis.catalog.AttributeStore`
         """
 
-        if isinstance(uri, AttributeStore):
-            return uri
-        elif isinstance(uri, str):
-            return cls(uri)
+        if isinstance(store, AttributeStore):
+            return store
+        elif isinstance(store, str):
+            return cls(store)
         else:
-            raise ValueError("Cannot make {} into AttributStore".format(uri))
+            raise ValueError("Cannot make {} into AttributStore".format(store))
+
+    @classmethod
+    def cached(cls, uri):
+        """Returns cached version of AttributeStore for URI or creates one"""
+        if uri in _cached_stores:
+            return _cached_stores[uri]
+        else:
+            store = cls(uri)
+            _cached_stores[uri] = store
+            return store
 
     class Attributes(object):
         """Accessor class for all attributes for a given layer"""
