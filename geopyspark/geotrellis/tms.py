@@ -16,11 +16,11 @@ class TileRender(object):
     rendering functions.
 
     Args:
-        render_function (Tile => PIL.Image): A function to convert geopyspark.geotrellis.Tile
+        render_function (Tile => PIL.Image.Image): A function to convert geopyspark.geotrellis.Tile
             to a PIL Image.
 
     Attributes:
-        render_function (Tile => PIL.Image): A function to convert geopyspark.geotrellis.Tile
+        render_function (Tile => PIL.Image.Image): A function to convert geopyspark.geotrellis.Tile
             to a PIL Image.
     """
 
@@ -60,13 +60,12 @@ class TileCompositer(object):
     compositing functions.
 
     Args:
-        composite_function (list[numpy array] => bytes): A function to convert
-            a list of numpy arrays to a collection of bytes giving a binary
-            image file.
+        composite_function (list[Tile] => PIL.Image.Image): A function to convert
+            a list of geopyspark.geotrellis.Tile to a PIL Image.
 
     Attributes:
-        composite_function (list[numpy array] => bytes): A function to convert
-            a list of numpy arrays to a collection of bytes giving a binary
+        composite_function (list[Tile] => PIL.Image.Image): A function to convert
+            a list of geopyspark.geotrellis.Tile to a PIL Image.
             image file.
     """
 
@@ -88,8 +87,8 @@ class TileCompositer(object):
         """
 
         try:
-            cells = [multibandtile_decoder(scala_array).cells for scala_array in all_scala_arrays]
-            image = self.composite_function(cells)
+            tiles = [multibandtile_decoder(scala_array) for scala_array in all_scala_arrays]
+            image = self.composite_function(tiles)
             bio = io.BytesIO()
             image.save(bio, 'PNG')
             return bio.getvalue()
