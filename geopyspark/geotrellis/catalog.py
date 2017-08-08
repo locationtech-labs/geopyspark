@@ -76,6 +76,8 @@ def read_value(uri,
         zdt (``datetime.datetime``): The time stamp of the tile if the data is spatial-temporal.
             This is represented as a ``datetime.datetime.`` instance.  The default value is,
             ``None``. If ``None``, then only the spatial area will be queried.
+        store (str or :class:`~geopyspark.geotrellis.catalog.AttributeStore`, optional):
+            ``AttributeStore`` instance or URI for layer metadata lookup.
 
     Returns:
         :class:`~geopyspark.geotrellis.Tile`
@@ -182,6 +184,8 @@ def query(uri,
             then the returned ``TiledRasterLayer`` could contain incorrect values. If ``None``,
             then the geometry and layer are assumed to be in the same projection.
         num_partitions (int, optional): Sets RDD partition count when reading from catalog.
+        store (str or :class:`~geopyspark.geotrellis.catalog.AttributeStore`, optional):
+            ``AttributeStore`` instance or URI for layer metadata lookup.
 
     Returns:
         :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
@@ -250,6 +254,8 @@ def write(uri,
             each index. Meaning, what time intervals are used to seperate each record. While this is
             set to ``None`` as default, it must be set if saving spatial-temporal data.
             Depending on the indexing method chosen, different time units are used.
+        store (str or :class:`~geopyspark.geotrellis.catalog.AttributeStore`, optional):
+            ``AttributeStore`` instance or URI for layer metadata lookup.
     """
 
     if tiled_raster_layer.zoom_level is None:
