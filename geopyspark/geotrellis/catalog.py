@@ -222,7 +222,7 @@ def query(uri,
                         query_geom, time_intervals, query_proj,
                         num_partitions)
 
-    layer_type = LayerType.fromKeyClass(srdd.keyClassName())
+    layer_type = LayerType._from_key_name(srdd.keyClassName())
 
     return TiledRasterLayer(layer_type, srdd)
 
