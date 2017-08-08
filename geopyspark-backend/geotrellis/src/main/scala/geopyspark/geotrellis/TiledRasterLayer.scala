@@ -56,7 +56,7 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag] exten
   def zoomLevel: Option[Int]
 
   def repartition(numPartitions: Int): TiledRasterLayer[K] =
-    withRDD(rdd.repartition(numPartitions))
+    withRDD(rdd.partitionBy(new HashPartitioner(numPartitions)))
 
   def bands(band: Int): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(band) })

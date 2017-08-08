@@ -989,7 +989,17 @@ class TiledRasterLayer(CachableLayer):
 
         return TiledRasterLayer(self.layer_type, srdd)
 
-    def repartition(self, num_partitions):
+    def repartition(self, num_partitions=None):
+        """Repartition underlying RDD using HashPartitioner.
+        If ``num_partitions`` is None, existing number of partitions will be used.
+
+        Args:
+            num_partitions(int, optional): Desired number of partitions
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+        """
+        num_partitions = num_partitions or self.getNumPartitions()
         return TiledRasterLayer(self.layer_type, self.srdd.repartition(num_partitions))
 
     def lookup(self, col, row):
