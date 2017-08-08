@@ -43,6 +43,8 @@ abstract class RasterLayer[K](implicit ev0: ClassTag[K], ev1: Component[K, Proje
 
   def toProtoRDD(): JavaRDD[Array[Byte]]
 
+  def collectKeys(): java.util.ArrayList[Array[Byte]]
+
   def bands(band: Int): RasterLayer[K] =
     withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(band) })
 

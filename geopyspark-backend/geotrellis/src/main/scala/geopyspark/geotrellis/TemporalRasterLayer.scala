@@ -12,6 +12,7 @@ import geotrellis.spark.reproject._
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd.RDD
 import protos.tupleMessages.ProtoTuple
+import protos.extentMessages.ProtoTemporalProjectedExtent
 import spray.json._
 
 import scala.util.{Either, Left, Right}
@@ -130,8 +131,21 @@ class TemporalRasterLayer(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]
     PythonTranslator.toPython[(TemporalProjectedExtent, Array[Byte]), ProtoTuple](geotiffRDD)
   }
 
+  def toSpatialLayer(instant: Long): ProjectedRasterLayer = {
+    val spatialRDD =
+      rdd
+        .filter { case (key, _) => key.instant == instant }
+        .map { x => (x._1.projectedExtent, x._2) }
+        .merge()
+
+    ProjectedRasterLayer(spatialRDD)
+  }
+
   def toSpatialLayer(): ProjectedRasterLayer =
-    ProjectedRasterLayer(rdd.map { x => (x._1.projectedExtent, x._2) })
+    ProjectedRasterLayer(rdd.map { x => (x._1.projectedExtent, x._2) }.merge())
+
+  def collectKeys(): java.util.ArrayList[Array[Byte]] =
+    PythonTranslator.toPython[TemporalProjectedExtent, ProtoTemporalProjectedExtent](rdd.keys.collect)
 }
 
 

@@ -4,9 +4,14 @@ classes are wrappers of their Scala counterparts. These will be used in leau of 
 when performing operations.
 '''
 import json
+import datetime
 import shapely.wkb
 from shapely.geometry import Polygon, MultiPolygon
-from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
+from geopyspark.geotrellis.protobufcodecs import (multibandtile_decoder,
+                                                  projected_extent_decoder,
+                                                  temporal_projected_extent_decoder,
+                                                  spatial_key_decoder,
+                                                  space_time_key_decoder)
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
@@ -14,7 +19,13 @@ ensure_pyspark()
 from pyspark.storagelevel import StorageLevel
 
 from geopyspark import get_spark_context, map_key_input, create_python_rdd
-from geopyspark.geotrellis import Metadata, Tile, LocalLayout, GlobalLayout, LayoutDefinition, crs_to_proj4
+from geopyspark.geotrellis import (Metadata,
+                                   Tile,
+                                   LocalLayout,
+                                   GlobalLayout,
+                                   LayoutDefinition,
+                                   crs_to_proj4,
+                                   _convert_to_unix_time)
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
                                              Neighborhood as nb,
@@ -118,11 +129,14 @@ def _reproject(target_crs, layout, resample_method, layer):
         raise TypeError("%s can not be used as target layout." % layout)
 
 
-def _to_spatial_layer(layer):
+def _to_spatial_layer(layer, target_time):
     if layer.layer_type == LayerType.SPATIAL:
         raise ValueError("The given already has a layer_type of LayerType.SPATIAL")
 
-    return layer.srdd.toSpatialLayer()
+    if target_time:
+        return layer.srdd.toSpatialLayer(_convert_to_unix_time(target_time))
+    else:
+        return layer.srdd.toSpatialLayer()
 
 
 class CachableLayer(object):
@@ -351,9 +365,14 @@ class RasterLayer(CachableLayer):
 
         return create_python_rdd(result, ser)
 
-    def to_spatial_layer(self):
+    def to_spatial_layer(self, target_time=None):
         """Converts a ``RasterLayer`` with a ``layout_type`` of ``LayoutType.SPACETIME`` to a
         ``RasterLayer`` with a ``layout_type`` of ``LayoutType.SPATIAL``.
+
+        Args:
+            target_time (``datetime.datetime``, optional): The instance of interest. If set, the
+                resulting ``RasterLayer`` will only contain keys that contained the given instance.
+                If ``None``, then all values within the layer will be kept.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.RasterLayer`
@@ -362,7 +381,7 @@ class RasterLayer(CachableLayer):
             ValueError: If the layer already has a ``layout_type`` of ``LayoutType.SPATIAL``.
         """
 
-        return RasterLayer(LayerType.SPATIAL, _to_spatial_layer(self))
+        return RasterLayer(LayerType.SPATIAL, _to_spatial_layer(self, target_time))
 
     def bands(self, band):
         """Select a subsection of bands from the ``Tile``\s within the layer.
@@ -470,6 +489,23 @@ class RasterLayer(CachableLayer):
             return RasterLayer(self.layer_type, self.srdd.convertDataType(no_data_constant))
         else:
             return RasterLayer(self.layer_type, self.srdd.convertDataType(new_type))
+
+    def collect_keys(self):
+        """Returns a list of all of the keys in the layer.
+
+        Note:
+            This method should only be called on layers with a smaller number of keys, as a large
+            number could cause memory issues.
+
+        Returns:
+            ``[:obj:`~geopyspark.geotrellis.SpatialKey`]`` or
+            ``[:ob:`~geopyspark.geotrellis.SpaceTimeKey`]``
+        """
+
+        if self.layer_type.value == "spatial":
+            return [projected_extent_decoder(key) for key in self.srdd.collectKeys()]
+        else:
+            return [temporal_projected_extent_decoder(key) for key in self.srdd.collectKeys()]
 
     def collect_metadata(self, layout=LocalLayout()):
         """Iterate over the RDD records and generates layer metadata desribing the contained
@@ -734,9 +770,14 @@ class TiledRasterLayer(CachableLayer):
 
         return create_python_rdd(result, ser)
 
-    def to_spatial_layer(self):
+    def to_spatial_layer(self, target_time=None):
         """Converts a ``TiledRasterLayer`` with a ``layout_type`` of ``LayoutType.SPACETIME`` to a
         ``TiledRasterLayer`` with a ``layout_type`` of ``LayoutType.SPATIAL``.
+
+        Args:
+            target_time (``datetime.datetime``, optional): The instance of interest. If set, the
+                resulting ``TiledRasterLayer`` will only contain keys that contained the given
+                instance. If ``None``, then all values within the layer will be kept.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
@@ -745,7 +786,24 @@ class TiledRasterLayer(CachableLayer):
             ValueError: If the layer already has a ``layout_type`` of ``LayoutType.SPATIAL``.
         """
 
-        return TiledRasterLayer(LayerType.SPATIAL, _to_spatial_layer(self))
+        return TiledRasterLayer(LayerType.SPATIAL, _to_spatial_layer(self, target_time))
+
+    def collect_keys(self):
+        """Returns a list of all of the keys in the layer.
+
+        Note:
+            This method should only be called on layers with a smaller number of keys, as a large
+            number could cause memory issues.
+
+        Returns:
+            ``[:class:`~geopyspark.geotrellis.ProjectedExtent`]`` or
+            ``[:class:`~geopyspark.geotrellis.TemporalProjectedExtent`]``
+        """
+
+        if self.layer_type.value == "spatial":
+            return [spatial_key_decoder(key) for key in self.srdd.collectKeys()]
+        else:
+            return [space_time_key_decoder(key) for key in self.srdd.collectKeys()]
 
     def bands(self, band):
         """Select a subsection of bands from the ``Tile``\s within the layer.
@@ -1148,7 +1206,7 @@ class TiledRasterLayer(CachableLayer):
             geometries = [geometries]
         wkbs = [shapely.wkb.dumps(g) for g in geometries]
 
-        return [(t._1(), t._2()) for t in list(fn(wkbs))]
+        return [(datetime.datetime.utcfromtimestamp(t._1() / 1000), t._2()) for t in list(fn(wkbs))]
 
     def histogram_series(self, geometries):
         fn = self.srdd.histogramSeries
