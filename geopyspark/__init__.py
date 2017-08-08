@@ -7,7 +7,7 @@ ensure_pyspark()
 from geopyspark.geopyspark_constants import JAR
 from pyspark import RDD, SparkConf, SparkContext
 from pyspark.serializers import AutoBatchedSerializer
-from py4j.java_gateway import JavaClass
+from py4j.java_gateway import JavaClass, JavaObject
 
 
 def get_spark_context():
@@ -144,6 +144,28 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
     conf.set(key='spark.executor.memory', value='8G')
 
     return conf
+
+
+def _ensure_callback_gateway_initialized(gw):
+    """ Ensure that python callback gateway is started and configured.
+    Source: ``pyspark/streaming/context.py`` in ``StreamingContext._ensure_initialized``
+    """
+    # start callback server
+    # getattr will fallback to JVM, so we cannot test by hasattr()
+    if "_callback_server" not in gw.__dict__ or gw._callback_server is None:
+        gw.callback_server_parameters.eager_load = True
+        gw.callback_server_parameters.daemonize = True
+        gw.callback_server_parameters.daemonize_connections = True
+        gw.callback_server_parameters.port = 0
+        gw.start_callback_server(gw.callback_server_parameters)
+        cbport = gw._callback_server.server_socket.getsockname()[1]
+        gw._callback_server.port = cbport
+        # gateway with real port
+        gw._python_proxy_port = gw._callback_server.port
+        # get the GatewayServer object in JVM by ID
+        jgws = JavaObject("GATEWAY_SERVER", gw._gateway_client)
+        # update the port of CallbackClient with real port
+        jgws.resetCallbackClient(jgws.getCallbackClient().getAddress(), gw._python_proxy_port)
 
 
 __all__ = ['geopyspark_conf']
