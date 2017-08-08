@@ -112,24 +112,4 @@ object GeoTrellisUtils {
         mappedLayout("tileRows"))
     }
   }
-
-  /** Read any attribute store value as JSON object.
-    * Returns null if attribute is not found in the store.
-    */
-  def readAttributeStoreJson(store: AttributeStore, id: LayerId, attributeName: String): String = {
-    try {
-      val json = store.read[JsValue](id, attributeName)
-      return json.compactPrint
-    } catch {
-      case e: AttributeNotFoundError =>
-        return null
-    }
-  }
-
-  /** Write JSON formatted string into catalog */
-  def writeAttributeStoreJson(store: AttributeStore, id: LayerId, attributeName: String, value: String): Unit = {
-    if (value == null) return
-    val json = value.parseJson // ensure we actually have JSON here
-    store.write(id, attributeName, json)
-  }
 }

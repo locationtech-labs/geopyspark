@@ -30,10 +30,8 @@ import geopyspark.geotrellis.PythonTranslator
   * Base wrapper class for all backends that provide a
   * LayerWriter[LayerId].
   */
-abstract class LayerWriterWrapper {
-
-  def attributeStore: AttributeStore
-  def layerWriter: LayerWriter[LayerId]
+class LayerWriterWrapper(attributeStore: AttributeStore, uri: String) {
+  val layerWriter: LayerWriter[LayerId] = LayerWriter(attributeStore, uri)
 
   private def getSpatialIndexMethod(indexStrategy: String): KeyIndexMethod[SpatialKey] =
     indexStrategy match {
@@ -97,102 +95,4 @@ abstract class LayerWriterWrapper {
     val indexMethod = getTemporalIndexMethod(timeString, indexStrategy)
     layerWriter.write(id, temporalRDD.rdd, indexMethod)
   }
-}
-
-
-/**
-  * Wrapper for the AccumuloLayerReader class.
-  */
-class AccumuloLayerWriterWrapper(
-  in: AccumuloInstance,
-  as: AccumuloAttributeStore,
-  table: String
-) extends LayerWriterWrapper {
-
-  val attributeStore = as
-  val layerWriter = AccumuloLayerWriter(in, as, table)
-}
-
-/**
-  * Wrapper for the HBaseLayerReader class.
-  */
-class HBaseLayerWriterWrapper(
-  as: HBaseAttributeStore,
-  table: String
-) extends LayerWriterWrapper {
-
-  val attributeStore = as
-  val layerWriter = HBaseLayerWriter(as, table)
-}
-
-/**
-  * Wrapper for the CassandraLayerReader class.
-  */
-class CassandraLayerWriterWrapper(
-  as: CassandraAttributeStore,
-  ks: String,
-  table: String
-) extends LayerWriterWrapper {
-
-  val attributeStore = as
-  val layerWriter = CassandraLayerWriter(as, ks, table)
-}
-
-/**
-  * Wrapper for the FileLayerReader class.
-  */
-class FileLayerWriterWrapper(as: FileAttributeStore)
-    extends LayerWriterWrapper {
-
-  val attributeStore = as
-  val layerWriter = FileLayerWriter(as)
-}
-
-/**
-  * Wrapper for the S3LayerReader class.
-  */
-class S3LayerWriterWrapper(as: S3AttributeStore)
-    extends LayerWriterWrapper {
-
-  val attributeStore = as
-  val layerWriter = S3LayerWriter(as)
-}
-
-/**
-  * Wrapper for the HadoopLayerReader class.
-  */
-class HadoopLayerWriterWrapper(as: HadoopAttributeStore)
-    extends LayerWriterWrapper {
-
-  val attributeStore = as
-  val layerWriter = HadoopLayerWriter(as.rootPath, as)
-}
-
-/**
-  * Interface for requesting layer writer wrappers.  This object is
-  * easily accessible from PySpark.
-  */
-object LayerWriterFactory {
-
-  def buildHadoop(hasw: HadoopAttributeStoreWrapper) =
-    new HadoopLayerWriterWrapper(hasw.attributeStore)
-
-  def buildS3(s3asw: S3AttributeStoreWrapper) =
-    new S3LayerWriterWrapper(s3asw.attributeStore)
-
-  def buildFile(fasw: FileAttributeStoreWrapper) =
-    new FileLayerWriterWrapper(fasw.attributeStore)
-
-  def buildCassandra(casw: CassandraAttributeStoreWrapper) =
-    new CassandraLayerWriterWrapper(
-      casw.attributeStore,
-      casw.keySpace,
-      casw.table
-    )
-
-  def buildHBase(hbasw: HBaseAttributeStoreWrapper) =
-    new HBaseLayerWriterWrapper(hbasw.attributeStore, hbasw.table)
-
-  def buildAccumulo(aasw: AccumuloAttributeStoreWrapper) =
-    new AccumuloLayerWriterWrapper(aasw.instance, aasw.attributeStore, aasw.table)
 }

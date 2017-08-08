@@ -27,6 +27,46 @@ class LayerType(Enum):
     """
     SPACETIME = 'spacetime'
 
+    @classmethod
+    def _from_key_name(cls, name):
+        """Covnert GeoTrellis key class name into corresponding LayerType"""
+
+        if name == "geotrellis.spark.SpatialKey" or name == "SpatialKey":
+            return LayerType.SPATIAL
+        elif name == "geotrellis.spark.SpaceTimeKey" or name == "SpaceTimeKey":
+            return LayerType.SPACETIME
+        elif name == "geotrellis.vector.ProjectedExtent" or name == "ProjectedExtent":
+            return LayerType.SPATIAL
+        elif name == "geotrellis.spark.TemporalProjectedExtent" or name == "TemporalProjectedExtent":
+            return LayerType.SPACETIME
+        else:
+            raise ValueError("Unrecognized key class type: " + name)
+
+    def _key_name(self, is_boundable):
+        """Gets the mapped GeoTrellis type from the ``key_type``.
+
+        Args:
+            is_boundable (bool): Is ``K`` boundable.
+
+        Returns:
+            The corresponding GeoTrellis type.
+        """
+
+        if is_boundable:
+            if self.value == "spatial":
+                return "SpatialKey"
+            elif self.value == "spacetime":
+                return "SpaceTimeKey"
+            else:
+                raise Exception("Could not find key type that matches", self.value)
+        else:
+            if self.value == "spatial":
+                return "ProjectedExtent"
+            elif self.value == "spacetime":
+                return "TemporalProjectedExtent"
+            else:
+                raise Exception("Could not find key type that matches", self.value)
+
 
 class IndexingMethod(Enum):
     """How the wrapped should be indexed when saved."""
