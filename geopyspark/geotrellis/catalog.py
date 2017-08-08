@@ -417,3 +417,16 @@ class AttributeStore(object):
         """
         zoom = zoom or 0
         self.wrapper.delete(name, zoom)
+
+    def contains(self, name, zoom=None):
+        """Checks if this store contains a layer metadata.
+
+        Args:
+            name (str): Layer name
+            zoom (int, optional): Layer zoom
+
+        Returns:
+           ``bool``
+        """
+        zoom = zoom or 0
+        return self.wrapper.contains(name, zoom)

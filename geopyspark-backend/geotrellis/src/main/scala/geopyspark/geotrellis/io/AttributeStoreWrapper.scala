@@ -67,4 +67,8 @@ class AttributeStoreWrapper(uri: String) {
     attributeStore.delete(id)
   }
 
+  def contains(layerName: String, zoom: Int): Boolean = {
+    val id = LayerId(layerName, zoom)
+    attributeStore.layerExists(id)
+  }
 }
