@@ -50,28 +50,31 @@ class LayerReaderWrapper(sc: SparkContext) {
 
     //val pyZoom: Option[Int] = ??? // is this top level zoom or zoom with None ?
 
-    def getNumPartitions[K: SpatialComponent](layerMetadata: TileLayerMetadata[K]): Int =
+    def getNumPartitions[K: SpatialComponent, M](
+      layerQuery: LayerQuery[K, TileLayerMetadata[K]],
+      layerMetadata: TileLayerMetadata[K]
+    ): Int =
       Option(numPartitions).map(_.toInt).getOrElse {
         val tileBytes = (layerMetadata.cellType.bytes
           * layerMetadata.layout.tileLayout.tileCols
           * layerMetadata.layout.tileLayout.tileRows)
-        // Aim for ~64MB per partition
-        val tilesPerPartition = (1 << 25) / tileBytes
+        // Aim for ~16MB per partition
+        val tilesPerPartition = (1 << 24) / tileBytes
         // TODO: consider temporal dimension size as well
-        math.max(
-          (layerMetadata.bounds.get.toGridBounds.sizeLong / tilesPerPartition).toInt,
-          sc.defaultParallelism)
+        val expectedTileCount: Long = layerQuery(layerMetadata).map(_.toGridBounds.sizeLong).reduce( _ + _)
+        math.max(1, (expectedTileCount / tilesPerPartition).toInt)
       }
 
     header.keyClass match {
       case "geotrellis.spark.SpatialKey" =>
         val layerMetadata = attributeStore.readMetadata[TileLayerMetadata[SpatialKey]](id)
-        val numPartitions: Int = getNumPartitions(layerMetadata)
         var query = new LayerQuery[SpatialKey, TileLayerMetadata[SpatialKey]]
 
         for (geom <- spatialQuery) {
           query = applySpatialFilter(query, geom, layerMetadata.crs, queryCRS)
         }
+
+        val numPartitions: Int = getNumPartitions(query, layerMetadata)
 
         val rdd =
           header.valueClass match {
@@ -87,7 +90,6 @@ class LayerReaderWrapper(sc: SparkContext) {
 
       case "geotrellis.spark.SpaceTimeKey" =>
         val layerMetadata = attributeStore.readMetadata[TileLayerMetadata[SpaceTimeKey]](id)
-        val numPartitions: Int = getNumPartitions(layerMetadata)
         var query = new LayerQuery[SpaceTimeKey, TileLayerMetadata[SpaceTimeKey]]
 
         for (geom <- spatialQuery) {
@@ -97,6 +99,8 @@ class LayerReaderWrapper(sc: SparkContext) {
         for (intervals <- getTemporalQuery(queryIntervalStrings)) {
           query = query.where(intervals)
         }
+
+        val numPartitions: Int = getNumPartitions(query, layerMetadata)
 
         val rdd =
           header.valueClass match {
