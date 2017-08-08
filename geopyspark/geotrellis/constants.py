@@ -42,6 +42,31 @@ class LayerType(Enum):
         else:
             raise ValueError("Unrecognized key class type: " + name)
 
+    def _key_name(self, is_boundable):
+        """Gets the mapped GeoTrellis type from the ``key_type``.
+
+        Args:
+            is_boundable (bool): Is ``K`` boundable.
+
+        Returns:
+            The corresponding GeoTrellis type.
+        """
+
+        if is_boundable:
+            if self.value == "spatial":
+                return "SpatialKey"
+            elif self.value == "spacetime":
+                return "SpaceTimeKey"
+            else:
+                raise Exception("Could not find key type that matches", self.value)
+        else:
+            if self.value == "spatial":
+                return "ProjectedExtent"
+            elif self.value == "spacetime":
+                return "TemporalProjectedExtent"
+            else:
+                raise Exception("Could not find key type that matches", self.value)
+
 
 class IndexingMethod(Enum):
     """How the wrapped should be indexed when saved."""

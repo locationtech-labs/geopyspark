@@ -2,15 +2,12 @@
 """
 
 import json
-from collections import namedtuple
-from urllib.parse import urlparse
 from shapely.geometry import Polygon, MultiPolygon, Point
-from shapely.wkt import dumps
 import shapely.wkb
 import pytz
-from  py4j.protocol import Py4JJavaError
+from py4j.protocol import Py4JJavaError
 
-from geopyspark import map_key_input, get_spark_context, scala_companion
+from geopyspark import get_spark_context, scala_companion
 from geopyspark.geotrellis.constants import LayerType, IndexingMethod, TimeUnit
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
 from geopyspark.geotrellis import Metadata, Extent, deprecated, Log
