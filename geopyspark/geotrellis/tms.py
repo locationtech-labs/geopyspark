@@ -16,8 +16,8 @@ class TileRender(object):
     rendering functions.
 
     Args:
-        render_function (numpy.ndarray => bytes): A function to convert a numpy
-            array to a collection of bytes giving a binary image file.
+        render_function (Tile => bytes): A function to convert geopyspark.geotrellis.Tile
+            to a collection of bytes giving a binary image file.
 
     Attributes:
         render_function (numpy.ndarray => bytes): A function to convert a numpy
@@ -42,8 +42,7 @@ class TileRender(object):
         """
         try:
             tile = multibandtile_decoder(scala_array)
-            cells = tile.cells
-            image = self.render_function(cells)
+            image = self.render_function(tile)
             bio = io.BytesIO()
             image.save(bio, 'PNG')
             return bio.getvalue()
