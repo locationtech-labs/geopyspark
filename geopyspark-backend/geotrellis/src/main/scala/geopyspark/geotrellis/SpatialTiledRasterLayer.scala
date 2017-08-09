@@ -169,19 +169,8 @@ class SpatialTiledRasterLayer(
     SpatialTiledRasterLayer(None, multibandRDD)
   }
 
-  def mask(geometries: Seq[MultiPolygon]): TiledRasterLayer[SpatialKey] = {
-    val options = Mask.Options.DEFAULT
-    val singleBand = ContextRDD(
-      rdd.mapValues({ v => v.band(0) }),
-      rdd.metadata
-    )
-    val result = Mask(singleBand, geometries, options)
-    val multiBand = MultibandTileLayerRDD(
-      result.mapValues({ v => MultibandTile(v) }),
-      result.metadata
-    )
-    SpatialTiledRasterLayer(zoomLevel, multiBand)
-  }
+  def mask(geometries: Seq[MultiPolygon]): TiledRasterLayer[SpatialKey] =
+    SpatialTiledRasterLayer(zoomLevel, Mask(rdd, geometries, Mask.Options.DEFAULT))
 
   def stitch: Array[Byte] = {
     val contextRDD = ContextRDD(
