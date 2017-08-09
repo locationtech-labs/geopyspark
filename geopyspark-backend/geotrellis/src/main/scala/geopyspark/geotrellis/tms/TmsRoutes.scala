@@ -65,9 +65,9 @@ object TMSServerRoutes {
             .retrieve(zoom, x, y)
             .map(_.map{tile =>
               if (renderer.requiresEncoding()) {
-                renderer.renderEncoded(geopyspark.geotrellis.PythonTranslator.toPython(MultibandTile(tile)))
+                renderer.renderEncoded(geopyspark.geotrellis.PythonTranslator.toPython(tile))
               } else {
-                renderer.render(MultibandTile(tile))
+                renderer.render(tile)
               }
             })
         onSuccess(tileFuture) {
@@ -83,16 +83,16 @@ object TMSServerRoutes {
   private class CompositingTileRoute(readers: List[TileReader], compositer: TileCompositer) extends TMSServerRoute {
     def root: Route =
       pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
-        val tileFutures: List[Future[Option[Tile]]] = readers.map(_.retrieve(zoom, x, y))
-        val futureTiles: Future[Option[Array[Tile]]] = tileFutures.sequence.map(_.sequence).map(_.map(_.toArray))
+        val tileFutures: List[Future[Option[MultibandTile]]] = readers.map(_.retrieve(zoom, x, y))
+        val futureTiles: Future[Option[Array[MultibandTile]]] = tileFutures.sequence.map(_.sequence).map(_.map(_.toArray))
         val composited: Future[Option[Array[Byte]]] = 
           futureTiles
             .map(
               _.map(array =>
                 if (compositer.requiresEncoding()) {
-                  compositer.compositeEncoded(array.map{tile => geopyspark.geotrellis.PythonTranslator.toPython(MultibandTile(tile))})
+                  compositer.compositeEncoded(array.map{tile => geopyspark.geotrellis.PythonTranslator.toPython(tile)})
                 } else {
-                  compositer.composite(array.map(MultibandTile(_))) 
+                  compositer.composite(array)
                 }
               )
             )
