@@ -24,7 +24,7 @@ trait TileReader {
 
 object TileReaders {
 
-  private def rezoom(zoom: Int, x: Int, y: Int, maxZoom: Int, read: SpatialKey => Tile) = {
+  private def rezoom(zoom: Int, x: Int, y: Int, maxZoom: Int, read: SpatialKey => MultibandTile): MultibandTile = {
     val dz = zoom - maxZoom
     val key = SpatialKey((x / math.pow(2, dz)).toInt, (y / math.pow(2, dz)).toInt)
     val dx = x - key._1 * math.pow(2, dz).toInt
@@ -56,8 +56,8 @@ object TileReaders {
       Future {
         if (overzooming && zoom > maxZoom) {
           val reader = layers.getOrElseUpdate(maxZoom, valueReader.reader[SpatialKey, Tile](LayerId(catalog, maxZoom)))
-          Try(rezoom(zoom, x, y, maxZoom, reader(_))) match {
-            case Success(tile) => Some(MultibandTile(tile))
+          Try(rezoom(zoom, x, y, maxZoom, k => MultibandTile(reader(k)))) match {
+            case Success(tile) => Some(tile)
             case Failure(_: ValueNotFoundError) => None
             case Failure(e: Throwable) => throw e
           }
@@ -105,14 +105,14 @@ object TileReaders {
 
   private object RDDLookup {
     val interval = 150 milliseconds
-    def props(levels: scala.collection.Map[Int, RDD[(SpatialKey, Tile)]],
+    def props(levels: scala.collection.Map[Int, RDD[(SpatialKey, MultibandTile)]],
               aggregator: ActorRef,
               overzooming: Boolean
             ) = Props(new RDDLookup(levels, aggregator, overzooming))
   }
 
   private class RDDLookup(
-    levels: scala.collection.Map[Int, RDD[(SpatialKey, Tile)]],
+    levels: scala.collection.Map[Int, RDD[(SpatialKey, MultibandTile)]],
     aggregator: ActorRef,
     overzooming: Boolean
   )(implicit ec: ExecutionContext) extends Actor {
@@ -140,7 +140,7 @@ object TileReaders {
                   promise success (
                     results
                       .find{ case (rddKey, _) => rddKey == key }
-                      .map{ case (_, tile) => MultibandTile(tile) }
+                      .map{ case (_, tile) => tile }
                   )
                 }}
               case None =>
@@ -153,9 +153,9 @@ object TileReaders {
                   }
                   val keys = kps.map{ case (key, _) => remap(key) }.toSet
                   val rawTiles = new MultiValueRDDFunctions(rdd).multilookup(keys)
-                  val fetch: SpatialKey => Tile = { toFind => rawTiles.find{ case (rddKey, _) => rddKey == toFind }.get._2 }
+                  val fetch: SpatialKey => MultibandTile = { toFind => rawTiles.find{ case (rddKey, _) => rddKey == toFind }.get._2 }
                   kps.foreach{ case (key, promise) => 
-                    promise success (Try(rezoom(zoom, key._1, key._2, maxZoom, fetch)).toOption.map(MultibandTile(_)))
+                    promise success (Try(rezoom(zoom, key._1, key._2, maxZoom, fetch)).toOption)
                   }
                 } else
                   reqs.foreach{ case QueueRequest(_, _, _, promise) => promise success None }
@@ -166,7 +166,7 @@ object TileReaders {
   }
 
   private class SpatialRddTileReader(
-    levels: scala.collection.Map[Int, RDD[(SpatialKey, Tile)]],
+    levels: scala.collection.Map[Int, RDD[(SpatialKey, MultibandTile)]],
     system: ActorSystem,
     overzooming: Boolean
   ) extends TileReader {
@@ -220,9 +220,7 @@ object TileReaders {
     system: ActorSystem, 
     overzooming: Boolean
   ): TileReader = {
-    val tiles = levels.mapValues{ layer =>
-      layer.rdd.mapValues { mb => mb.bands(0) }
-    }
+    val tiles = levels.mapValues(_.rdd)
     new SpatialRddTileReader(tiles, system, overzooming)
   }
 
