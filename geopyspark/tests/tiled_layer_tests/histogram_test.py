@@ -100,7 +100,7 @@ class HistogramTest(BaseTestClass):
         tiled2 = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd2,
                                                  metadata2)
 
-        hist2 = tiled2.get_histogram()
+        hist2 = tiled2.get_class_histogram()
         bin_counts = hist2.bin_counts()
 
         self.assertEqual(bin_counts, [(1, 10), (3, 3), (4, 2), (5, 1)])

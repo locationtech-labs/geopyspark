@@ -5,6 +5,7 @@ import geopyspark.geotrellis.GeoTrellisUtils._
 import geotrellis.proj4._
 import geotrellis.raster._
 import geotrellis.raster.render._
+import geotrellis.raster.histogram._
 import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
 import geotrellis.raster.resample.ResampleMethod
@@ -174,6 +175,11 @@ abstract class TileLayer[K: ClassTag] {
       .mapValues(_.band(0))
       .histogramExactInt
       .quantileBreaks(n)
+
+
+  def getIntHistograms(): Array[Histogram[Int]] = rdd.histogramExactInt
+
+  def getDoubleHistograms(): Array[Histogram[Double]] = rdd.histogram
 
   protected def reclassify(reclassifiedRDD: RDD[(K, MultibandTile)]): TileLayer[_]
   protected def reclassifyDouble(reclassifiedRDD: RDD[(K, MultibandTile)]): TileLayer[_]
