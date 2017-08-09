@@ -79,19 +79,8 @@ class TemporalTiledRasterLayer(
     TemporalTiledRasterLayer(None, ContextRDD(rdd2, metadata2))
   }
 
-  def mask(geometries: Seq[MultiPolygon]): TiledRasterLayer[SpaceTimeKey] = {
-    val options = Mask.Options.DEFAULT
-    val singleBand = ContextRDD(
-      rdd.mapValues({ v => v.band(0) }),
-      rdd.metadata
-    )
-    val result = Mask(singleBand, geometries, options)
-    val multiBand = MultibandTileLayerRDD(
-      result.mapValues({ v => MultibandTile(v) }),
-      result.metadata
-    )
-    TemporalTiledRasterLayer(zoomLevel, multiBand)
-  }
+  def mask(geometries: Seq[MultiPolygon]): TiledRasterLayer[SpaceTimeKey] =
+    TemporalTiledRasterLayer(zoomLevel, Mask(rdd, geometries, Mask.Options.DEFAULT))
 
   private def wkbsToMultiPolygons(wkbs: java.util.ArrayList[Array[Byte]]) = {
     wkbs
