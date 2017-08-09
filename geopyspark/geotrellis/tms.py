@@ -134,31 +134,46 @@ class TMS(object):
         self.server.set_handshake(handshake)
         self.handshake = handshake
 
-    def bind(self, host, requested_port=None):
+    def bind(self, host=None, requested_port=None):
         """Starts up a TMS server.
 
         Args:
-            host (str): The target host.  Typically "0.0.0.0", "localhost", or
-                "127.0.0.1".  The first will make the TMS service accessible
-                from the world.
+            host (str, optional): The target host.  Typically "localhost",
+                "127.0.0.1", or "0.0.0.0".  The latter will make the TMS service
+                accessible from the world.  If omitted, defaults to localhost.
 
             requested_port (optional, int): A port number to bind the service
-                to.  If omitted, a random port.
+                to.  If omitted, use a random available port.
         """
+        if self.bound:
+            raise RuntimeError("Cannot bind TMS server: Already bound")
+
+        if not host:
+            host = "localhost"
+        
         try:
             if requested_port:
                 self.server.bind(host, requested_port)
             else:
                 self.server.bind(host)
-            self.bound = True
-            self._port = self.server.port()
-            self._host = [l for l in
-                          ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1],
-                           [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in
-                             [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]])
-                          if l][0][0]
         except:
-            raise RuntimeError("Error binding to " + "{} on port {}".format(self._host, self._port) if requested_port else self._host)
+            raise RuntimeError("Problem binding TMS server")
+
+        self.bound = True
+        self._port = self.server.port()
+
+        try:
+            if host == "0.0.0.0":
+                self._host = [l for l in
+                              ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1],
+                               [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in
+                                 [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]])
+                              if l][0][0]
+            else:
+                self._host = host
+        except:
+            self.unbind()
+            raise RuntimeError("Error binding to " + "{} on port {}".format(host, self._port) if requested_port else host)
 
     def unbind(self):
         """Shuts down the TMS service, freeing the assigned port."""
