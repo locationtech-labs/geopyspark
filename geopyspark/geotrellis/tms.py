@@ -150,7 +150,7 @@ class TMS(object):
 
         if not host:
             host = "localhost"
-        
+
         try:
             if requested_port:
                 self.server.bind(host, requested_port)
