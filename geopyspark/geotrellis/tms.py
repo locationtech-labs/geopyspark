@@ -177,6 +177,9 @@ class TMS(object):
 
     def unbind(self):
         """Shuts down the TMS service, freeing the assigned port."""
+        if not self.bound:
+            raise RuntimeError("Cannot unbind TMS server: Not bound!")
+        
         self.server.unbind()
         self._port = None
         self._host = None
@@ -211,7 +214,7 @@ class TMS(object):
             return "http://{}:{}/tile/{{z}}/{{x}}/{{y}}.png".format(self._host, self._port)
 
     @classmethod
-    def build(cls, source, display):
+    def build(cls, source, display, allow_overzooming=True):
         """Builds a TMS server from one or more layers.
 
         This function takes a SparkContext, a source or list of sources, and a
@@ -234,6 +237,9 @@ class TMS(object):
                 inputs, resampling may be required if the tile sources have
                 different tile sizes. Returns bytes representing the resulting
                 image.
+            allow_overzooming (bool): If set, viewing at zoom levels above the
+                highest available zoom level will produce tiles that are
+                resampled from the highest zoom level present in the data set.
         """
 
         pysc = get_spark_context()
@@ -242,9 +248,10 @@ class TMS(object):
             if isinstance(arg, Pyramid):
                 reader = pysc._gateway.jvm.geopyspark.geotrellis.tms.TileReaders.createSpatialRddReader(
                     {z: lvl.srdd for z, lvl in arg.levels.items()},
-                    pysc._gateway.jvm.geopyspark.geotrellis.tms.AkkaSystem.system())
+                    pysc._gateway.jvm.geopyspark.geotrellis.tms.AkkaSystem.system(),
+                    allow_overzooming)
             elif isinstance(arg, tuple) and isinstance(arg[0], str) and isinstance(arg[1], str):
-                reader = pysc._gateway.jvm.geopyspark.geotrellis.tms.TileReaders.createCatalogReader(arg[0], arg[1])
+                reader = pysc._gateway.jvm.geopyspark.geotrellis.tms.TileReaders.createCatalogReader(arg[0], arg[1], allow_overzooming)
             else:
                 raise ValueError('Arguments must be of type Pyramid or (string, string)')
 
