@@ -2,213 +2,41 @@
 """
 
 import json
-from collections import namedtuple
-from urllib.parse import urlparse
 from shapely.geometry import Polygon, MultiPolygon, Point
-from shapely.wkt import dumps
 import shapely.wkb
 import pytz
+from py4j.protocol import Py4JJavaError
 
-from geopyspark import map_key_input, get_spark_context, scala_companion
+from geopyspark import get_spark_context, scala_companion
 from geopyspark.geotrellis.constants import LayerType, IndexingMethod, TimeUnit
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
 from geopyspark.geotrellis import Metadata, Extent, deprecated, Log
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
-__all__ = ["read_layer_metadata", "get_layer_ids", "read_value", "query", "write", "AttributeStore"]
+__all__ = ["read_layer_metadata", "read_value", "query", "write", "AttributeStore"]
+
+"""Instances of previously used AttributeStore keyed by their URI """
+_cached_stores = {}
 
 
-_mapped_cached = {}
-_mapped_serializers = {}
-_cached = namedtuple('Cached', ('store', 'reader', 'value_reader', 'writer'))
-
-_mapped_bounds = {}
-
-
-def _construct_catalog(pysc, new_uri, options):
-    if new_uri not in _mapped_cached:
-
-        store_factory = pysc._gateway.jvm.geopyspark.geotrellis.io.AttributeStoreFactory
-        reader_factory = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerReaderFactory
-        value_reader_factory = pysc._gateway.jvm.geopyspark.geotrellis.io.ValueReaderFactory
-        writer_factory = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
-
-        parsed_uri = urlparse(new_uri)
-        backend = parsed_uri.scheme
-
-        if backend == 'hdfs':
-            store = store_factory.buildHadoop(new_uri, pysc._jsc.sc())
-            reader = reader_factory.buildHadoop(store, pysc._jsc.sc())
-            value_reader = value_reader_factory.buildHadoop(store)
-            writer = writer_factory.buildHadoop(store)
-
-        elif backend == 'file':
-            store = store_factory.buildFile(new_uri[7:])
-            reader = reader_factory.buildFile(store, pysc._jsc.sc())
-            value_reader = value_reader_factory.buildFile(store)
-            writer = writer_factory.buildFile(store)
-
-        elif backend == 's3':
-            store = store_factory.buildS3(parsed_uri.netloc, parsed_uri.path[1:])
-            reader = reader_factory.buildS3(store, pysc._jsc.sc())
-            value_reader = value_reader_factory.buildS3(store)
-            writer = writer_factory.buildS3(store)
-
-        elif backend == 'cassandra':
-            parameters = parsed_uri.query.split('&')
-            parameter_dict = {}
-
-            for param in parameters:
-                split_param = param.split('=', 1)
-                parameter_dict[split_param[0]] = split_param[1]
-
-            store = store_factory.buildCassandra(
-                parameter_dict['host'],
-                parameter_dict['username'],
-                parameter_dict['password'],
-                parameter_dict['keyspace'],
-                parameter_dict['table'],
-                options)
-
-            reader = reader_factory.buildCassandra(store, pysc._jsc.sc())
-            value_reader = value_reader_factory.buildCassandra(store)
-            writer = writer_factory.buildCassandra(store,
-                                                   parameter_dict['keyspace'],
-                                                   parameter_dict['table'])
-
-        elif backend == 'hbase':
-
-            # The assumed uri looks like: hbase://zoo1, zoo2, ..., zooN: port/table
-            (zookeepers, port) = parsed_uri.netloc.split(':')
-            table = parsed_uri.path
-
-            if 'master' in options:
-                master = options['master']
-            else:
-                master = ""
-
-            store = store_factory.buildHBase(zookeepers, master, port, table)
-            reader = reader_factory.buildHBase(store, pysc._jsc.sc())
-            value_reader = value_reader_factory.buildHBase(store)
-            writer = writer_factory.buildHBase(store, table)
-
-        elif backend == 'accumulo':
-
-            # The assumed uri looks like: accumulo://username:password/zoo1, zoo2/instance/table
-            (user, password) = parsed_uri.netloc.split(':')
-            split_parameters = parsed_uri.path.split('/')[1:]
-
-            store = store_factory.buildAccumulo(split_parameters[0],
-                                                split_parameters[1],
-                                                user,
-                                                password,
-                                                split_parameters[2])
-
-            reader = reader_factory.buildAccumulo(split_parameters[1],
-                                                  store,
-                                                  pysc._jsc.sc())
-
-            value_reader = value_reader_factory.buildAccumulo(store)
-
-            writer = writer_factory.buildAccumulo(split_parameters[1],
-                                                  store,
-                                                  split_parameters[2])
-
-        else:
-            raise ValueError("Cannot find Attribute Store for", backend)
-
-        _mapped_cached[new_uri] = _cached(store=store,
-                                          reader=reader,
-                                          value_reader=value_reader,
-                                          writer=writer)
-
-
-def _in_bounds(layer_type, uri, layer_name, zoom_level, col, row):
-    if (layer_name, zoom_level) not in _mapped_bounds:
-        layer_metadata = read_layer_metadata(layer_type, uri, layer_name, zoom_level)
-        bounds = layer_metadata.bounds
-        _mapped_bounds[(layer_name, zoom_level)] = bounds
-    else:
-        bounds = _mapped_bounds[(layer_name, zoom_level)]
-
-    mins = col < bounds.minKey.col or row < bounds.minKey.row
-    maxs = col > bounds.maxKey.col or row > bounds.maxKey.row
-
-    if mins or maxs:
-        return False
-    else:
-        return True
-
-
-def read_layer_metadata(layer_type,
-                        uri,
+def read_layer_metadata(uri,
                         layer_name,
-                        layer_zoom,
-                        options=None,
-                        **kwargs):
+                        layer_zoom):
     """Reads the metadata from a saved layer without reading in the whole layer.
 
     Args:
-        layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
-            of the geotiffs are. This is represented by either constants within ``LayerType`` or by
-            a string.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be read from.
         layer_zoom (int): The zoom level of the layer that is to be read.
-        options (dict, optional): Additional parameters for reading the layer for specific backends.
-            The dictionary is only used for ``Cassandra`` and ``HBase``, no other backend requires
-            this to be set.
-        **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
-            be in camel case. If both options and keywords are set, then the options will be used.
 
     Returns:
         :class:`~geopyspark.geotrellis.Metadata`
     """
 
-    options = options or kwargs or {}
-
-    _construct_catalog(get_spark_context(), uri, options)
-    cached = _mapped_cached[uri]
-
-    if layer_type == LayerType.SPATIAL:
-        metadata = cached.store.metadataSpatial(layer_name, layer_zoom)
-    else:
-        metadata = cached.store.metadataSpaceTime(layer_name, layer_zoom)
-
-    return Metadata.from_dict(json.loads(metadata))
-
-
-def get_layer_ids(uri,
-                  options=None,
-                  **kwargs):
-    """Returns a list of all of the layer ids in the selected catalog as dicts that contain the
-    name and zoom of a given layer.
-
-    Args:
-        uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
-            catalog to be read from. The shape of this string varies depending on backend.
-        options (dict, optional): Additional parameters for reading the layer for specific backends.
-            The dictionary is only used for ``Cassandra`` and ``HBase``, no other backend requires this
-            to be set.
-        **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
-            be in camel case. If both options and keywords are set, then the options will be used.
-
-    Returns:
-        [layerIds]
-
-        Where ``layerIds`` is a ``dict`` with the following fields:
-            - **name** (str): The name of the layer
-            - **zoom** (int): The zoom level of the given layer.
-    """
-
-    options = options or kwargs or {}
-
-    _construct_catalog(get_spark_context(), uri, options)
-    cached = _mapped_cached[uri]
-
-    return list(cached.reader.layerIds())
+    store = AttributeStore.cached(uri)
+    return store.layer(layer_name, layer_zoom).layer_metadata()
 
 
 @deprecated
@@ -221,18 +49,16 @@ def read(layer_type,
          **kwargs):
     """Deprecated in favor of :meth:`~geopyspark.geotrellis.catalog.query`."""
 
-    return query(layer_type, uri, layer_name, layer_zoom, options=options,
-                 num_partitions=num_partitions)
+    return query(uri, layer_name, layer_zoom, num_partitions=num_partitions)
 
-def read_value(layer_type,
-               uri,
+
+def read_value(uri,
                layer_name,
                layer_zoom,
                col,
                row,
                zdt=None,
-               options=None,
-               **kwargs):
+               store=None):
     """Reads a single ``Tile`` from a GeoTrellis catalog.
     Unlike other functions in this module, this will not return a ``TiledRasterLayer``, but rather a
     GeoPySpark formatted raster. This is the function to use when creating a tile server.
@@ -241,9 +67,6 @@ def read_value(layer_type,
         When requesting a tile that does not exist, ``None`` will be returned.
 
     Args:
-        layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
-            of the geotiffs are. This is represented by either constants within ``LayerType`` or by
-            a string.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be read from.
@@ -253,53 +76,73 @@ def read_value(layer_type,
         zdt (``datetime.datetime``): The time stamp of the tile if the data is spatial-temporal.
             This is represented as a ``datetime.datetime.`` instance.  The default value is,
             ``None``. If ``None``, then only the spatial area will be queried.
-        options (dict, optional): Additional parameters for reading the tile for specific backends.
-            The dictionary is only used for ``Cassandra`` and ``HBase``, no other backend requires
-            this to be set.
-        **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
-            be in camel case. If both options and keywords are set, then the options will be used.
+        store (str or :class:`~geopyspark.geotrellis.catalog.AttributeStore`, optional):
+            ``AttributeStore`` instance or URI for layer metadata lookup.
 
     Returns:
         :class:`~geopyspark.geotrellis.Tile`
     """
 
-    if not _in_bounds(layer_type, uri, layer_name, layer_zoom, col, row):
-        return None
+    if store:
+        store = AttributeStore.build(store)
     else:
-        options = options or kwargs or {}
+        store = AttributeStore.cached(uri)
 
-        if zdt:
-            zdt = zdt.astimezone(pytz.utc).isoformat()
+    reader = ValueReader(uri, layer_name, layer_zoom, store)
+    return reader.read(col, row, zdt)
+
+
+class ValueReader(object):
+    """GeoTrellis catalog indivual value reader.
+    Suitable for use in TMS service because it does not have Spark overhead.
+    """
+
+    def __init__(self, uri, layer_name, zoom=None, store=None):
+        if store:
+            self.store = AttributeStore.build(store)
         else:
-            zdt = ''
+            self.store = AttributeStore.cached(uri)
 
-        if uri not in _mapped_cached:
-            _construct_catalog(get_spark_context(), uri, options)
+        self.layer_name = layer_name
+        self.zoom = zoom
+        pysc = get_spark_context()
+        scala_store = self.store.wrapper.attributeStore()
+        ValueReaderWrapper = pysc._gateway.jvm.geopyspark.geotrellis.io.ValueReaderWrapper
+        self.wrapper = ValueReaderWrapper(scala_store, uri)
 
-        cached = _mapped_cached[uri]
+    def read(self, col, row, zdt=None, zoom=None):
+        """Reads a single ``Tile`` from a GeoTrellis catalog.
+           When requesting a tile that does not exist, ``None`` will be returned.
 
-        key = map_key_input(LayerType(layer_type).value, True)
+        Args:
 
-        values = cached.value_reader.readTile(key,
-                                              layer_name,
-                                              layer_zoom,
-                                              col,
-                                              row,
-                                              zdt)
+            col (int): The col number of the tile within the layout. Cols run east to west.
+            row (int): The row number of the tile within the layout. Row run north to south.
+            zdt (``datetime.datetime``): The time stamp of the tile if the data is spatial-temporal.
+                This is represented as a ``datetime.datetime.`` instance.  The default value is,
+                ``None``. If ``None``, then only the spatial area will be queried.
+            zoom (int, optional): The zoom level of the layer that is to be read.
+                Defaults to ``self.zoom``
 
-        return multibandtile_decoder(values)
+        Returns:
+            :class:`~geopyspark.geotrellis.Tile`
+        """
+
+        zoom = zoom or self.zoom or 0
+        zoom = zoom and int(zoom)
+        zdt = zdt and zdt.astimezone(pytz.utc).isoformat()
+        value = self.wrapper.readTile(self.layer_name, zoom, col, row, zdt)
+        return value and multibandtile_decoder(value)
 
 
-def query(layer_type,
-          uri,
+def query(uri,
           layer_name,
           layer_zoom=None,
           query_geom=None,
           time_intervals=None,
           query_proj=None,
-          options=None,
           num_partitions=None,
-          **kwargs):
+          store=None):
     """Queries a single, zoom layer from a GeoTrellis catalog given spatial and/or time parameters.
     Unlike read, this method will only return part of the layer that intersects the specified
     region.
@@ -340,75 +183,51 @@ def query(layer_type,
             than the layer it is being filtered against. If they are different and this is not set,
             then the returned ``TiledRasterLayer`` could contain incorrect values. If ``None``,
             then the geometry and layer are assumed to be in the same projection.
-        options (dict, optional): Additional parameters for querying the tile for specific backends.
-            The dictioanry is only used for ``Cassandra`` and ``HBase``, no other backend requires
-            this to be set.
         num_partitions (int, optional): Sets RDD partition count when reading from catalog.
-        **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
-            be in camel case. If both options and keywords are set, then the options will be used.
+        store (str or :class:`~geopyspark.geotrellis.catalog.AttributeStore`, optional):
+            ``AttributeStore`` instance or URI for layer metadata lookup.
 
     Returns:
         :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
     """
-
-    options = options or kwargs or {}
-    layer_zoom = layer_zoom or 0
+    if store:
+        store = AttributeStore.build(store)
+    else:
+        store = AttributeStore.cached(uri)
 
     pysc = get_spark_context()
+    layer_zoom = layer_zoom or 0
 
-    _construct_catalog(pysc, uri, options)
-
-    cached = _mapped_cached[uri]
-
-    key = map_key_input(LayerType(layer_type).value, True)
-
-    num_partitions = num_partitions or pysc.defaultMinPartitions
-
-    if not query_geom:
-        srdd = cached.reader.read(key, layer_name, layer_zoom, num_partitions)
-        return TiledRasterLayer(layer_type, srdd)
-
+    if query_geom is None:
+        pass  # pass as Null to Java
+    elif isinstance(query_geom, Extent):
+        query_geom = query_geom.to_polygon
+        query_geom = shapely.wkb.dumps(query_geom)
+    elif isinstance(query_geom, (Polygon, MultiPolygon, Point)):
+        query_geom = shapely.wkb.dumps(query_geom)
+    elif isinstance(query_geom, bytes):
+        pass  # assume bytes are WKB
     else:
-        if time_intervals:
-            time_intervals = [time.astimezone(pytz.utc).isoformat() for time in time_intervals]
-        else:
-            time_intervals = []
+        raise TypeError("Could not query intersection", query_geom)
 
-        query_proj = query_proj or ""
+    if isinstance(query_proj, int):
+        query_proj = str(query_proj)
 
-        if isinstance(query_proj, int):
-            query_proj = str(query_proj)
+    if time_intervals:
+        time_intervals = [time.astimezon(pytz.utc).isoformat() for time in time_intervals]
+    else:
+        time_intervals = []
 
-        if isinstance(query_geom, (Polygon, MultiPolygon, Point)):
-            srdd = cached.reader.query(key,
-                                       layer_name,
-                                       layer_zoom,
-                                       shapely.wkb.dumps(query_geom),
-                                       time_intervals,
-                                       query_proj,
-                                       num_partitions)
+    reader = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerReaderWrapper(pysc._jsc.sc())
+    scala_store = store.wrapper.attributeStore()
+    srdd = reader.query(scala_store, uri,
+                        layer_name, layer_zoom,
+                        query_geom, time_intervals, query_proj,
+                        num_partitions)
 
-        elif isinstance(query_geom, Extent):
-            srdd = cached.reader.query(key,
-                                       layer_name,
-                                       layer_zoom,
-                                       shapely.wkb.dumps(query_geom.to_polygon),
-                                       time_intervals,
-                                       query_proj,
-                                       num_partitions)
+    layer_type = LayerType._from_key_name(srdd.keyClassName())
 
-        elif isinstance(query_geom, bytes):
-            srdd = cached.reader.query(key,
-                                       layer_name,
-                                       layer_zoom,
-                                       query_geom,
-                                       time_intervals,
-                                       query_proj,
-                                       num_partitions)
-        else:
-            raise TypeError("Could not query intersection", query_geom)
-
-        return TiledRasterLayer(layer_type, srdd)
+    return TiledRasterLayer(layer_type, srdd)
 
 
 def write(uri,
@@ -416,8 +235,7 @@ def write(uri,
           tiled_raster_layer,
           index_strategy=IndexingMethod.ZORDER,
           time_unit=None,
-          options=None,
-          **kwargs):
+          store=None):
     """Writes a tile layer to a specified destination.
 
     Args:
@@ -436,32 +254,36 @@ def write(uri,
             each index. Meaning, what time intervals are used to seperate each record. While this is
             set to ``None`` as default, it must be set if saving spatial-temporal data.
             Depending on the indexing method chosen, different time units are used.
-        options (dict, optional): Additional parameters for writing the layer for specific
-            backends. The dictioanry is only used for ``Cassandra`` and ``HBase``, no other backend
-            requires this to be set.
-        **kwargs: The optional parameters can also be set as keywords arguements. The keywords must
-            be in camel case. If both options and keywords are set, then the options will be used.
+        store (str or :class:`~geopyspark.geotrellis.catalog.AttributeStore`, optional):
+            ``AttributeStore`` instance or URI for layer metadata lookup.
     """
 
     if tiled_raster_layer.zoom_level is None:
         Log.warn(tiled_raster_layer.pysc, "The given layer doesn't not have a zoom_level. Writing to zoom 0.")
 
-    options = options or kwargs or {}
+    if store:
+        store = AttributeStore.build(store)
+    else:
+        store = AttributeStore.cached(uri)
+
+    pysc = tiled_raster_layer.pysc
     time_unit = time_unit or ""
 
-    _construct_catalog(tiled_raster_layer.pysc, uri, options)
-
-    cached = _mapped_cached[uri]
+    writer = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterWrapper(
+        store.wrapper.attributeStore(), uri)
 
     if tiled_raster_layer.layer_type == LayerType.SPATIAL:
-        cached.writer.writeSpatial(layer_name,
-                                   tiled_raster_layer.srdd,
-                                   IndexingMethod(index_strategy).value)
+        writer.writeSpatial(layer_name,
+                            tiled_raster_layer.srdd,
+                            IndexingMethod(index_strategy).value)
+
+    elif tiled_raster_layer.layer_type == LayerType.SPACETIME:
+        writer.writeTemporal(layer_name,
+                             tiled_raster_layer.srdd,
+                             TimeUnit(time_unit).value,
+                             IndexingMethod(index_strategy).value)
     else:
-        cached.writer.writeTemporal(layer_name,
-                                    tiled_raster_layer.srdd,
-                                    TimeUnit(time_unit).value,
-                                    IndexingMethod(index_strategy).value)
+        raise ValueError("Cannot write {} layer".format(tiled_raster_layer.layer_type))
 
 
 class AttributeStore(object):
@@ -475,10 +297,41 @@ class AttributeStore(object):
         hist = store.layer("us-nlcd2011-30m-epsg3857", zoom=7).read("histogram")
         hist = gps.Histogram.from_dict(hist)
     """
-
     def __init__(self, uri):
         self.uri = uri
-        self.underlying = scala_companion("geotrellis.spark.io.AttributeStore").apply(uri)
+        pysc = get_spark_context()
+        try:
+            self.wrapper = pysc._gateway.jvm.geopyspark.geotrellis.io.AttributeStoreWrapper(uri)
+        except Py4JJavaError as err:
+            raise ValueError(err.java_exception.getMessage())
+
+    @classmethod
+    def build(cls, store):
+        """Builds AttributeStore from URI or passes an instance through.
+
+        Args:
+            uri (str or AttributeStore): URI for AttributeStore object or instance.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.catalog.AttributeStore`
+        """
+
+        if isinstance(store, AttributeStore):
+            return store
+        elif isinstance(store, str):
+            return cls(store)
+        else:
+            raise ValueError("Cannot make {} into AttributStore".format(store))
+
+    @classmethod
+    def cached(cls, uri):
+        """Returns cached version of AttributeStore for URI or creates one"""
+        if uri in _cached_stores:
+            return _cached_stores[uri]
+        else:
+            store = cls(uri)
+            _cached_stores[uri] = store
+            return store
 
     class Attributes(object):
         """Accessor class for all attributes for a given layer"""
@@ -486,8 +339,6 @@ class AttributeStore(object):
             self.store = store
             self.layer_name = layer_name
             self.layer_zoom = layer_zoom
-            self.layer_id = scala_companion("geotrellis.spark.LayerId").apply(layer_name, layer_zoom or 0)
-            self.utils = scala_companion("geopyspark.geotrellis.GeoTrellisUtils")
 
         def __repr__(self):
             return "Attributes({}, {}, {})".format(self.store.uri, self.layer_name, self.layer_zoom)
@@ -510,14 +361,19 @@ class AttributeStore(object):
             Returns:
                 ``dict``: Attribute value
             """
-            value_json = self.utils.readAttributeStoreJson(
-                self.store.underlying,
-                self.layer_id,
-                name)
+            value_json = self.store.wrapper.read(self.layer_name, self.layer_zoom, name)
             if value_json:
                 return json.loads(value_json)
             else:
                 raise KeyError(self.store.uri, self.layer_name, self.layer_zoom, name)
+
+        def layer_metadata(self):
+            value_json = self.store.wrapper.readMetadata(self.layer_name, self.layer_zoom)
+            if value_json:
+                metadata_dict = json.loads(value_json)
+                return Metadata.from_dict(metadata_dict)
+            else:
+                raise KeyError(self.store.uri, self.layer_name, self.layer_zoom, "layer metadata")
 
         def write(self, name, value):
             """Write layer attribute value as a dict
@@ -527,11 +383,7 @@ class AttributeStore(object):
                 value (dict): Attribute value
             """
             value_json = json.dumps(value)
-            self.utils.writeAttributeStoreJson(
-                self.store.underlying,
-                self.layer_id,
-                name,
-                value_json)
+            self.store.wrapper.write(self.layer_name, self.layer_zoom, name, value_json)
 
         def delete(self, name):
             """Delete attribute by name
@@ -539,7 +391,7 @@ class AttributeStore(object):
             Args:
                 name (str): Attribute name
             """
-            self.store.underlying.delete(self.layer_id, name)
+            self.store.wrapper.delete(self.layer_name, self.layer_zoom, name)
 
     def layer(self, name, zoom=None):
         """Layer Attributes object for given layer
@@ -558,7 +410,7 @@ class AttributeStore(object):
         Returns:
             ``[:class:`~geopyspark.geotrellis.catalog.AttributeStore.Attributes`]``
         """
-        layers = self.underlying.layerIds()
+        layers = self.wrapper.attributeStore().layerIds()
         util = scala_companion("geopyspark.geotrellis.GeoTrellisUtils")
         return [self.Attributes(self, l.name(), l.zoom()) for l in util.seqToIterable(layers)]
 
@@ -569,5 +421,18 @@ class AttributeStore(object):
             name (str): Layer name
             zoom (int, optional): Layer zoom
         """
-        layer_id = scala_companion("geotrellis.spark.LayerId").apply(name, zoom or 0)
-        self.underlying.delete(layer_id)
+        zoom = zoom or 0
+        self.wrapper.delete(name, zoom)
+
+    def contains(self, name, zoom=None):
+        """Checks if this store contains a layer metadata.
+
+        Args:
+            name (str): Layer name
+            zoom (int, optional): Layer zoom
+
+        Returns:
+           ``bool``
+        """
+        zoom = zoom or 0
+        return self.wrapper.contains(name, zoom)

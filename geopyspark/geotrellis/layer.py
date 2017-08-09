@@ -17,8 +17,7 @@ from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
 from pyspark.storagelevel import StorageLevel
-
-from geopyspark import get_spark_context, map_key_input, create_python_rdd
+from geopyspark import get_spark_context, create_python_rdd
 from geopyspark.geotrellis import (Metadata,
                                    Tile,
                                    LocalLayout,
@@ -266,7 +265,7 @@ class RasterLayer(CachableLayer):
         """
 
         pysc = get_spark_context()
-        key = map_key_input(LayerType(layer_type).value, False)
+        key = LayerType(layer_type)._key_name(False)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
@@ -293,7 +292,7 @@ class RasterLayer(CachableLayer):
         """
 
         result = self.srdd.toProtoRDD()
-        key = map_key_input(LayerType(self.layer_type).value, False)
+        key = LayerType(self.layer_type)._key_name(False)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
 
         return create_python_rdd(result, ser)
@@ -311,7 +310,7 @@ class RasterLayer(CachableLayer):
         """
 
         result = self.srdd.toPngRDD(color_map.cmap)
-        key = map_key_input(LayerType(self.layer_type).value, False)
+        key = LayerType(self.layer_type)._key_name(False)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
         return create_python_rdd(result, ser)
@@ -360,7 +359,7 @@ class RasterLayer(CachableLayer):
         result = _to_geotiff_rdd(self.pysc, self.srdd, storage_method, rows_per_strip, tile_dimensions,
                                  compression, color_space, color_map, head_tags, band_tags)
 
-        key = map_key_input(LayerType(self.layer_type).value, False)
+        key = LayerType(self.layer_type)._key_name(False)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
         return create_python_rdd(result, ser)
@@ -706,7 +705,7 @@ class TiledRasterLayer(CachableLayer):
         """
 
         pysc = get_spark_context()
-        key = map_key_input(LayerType(layer_type).value, True)
+        key = LayerType(layer_type)._key_name(True)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
         reserialized_rdd = numpy_rdd._reserialize(ser)
 
@@ -747,7 +746,7 @@ class TiledRasterLayer(CachableLayer):
         """
 
         result = self.srdd.toProtoRDD()
-        key = map_key_input(LayerType(self.layer_type).value, True)
+        key = LayerType(self.layer_type)._key_name(True)
         ser = ProtoBufSerializer.create_tuple_serializer(key_type=key)
 
         return create_python_rdd(result, ser)
@@ -765,7 +764,7 @@ class TiledRasterLayer(CachableLayer):
         """
 
         result = self.srdd.toPngRDD(color_map.cmap)
-        key = map_key_input(LayerType(self.layer_type).value, True)
+        key = LayerType(self.layer_type)._key_name(True)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
         return create_python_rdd(result, ser)
@@ -930,7 +929,7 @@ class TiledRasterLayer(CachableLayer):
         result = _to_geotiff_rdd(self.pysc, self.srdd, storage_method, rows_per_strip, tile_dimensions,
                                  compression, color_space, color_map, head_tags, band_tags)
 
-        key = map_key_input(LayerType(self.layer_type).value, True)
+        key = LayerType(self.layer_type)._key_name(True)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
 
         return create_python_rdd(result, ser)
@@ -989,7 +988,17 @@ class TiledRasterLayer(CachableLayer):
 
         return TiledRasterLayer(self.layer_type, srdd)
 
-    def repartition(self, num_partitions):
+    def repartition(self, num_partitions=None):
+        """Repartition underlying RDD using HashPartitioner.
+        If ``num_partitions`` is None, existing number of partitions will be used.
+
+        Args:
+            num_partitions(int, optional): Desired number of partitions
+
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+        """
+        num_partitions = num_partitions or self.getNumPartitions()
         return TiledRasterLayer(self.layer_type, self.srdd.repartition(num_partitions))
 
     def lookup(self, col, row):
