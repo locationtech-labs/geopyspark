@@ -154,6 +154,7 @@ a need for it.
   :hidden:
 
   notebook-demos/reading-in-sentinel-data
+  notebook-demos/ingesting-an-image
 
 .. toctree::
   :maxdepth: 4
