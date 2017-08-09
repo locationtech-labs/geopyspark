@@ -19,7 +19,7 @@ trait TileReader {
   def startup(): Unit = {}
   def shutdown(): Unit = {}
 
-  def retrieve(zoom: Int, x: Int, y: Int): Future[Option[Tile]]
+  def retrieve(zoom: Int, x: Int, y: Int): Future[Option[MultibandTile]]
 }
 
 object TileReaders {
@@ -35,14 +35,14 @@ object TileReaders {
       val key = SpatialKey(x, y)
       Future {
         val reader = layers.getOrElseUpdate(zoom, valueReader.reader[SpatialKey, Tile](LayerId(catalog, zoom)))
-        Try(reader(key)).toOption
+        Try(MultibandTile(reader(key))).toOption
       }
     }
 
   }
 
   private sealed trait AggregatorCommand
-  private case class QueueRequest(zoom: Int, x: Int, y: Int, pr: Promise[Option[Tile]]) extends AggregatorCommand
+  private case class QueueRequest(zoom: Int, x: Int, y: Int, pr: Promise[Option[MultibandTile]]) extends AggregatorCommand
   private case object DumpRequests extends AggregatorCommand
 
   private object RequestAggregator {
@@ -72,13 +72,13 @@ object TileReaders {
 
   private object RDDLookup {
     val interval = 150 milliseconds
-    def props(levels: scala.collection.Map[Int, RDD[(SpatialKey, Tile)]],
+    def props(levels: scala.collection.Map[Int, RDD[(SpatialKey, MultibandTile)]],
               aggregator: ActorRef
             ) = Props(new RDDLookup(levels, aggregator))
   }
 
   private class RDDLookup(
-    levels: scala.collection.Map[Int, RDD[(SpatialKey, Tile)]],
+    levels: scala.collection.Map[Int, RDD[(SpatialKey, MultibandTile)]],
     aggregator: ActorRef
   )(implicit ec: ExecutionContext) extends Actor {
     def receive = {
@@ -115,7 +115,7 @@ object TileReaders {
   }
 
   private class SpatialRddTileReader(
-    levels: scala.collection.Map[Int, RDD[(SpatialKey, Tile)]],
+    levels: scala.collection.Map[Int, RDD[(SpatialKey, MultibandTile)]],
     system: ActorSystem
   ) extends TileReader {
 
@@ -149,7 +149,7 @@ object TileReaders {
     def fulfiller = _fulfiller
 
     def retrieve(zoom: Int, x: Int, y: Int) = {
-      val callback = Promise[Option[Tile]]()
+      val callback = Promise[Option[MultibandTile]]()
       aggregator ! QueueRequest(zoom, x, y, callback)
       callback.future
     }
@@ -166,11 +166,7 @@ object TileReaders {
   def createSpatialRddReader(
     levels: java.util.HashMap[Int, TiledRasterLayer[SpatialKey]],
     system: ActorSystem
-  ): TileReader = {
-    val tiles = levels.mapValues{ layer =>
-      layer.rdd.mapValues { mb => mb.bands(0) }
-    }
-    new SpatialRddTileReader(tiles, system)
-  }
+  ): TileReader =
+    new SpatialRddTileReader(levels.mapValues(_.rdd), system)
 
 }

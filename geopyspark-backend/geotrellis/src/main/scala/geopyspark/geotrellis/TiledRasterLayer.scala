@@ -9,7 +9,6 @@ import protos.tupleMessages._
 import geotrellis.proj4._
 import geotrellis.raster._
 import geotrellis.raster.distance._
-import geotrellis.raster.histogram._
 import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
 import geotrellis.raster.rasterize._
@@ -288,10 +287,6 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag] exten
     }
 
   def isFloatingPointLayer(): Boolean = rdd.metadata.cellType.isFloatingPoint
-
-  def getIntHistograms(): Histogram[Int] = rdd.histogramExactInt.head
-
-  def getDoubleHistograms(): Histogram[Double] = rdd.histogram.head
 
   protected def withRDD(result: RDD[(K, MultibandTile)]): TiledRasterLayer[K]
 }

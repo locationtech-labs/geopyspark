@@ -131,6 +131,14 @@ a need for it.
 
 .. toctree::
   :maxdepth: 4
+  :caption: Notebook Guides
+  :glob:
+  :hidden:
+
+  notebook-demos/core-concepts
+
+.. toctree::
+  :maxdepth: 4
   :caption: User Guides
   :glob:
   :hidden:
