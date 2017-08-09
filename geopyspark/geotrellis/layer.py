@@ -138,6 +138,78 @@ def _to_spatial_layer(layer, target_time):
         return layer.srdd.toSpatialLayer()
 
 
+class TileLayer(object):
+    """
+    Wrapper for Scala RDD instance of GeoTrellis multiband tiles through a py4j reference.
+
+    Attributes:
+        srdd (py4j.java_gateway.JavaObject): The coresponding Scala RDD class.
+    """
+
+    def get_class_histogram(self):
+        """Creates a  ``Histogram`` of integer values.
+        Suitable for classification rasters with limited number values.
+        If only single band is present histogram is returned directly.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.histogram.Histogram` or
+            [:class:`~geopyspark.geotrellis.histogram.Histogram`]
+        """
+        histogram = [Histogram(h) for h in self.srdd.getIntHistograms()]
+        if len(histogram) == 1:
+            return histogram[0]
+        else:
+            return histogram
+
+    def get_histogram(self):
+        """Creates a ``Histogram`` for each band in the layer.
+        If only single band is present histogram is returned directly.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.histogram.Histogram` or
+            [:class:`~geopyspark.geotrellis.histogram.Histogram`]
+        """
+        histogram = [Histogram(h) for h in self.srdd.getDoubleHistograms()]
+        if len(histogram) == 1:
+            return histogram[0]
+        else:
+            return histogram
+
+    def get_min_max(self):
+        """Returns the maximum and minimum values of all of the rasters in the layer.
+
+        Returns:
+            (float, float)
+        """
+
+        min_max = self.srdd.getMinMax()
+        return (min_max._1(), min_max._2())
+
+    def get_quantile_breaks(self, num_breaks):
+        """Returns quantile breaks for this Layer.
+
+        Args:
+            num_breaks (int): The number of breaks to return.
+
+        Returns:
+            ``[float]``
+        """
+        return list(self.srdd.quantileBreaks(num_breaks))
+
+    def get_quantile_breaks_exact_int(self, num_breaks):
+        """Returns quantile breaks for this Layer.
+        This version uses the ``FastMapHistogram``, which counts exact integer values.
+        If your layer has too many values, this can cause memory errors.
+
+        Args:
+            num_breaks (int): The number of breaks to return.
+
+        Returns:
+            ``[int]``
+        """
+        return list(self.srdd.quantileBreaksExactInt(num_breaks))
+
+
 class CachableLayer(object):
     """
     Base class for class that wraps a Scala RDD instance through a py4j reference.
@@ -212,7 +284,7 @@ class CachableLayer(object):
         return self.srdd.rdd().count()
 
 
-class RasterLayer(CachableLayer):
+class RasterLayer(CachableLayer, TileLayer):
     """A wrapper of a RDD that contains GeoTrellis rasters.
 
     Represents a layer that wraps a RDD that contains ``(K, V)``. Where ``K`` is either
@@ -623,16 +695,6 @@ class RasterLayer(CachableLayer):
 
         return RasterLayer(self.layer_type, srdd)
 
-    def get_min_max(self):
-        """Returns the maximum and minimum values of all of the rasters in the layer.
-
-        Returns:
-            (float, float)
-        """
-
-        min_max = self.srdd.getMinMax()
-        return (min_max._1(), min_max._2())
-
     def __str__(self):
         return "RasterLayer(layer_type={})".format(self.layer_type)
 
@@ -640,7 +702,7 @@ class RasterLayer(CachableLayer):
         return "RasterLayer(layer_type={})".format(self.layer_type)
 
 
-class TiledRasterLayer(CachableLayer):
+class TiledRasterLayer(CachableLayer, TileLayer):
     """Wraps a RDD of tiled, GeoTrellis rasters.
 
     Represents a RDD that contains ``(K, V)``. Where ``K`` is either
@@ -1292,16 +1354,6 @@ class TiledRasterLayer(CachableLayer):
 
         return TiledRasterLayer(self.layer_type, srdd)
 
-    def get_min_max(self):
-        """Returns the maximum and minimum values of all of the rasters in the Layer.
-
-        Returns:
-            ``(float, float)``
-        """
-
-        min_max = self.srdd.getMinMax()
-        return (min_max._1(), min_max._2())
-
     def normalize(self, new_min, new_max, old_min=None, old_max=None):
         """Finds the min value that is contained within the given geometry.
 
@@ -1426,44 +1478,6 @@ class TiledRasterLayer(CachableLayer):
         """
 
         return self._process_polygonal_summary(geometry, self.srdd.polygonalMean)
-
-    def get_quantile_breaks(self, num_breaks):
-        """Returns quantile breaks for this Layer.
-
-        Args:
-            num_breaks (int): The number of breaks to return.
-
-        Returns:
-            ``[float]``
-        """
-        return list(self.srdd.quantileBreaks(num_breaks))
-
-    def get_quantile_breaks_exact_int(self, num_breaks):
-        """Returns quantile breaks for this Layer.
-        This version uses the ``FastMapHistogram``, which counts exact integer values.
-        If your layer has too many values, this can cause memory errors.
-
-        Args:
-            num_breaks (int): The number of breaks to return.
-
-        Returns:
-            ``[int]``
-        """
-        return list(self.srdd.quantileBreaksExactInt(num_breaks))
-
-    def get_histogram(self):
-        """Creates a ``Histogram`` from the values within this layer.
-
-        Returns:
-            :class:`~geopyspark.geotrellis.histogram.Histogram`
-        """
-
-        if self.is_floating_point_layer:
-            histogram = self.srdd.getDoubleHistograms()
-        else:
-            histogram = self.srdd.getIntHistograms()
-
-        return Histogram(histogram)
 
     def _process_operation(self, value, operation):
         if isinstance(value, int) or isinstance(value, float):
