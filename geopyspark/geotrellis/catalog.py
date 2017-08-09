@@ -130,7 +130,13 @@ class ValueReader(object):
 
         zoom = zoom or self.zoom or 0
         zoom = zoom and int(zoom)
-        zdt = zdt and zdt.astimezone(pytz.utc).isoformat()
+
+        if zdt:
+            if zdt.tzinfo:
+                zdt = zdt.astimezone(pytz.utc).isoformat()
+            else:
+                zdt = zdt.replace(tzinfo=pytz.utc).isoformat()
+
         value = self.wrapper.readTile(self.layer_name, zoom, col, row, zdt)
         return value and multibandtile_decoder(value)
 
@@ -212,7 +218,12 @@ def query(uri,
         query_proj = str(query_proj)
 
     if time_intervals:
-        time_intervals = [time.astimezon(pytz.utc).isoformat() for time in time_intervals]
+        for x in range(0, len(time_intervals)):
+            time = time_intervals[x]
+            if time.tzinfo:
+                time_intervals[x] = time.astimezone(pytz.utc).isoformat()
+            else:
+                time_intervals[x] = time.replace(tzinfo=pytz.utc).isoformat()
     else:
         time_intervals = []
 
