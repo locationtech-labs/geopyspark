@@ -61,7 +61,7 @@ def read_value(uri,
                store=None):
     """Reads a single ``Tile`` from a GeoTrellis catalog.
     Unlike other functions in this module, this will not return a ``TiledRasterLayer``, but rather a
-    GeoPySpark formatted raster. This is the function to use when creating a tile server.
+    GeoPySpark formatted raster.
 
     Note:
         When requesting a tile that does not exist, ``None`` will be returned.
@@ -144,15 +144,13 @@ def query(uri,
           num_partitions=None,
           store=None):
     """Queries a single, zoom layer from a GeoTrellis catalog given spatial and/or time parameters.
-    Unlike read, this method will only return part of the layer that intersects the specified
-    region.
 
     Note:
         The whole layer could still be read in if ``intersects`` and/or ``time_intervals`` have not
         been set, or if the querried region contains the entire layer.
 
     Args:
-        layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
+        layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`): What the layer type
             of the geotiffs are. This is represented by either constants within ``LayerType`` or by
             a string.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
@@ -188,7 +186,7 @@ def query(uri,
             ``AttributeStore`` instance or URI for layer metadata lookup.
 
     Returns:
-        :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+        :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
     """
     if store:
         store = AttributeStore.build(store)

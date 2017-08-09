@@ -176,6 +176,22 @@ class CellType(Enum):
 
     @staticmethod
     def create_user_defined_celltype(cell_type, no_data_value):
+        """This method is used when the user wishes to create a user defined, no data value
+        for a given ``CellType``.
+
+        Note:
+            "bool" and "raw" ``CellType``\s cannot be create with user defined no data values.
+
+        Args:
+            cell_type (str or :class:`~geopyspark.geotrellis.constants.CellType`): The ``CellType``
+                or its ``str`` representation.
+            no_data_value: The custom no data value for the ``CellType``. Can be different types
+                depending on the base ``CellType``.
+
+        Returns:
+            str: A ``str`` reprsentation of the ``CellType`` with the user's defined no data value.
+        """
+
         cell_type = CellType(cell_type).value
 
         if 'bool' in cell_type:

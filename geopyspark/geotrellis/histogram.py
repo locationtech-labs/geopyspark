@@ -166,7 +166,7 @@ class Histogram(object):
             num_breaks (int): The number of breaks to return.
 
         Returns:
-            ``[int]``
+            [int]
         """
 
         return list(self.scala_histogram.quantileBreaks(num_breaks))
