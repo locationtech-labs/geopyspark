@@ -179,7 +179,7 @@ class TMS(object):
         """Shuts down the TMS service, freeing the assigned port."""
         if not self.bound:
             raise RuntimeError("Cannot unbind TMS server: Not bound!")
-        
+
         self.server.unbind()
         self._port = None
         self._host = None
