@@ -2,16 +2,22 @@ export PYTHON := python3
 export PYSPARK_PYTHON := ipython
 export ASSEMBLED="assembled"
 
+rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
+
 JAR-PATH := geopyspark/jars
 ASSEMBLYNAME := geotrellis-backend-assembly-0.2.0.jar
 BUILD-ASSEMBLY := geopyspark-backend/geotrellis/target/scala-2.11/${ASSEMBLYNAME}
 DIST-ASSEMBLY := ${JAR-PATH}/${ASSEMBLYNAME}
 WHEELNAME := geopyspark-0.1.0-py3-none-any.whl
 WHEEL := dist/${WHEELNAME}
-rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
+
+SCALA_SRC := $(call rwildcard, geopyspark-backend/geotrellis/src/, *.scala)
+SCALA_BLD := $(wildcard geopyspark-backend/project/*) geopyspark-backend/build.sbt geopyspark-backend/geotrellis/build.sbt
+PYTHON_SRC := $(call rwildcard, geopyspark/, *.py)
 
 export PYSPARK_SUBMIT_ARGS := --master local[*] --driver-memory 8G --jars ${PWD}/${DIST-ASSEMBLY} \
 --conf spark.serializer=org.apache.spark.serializer.KryoSerializer pyspark-shell
+
 
 install: ${DIST-ASSEMBLY} ${WHEEL}
 	${PYTHON} setup.py install --user --force --prefix=
@@ -23,10 +29,10 @@ virtual-install: ${DIST-ASSEMBLY}
 ${DIST-ASSEMBLY}: ${BUILD-ASSEMBLY}
 	cp -f ${BUILD-ASSEMBLY} ${DIST-ASSEMBLY}
 
-${BUILD-ASSEMBLY}: $(call rwildcard, geopyspark-backend/, *.scala)
+${BUILD-ASSEMBLY}: ${SCALA_SRC} ${SCALA_BLD}
 	(cd geopyspark-backend && ./sbt "project geotrellis-backend" assembly)
 
-${WHEEL}: ${DIST-ASSEMBLY} $(call rwildcard, geopyspark, *.py) setup.py
+${WHEEL}: ${DIST-ASSEMBLY} ${PYTHON_SRC} setup.py
 	rm -rf build/
 	${PYTHON} setup.py bdist_wheel
 
