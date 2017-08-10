@@ -88,7 +88,7 @@ class ColorMap(object):
         self.cmap = cmap
 
     @classmethod
-    def build(cls, breaks=None, colors=None,
+    def build(cls, breaks, colors=None,
               no_data_color=0x00000000, fallback=0x00000000,
               classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO):
         """Given breaks and colors, build a ``ColorMap`` object.
@@ -99,9 +99,10 @@ class ColorMap(object):
                 e.g., 0xff000080 is red at half opacity. If a ``list`` then tile values that
                 specify breaks in the color mapping. If a ``Histogram`` then a histogram from which
                 breaks can be derived.
-            colors (str or list):  If a ``str`` then the name of a matplotlib color ramp.
+            colors (str or list, optional):  If a ``str`` then the name of a matplotlib color ramp.
                 If a ``list`` then either a list of colortools ``Color`` objects or a list
-                of integers containing packed RGBA values.
+                of integers containing packed RGBA values. If ``None``, then the ``ColorMap`` will
+                be created from the ``breaks`` given.
             no_data_color(int, optional): A color to replace NODATA values with
             fallback (int, optional): A color to replace cells that have no
                 value in the mapping

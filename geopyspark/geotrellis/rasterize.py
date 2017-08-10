@@ -17,10 +17,12 @@ def rasterize(geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=
         fill_value (int or float): Value to burn into pixels intersectiong geometry
         cell_type (str or :class:`~geopyspark.geotrellis.constants.CellType`): Which data type the
             cells should be when created. Defaults to ``CellType.FLOAT64``.
-        options (:class:`~geopyspark.geotrellis.RasterizerOptions`): Pixel intersection options.
+        options (:class:`~geopyspark.geotrellis.RasterizerOptions`, optional): Pixel intersection options.
+        num_partitions (int, optional): The number of repartitions Spark will make when the data is
+            repartitioned. If ``None``, then the data will not be repartitioned.
 
     Returns:
-        :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+        :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
     """
 
     if isinstance(crs, int):

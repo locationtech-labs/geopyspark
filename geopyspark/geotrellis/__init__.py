@@ -5,6 +5,7 @@ import datetime
 import functools
 import datetime
 from shapely.geometry import box
+import pytz
 
 from geopyspark import get_spark_context
 from geopyspark.geotrellis.constants import CellType, NO_DATA_INT
@@ -14,7 +15,10 @@ _EPOCH = datetime.datetime.utcfromtimestamp(0)
 
 
 def _convert_to_unix_time(date_time):
-    return int((date_time - _EPOCH).total_seconds() * 1000)
+    if date_time.tzinfo:
+        return int((date_time.astimezone(pytz.utc) - _EPOCH.replace(tzinfo=pytz.utc)).total_seconds() * 1000)
+    else:
+        return int((date_time - _EPOCH).total_seconds() * 1000)
 
 
 def deprecated(func):

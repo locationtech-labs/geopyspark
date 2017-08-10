@@ -17,11 +17,13 @@ def hillshade(tiled_raster_layer, band=0, azimuth=315.0, altitude=45.0, z_factor
     `description <http://goo.gl/DtVDQ>`_ of Hillshade.
 
     Args:
-        band (int): The band of the raster to base the hillshade calculation on. Default is 0.
-        azimuth (float): The azimuth angle of the source of light. Default value is 315.0.
-        altitude (float): The angle of the altitude of the light above the horizon. Default is
+        tiled_raster_layer (:class:`~geopyspark.geotrellis.layer.TiledRasterLayer`): The base layer
+            that contains the rasters used to compute the hillshade.
+        band (int, optional): The band of the raster to base the hillshade calculation on. Default is 0.
+        azimuth (float, optional): The azimuth angle of the source of light. Default value is 315.0.
+        altitude (float, optional): The angle of the altitude of the light above the horizon. Default is
             45.0.
-        z_factor (float): How many x and y units in a single z unit. Default value is 1.0.
+        z_factor (float, optional): How many x and y units in a single z unit. Default value is 1.0.
 
     Returns:
         :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`

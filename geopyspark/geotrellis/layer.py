@@ -290,13 +290,13 @@ class RasterLayer(CachableLayer, TileLayer):
     Represents a layer that wraps a RDD that contains ``(K, V)``. Where ``K`` is either
     :class:`~geopyspark.geotrellis.ProjectedExtent` or
     :class:`~geopyspark.geotrellis.TemporalProjectedExtent` depending on the ``layer_type`` of the RDD,
-    and ``V`` being a :ref:`raster`.
+    and ``V`` being a :class:`~geopyspark.geotrellis.Tile`.
 
     The data held within this layer has not been tiled. Meaning the data has yet to be
     modified to fit a certain layout. See :ref:`raster_rdd` for more information.
 
     Args:
-        layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
+        layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`): What the layer type
             of the geotiffs are. This is represented by either constants within ``LayerType`` or by
             a string.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
@@ -304,9 +304,8 @@ class RasterLayer(CachableLayer, TileLayer):
 
     Attributes:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
-            of the geotiffs are. This is represented by either constants within ``LayerType`` or by
-            a string.
+        layer_type (:class:`~geopyspark.geotrellis.constants.LayerType`): What the layer type
+            of the geotiffs are.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
             ``RasterLayer`` to access the various Scala methods.
     """
@@ -324,7 +323,7 @@ class RasterLayer(CachableLayer, TileLayer):
         """Create a ``RasterLayer`` from a numpy RDD.
 
         Args:
-            layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
+            layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`): What the layer type
                 of the geotiffs are. This is represented by either constants within ``LayerType`` or by
                 a string.
             numpy_rdd (pyspark.RDD): A PySpark RDD that contains tuples of either
@@ -333,7 +332,7 @@ class RasterLayer(CachableLayer, TileLayer):
                 are represented by a numpy array.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
+            :class:`~geopyspark.geotrellis.layer.RasterLayer`
         """
 
         pysc = get_spark_context()
@@ -468,10 +467,10 @@ class RasterLayer(CachableLayer, TileLayer):
 
         Args:
             band (int or tuple or list or range): The band(s) to be selected from the ``Tile``\s.
-                Can either be a single ``int``, or a collection of ``int``\s.
+                Can either be a single int, or a collection of int\s.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.RasterLayer` with the selected bands.
+            :class:`~geopyspark.geotrellis.layer.RasterLayer` with the selected bands.
         """
 
         if isinstance(band, range):
@@ -497,7 +496,7 @@ class RasterLayer(CachableLayer, TileLayer):
                 function that takes a ``Tile`` and returns a ``Tile``.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
+            :class:`~geopyspark.geotrellis.layer.RasterLayer`
         """
 
         python_rdd = self.to_numpy_rdd()
@@ -516,11 +515,11 @@ class RasterLayer(CachableLayer, TileLayer):
         Args:
             func (cells, nd => cells): A function that takes two arguements: ``cells`` and
                 ``nd``. Where ``cells`` is the numpy array and ``nd`` is the ``no_data_value`` of
-                the tile. It returns ``cells`` which are the new cells values of the tile
+                the ``Tile``. It returns ``cells`` which are the new cells values of the ``Tile``
                 represented as a numpy array.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
+            :class:`~geopyspark.geotrellis.layer.RasterLayer`
         """
 
         python_rdd = self.to_numpy_rdd()
@@ -540,7 +539,7 @@ class RasterLayer(CachableLayer, TileLayer):
             no_data_value (int or float, optional): The value that should be marked as NoData.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
+            :class:`~geopyspark.geotrellis.layer.RasterLayer`
 
         Raises:
             ValueError: If ``no_data_value`` is set and the ``new_type`` contains raw values.
@@ -583,11 +582,10 @@ class RasterLayer(CachableLayer, TileLayer):
         rasters.
 
         Args:
-            layout (
-                :obj:`~geopyspark.geotrellis.LayoutDefinition` or
+            layout (:obj:`~geopyspark.geotrellis.LayoutDefinition` or
                 :obj:`~geopyspark.geotrellis.GlobalLayout` or
-                :class:`~geopyspark.geotrellis.LocalLayout`, optional
-            ): Target raster layout for the tiling operation.
+                :class:`~geopyspark.geotrellis.LocalLayout`, optional):
+                    Target raster layout for the tiling operation.
 
         Returns:
             :class:`~geopyspark.geotrellis.Metadata`
@@ -609,7 +607,7 @@ class RasterLayer(CachableLayer, TileLayer):
                 ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
+            :class:`~geopyspark.geotrellis.layer.RasterLayer`
         """
 
         resample_method = ResampleMethod(resample_method)
@@ -625,13 +623,12 @@ class RasterLayer(CachableLayer, TileLayer):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layout (
-                :class:`~geopyspark.geotrellis.Metadata` or
+            layout (:class:`~geopyspark.geotrellis.Metadata` or
                 :class:`~geopyspark.geotrellis.TiledRasterLayer` or
                 :obj:`~geopyspark.geotrellis.LayoutDefinition` or
                 :obj:`~geopyspark.geotrellis.GlobalLayout` or
-                :class:`~geopyspark.geotrellis.LocalLayout`, optional
-            ): Target raster layout for the tiling operation.
+                :class:`~geopyspark.geotrellis.LocalLayout`, optional):
+                    Target raster layout for the tiling operation.
             target_crs (str or int, optional): Target CRS of reprojection. Either EPSG code,
                 well-known name, or a PROJ.4 string. If ``None``, no reproject will be perfomed.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
@@ -639,7 +636,7 @@ class RasterLayer(CachableLayer, TileLayer):
                 Default is``ResampleMethods.NEAREST_NEIGHBOR``.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
         resample_method = ResampleMethod(resample_method)
@@ -671,8 +668,8 @@ class RasterLayer(CachableLayer, TileLayer):
         Args:
             value_map (dict): A ``dict`` whose keys represent values where a break should occur and
                 its values are the new value the cells within the break should become.
-            data_type (type): The type of the values within the rasters. Can either be ``int`` or
-                ``float``.
+            data_type (type): The type of the values within the rasters. Can either be int or
+                float.
             classification_strategy (str or :class:`~geopyspark.geotrellis.constants.ClassificationStrategy`, optional):
                 How the cells should be classified along the breaks. If unspecified, then
                 ``ClassificationStrategy.LESS_THAN_OR_EQUAL_TO`` will be used.
@@ -682,13 +679,13 @@ class RasterLayer(CachableLayer, TileLayer):
                 nodata values will be preserved.
 
         NOTE:
-            NoData symbolizes a different value depending on if ``data_type`` is ``int`` or
-            ``float``. For ``int``, the constant ``NO_DATA_INT`` can be used which represents the
-            NoData value for ``int`` in GeoTrellis. For ``float``, ``float('nan')`` is used to
+            NoData symbolizes a different value depending on if ``data_type`` is int or
+            float. For int, the constant ``NO_DATA_INT`` can be used which represents the
+            NoData value for int in GeoTrellis. For float, ``float('nan')`` is used to
             represent NoData.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.RasterLayer`
+            :class:`~geopyspark.geotrellis.layer.RasterLayer`
         """
 
         srdd = _reclassify(self.srdd, value_map, data_type, classification_strategy, replace_nodata_with)
@@ -707,13 +704,14 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
     Represents a RDD that contains ``(K, V)``. Where ``K`` is either
     :class:`~geopyspark.geotrellis.SpatialKey` or :obj:`~geopyspark.geotrellis.SpaceTimeKey`
-    depending on the ``layer_type`` of the RDD, and ``V`` being a :ref:`raster`.
+    depending on the ``layer_type`` of the RDD, and ``V`` being a
+    :class:`~geopyspark.geotrellis.Tile`.
 
     The data held within the layer is tiled. This means that the rasters have been modified to fit
     a larger layout. For more information, see :ref:`tiled-raster-rdd`.
 
     Args:
-        layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
+        layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`): What the layer type
             of the geotiffs are. This is represented by either constants within ``LayerType`` or by
             a string.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
@@ -721,9 +719,8 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
     Attributes:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
-            of the geotiffs are. This is represented by either constants within ``LayerType`` or by
-            a string.
+        layer_type (:class:`~geopyspark.geotrellis.constants.LayerType`): What the layer type
+            of the geotiffs are.
         srdd (py4j.java_gateway.JavaObject): The coresponding Scala class. This is what allows
             ``RasterLayer`` to access the various Scala methods.
         is_floating_point_layer (bool): Whether the data within the ``TiledRasterLayer`` is floating
@@ -750,7 +747,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         """Create a ``TiledRasterLayer`` from a numpy RDD.
 
         Args:
-            layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
+            layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`): What the layer type
                 of the geotiffs are. This is represented by either constants within ``LayerType`` or by
                 a string.
             numpy_rdd (pyspark.RDD): A PySpark RDD that contains tuples of either
@@ -763,7 +760,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 have. If ``None``, then the returned layer's ``zoom_level`` will be ``None``.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
         pysc = get_spark_context()
@@ -880,10 +877,10 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         Args:
             band (int or tuple or list or range): The band(s) to be selected from the ``Tile``\s.
-                Can either be a single ``int``, or a collection of ``int``\s.
+                Can either be a single int, or a collection of int\s.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer` with the selected bands.
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer` with the selected bands.
         """
 
         if isinstance(band, range):
@@ -909,7 +906,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 function that takes a ``Tile`` and returns a ``Tile``.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
         python_rdd = self.to_numpy_rdd()
@@ -934,7 +931,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 represented as a numpy array.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
         python_rdd = self.to_numpy_rdd()
@@ -1005,7 +1002,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             no_data_value (int or float, optional): The value that should be marked as NoData.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
 
         Raises:
             ValueError: If ``no_data_value`` is set and the ``new_type`` contains raw values.
@@ -1038,7 +1035,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
         resample_method = ResampleMethod(resample_method)
@@ -1071,12 +1068,13 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             row (int): The ``SpatialKey`` row.
 
         Returns:
-            A list of numpy arrays (the tiles)
+            [:class:`~geopyspark.geotrellis.Tile`]
 
         Raises:
             ValueError: If using lookup on a non ``LayerType.SPATIAL`` ``TiledRasterLayer``.
             IndexError: If col and row are not within the ``TiledRasterLayer``\'s bounds.
         """
+
         if self.layer_type != LayerType.SPATIAL:
             raise ValueError("Only TiledRasterLayers with a layer_type of Spatial can use lookup()")
 
@@ -1099,13 +1097,12 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         """Cut tiles to a given layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layout (
-                :obj:`~geopyspark.geotrellis.LayoutDefinition` or
+            layout (:obj:`~geopyspark.geotrellis.LayoutDefinition` or
                 :class:`~geopyspark.geotrellis.Metadata` or
                 :class:`~geopyspark.geotrellis.TiledRasterLayer` or
                 :obj:`~geopyspark.geotrellis.GlobalLayout` or
-                :class:`~geopyspark.geotrellis.LocalLayout`
-            ): Target raster layout for the tiling operation.
+                :class:`~geopyspark.geotrellis.LocalLayout`):
+                    Target raster layout for the tiling operation.
             target_crs (str or int, optional): Target CRS of reprojection. Either EPSG code,
                 well-known name, or a PROJ.4 string. If ``None``, no reproject will be perfomed.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
@@ -1113,7 +1110,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
         resample_method = ResampleMethod(resample_method)
@@ -1174,8 +1171,8 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             neighborhood (str or :class:`~geopyspark.geotrellis.neighborhood.Neighborhood`, optional):
                 The type of neighborhood to use in the focal operation. This can be represented by
                 either an instance of ``Neighborhood``, or by a constant.
-            param_1 (int or float, optional): If using ``SLOPE``, then this is the zFactor, else it
-                is the first argument of ``neighborhood``.
+            param_1 (int or float, optional): If using ``Operation.SLOPE``, then this is the
+                zFactor, else it is the first argument of ``neighborhood``.
             param_2 (int or float, optional): The second argument of the ``neighborhood``.
             param_3 (int or float, optional): The third argument of the ``neighborhood``.
 
@@ -1185,17 +1182,17 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
             Any ``param`` that is not set will default to 0.0.
 
-            If ``neighborhood`` is ``None`` then ``operation`` **must** be either ``SLOPE`` or
-            ``ASPECT``.
+            If ``neighborhood`` is ``None`` then ``operation`` **must** be either
+            ``Operation.SLOPE`` or ``Operation.ASPECT``.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
 
         Raises:
             ValueError: If ``operation`` is not a known operation.
             ValueError: If ``neighborhood`` is not a known neighborhood.
-            ValueError: If ``neighborhood`` was not set, and ``operation`` is not ``SLOPE`` or
-                ``ASPECT``.
+            ValueError: If ``neighborhood`` was not set, and ``operation`` is not
+                ``Operation.SLOPE`` or ``Operation.ASPECT``.
         """
 
         operation = Operation(operation).value
@@ -1238,7 +1235,8 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         return ser.loads(value)[0]
 
     def save_stitched(self, path, crop_bounds=None, crop_dimensions=None):
-        """Stitch all of the rasters within the Layer into one raster.
+        """Stitch all of the rasters within the Layer into one raster and then saves it to a given
+        path.
 
         Args:
             path (str): The path of the geotiff to save. The path must be on the local file system.
@@ -1311,7 +1309,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                     All geometries must be in the same CRS as the TileLayer.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
         if not isinstance(geometries, list):
@@ -1329,8 +1327,8 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         Args:
             value_map (dict): A ``dict`` whose keys represent values where a break should occur and
                 its values are the new value the cells within the break should become.
-            data_type (type): The type of the values within the rasters. Can either be ``int`` or
-                ``float``.
+            data_type (type): The type of the values within the rasters. Can either be int or
+                float.
             classification_strategy (str or :class:`~geopyspark.geotrellis.constants.ClassificationStrategy`, optional):
                 How the cells should be classified along the breaks. If unspecified, then
                 ``ClassificationStrategy.LESS_THAN_OR_EQUAL_TO`` will be used.
@@ -1340,13 +1338,13 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 nodata values will be preserved.
 
         NOTE:
-            NoData symbolizes a different value depending on if ``data_type`` is ``int`` or
-            ``float``. For ``int``, the constant ``NO_DATA_INT`` can be used which represents the
-            NoData value for ``int`` in GeoTrellis. For ``float``, ``float('nan')`` is used to
+            NoData symbolizes a different value depending on if ``data_type`` is int or
+            float. For int, the constant ``NO_DATA_INT`` can be used which represents the
+            NoData value for int in GeoTrellis. For float, ``float('nan')`` is used to
             represent NoData.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
         srdd = _reclassify(self.srdd, value_map, data_type,
@@ -1370,7 +1368,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             new_max (int or float): New maximum to normalize to.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
         if not old_min and not old_max:
@@ -1400,14 +1398,14 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             geometry (shapely.geometry.Polygon or shapely.geometry.MultiPolygon or bytes): A
                 Shapely ``Polygon`` or ``MultiPolygon`` that represents the area where the summary
                 should be computed; or a WKB representation of the geometry.
-            data_type (type): The type of the values within the rasters. Can either be ``int`` or
-                ``float``.
+            data_type (type): The type of the values within the rasters. Can either be int or
+                float.
 
         Returns:
-            ``int`` or ``float`` depending on ``data_type``.
+            int or float depending on ``data_type``.
 
         Raises:
-            TypeError: If ``data_type`` is not an ``int`` or ``float``.
+            TypeError: If ``data_type`` is not an int or float.
         """
 
         if data_type is int:
@@ -1424,14 +1422,14 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             geometry (shapely.geometry.Polygon or shapely.geometry.MultiPolygon or bytes): A
                 Shapely ``Polygon`` or ``MultiPolygon`` that represents the area where the summary
                 should be computed; or a WKB representation of the geometry.
-            data_type (type): The type of the values within the rasters. Can either be ``int`` or
-                ``float``.
+            data_type (type): The type of the values within the rasters. Can either be int or
+                float.
 
         Returns:
-            ``int`` or ``float`` depending on ``data_type``.
+            int or float depending on ``data_type``.
 
         Raises:
-            TypeError: If ``data_type`` is not an ``int`` or ``float``.
+            TypeError: If ``data_type`` is not an int or float.
         """
 
         if data_type is int:
@@ -1448,14 +1446,14 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             geometry (shapely.geometry.Polygon or shapely.geometry.MultiPolygon or bytes): A
                 Shapely ``Polygon`` or ``MultiPolygon`` that represents the area where the summary
                 should be computed; or a WKB representation of the geometry.
-            data_type (type): The type of the values within the rasters. Can either be ``int`` or
-                ``float``.
+            data_type (type): The type of the values within the rasters. Can either be int or
+                float.
 
         Returns:
-            ``int`` or ``float`` depending on ``data_type``.
+            int or float depending on ``data_type``.
 
         Raises:
-            TypeError: If ``data_type`` is not an ``int`` or ``float``.
+            TypeError: If ``data_type`` is not an int or float.
         """
 
         if data_type is int:
@@ -1474,7 +1472,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 should be computed; or a WKB representation of the geometry.
 
         Returns:
-            ``float``
+            float
         """
 
         return self._process_polygonal_summary(geometry, self.srdd.polygonalMean)
@@ -1550,8 +1548,8 @@ class Pyramid(CachableLayer):
 
     Attributes:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`): What the spatial
-            type of the geotiffs are.
+        layer_type (class:`~geopyspark.geotrellis.constants.LayerType`): What the layer type
+            of the geotiffs are.
         levels (dict): A dict of ``TiledRasterLayer``\s where the value is the layer itself
             and the key is its given zoom level.
         max_zoom (int): The highest zoom level of the pyramid.

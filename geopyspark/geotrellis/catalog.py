@@ -61,7 +61,7 @@ def read_value(uri,
                store=None):
     """Reads a single ``Tile`` from a GeoTrellis catalog.
     Unlike other functions in this module, this will not return a ``TiledRasterLayer``, but rather a
-    GeoPySpark formatted raster. This is the function to use when creating a tile server.
+    GeoPySpark formatted raster.
 
     Note:
         When requesting a tile that does not exist, ``None`` will be returned.
@@ -130,7 +130,13 @@ class ValueReader(object):
 
         zoom = zoom or self.zoom or 0
         zoom = zoom and int(zoom)
-        zdt = zdt and zdt.astimezone(pytz.utc).isoformat()
+
+        if zdt:
+            if zdt.tzinfo:
+                zdt = zdt.astimezone(pytz.utc).isoformat()
+            else:
+                zdt = zdt.replace(tzinfo=pytz.utc).isoformat()
+
         value = self.wrapper.readTile(self.layer_name, zoom, col, row, zdt)
         return value and multibandtile_decoder(value)
 
@@ -144,15 +150,13 @@ def query(uri,
           num_partitions=None,
           store=None):
     """Queries a single, zoom layer from a GeoTrellis catalog given spatial and/or time parameters.
-    Unlike read, this method will only return part of the layer that intersects the specified
-    region.
 
     Note:
         The whole layer could still be read in if ``intersects`` and/or ``time_intervals`` have not
         been set, or if the querried region contains the entire layer.
 
     Args:
-        layer_type (str or :class:`geopyspark.geotrellis.constants.LayerType`): What the spatial type
+        layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`): What the layer type
             of the geotiffs are. This is represented by either constants within ``LayerType`` or by
             a string.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
@@ -188,7 +192,7 @@ def query(uri,
             ``AttributeStore`` instance or URI for layer metadata lookup.
 
     Returns:
-        :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+        :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
     """
     if store:
         store = AttributeStore.build(store)
@@ -214,7 +218,12 @@ def query(uri,
         query_proj = str(query_proj)
 
     if time_intervals:
-        time_intervals = [time.astimezon(pytz.utc).isoformat() for time in time_intervals]
+        for x in range(0, len(time_intervals)):
+            time = time_intervals[x]
+            if time.tzinfo:
+                time_intervals[x] = time.astimezone(pytz.utc).isoformat()
+            else:
+                time_intervals[x] = time.replace(tzinfo=pytz.utc).isoformat()
     else:
         time_intervals = []
 
