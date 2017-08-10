@@ -370,14 +370,16 @@ class AttributeStore(object):
             Returns:
                 ``dict``: Attribute value
             """
-            value_json = self.store.wrapper.read(self.layer_name, self.layer_zoom, name)
+            zoom = self.zoom or 0
+            value_json = self.store.wrapper.read(self.layer_name, zoom, name)
             if value_json:
                 return json.loads(value_json)
             else:
                 raise KeyError(self.store.uri, self.layer_name, self.layer_zoom, name)
 
         def layer_metadata(self):
-            value_json = self.store.wrapper.readMetadata(self.layer_name, self.layer_zoom)
+            zoom = self.zoom or 0
+            value_json = self.store.wrapper.readMetadata(self.layer_name, zoom)
             if value_json:
                 metadata_dict = json.loads(value_json)
                 return Metadata.from_dict(metadata_dict)
@@ -391,8 +393,9 @@ class AttributeStore(object):
                 name (str): Attribute name
                 value (dict): Attribute value
             """
+            zoom = self.zoom or 0
             value_json = json.dumps(value)
-            self.store.wrapper.write(self.layer_name, self.layer_zoom, name, value_json)
+            self.store.wrapper.write(self.layer_name, zoom, name, value_json)
 
         def delete(self, name):
             """Delete attribute by name
@@ -400,7 +403,8 @@ class AttributeStore(object):
             Args:
                 name (str): Attribute name
             """
-            self.store.wrapper.delete(self.layer_name, self.layer_zoom, name)
+            zoom = self.zoom or 0
+            self.store.wrapper.delete(self.layer_name, zoom, name)
 
     def layer(self, name, zoom=None):
         """Layer Attributes object for given layer
