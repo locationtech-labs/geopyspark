@@ -148,11 +148,20 @@ abstract class TileLayer[K: ClassTag] {
   }
 
   def getMinMax: (Double, Double) = {
-    val minMaxs: Array[(Double, Double)] = rdd.histogram.map{ x => x.minMaxValues.get }
+    val minMaxs: Array[(Double, Double)] =
+      rdd.histogram.map { x =>
+        x.minMaxValues.get match {
+          case None => (Double.NaN, Double.NaN)
+          case Some(minMaxs) => minMaxs
+        }
+      }
 
-    minMaxs.foldLeft(minMaxs(0)) {
-      (acc, elem) =>
-      (math.min(acc._1, elem._1), math.max(acc._2, elem._2))
+    minMaxs.foldLeft(minMaxs(0)) { (acc, elem) =>
+      if (isData(elem._1)) {
+        (math.min(acc._1, elem._1), math.max(acc._2, elem._2))
+      } else {
+        acc
+      }
     }
   }
 
