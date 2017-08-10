@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.collection.concurrent._
 import scala.collection.JavaConversions._
-import scala.util.Try
+import scala.util.{Try, Failure, Success}
 
 trait TileReader {
   def startup(): Unit = {}
@@ -35,7 +35,11 @@ object TileReaders {
       val key = SpatialKey(x, y)
       Future {
         val reader = layers.getOrElseUpdate(zoom, valueReader.reader[SpatialKey, Tile](LayerId(catalog, zoom)))
-        Try(MultibandTile(reader(key))).toOption
+        Try(MultibandTile(reader(key))) match {
+          case Success(tile) => Some(tile)
+          case Failure(_: ValueNotFoundError) => None
+          case Failure(e: Throwable) => throw e
+        }
       }
     }
 

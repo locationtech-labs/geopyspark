@@ -60,15 +60,19 @@ object TMSServerRoutes {
   private class RenderingTileRoute(reader: TileReader, renderer: TileRender) extends TMSServerRoute {
     def root: Route =
       pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
-        val tileFuture = reader.retrieve(zoom, x, y)
-        complete {
-          tileFuture.map(_.map { tile =>
-            if (renderer.requiresEncoding()) {
-              renderer.renderEncoded(geopyspark.geotrellis.PythonTranslator.toPython(tile))
-            } else {
-              renderer.render(tile)
-            }
-          })
+        val tileFuture = 
+          reader
+            .retrieve(zoom, x, y)
+            .map(_.map{tile =>
+              if (renderer.requiresEncoding()) {
+                renderer.renderEncoded(geopyspark.geotrellis.PythonTranslator.toPython(tile))
+              } else {
+                renderer.render(tile)
+              }
+            })
+        onSuccess(tileFuture) {
+          case Some(t) => complete(t)
+          case None => complete(204, None)
         }
       }
 
@@ -80,18 +84,22 @@ object TMSServerRoutes {
     def root: Route =
       pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
         val tileFutures: List[Future[Option[MultibandTile]]] = readers.map(_.retrieve(zoom, x, y))
-        val futureTiles: Future[Option[Array[MultibandTile]]] =
-          tileFutures.sequence.map(_.sequence).map(_.map(_.toArray))
-        complete {
-          futureTiles.map(
-            _.map(array =>
-              if (compositer.requiresEncoding()) {
-                compositer.compositeEncoded(array.map{tile => geopyspark.geotrellis.PythonTranslator.toPython(tile)})
-              } else {
-                compositer.composite(array)
-              }
+        val futureTiles: Future[Option[Array[MultibandTile]]] = tileFutures.sequence.map(_.sequence).map(_.map(_.toArray))
+        val composited: Future[Option[Array[Byte]]] = 
+          futureTiles
+            .map(
+              _.map(array =>
+                if (compositer.requiresEncoding()) {
+                  compositer.compositeEncoded(array.map{tile => geopyspark.geotrellis.PythonTranslator.toPython(tile)})
+                } else {
+                  compositer.composite(array)
+                }
+              )
             )
-          )
+
+        onSuccess(composited) {
+          case Some(img) => complete(img)
+          case None => complete(204, None)
         }
       }
 
