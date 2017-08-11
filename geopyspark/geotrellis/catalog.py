@@ -370,7 +370,7 @@ class AttributeStore(object):
             Returns:
                 ``dict``: Attribute value
             """
-            zoom = self.zoom or 0
+            zoom = self.layer_zoom or 0
             value_json = self.store.wrapper.read(self.layer_name, zoom, name)
             if value_json:
                 return json.loads(value_json)
@@ -378,7 +378,7 @@ class AttributeStore(object):
                 raise KeyError(self.store.uri, self.layer_name, self.layer_zoom, name)
 
         def layer_metadata(self):
-            zoom = self.zoom or 0
+            zoom = self.layer_zoom or 0
             value_json = self.store.wrapper.readMetadata(self.layer_name, zoom)
             if value_json:
                 metadata_dict = json.loads(value_json)
@@ -393,7 +393,7 @@ class AttributeStore(object):
                 name (str): Attribute name
                 value (dict): Attribute value
             """
-            zoom = self.zoom or 0
+            zoom = self.layer_zoom or 0
             value_json = json.dumps(value)
             self.store.wrapper.write(self.layer_name, zoom, name, value_json)
 
@@ -403,7 +403,7 @@ class AttributeStore(object):
             Args:
                 name (str): Attribute name
             """
-            zoom = self.zoom or 0
+            zoom = self.layer_zoom or 0
             self.store.wrapper.delete(self.layer_name, zoom, name)
 
     def layer(self, name, zoom=None):
