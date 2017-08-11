@@ -124,15 +124,13 @@ class TMS(object):
     def __init__(self, server):
         self.pysc = get_spark_context()
         self.server = server
-        self.handshake = ''
         self.bound = False
         self._host = None
         self._port = None
         self.pysc._gateway.start_callback_server()
 
     def set_handshake(self, handshake):
-        self.server.set_handshake(handshake)
-        self.handshake = handshake
+        self.server.setHandshake(handshake)
 
     def bind(self, host=None, requested_port=None):
         """Starts up a TMS server.
