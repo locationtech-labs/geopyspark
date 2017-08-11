@@ -1,4 +1,6 @@
 import io
+import socket
+import numpy as np
 
 from geopyspark import get_spark_context, _ensure_callback_gateway_initialized
 from geopyspark.geotrellis.color import ColorMap
@@ -112,16 +114,101 @@ class TMS(object):
     Attributes:
         pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
         server (JavaObject): The Java TMSServer instance
+        host (str): The IP address of the host, if bound, else None
+        port (int): The port number of the TMS server, if bound, else None
+        url_pattern (string): The URI pattern for the current TMS service, with
+            {z}, {x}, {y} tokens.  Can be copied directly to services such as
+            `geojson.io`.
     """
 
     def __init__(self, server):
         self.pysc = get_spark_context()
         self.server = server
         self.handshake = ''
+        self.bound = False
+        self._host = None
+        self._port = None
+        self.pysc._gateway.start_callback_server()
 
     def set_handshake(self, handshake):
         self.server.set_handshake(handshake)
         self.handshake = handshake
+
+    def bind(self, host=None, requested_port=None):
+        """Starts up a TMS server.
+
+        Args:
+            host (str, optional): The target host.  Typically "localhost",
+                "127.0.0.1", or "0.0.0.0".  The latter will make the TMS service
+                accessible from the world.  If omitted, defaults to localhost.
+
+            requested_port (optional, int): A port number to bind the service
+                to.  If omitted, use a random available port.
+        """
+        if self.bound:
+            raise RuntimeError("Cannot bind TMS server: Already bound")
+
+        if not host:
+            host = "localhost"
+
+        try:
+            if requested_port:
+                self.server.bind(host, requested_port)
+            else:
+                self.server.bind(host)
+        except:
+            raise RuntimeError("Problem binding TMS server")
+
+        self.bound = True
+        self._port = self.server.port()
+
+        try:
+            if host == "0.0.0.0":
+                self._host = [l for l in
+                              ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1],
+                               [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in
+                                 [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]])
+                              if l][0][0]
+            else:
+                self._host = host
+        except:
+            self.unbind()
+            raise RuntimeError("Error binding to " + "{} on port {}".format(host, self._port) if requested_port else host)
+
+    def unbind(self):
+        """Shuts down the TMS service, freeing the assigned port."""
+        self.server.unbind()
+        self._port = None
+        self._host = None
+        self.bound = False
+
+    @property
+    def host(self):
+        """Returns the IP string of the server's host if bound, else None.
+
+        Returns:
+            (str)"""
+        return self._host
+
+    @property
+    def port(self):
+        """Returns the port number for the current TMS server if bound, else None.
+
+        Returns:
+            (int)"""
+        return self._port
+
+    @property
+    def url_pattern(self):
+        """Returns the URI for the tiles served by the present server.  Contains
+        {z}, {x}, and {y} tokens to be substituted for the desired zoom and x/y tile position.
+
+        Returns:
+            (str)"""
+        if not self.bound:
+            raise ValueError("Cannot generate URL for unbound TMS server")
+        else:
+            return "http://{}:{}/tile/{{z}}/{{x}}/{{y}}.png".format(self._host, self._port)
 
     @classmethod
     def build(cls, source, display):
