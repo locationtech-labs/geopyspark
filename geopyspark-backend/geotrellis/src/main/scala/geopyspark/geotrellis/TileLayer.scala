@@ -150,7 +150,7 @@ abstract class TileLayer[K: ClassTag] {
   def getMinMax: (Double, Double) = {
     val minMaxs: Array[(Double, Double)] =
       rdd.histogram.map { x =>
-        x.minMaxValues.get match {
+        x.minMaxValues match {
           case None => (Double.NaN, Double.NaN)
           case Some(minMaxs) => minMaxs
         }
