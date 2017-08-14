@@ -131,41 +131,14 @@ a need for it.
 
 .. toctree::
   :maxdepth: 4
-  :caption: Notebook Guides
-  :glob:
-  :hidden:
-
-  notebook-demos/core-concepts
-  notebook-demos/layers
-  notebook-demos/catalog
-
-.. toctree::
-  :maxdepth: 3
-  :caption: Notebook Demos
-  :glob:
-  :hidden:
-
-  notebook-demos/reading-in-sentinel-data
-
-.. toctree::
-  :maxdepth: 3
-  :caption: Notebook Demos
-  :glob:
-  :hidden:
-
-  notebook-demos/reading-in-sentinel-data
-  notebook-demos/ingesting-an-image
-
-.. toctree::
-  :maxdepth: 4
   :caption: User Guides
   :glob:
   :hidden:
 
-  guides/core_concepts
-  guides/geopycontext
-  guides/rdd
+  guides/core-concepts
+  guides/layers
   guides/catalog
+  guides/map-algebra
 
 .. toctree::
   :maxdepth: 3
@@ -173,10 +146,8 @@ a need for it.
   :glob:
   :hidden:
 
-  tutorials/greyscale_ingest_example
-  tutorials/greyscale_tile_server_example
-  tutorials/sentinel_ingest_example
-  tutorials/sentinel_tile_server_example
+  tutorials/ingesting-an-image
+  tutorials/reading-in-sentinel-data
 
 .. toctree::
   :maxdepth: 4
