@@ -140,6 +140,14 @@ a need for it.
   notebook-demos/catalog
 
 .. toctree::
+  :maxdepth: 3
+  :caption: Notebook Demos
+  :glob:
+  :hidden:
+
+  notebook-demos/reading-in-sentinel-data
+
+.. toctree::
   :maxdepth: 4
   :caption: User Guides
   :glob:
