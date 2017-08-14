@@ -221,6 +221,12 @@ Installing For Developers
 Developing GeoPySpark With GeoNotebook
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+**Note**: Before begining this section, it should be noted that python-mapnik,
+a dependency for GeoNotebook, has been found to be difficult to install. If
+problems are encountered during installation, a possible work around would be
+to run ``make wheel`` and then do ``docker cp`` the ``wheel`` into the
+GeoPySpark docker container and install it from there.
+
 `GeoNotebook <https://github.com/OpenGeoscience/geonotebook>`_ is a Jupyter
 notebook extension that specializes in working with geospatial data. GeoPySpark
 can be used with this notebook; which allows for a more interactive experience
