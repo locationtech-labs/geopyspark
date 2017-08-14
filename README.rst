@@ -7,94 +7,63 @@ GeoPySpark
    :target: https://geopyspark.readthedocs.io/en/latest/?badge=latest
 
 
-**NOTE**: GeoPySpark is currently going through some reworking right now. It is
-NOT reccomended that you install GeoPySpark from GitHub.  Rather, do so with
-``pip``. In addition, please refer to the
-`0.1.0 verson of the GeoPySpark ReadTheDocs page <http://geopyspark.readthedocs.io/en/v0.1.0>`_
-and the not the latest version.
-
-
-``GeoPySpark`` provides Python bindings for working with geospatial data using `PySpark <http://spark.apache.org/docs/latest/api/python/pyspark.html>`_.
-It will provide interfaces into GeoTrellis and GeoMesa LocationTech frameworks.
-It is currently under development, and has just entered alpha.
-
-Currently, only functionality from GeoTrellis has been supported. GeoMesa
-LocationTech frameworks will be added at a later date.
+GeoPySpark is a Python bindings library for `GeoTrellis <http://geotrellis.io>`_, a Scala
+library for working with geospatial data in a distributed environment.
+By using `PySpark <http://spark.apache.org/docs/latest/api/python/pyspark.html>`_, GeoPySpark is
+able to provide na interface into the GeoTrellis framework.
 
 A Quick Example
 ----------------
 
 Here is a quick example of GeoPySpark. In the following code, we take NLCD data
-of the state of Pennsylvania from 2011, and do a polygonal summary of an area
-of interest to find the min and max classifications values of that area.
+of the state of Pennsylvania from 2011, and do a masking operation on it with
+a Polygon that represents an area of interest. This masked layer is then saved.
 
 If you wish to follow along with this example, you will need to download the
-NLCD data and the geojson that represents the area of interest. Running these
-two commands will download these files for you:
+NLCD data and unzip it.. Running these two commands will complete these tasks
+for you:
 
 .. code:: console
 
    curl -o /tmp/NLCD2011_LC_Pennsylvannia.zip https://s3-us-west-2.amazonaws.com/prd-tnm/StagedProducts/NLCD/2011/landcover/states/NLCD2011_LC_Pennsylvania.zip?ORIG=513_SBDDG
-   unzip /tmp/NLCD2011_LC_Pennsylvannia.zip
-   curl -o /tmp/area_of_interest.geojson https://s3.amazonaws.com/geopyspark-test/area_of_interest.json
+   unzip -d /tmp /tmp/NLCD2011_LC_Pennsylvannia.zip
 
 .. code:: python
 
-  import json
-  from functools import partial
+  import geopyspark as gps
 
-  from geopyspark.geopycontext import GeoPyContext
-  from geopyspark.geotrellis.constants import SPATIAL, ZOOM
-  from geopyspark.geotrellis.geotiff_rdd import get
-  from geopyspark.geotrellis.catalog import write
-
-  from shapely.geometry import Polygon, shape
-  from shapely.ops import transform
-  import pyproj
+  from pyspark import SparkContext
+  from shapely.geometry import box
 
 
-  # Create the GeoPyContext
-  geopysc = GeoPyContext(appName="example", master="local[*]")
+  # Create the SparkContext
+  conf = gps.create_geopyspark_conf(appName="geopyspark-example", master="local[*]")
+  sc = SparkContext(conf=conf)
 
   # Read in the NLCD tif that has been saved locally.
   # This tif represents the state of Pennsylvania.
-  raster_rdd = get(geopysc=geopysc, rdd_type=SPATIAL,
-  uri='/tmp/NLCD2011_LC_Pennsylvania.tif',
-  options={'numPartitions': 100})
+  raster_layer = gps.geotiff.get(layer_type=gps.LayerType.SPATIAL,
+                                 uri='/tmp/NLCD2011_LC_Pennsylvania.tif',
+                                 num_partitions=100)
 
-  tiled_rdd = raster_rdd.to_tiled_layer()
+  # Tile the rasters within the layer and reproject them to Web Mercator.
+  tiled_layer = raster_layer.tile_to_layout(layout=gps.GlobalLayout(), target_crs=3857)
 
-  # Reproject the reclassified TiledRasterRDD so that it is in WebMercator
-  reprojected_rdd = tiled_rdd.reproject(3857, scheme=ZOOM).cache().repartition(150)
+  # Creates a Polygon that covers roughly the north-west section of Philadelphia.
+  # This is the region that will be masked.
+  area_of_interest = box(-75.229225, 40.003686, -75.107345, 40.084375)
 
-  # We will do a polygonal summary of the north-west region of Philadelphia.
-  with open('/tmp/area_of_interest.json') as f:
-      txt = json.load(f)
+  # Mask the tiles within the layer with the area of interest
+  masked = tiled_layer.mask(geometries=area_of_interest)
 
-  geom = shape(txt['features'][0]['geometry'])
-
-  # We need to reporject the geometry to WebMercator so that it will intersect with
-  # the TiledRasterRDD.
-  project = partial(
-      pyproj.transform,
-      pyproj.Proj(init='epsg:4326'),
-      pyproj.Proj(init='epsg:3857'))
-
-  area_of_interest = transform(project, geom)
-
-  # Find the min and max of the values within the area of interest polygon.
-  min_val = reprojected_rdd.polygonal_min(geometry=area_of_interest, data_type=int)
-  max_val = reprojected_rdd.polygonal_max(geometry=area_of_interest, data_type=int)
-
-  print('The min value of the area of interest is:', min_val)
-  print('The max value of the area of interest is:', max_val)
-
-  # We will now pyramid the relcassified TiledRasterRDD so that we can use it in a TMS server later.
-  pyramided_rdd = reprojected_rdd.pyramid(start_zoom=1, end_zoom=12)
+  # We will now pyramid the masked TiledRasterLayer so that we can use it in a TMS server later.
+  pyramided_mask = masked.pyramid()
 
   # Save each layer of the pyramid locally so that it can be accessed at a later time.
-  for pyramid in pyramided_rdd:
-      write('file:///tmp/nld-2011', 'pa', pyramid)
+  for pyramid in pyramided_mask.levels.values():
+      gps.write(uri='file:///tmp/pa-nlcd-2011',
+                layer_name='north-west-philly',
+                tiled_raster_layer=pyramid)
 
 
 Contact and Support
@@ -122,7 +91,7 @@ GeoPySpark Requirements
 Requirement  Version
 ============ ============
 Java         >=1.8
-Scala        2.11.8
+Scala        >=2.11
 Python       3.3 - 3.6
 Hadoop       >=2.1.1
 ============ ============
