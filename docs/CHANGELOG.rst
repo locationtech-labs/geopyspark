@@ -32,7 +32,7 @@ or updated per se, we'll just go over the features that will be present in
 
 **geopyspark.command**
 
- - GeoPySpark can now use a script to download the jar. 
+ - GeoPySpark can now use a script to download the jar.
    Used when installing GeoPySpark from pip.
 
 **Documentation**
@@ -41,3 +41,48 @@ or updated per se, we'll just go over the features that will be present in
  - Core-Concepts, rdd, geopycontext, and catalog.
  - Ingesting and creating a tile server with a greyscale raster dataset.
  - Ingesting and creating a tile server with data from Sentinel.
+
+
+0.2.0
+-----
+
+The second release of GeoPySpark has brought about massive changes to the
+library. Many more features have been added, and some have been taken away. The
+API has also been overhauld, and code written using the 0.1.0 code will not work
+with this version.
+
+Because so much has changed over these past few months, only the most major
+changes will be discussed below.
+
+
+**geopyspark**
+
+  - Removed ``GeoPyContext``.
+  - Added ``geopyspark_conf`` function which is used to create a ``SparkConf`` for
+    GeoPySpark.
+  - Changed how the environemnt is constructed when using GeoPySpark.
+
+**geopyspark.geotrellis**
+
+  - A ``SparkContext`` instance is no longer needs to be passed in for any class
+    or function.
+  - Renamed ``RasterRDD`` and ``TiledRasterRDD`` to ``RasterLayer`` and
+    ``TiledRasterLayer``.
+  - Changed how ``tile_to_layout`` and ``reproject`` work.
+  - Broked out ``rasterize``, ``hillshade``, ``cost_distance``, and
+    ``euclidean_distance`` into their own, respective modules.
+  - Added the ``Pyramid`` class to ``layer.py``.
+  - Renamed ``geotiff_rdd`` to ``geotiff``.
+  - Broke out the options in ``geotiff.get``.
+  - Constants are now orginized by enum classes.
+  - Avro is no longer used for serialization/deserialization.
+  - ProtoBuf is now used for serialization/deserialization.
+  - Added the ``render`` module.
+  - Added the ``color`` mdoule.
+  - Added the ``histogram`` moudle.
+
+**Documentation**
+
+  - Updated all of the docstrings to reflect the new changes.
+  - All of the documentation has been updated to reflect the new chnagtes.
+  - Example jupyter notebooks have been added.
