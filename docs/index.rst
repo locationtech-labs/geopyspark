@@ -136,6 +136,7 @@ a need for it.
   :hidden:
 
   notebook-demos/core-concepts
+  notebook-demos/layers
 
 .. toctree::
   :maxdepth: 4
