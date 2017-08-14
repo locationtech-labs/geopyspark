@@ -196,14 +196,14 @@ Aspect
     tiled_layer.focal(operation=gps.Operation.ASPECT, neighborhood=square).lookup(0, 0)[0].cells
 
 Miscellaneous Raster Operations
-===============================
+--------------------------------
 
 There are other means to extract information from rasters and to create
 rasters that need to be presented. These are *polygonal summaries*,
 *cost distance*, and *rasterization*.
 
 Polygonal Summary Methods
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In addition to local and focal operations, polygonal summaries can also
 be performed on ``TiledRasterLayer``\ s. These are operations that are
@@ -218,7 +218,7 @@ results will be returned.
     tiled_layer.layer_metadata
 
 Polygonal Min
-^^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
 .. code:: ipython3
 
@@ -226,7 +226,7 @@ Polygonal Min
     tiled_layer.polygonal_min(geometry=poly_min, data_type=int)
 
 Polygonal Max
-^^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
 .. code:: ipython3
 
@@ -234,7 +234,7 @@ Polygonal Max
     tiled_layer.polygonal_min(geometry=poly_max, data_type=int)
 
 Polygonal Sum
-^^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
 .. code:: ipython3
 
@@ -242,7 +242,7 @@ Polygonal Sum
     tiled_layer.polygonal_min(geometry=poly_sum, data_type=int)
 
 Polygonal Mean
-^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~
 
 .. code:: ipython3
 
@@ -250,7 +250,7 @@ Polygonal Mean
     tiled_layer.polygonal_min(geometry=poly_max, data_type=int)
 
 Cost Distance
--------------
+^^^^^^^^^^^^^^
 
 ``cost_distance`` is an iterative method for approximating the weighted
 distance from a raster cell to a given geometry. The ``cost_distance``
@@ -271,7 +271,7 @@ scalar value.
                                      [1.0, 1.0, 1.0, 1.0, 1.0],
                                      [1.0, 1.0, 1.0, 1.0, 0.0]]])
     
-    tile = gps.Tile.from_numpy_array(numpy_array=cost_distance_cells, no_data_value=-1.0)
+    tile = gps.Tile.from_numpy_array(numpy_array=cost_distance_cells, no_data_value=~1.0)
     cost_distance_extent = gps.ProjectedExtent(extent=gps.Extent(xmin=0.0, ymin=0.0, xmax=5.0, ymax=5.0), epsg=4326)
     cost_distance_layer = [(cost_distance_extent, tile)]
     
@@ -285,7 +285,7 @@ scalar value.
     result.to_numpy_rdd().first()[1].cells[0]
 
 Rasterization
--------------
+^^^^^^^^^^^^^^
 
 It may be desirable to convert vector data into a raster layer. For
 this, we provide the ``rasterize`` function, which determines the set of
@@ -301,7 +301,7 @@ given layout, and then produces a ``TiledRasterLayer`` with these tiled
 values.
 
 Rasterize MultiPolygons
-^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: ipython3
 
@@ -317,7 +317,7 @@ Rasterize MultiPolygons
     gps.rasterize(geoms=[raster_mulit_poly], crs=4326, zoom=5, fill_value=1)
 
 Rasterize LineStrings
-^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: ipython3
 
@@ -331,7 +331,7 @@ Rasterize LineStrings
     gps.rasterize(geoms=[line_1, line_2, line_3], crs=4326, zoom=3, fill_value=2, cell_type=gps.CellType.INT16)
 
 Rasterize Polygons and LineStrings
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: ipython3
 
