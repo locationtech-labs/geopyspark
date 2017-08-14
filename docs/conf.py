@@ -32,7 +32,9 @@ os.chdir('..')
 jar = 'geotrellis-backend-assembly-0.2.0.jar'
 
 if not path.isfile(path.join('geopyspark/jars', jar)):
-    subprocess.call(['make', 'build'])
+    url = 'https://github.com/locationtech-labs/geopyspark/releases/download/v0.2.0-RC6/'
+    subprocess.call(['curl', '-L', url+jar, '-o', path.join('geopyspark/jars', jar)])
+
 sys.path.insert(0, path.abspath(os.curdir))
 
 
@@ -45,7 +47,7 @@ sys.path.insert(0, path.abspath(os.curdir))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'nbsphinx', 'sphinx.ext.mathjax']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon']
 
 napoleon_google_docstring = True
 
@@ -85,7 +87,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '**.ipynb_checkpoints']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
