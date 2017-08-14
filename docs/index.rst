@@ -108,9 +108,8 @@ a need for it.
   contributing
 
 .. toctree::
-  :maxdepth: 4
+  :maxdepth: 5
   :caption: User Guides
-  :glob:
   :hidden:
 
   guides/core-concepts
@@ -119,7 +118,7 @@ a need for it.
   guides/map-algebra
 
 .. toctree::
-  :maxdepth: 3
+  :maxdepth: 2
   :caption: Tutorials
   :glob:
   :hidden:

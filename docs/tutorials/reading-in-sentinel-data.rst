@@ -140,7 +140,7 @@ From the ``RDD``, we can now create a ``RasterLayer`` using the
     raster_layer
 
 Where to Go From Here
-=====================
+----------------------
 
 By creating a ``RasterLayer``, we can now work with and analyze the data
 within it. If you wish to know more about these operations, please see

@@ -18,8 +18,11 @@
     conf = gps.geopyspark_conf(master="local[*]", appName="layers")
     pysc = SparkContext(conf=conf)
 
+Working With Layers
+===================
+
 How is Data Stored and Represented in GeoPySpark?
-=================================================
+-------------------------------------------------
 
 All data that is worked with in GeoPySpark is at some point stored
 within an ``RDD``. Therefore, it is important to understand how
@@ -33,7 +36,7 @@ with a Scala ``RDD``. Specifically, these wrapper classes are
 more detail later.
 
 Layers Are More Than RDDs
--------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We refer to the Python wrapper classes as layers and not ``RDD``\ s for
 two reasons: first, neither ``RasterLayer`` or ``TiledRasterLayer``
@@ -48,7 +51,7 @@ on both the wrapper class and the nature of the data itself. More on
 this below.
 
 RasterLayer
------------
+~~~~~~~~~~~
 
 The ``RasterLayer`` class deals with *untiled data*—that is, the
 elements of the layer have not been normalized into a single unified
@@ -63,7 +66,7 @@ The ``RDD``\ s contained by ``RasterLayer`` objects have key type,
 when the layer type is ``SPATIAL`` or ``SPACETIME``, respectively.
 
 TiledRasterLayer
-----------------
+~~~~~~~~~~~~~~~~
 
 ``TiledRasterLayer`` is the complement to ``RasterLayer`` and is meant
 to store tiled data. Tiled data has been fitted to a certain layout,
@@ -78,17 +81,17 @@ In the case of ``TiledRasterLayer``, ``K`` is either ``SpatialKey`` or
 ``SpaceTimeKey``.
 
 RasterLayer
-===========
+-----------
 
 Creating RasterLayers
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 There are just two ways to create a ``RasterLayer``: (1) through reading
 GeoTiffs from the local file system, S3, or HDFS; or (2) from an
 existing PySpark RDD.
 
 From PySpark RDDs
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 The first option is to create a ``RasterLayer`` from a PySpark ``RDD``
 via the ``from_numpy_rdd`` class method. This step can be a bit more
@@ -116,7 +119,7 @@ always be the second element of the tuple.
     multiband_raster_layer
 
 From GeoTiffs
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 The ``get`` function in the ``geopyspark.geotrellis.geotiff`` module
 creates an instance of ``RasterLayer`` from GeoTiffs. These files can be
@@ -129,7 +132,7 @@ a GeoTiff with spatial data is read locally.
     raster_layer
 
 Using RasterLayer
------------------
+~~~~~~~~~~~~~~~~~
 
 This next section goes over the methods of ``RasterLayer``. It should be
 noted that not all methods contained within this class will be covered.
@@ -137,7 +140,7 @@ More information on the methods that deal with the visualization of the
 contents of the layer can be found in the [visualization guide].
 
 Converting to a Python RDD
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By using ``to_numpy_rdd``, the base ``RasterLayer`` will be serialized
 into a Python ``RDD``. This will convert all of the first values within
@@ -154,7 +157,7 @@ and the second value to ``Tile``.
     python_rdd.first()
 
 SpaceTime Layer to Spatial Layer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you're working with a spatial-temporal layer and would like to
 convert it to a spatial layer, then you can use the ``to_spatial_layer``
@@ -181,7 +184,7 @@ converting ``TemporalProjectedExtent`` to ``ProjectedExtent``.
     space_time_layer.to_spatial_layer()
 
 Collecting Metadata
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 
 The ``Metadata`` of a layer contains information of the values within
 it. This data pertains to the layout, projection, and extent of the data
@@ -211,7 +214,7 @@ the ``layout`` given.
     raster_layer.collect_metadata(layout=layout_definition)
 
 Reproject
-~~~~~~~~~
+^^^^^^^^^
 
 ``reproject`` will change the projection the rasters within the layer to
 the given ``target_crs``. This method does not sample past the tiles'
@@ -228,7 +231,7 @@ boundaries.
     raster_layer.reproject(target_crs=3857).collect_metadata().crs
 
 Tiling Data to a Layout
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 ``tile_to_layout`` will tile and format the rasters within a
 ``RasterLayer`` to a given layout. The result of this tiling is a new
@@ -245,7 +248,7 @@ is important as anything with a ``GlobalLayout`` needs to sample past
 the boundaries of the rasters.
 
 From Metadata
-^^^^^^^^^^^^^
+'''''''''''''
 
 Create a ``TiledRasterLayer`` that contains the layout from the given
 ``Metadata``.
@@ -258,21 +261,21 @@ the metadata, then an error will be thrown.
     raster_layer.tile_to_layout(layout=metadata)
 
 From LayoutDefinition
-^^^^^^^^^^^^^^^^^^^^^
+'''''''''''''''''''''
 
 .. code:: ipython3
 
     raster_layer.tile_to_layout(layout=layout_definition)
 
 From LocalLayout
-^^^^^^^^^^^^^^^^
+''''''''''''''''
 
 .. code:: ipython3
 
     raster_layer.tile_to_layout(gps.LocalLayout())
 
 From GlobalLayout
-^^^^^^^^^^^^^^^^^
+'''''''''''''''''
 
 .. code:: ipython3
 
@@ -280,7 +283,7 @@ From GlobalLayout
     tiled_raster_layer
 
 From A TiledRasterLayer
-^^^^^^^^^^^^^^^^^^^^^^^
+'''''''''''''''''''''''
 
 One can tile a ``RasterLayer`` to the same layout as a
 ``TiledRasterLayout``.
@@ -293,10 +296,10 @@ layer's, then an error will be thrown.
     raster_layer.tile_to_layout(layout=tiled_raster_layer)
 
 TiledRasterLayer
-================
+----------------
 
 Creating TiledRasterLayers
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For this guide, we will just go over one initialization method for
 ``TiledRasterLayer``, ``from_numpy_rdd``. However, there are other ways
@@ -304,7 +307,7 @@ to create this class. These additional creation strategies can be found
 in the [map algebra guide].
 
 From PySpark RDD
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 Like ``RasterLayer``\ s, ``TiledRasterLayer``\ s can be created from
 ``RDD``\ s using ``from_numpy_rdd``. What is different, however, is that
@@ -347,7 +350,7 @@ second element of the tuple.
     space_time_tiled_layer
 
 Using TiledRasterLayers
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 This section will go over the methods found within ``TiledRasterLayer``.
 Like with ``RasterLayer``, not all methods within this class will be
@@ -357,7 +360,7 @@ the visualization of the contents of the layer can be found in the
 in the [map algebra guide].
 
 Converting to a Python RDD
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By using ``to_numpy_rdd``, the base ``TiledRasterLayer`` will be
 serialized into a Python ``RDD``. This will convert all of the first
@@ -373,7 +376,7 @@ and the second value to ``Tile``.
     python_rdd.first()
 
 SpaceTime Layer to Spatial Layer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you're working with a spatiotemporal layer and would like to convert
 it to a spatial layer, then you can use the ``to_spatial_layer`` method.
@@ -407,7 +410,7 @@ This changes the keys of the ``RDD`` within the layer by converting
     space_time_layer.to_spatial_layer()
 
 Repartitioning
-~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^
 
 While not an ``RDD``, ``TiledRasterLayer`` does contain an underlying
 ``RDD``, and thus, it can be repartitioned using the ``repartition``
@@ -419,7 +422,7 @@ method.
     tiled_raster_layer.repartition(num_partitions=120)
 
 Lookup
-~~~~~~
+^^^^^^
 
 If there is a particular tile within the layer that is of interest, it
 is possible to retrieve it as a ``Tile`` using the ``lookup`` method.
@@ -432,7 +435,7 @@ is possible to retrieve it as a ``Tile`` using the ``lookup`` method.
     tiled_raster_layer.lookup(col=min_key.col, row=min_key.row)
 
 Masking
-~~~~~~~
+^^^^^^^
 
 By using ``mask`` method, the ``TiledRasterRDD`` can be masekd using one
 or more Shapely geometries.
@@ -460,7 +463,7 @@ or more Shapely geometries.
     tiled_raster_layer.mask(geometries=[mask, mask_2])
 
 Normalize
-~~~~~~~~~
+^^^^^^^^^
 
 ``normalize`` will linearly transform the data within the layer such
 that all values fall within a given range.
@@ -471,7 +474,7 @@ that all values fall within a given range.
     tiled_raster_layer.normalize(new_min=0, new_max=60000)
 
 Pyramiding
-~~~~~~~~~~
+^^^^^^^^^^
 
 When using a layer for a TMS server, it is important that the layer is
 pyramided. That is, we create a level-of-detail hierarchy that covers
@@ -493,7 +496,7 @@ guide].
     tiled_raster_layer.pyramid()
 
 Reproject
-~~~~~~~~~
+^^^^^^^^^
 
 This is similar to the ``reproject`` method for ``RasterLayer`` where
 the reprojection will not sample past the tiles' boundaries. This means
@@ -516,7 +519,7 @@ changed to 0 since the area being represented changes to just the tiles.
     reprojected_tiled_raster_layer.zoom_level, reprojected_tiled_raster_layer.layer_metadata.crs
 
 Stitching
-~~~~~~~~~
+^^^^^^^^^
 
 Using ``stitch`` will produce a single ``Tile`` by stitching together
 all of the tiles within the ``TiledRasterLayer``. This can only be done
@@ -530,7 +533,7 @@ resulting ``Tile``.
     tiled_raster_layer.stitch().cells.shape
 
 Saving a Stitched Layer
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``save_stitched`` method both stitches and saves a layer as a
 GeoTiff.
@@ -563,7 +566,7 @@ is stitched.
                                      crop_dimensions=(1000, 1000))
 
 Tiling Data to a Layout
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 This is similar to ``RasterLayer``'s ``tile_to_layout`` method, except
 for one important detail. If performing a ``tile_to_layout`` on a
@@ -776,7 +779,7 @@ errors could occur.
     tiled_raster_layer.get_quantile_breaks_exact_int(num_breaks=3)
 
 Finding the Min and Max Values of a Layer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``get_min_max`` method will find the min and max value for the
 layer. The result will always be ``(float, float)`` regardless of the
