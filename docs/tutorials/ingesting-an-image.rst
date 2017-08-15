@@ -20,7 +20,7 @@ contains elevation data on the east coast of Sri Lanka.
 methods shown in this tutorial. However, this could not be done in this
 instance due to permission requirements needed to access the file.
 
-.. code:: ipython3
+.. code:: python3
 
     !curl -o /tmp/cropped.tif https://s3.amazonaws.com/geopyspark-test/example-files/cropped.tif
 
@@ -40,7 +40,7 @@ The Code
 
 With our file downloaded we can begin the ingest.
 
-.. code:: ipython3
+.. code:: python3
 
     import geopyspark as gps
     
@@ -62,7 +62,7 @@ set a certain way in order for GeoPySpark to work. Thus,
 parameters without having to worry about setting the other, required
 fields.
 
-.. code:: ipython3
+.. code:: python3
 
     conf = gps.geopyspark_conf(master="local[*]", appName="ingest-example")
     pysc = SparkContext(conf=conf)
@@ -74,7 +74,7 @@ After the creation of ``pysc``, we can now read in the data. For this
 example, we will be reading in a single GeoTiff that contains spatial
 data. Hence, why we set the ``layer_type`` to ``LayerType.SPATIAL``.
 
-.. code:: ipython3
+.. code:: python3
 
     raster_layer = gps.geotiff.get(layer_type=gps.LayerType.SPATIAL, uri="file:///tmp/cropped.tif")
 
@@ -92,7 +92,7 @@ show it in on a map at some point. Therefore, we have to make sure that
 the tiles within the layer are in the right projection. We can do this
 by setting the ``target_crs`` parameter.
 
-.. code:: ipython3
+.. code:: python3
 
     tiled_raster_layer = raster_layer.tile_to_layout(gps.GlobalLayout(), target_crs=3857)
     tiled_raster_layer
@@ -104,12 +104,12 @@ Now it's time to pyramid! With our reprojected data, we will create an
 instance of ``Pyramid`` that contains 12 ``TiledRasterLayer``\ s. Each
 one having it's own ``zoom_level`` from 11 to 0.
 
-.. code:: ipython3
+.. code:: python3
 
     pyramided_layer = tiled_raster_layer.pyramid()
     pyramided_layer.max_zoom
 
-.. code:: ipython3
+.. code:: python3
 
     pyramided_layer.levels
 
@@ -120,7 +120,7 @@ To save all of the ``TiledRasterLayer``\ s within ``pyramid_layer``, we
 just have to loop through values of ``pyramid_layer.level`` and write
 each layer locally.
 
-.. code:: ipython3
+.. code:: python3
 
     for tiled_layer in pyramided_layer.levels.values():
         gps.write(uri="file:///tmp/ingested-image", layer_name="ingested-image", tiled_raster_layer=tiled_layer)

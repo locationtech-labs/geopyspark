@@ -1,5 +1,5 @@
 
-.. code:: ipython3
+.. code:: python3
 
    import datetime
    import numpy as np
@@ -27,7 +27,7 @@ have the ``no_data_value`` of the raster.
 **Note**: All rasters in GeoPySpark are represented as having multiple
 bands, even if the original raster just contained one.
 
-.. code:: ipython3
+.. code:: python3
 
     arr = np.array([[[0, 0, 0, 0],
                      [1, 1, 1, 1],
@@ -36,7 +36,7 @@ bands, even if the original raster just contained one.
     # The resulting Tile will set -10 as the no_data_value for the raster
     gps.Tile.from_numpy_array(numpy_array=arr, no_data_value=-10)
 
-.. code:: ipython3
+.. code:: python3
 
     # The resulting Tile will have no no_data_value
     gps.Tile.from_numpy_array(numpy_array=arr)
@@ -53,7 +53,7 @@ box*.
 **Note**: The values within the ``Extent`` must be ``float``\ s and not
 ``double``\ s.
 
-.. code:: ipython3
+.. code:: python3
 
     extent = gps.Extent(0.0, 0.0, 10.0, 10.0)
     extent
@@ -65,13 +65,13 @@ ProjectedExtent
 in addition to its CRS. Either the EPSG code or a proj4 string can be
 used to indicate the CRS of the ``ProjectedExtent``.
 
-.. code:: ipython3
+.. code:: python3
 
     # Using an EPSG code
     
     gps.ProjectedExtent(extent=extent, epsg=3857)
 
-.. code:: ipython3
+.. code:: python3
 
     # Using a Proj4 String
     
@@ -86,7 +86,7 @@ the area on Earth the raster represents, its CRS, and the time the data
 was represents. This point of time, called ``instant``, is an instance
 of ``datetime.datetime``.
 
-.. code:: ipython3
+.. code:: python3
 
     time = datetime.datetime.now()
     gps.TemporalProjectedExtent(extent=extent, instant=time, epsg=3857)
@@ -100,7 +100,7 @@ detail how many columns and rows the grid itself has, respectively.
 While ``tileCols`` and ``tileRows`` tell how many columns and rows each
 individual raster has.
 
-.. code:: ipython3
+.. code:: python3
 
     # Describes a layer where there are four rasters in a 2x2 grid. Each raster has 256 cols and rows.
     
@@ -113,7 +113,7 @@ LayoutDefinition
 ``LayoutDefinition`` describes both how the rasters are orginized in a
 layer as well as the area covered by the grid.
 
-.. code:: ipython3
+.. code:: python3
 
     layout_definition = gps.LayoutDefinition(extent=extent, tileLayout=tile_layout)
     layout_definition
@@ -138,17 +138,17 @@ of the cells within the rasters.
 Rather, it is best used for layers where operations and analysis will be
 performed.**
 
-.. code:: ipython3
+.. code:: python3
 
     # Creates a LocalLayout where each tile within the grid will be 256x256 pixels.
     gps.LocalLayout()
 
-.. code:: ipython3
+.. code:: python3
 
     # Creates a LocalLayout where each tile within the grid will be 512x512 pixels.
     gps.LocalLayout(tile_size=512)
 
-.. code:: ipython3
+.. code:: python3
 
     # Creates a LocalLayout where each tile within the grid will be 256x512 pixels.
     gps.LocalLayout(tile_cols=256, tile_rows=512)
@@ -165,12 +165,12 @@ original raster.
 **Note**: This layout strategy **should be used when the resulting layer
 is to be dispalyed in a TMS server.**
 
-.. code:: ipython3
+.. code:: python3
 
     # Creates a GobalLayout instance with the default values
     gps.GlobalLayout()
 
-.. code:: ipython3
+.. code:: python3
 
     # Creates a GlobalLayout instance for a zoom of 12
     gps.GlobalLayout(zoom=12)
@@ -190,7 +190,7 @@ represented by a pair of coordinates, ``col`` and ``row``, respectively.
 As its name and attributes suggest, ``SpatialKey`` deals solely with
 spatial data.
 
-.. code:: ipython3
+.. code:: python3
 
     gps.SpatialKey(col=0, row=0)
 
@@ -205,7 +205,7 @@ as well as a z value that represents a point in time called,
 is also an instance of ``datetime.datetime``. Thus, ``SpaceTimeKey``\ s
 deal with spatial-temporal data.
 
-.. code:: ipython3
+.. code:: python3
 
     gps.SpaceTimeKey(col=0, row=0, instant=time)
 
@@ -218,7 +218,7 @@ either be a ``SpatialKey`` or a ``SpaceTimeKey`` depending on the type
 of data within the layer. The ``minKey`` is the left, uppermost cell in
 the grid and the ``maxKey`` is the right, bottommost cell.
 
-.. code:: ipython3
+.. code:: python3
 
     # Creating a Bounds from SpatialKeys
     
@@ -228,7 +228,7 @@ the grid and the ``maxKey`` is the right, bottommost cell.
     bounds = gps.Bounds(min_spatial_key, max_spatial_key)
     bounds
 
-.. code:: ipython3
+.. code:: python3
 
     # Creating a Bounds from SpaceTimeKeys
     
@@ -250,7 +250,7 @@ easier means. For ``RasterLayer``, one call the method,
 ``collect_metadata()`` and ``TiledRasterLayer`` has the attribute,
 ``layer_metadata``.
 
-.. code:: ipython3
+.. code:: python3
 
     # Creates Metadata for a layer with rasters that have a cell type of int16 with the previously defined
     # bounds, crs, extent, and layout definition.
