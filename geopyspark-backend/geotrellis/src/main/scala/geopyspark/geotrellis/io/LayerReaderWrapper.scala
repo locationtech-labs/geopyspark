@@ -128,12 +128,13 @@ class LayerReaderWrapper(sc: SparkContext) {
     ev1: LayerFilter[K, Intersects.type, Polygon, M],
     ev2: LayerFilter[K, Intersects.type, MultiPolygon, M]
   ): LayerQuery[K, M] = {
-    val projectedGeom = queryCRS match {
-      case Some(crs) =>
-        queryGeom.reproject(layerCRS, crs)
-      case None =>
-        queryGeom
-    }
+    val projectedGeom =
+      queryCRS match {
+        case Some(crs) =>
+          queryGeom.reproject(crs, layerCRS)
+        case None =>
+          queryGeom
+      }
 
     projectedGeom match {
       case point: Point =>
