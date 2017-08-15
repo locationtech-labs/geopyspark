@@ -38,7 +38,7 @@ For more information on the way the data is stored on S3, please see
 this
 `link <http://sentinel-pds.s3-website.eu-central-1.amazonaws.com/>`__.
 
-.. code:: ipython3
+.. code:: python3
 
     !curl -o /tmp/B01.jp2 http://sentinel-s2-l1c.s3.amazonaws.com/tiles/32/T/NM/2017/1/4/0/B01.jp2
     !curl -o /tmp/B09.jp2 http://sentinel-s2-l1c.s3.amazonaws.com/tiles/32/T/NM/2017/1/4/0/B09.jp2
@@ -49,7 +49,7 @@ The Code
 
 Now that we have the files, we can begin to read them into GeoPySpark.
 
-.. code:: ipython3
+.. code:: python3
 
     import rasterio
     import geopyspark as gps
@@ -57,7 +57,7 @@ Now that we have the files, we can begin to read them into GeoPySpark.
     
     from pyspark import SparkContext
 
-.. code:: ipython3
+.. code:: python3
 
     conf = gps.geopyspark_conf(master="local[*]", appName="sentinel-ingest-example")
     pysc = SparkContext(conf=conf)
@@ -70,7 +70,7 @@ Once they are read in, we will then combine the three seperate numpy
 arrays into one. This combined array represents a single, multiband
 raster.
 
-.. code:: ipython3
+.. code:: python3
 
     jp2s = ["/tmp/B01.jp2", "/tmp/B09.jp2", "/tmp/B10.jp2"]
     arrs = []
@@ -89,7 +89,7 @@ With our raster data in hand, we can how begin the creation of a Python
 ``RDD``. Please see the `core concepts <core-concepts.ipynb>`__ guide
 for more information on what the following instances represent.
 
-.. code:: ipython3
+.. code:: python3
 
     # Create an Extent instance from rasterio's bounds
     extent = gps.Extent(*f.bounds)
@@ -104,23 +104,23 @@ way rasterio formats the projection of the read in rasters is not
 compatible with how GeoPySpark expects the ``CRS`` to be in. Thus, we
 had to do a bit of extra work to get it into the correct state
 
-.. code:: ipython3
+.. code:: python3
 
     # Projection information from the rasterio file
     f.crs.to_dict()
 
-.. code:: ipython3
+.. code:: python3
 
     # The projection information formatted to work with GeoPySpark
     int(f.crs.to_dict()['init'][5:])
 
-.. code:: ipython3
+.. code:: python3
 
     # We can create a Tile instance from our multiband, raster array and the nodata value from rasterio
     tile = gps.Tile.from_numpy_array(numpy_array=data, no_data_value=f.nodata)
     tile
 
-.. code:: ipython3
+.. code:: python3
 
     # Now that we have our ProjectedExtent and Tile, we can create our RDD from them
     rdd = pysc.parallelize([(projected_extent, tile)])
@@ -132,7 +132,7 @@ Creating the Layer
 From the ``RDD``, we can now create a ``RasterLayer`` using the
 ``from_numpy_rdd`` method.
 
-.. code:: ipython3
+.. code:: python3
 
     # While there is a time component to the data, this was ignored for this tutorial and instead the focus is just
     # on the spatial information. Thus, we have a LayerType of SPATIAL.
