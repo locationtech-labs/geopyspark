@@ -319,6 +319,26 @@ These can be used regardless of installation method. However, if installed
 through ``pip``, then the jar must be downloaded first or these commands
 will not work.
 
+
+Running GeoPySpark Tests
+-------------------------
+
+GeoPySpark uses the `pytest <https://docs.pytest.org/en/latest/>`_ testing
+framework to run its unittests. If you wish to run GeoPySpark's unittests,
+then you must first clone this repository to your machine. Once complete,
+go to the root of the library and run the following command:
+
+.. code:: console
+
+   pytest
+
+This will then run all of the tests present in the GeoPySpark library.
+
+**Note**: The unittests require additional dependencies in order to pass fully.
+`pyrproj <https://pypi.python.org/pypi/pyproj?>`_, `colortools <https://pypi.python.org/pypi/colortools/0.1.2>`_,
+and `matplotlib <https://pypi.python.org/pypi/matplotlib/2.0.2>`_  (only for >=Python3.4) are needed to
+ensure that all of the tests pass.
+
 Make Targets
 ^^^^^^^^^^^^
 
