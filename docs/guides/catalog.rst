@@ -1,53 +1,53 @@
 
-.. code:: ipython3
+.. code:: python3
 
-    import datetime
-    import geopyspark as gps
-    import numpy as np
+   import datetime
+   import geopyspark as gps
+   import numpy as np
     
-    from pyspark import SparkContext
-    from shapely.geometry import MultiPolygon, box
+   from pyspark import SparkContext
+   from shapely.geometry import MultiPolygon, box
 
-.. code:: ipython3
+.. code:: python3
 
-    !curl -o /tmp/cropped.tif https://s3.amazonaws.com/geopyspark-test/example-files/cropped.tif
+   !curl -o /tmp/cropped.tif https://s3.amazonaws.com/geopyspark-test/example-files/cropped.tif
 
-.. code:: ipython3
+.. code:: python3
 
-    conf = gps.geopyspark_conf(master="local[*]", appName="layers")
-    pysc = SparkContext(conf=conf)
+   conf = gps.geopyspark_conf(master="local[*]", appName="layers")
+   pysc = SparkContext(conf=conf)
 
-.. code:: ipython3
+.. code:: python3
 
-    # Setting up the Spatial Data to be used in this example
+   # Setting up the Spatial Data to be used in this example
     
-    spatial_raster_layer = gps.geotiff.get(layer_type=gps.LayerType.SPATIAL, uri="/tmp/cropped.tif")
-    spatial_tiled_layer = spatial_raster_layer.tile_to_layout(layout=gps.GlobalLayout(), target_crs=3857)
+   spatial_raster_layer = gps.geotiff.get(layer_type=gps.LayerType.SPATIAL, uri="/tmp/cropped.tif")
+   spatial_tiled_layer = spatial_raster_layer.tile_to_layout(layout=gps.GlobalLayout(), target_crs=3857)
 
-.. code:: ipython3
+.. code:: python3
 
-    # Setting up the Spatial-Temporal Data to be used in this example
+   # Setting up the Spatial-Temporal Data to be used in this example
     
-    def make_raster(x, y, v, cols=4, rows=4, crs=4326):
-        cells = np.zeros((1, rows, cols), dtype='float32')
-        cells.fill(v)
-        # extent of a single cell is 1
-        extent = gps.TemporalProjectedExtent(extent = gps.Extent(x, y, x + cols, y + rows),
-                                             epsg=crs,
-                                             instant=datetime.datetime.now())
+   def make_raster(x, y, v, cols=4, rows=4, crs=4326):
+       cells = np.zeros((1, rows, cols), dtype='float32')
+       cells.fill(v)
+       # extent of a single cell is 1
+       extent = gps.TemporalProjectedExtent(extent = gps.Extent(x, y, x + cols, y + rows),
+                                            epsg=crs,
+                                            instant=datetime.datetime.now())
         
-        return (extent, gps.Tile.from_numpy_array(cells))
+       return (extent, gps.Tile.from_numpy_array(cells))
                 
-    layer = [
-        make_raster(0, 0, v=1),
-        make_raster(3, 2, v=2),
-        make_raster(6, 0, v=3)
-    ]
+   layer = [
+       make_raster(0, 0, v=1),
+       make_raster(3, 2, v=2),
+       make_raster(6, 0, v=3)
+   ]
       
-    rdd = pysc.parallelize(layer)
-    space_time_raster_layer = gps.RasterLayer.from_numpy_rdd(gps.LayerType.SPACETIME, rdd)
-    space_time_tiled_layer = space_time_raster_layer.tile_to_layout(layout=gps.GlobalLayout(tile_size=5))
-    space_time_pyramid = space_time_tiled_layer.pyramid()
+   rdd = pysc.parallelize(layer)
+   space_time_raster_layer = gps.RasterLayer.from_numpy_rdd(gps.LayerType.SPACETIME, rdd)
+   space_time_tiled_layer = space_time_raster_layer.tile_to_layout(layout=gps.GlobalLayout(tile_size=5))
+   space_time_pyramid = space_time_tiled_layer.pyramid()
 
 Catalog
 =======
@@ -149,12 +149,12 @@ Saving a Spatial Layer
 Saving a spatial layer is a straight forward task. All that needs to be
 supplied is a ``URI``, the name of the layer, and the layer to be saved.
 
-.. code:: ipython3
+.. code:: python3
 
     # The zoom level which will be saved
     spatial_tiled_layer.zoom_level
 
-.. code:: ipython3
+.. code:: python3
 
     # This will create a catalog called, "spatial-catalog" in the /tmp directory.
     # Within it, a layer named, "spatial-layer" will be saved.
@@ -168,12 +168,12 @@ records within the catalog will be spaced; which in turn, determines the
 resolution of index. The ``TimeUnit`` enum class contains all available
 units of time that can be used to space apart data in the catalog.
 
-.. code:: ipython3
+.. code:: python3
 
     # The zoom level which will be saved
     space_time_tiled_layer.zoom_level
 
-.. code:: ipython3
+.. code:: python3
 
     # This will create a catalog called, "spacetime-catalog" in the /tmp directory.
     # Within it, a layer named, "spacetime-layer" will be saved and each indice will be spaced apart by SECONDS
@@ -194,7 +194,7 @@ However, because a ``Pyramid`` is just a collection of
 ``TiledRasterLayer``\ s of different zooms, it is possible to iterate
 through the layers of the ``Pyramid`` and save one individually.
 
-.. code:: ipython3
+.. code:: python3
 
     for zoom, layer in space_time_pyramid.levels.items():
         # Because we've already written a layer of the same name to the same catalog with a zoom level of 7,
@@ -213,12 +213,12 @@ in the whole layer. This is done using the ``read_layer_metadata``
 function. There is no difference between spatial and spatial-temporal
 layers when using this function.
 
-.. code:: ipython3
+.. code:: python3
 
     # Metadata from the TiledRasterLayer
     spatial_tiled_layer.layer_metadata
 
-.. code:: ipython3
+.. code:: python3
 
     # Reads the Metadata from the spatial-layer of the spatial-catalog for zoom level 11
     gps.read_layer_metadata(uri="file:///tmp/spatial-catalog",
@@ -235,7 +235,7 @@ depending on whether or not the specified tile exists.
 Reading a Tile From a Saved, Spatial Layer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code:: ipython3
+.. code:: python3
 
     # The Tile being read will be the smallest key of the layer
     min_key = spatial_tiled_layer.layer_metadata.bounds.minKey
@@ -249,7 +249,7 @@ Reading a Tile From a Saved, Spatial Layer
 Reading a Tile From a Saved, Spatial-Temporal Layer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code:: ipython3
+.. code:: python3
 
     # The Tile being read will be the largest key of the layer
     max_key = space_time_tiled_layer.layer_metadata.bounds.maxKey
@@ -274,7 +274,7 @@ between spatial and spatial-temporal layers when using this function.
 parameters given to ``query``. If no filters were given, then the whole
 layer is read.
 
-.. code:: ipython3
+.. code:: python3
 
     # Returns the entire layer that was at zoom level 11.
     gps.query(uri="file:///tmp/spatial-catalog",
@@ -308,14 +308,14 @@ When the Queried Geometry is in the Same Projection as the Layer
 By default, the ``query`` function assumes that the geometry and layer
 given are in the same projection.
 
-.. code:: ipython3
+.. code:: python3
 
     layer_extent = spatial_tiled_layer.layer_metadata.extent
     
     # Creates a Polygon from the cropped Extent of the Layer
     poly = box(layer_extent.xmin+100, layer_extent.ymin+100, layer_extent.xmax-100, layer_extent.ymax-100)
 
-.. code:: ipython3
+.. code:: python3
 
     # Returns the region of the layer that was intersected by the Polygon at zoom level 11.
     gps.query(uri="file:///tmp/spatial-catalog",
@@ -331,13 +331,13 @@ the same projection. If the two are in different CRSs, then this can be
 resolved by setting the ``proj_query`` parameter to whatever projection
 the geometry is in.
 
-.. code:: ipython3
+.. code:: python3
 
     # The queried Extent is in a different projection than the base layer
     metadata = spatial_tiled_layer.tile_to_layout(layout=gps.GlobalLayout(), target_crs=4326).layer_metadata
     metadata.layout_definition.extent, spatial_tiled_layer.layer_metadata.layout_definition.extent
 
-.. code:: ipython3
+.. code:: python3
 
     # Queries the area of the Extent and returns any intersections
     querried_spatial_layer = gps.query(uri="file:///tmp/spatial-catalog",
@@ -346,7 +346,7 @@ the geometry is in.
                                        query_geom=metadata.layout_definition.extent.to_polygon,
                                        query_proj="EPSG:3857")
 
-.. code:: ipython3
+.. code:: python3
 
     # Because we queried the whole Extent of the layer, we should have gotten back the whole thing.
     querried_extent = querried_spatial_layer.layer_metadata.layout_definition.extent
@@ -363,7 +363,7 @@ also be filtered by time as well.
 Querying by Time
 ^^^^^^^^^^^^^^^^
 
-.. code:: ipython3
+.. code:: python3
 
     min_key = space_time_tiled_layer.layer_metadata.bounds.minKey
     
@@ -374,7 +374,7 @@ Querying by Time
               layer_zoom=7,
               time_intervals=[min_key.instant, max_key.instant])
 
-.. code:: ipython3
+.. code:: python3
 
     # It's possible to query a single time interval. By doing so, only Tiles that contain the time given will be
     # returned.
@@ -386,14 +386,14 @@ Querying by Time
 Querying by Space and Time
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code:: ipython3
+.. code:: python3
 
     # In addition to Polygons, one can also query using MultiPolygons.
     poly_1 = box(140.0, 60.0, 150.0, 65.0)
     poly_2 = box(160.0, 70.0, 179.0, 89.0)
     multi_poly = MultiPolygon(poly_1, poly_2)
 
-.. code:: ipython3
+.. code:: python3
 
     # Returns a TiledRasterLayer that contains the tiles which intersect the given polygons and are within the
     # specified time interval.

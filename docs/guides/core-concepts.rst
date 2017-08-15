@@ -1,9 +1,9 @@
 
 .. code:: ipython3
 
-    import datetime
-    import numpy as np
-    import geopyspark as gps
+   import datetime
+   import numpy as np
+   import geopyspark as gps
 
 Core Concepts
 =============
