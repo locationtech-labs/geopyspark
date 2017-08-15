@@ -1,22 +1,22 @@
 
-.. code:: ipython3
+.. code:: python3
 
-    import datetime
-    import numpy as np
-    import pyproj
-    import geopyspark as gps
+   import datetime
+   import numpy as np
+   import pyproj
+   import geopyspark as gps
     
-    from pyspark import SparkContext
-    from shapely.geometry import box
+   from pyspark import SparkContext
+   from shapely.geometry import box
 
-.. code:: ipython3
+.. code:: python3
 
-    !curl -o /tmp/cropped.tif https://s3.amazonaws.com/geopyspark-test/example-files/cropped.tif
+   !curl -o /tmp/cropped.tif https://s3.amazonaws.com/geopyspark-test/example-files/cropped.tif
 
-.. code:: ipython3
+.. code:: python3
 
-    conf = gps.geopyspark_conf(master="local[*]", appName="layers")
-    pysc = SparkContext(conf=conf)
+   conf = gps.geopyspark_conf(master="local[*]", appName="layers")
+   pysc = SparkContext(conf=conf)
 
 Working With Layers
 ===================
@@ -106,7 +106,7 @@ data spatial. If we were dealing with spatial-temproal data, then
 ``TemporalProjectedExtent`` would be the first element. A ``Tile`` will
 always be the second element of the tuple.
 
-.. code:: ipython3
+.. code:: python3
 
     arr = np.ones((1, 16, 16), dtype='int')
     tile = gps.Tile.from_numpy_array(numpy_array=np.array(arr), no_data_value=-500)
@@ -126,7 +126,7 @@ creates an instance of ``RasterLayer`` from GeoTiffs. These files can be
 located on either your local file system, HDFS, or S3. In this example,
 a GeoTiff with spatial data is read locally.
 
-.. code:: ipython3
+.. code:: python3
 
     raster_layer = gps.geotiff.get(layer_type=gps.LayerType.SPATIAL, uri="file:///tmp/cropped.tif")
     raster_layer
@@ -147,12 +147,12 @@ into a Python ``RDD``. This will convert all of the first values within
 each tuple to either ``ProjectedExtent`` or ``TemporalProjectedExtent``,
 and the second value to ``Tile``.
 
-.. code:: ipython3
+.. code:: python3
 
     python_rdd = raster_layer.to_numpy_rdd()
     python_rdd
 
-.. code:: ipython3
+.. code:: python3
 
     python_rdd.first()
 
@@ -164,7 +164,7 @@ convert it to a spatial layer, then you can use the ``to_spatial_layer``
 method. This changes the keys of the ``RDD`` within the layer by
 converting ``TemporalProjectedExtent`` to ``ProjectedExtent``.
 
-.. code:: ipython3
+.. code:: python3
 
     # Creating the space time layer
     
@@ -177,7 +177,7 @@ converting ``TemporalProjectedExtent`` to ``ProjectedExtent``.
     space_time_layer = gps.RasterLayer.from_numpy_rdd(layer_type=gps.LayerType.SPACETIME, numpy_rdd=space_time_rdd)
     space_time_layer
 
-.. code:: ipython3
+.. code:: python3
 
     # Converting the SpaceTime layer to a Spatial layer
     
@@ -193,18 +193,18 @@ found within the layer.
 ``collect_metadata`` will return the ``Metadata`` of the layer that fits
 the ``layout`` given.
 
-.. code:: ipython3
+.. code:: python3
 
     # Collecting Metadata with the default LocalLayout()
     metadata = raster_layer.collect_metadata()
     metadata
 
-.. code:: ipython3
+.. code:: python3
 
     # Collecting Metadata with the default GlobalLayout()
     raster_layer.collect_metadata(layout=gps.GlobalLayout())
 
-.. code:: ipython3
+.. code:: python3
 
     # Collecting Metadata with a LayoutDefinition
     extent = gps.Extent(0.0, 0.0, 33.0, 33.0)
@@ -220,12 +220,12 @@ Reproject
 the given ``target_crs``. This method does not sample past the tiles'
 boundaries.
 
-.. code:: ipython3
+.. code:: python3
 
     # The CRS of the layer before reprojecting
     metadata.crs
 
-.. code:: ipython3
+.. code:: python3
 
     # The CRS of the layer after reprojecting
     raster_layer.reproject(target_crs=3857).collect_metadata().crs
@@ -256,28 +256,28 @@ Create a ``TiledRasterLayer`` that contains the layout from the given
 **Note**: If the specified ``target_crs`` is different from what's in
 the metadata, then an error will be thrown.
 
-.. code:: ipython3
+.. code:: python3
 
     raster_layer.tile_to_layout(layout=metadata)
 
 From LayoutDefinition
 '''''''''''''''''''''
 
-.. code:: ipython3
+.. code:: python3
 
     raster_layer.tile_to_layout(layout=layout_definition)
 
 From LocalLayout
 ''''''''''''''''
 
-.. code:: ipython3
+.. code:: python3
 
     raster_layer.tile_to_layout(gps.LocalLayout())
 
 From GlobalLayout
 '''''''''''''''''
 
-.. code:: ipython3
+.. code:: python3
 
     tiled_raster_layer = raster_layer.tile_to_layout(gps.GlobalLayout())
     tiled_raster_layer
@@ -291,7 +291,7 @@ One can tile a ``RasterLayer`` to the same layout as a
 **Note**: If the specifying ``target_crs`` is different from the other
 layer's, then an error will be thrown.
 
-.. code:: ipython3
+.. code:: python3
 
     raster_layer.tile_to_layout(layout=tiled_raster_layer)
 
@@ -320,7 +320,7 @@ spatial. If we were dealing with spatial-temproal data, then
 ``SpaceTimeKey`` would be the first element. ``Tile`` will always be the
 second element of the tuple.
 
-.. code:: ipython3
+.. code:: python3
 
     data = np.zeros((1, 512, 512), dtype='float32')
     tile = gps.Tile.from_numpy_array(numpy_array=data, no_data_value=-1.0)
@@ -367,11 +367,11 @@ serialized into a Python ``RDD``. This will convert all of the first
 values within each tuple to either ``SpatialKey`` or ``SpaceTimeKey``,
 and the second value to ``Tile``.
 
-.. code:: ipython3
+.. code:: python3
 
     python_rdd = tiled_raster_layer.to_numpy_rdd()
 
-.. code:: ipython3
+.. code:: python3
 
     python_rdd.first()
 
@@ -383,7 +383,7 @@ it to a spatial layer, then you can use the ``to_spatial_layer`` method.
 This changes the keys of the ``RDD`` within the layer by converting
 ``SpaceTimeKey`` to ``SpatialKey``.
 
-.. code:: ipython3
+.. code:: python3
 
     # Creating the space time layer
     
@@ -403,7 +403,7 @@ This changes the keys of the ``RDD`` within the layer by converting
                                                            metadata=metadata)
     space_time_layer
 
-.. code:: ipython3
+.. code:: python3
 
     # Converting the SpaceTime layer to a Spatial layer
     
@@ -416,7 +416,7 @@ While not an ``RDD``, ``TiledRasterLayer`` does contain an underlying
 ``RDD``, and thus, it can be repartitioned using the ``repartition``
 method.
 
-.. code:: ipython3
+.. code:: python3
 
     # Repartition the internal RDD to have 120 partitions
     tiled_raster_layer.repartition(num_partitions=120)
@@ -427,7 +427,7 @@ Lookup
 If there is a particular tile within the layer that is of interest, it
 is possible to retrieve it as a ``Tile`` using the ``lookup`` method.
 
-.. code:: ipython3
+.. code:: python3
 
     min_key = tiled_raster_layer.layer_metadata.bounds.minKey
     
@@ -440,7 +440,7 @@ Masking
 By using ``mask`` method, the ``TiledRasterRDD`` can be masekd using one
 or more Shapely geometries.
 
-.. code:: ipython3
+.. code:: python3
 
     layer_extent = tiled_raster_layer.layer_metadata.extent
     
@@ -452,7 +452,7 @@ or more Shapely geometries.
     
     tiled_raster_layer.mask(geometries=mask)
 
-.. code:: ipython3
+.. code:: python3
 
     mask_2 = box(layer_extent.xmin + 50,
                  layer_extent.ymin + 50,
@@ -468,7 +468,7 @@ Normalize
 ``normalize`` will linearly transform the data within the layer such
 that all values fall within a given range.
 
-.. code:: ipython3
+.. code:: python3
 
     # Normalizes the layer so that the new min value is 0 and the new max value is 60000
     tiled_raster_layer.normalize(new_min=0, new_max=60000)
@@ -490,7 +490,7 @@ being the source layer's ``zoom_level``, and the lowest zoom being 0.
 For more information on the ``Pyramiding`` class, see the [visualization
 guide].
 
-.. code:: ipython3
+.. code:: python3
 
     # This creates a Pyramid with zoom levels that go from 0 to 11 for a total of 12.
     tiled_raster_layer.pyramid()
@@ -506,12 +506,12 @@ layouts `here <core-concepts.ipynb#Tiling-Strategies>`__). Because of
 this, whatever ``zoom_level`` the ``TiledRasterLayer`` has will be
 changed to 0 since the area being represented changes to just the tiles.
 
-.. code:: ipython3
+.. code:: python3
 
     # The zoom_level and crs of the TiledRasterLayer before reprojecting
     tiled_raster_layer.zoom_level, tiled_raster_layer.layer_metadata.crs
 
-.. code:: ipython3
+.. code:: python3
 
     reprojected_tiled_raster_layer = tiled_raster_layer.reproject(target_crs=3857)
     
@@ -527,7 +527,7 @@ with spatial layers, and is not recommended if the data contained within
 the layer is large, as it can cause a crash due to the size of the
 resulting ``Tile``.
 
-.. code:: ipython3
+.. code:: python3
 
     # Creates a Tile with an underlying numpy array with a size of (1, 6144, 1536).
     tiled_raster_layer.stitch().cells.shape
@@ -538,7 +538,7 @@ Saving a Stitched Layer
 The ``save_stitched`` method both stitches and saves a layer as a
 GeoTiff.
 
-.. code:: ipython3
+.. code:: python3
 
     # Saves the stitched layer to /tmp/stitched.tif
     tiled_raster_layer.save_stitched(path='/tmp/stitched.tif')
@@ -546,7 +546,7 @@ GeoTiff.
 It is also possible to specify the regions of layer to be saved when it
 is stitched.
 
-.. code:: ipython3
+.. code:: python3
 
     layer_extent = tiled_raster_layer.layer_metadata.layout_definition.extent
     
@@ -558,7 +558,7 @@ is stitched.
     
     tiled_raster_layer.save_stitched(path='/tmp/cropped-stitched.tif', crop_bounds=sub_exent)
 
-.. code:: ipython3
+.. code:: python3
 
     # In addition to the sub Extent, one can also choose how many cols and rows will be in the saved in the GeoTiff.
     tiled_raster_layer.save_stitched(path='/tmp/cropped-stitched-2.tif',
@@ -575,22 +575,22 @@ could be lost or changed depending on the ``layout`` and/or
 ``target_crs`` chosen. Thus, it is important to keep that in mind in
 retiling a ``TiledRasterLayer``.
 
-.. code:: ipython3
+.. code:: python3
 
     # Original zoom_level of the source TiledRasterLayer
     tiled_raster_layer.zoom_level
 
-.. code:: ipython3
+.. code:: python3
 
     # zoom_level will be lost in the resulting TiledRasterlayer
     tiled_raster_layer.tile_to_layout(layout=gps.LocalLayout())
 
-.. code:: ipython3
+.. code:: python3
 
     # zoom_level will be changed in the resulting TiledRasterLayer
     tiled_raster_layer.tile_to_layout(layout=gps.GlobalLayout(), target_crs=3857)
 
-.. code:: ipython3
+.. code:: python3
 
     # zoom_level will reamin the same in the resulting TiledRasterLayer
     tiled_raster_layer.tile_to_layout(layout=gps.GlobalLayout(zoom=11))
@@ -619,12 +619,12 @@ between two sub-bands of a large dataset. Thus, if you're working with a
 large amount of data, then it is recommended to do band selection before
 reading them in.
 
-.. code:: ipython3
+.. code:: python3
 
     # Selecting the second band from the layer
     multiband_raster_layer.bands(1)
 
-.. code:: ipython3
+.. code:: python3
 
     # Selecting the first and second bands from the layer
     multiband_raster_layer.bands([0, 1])
@@ -637,17 +637,17 @@ within the rasters of the layer to a new data type. The ``noData`` value
 can also be set during this conversion, and if it's not set, then there
 will be no ``noData`` value for the resulting rasters.
 
-.. code:: ipython3
+.. code:: python3
 
     # The data type of the cells before converting
     metadata.cell_type
 
-.. code:: ipython3
+.. code:: python3
 
     # Changing the cell type to int8 with a noData value of -100.
     raster_layer.convert_data_type(new_type=gps.CellType.INT8, no_data_value=-100).collect_metadata().cell_type
 
-.. code:: ipython3
+.. code:: python3
 
     # Changing the cell type to int32 with no noData value.
     raster_layer.convert_data_type(new_type=gps.CellType.INT32).collect_metadata().cell_type
@@ -660,12 +660,12 @@ Reclassify Cell Values
 the ``data_type`` of the cells also needs to be given. This is either
 ``int`` or ``float``.
 
-.. code:: ipython3
+.. code:: python3
 
     # Values of the first tile before being reclassified
     multiband_raster_layer.to_numpy_rdd().first()[1]
 
-.. code:: ipython3
+.. code:: python3
 
     # Change all values greater than or equal to 1 to 10
     reclassified = multiband_raster_layer.reclassify(value_map={1: 10},
@@ -692,7 +692,7 @@ first needs to be deserialized from Scala to Python and then serialized
 from Python back to Scala. Because of this, it is recommended to chain
 together all functions to avoid unnecessary serialization overhead.
 
-.. code:: ipython3
+.. code:: python3
 
     def add_one(cells, _):
         return cells + 1
@@ -700,7 +700,7 @@ together all functions to avoid unnecessary serialization overhead.
     # Mapping with a single funciton
     raster_layer.map_cells(add_one)
 
-.. code:: ipython3
+.. code:: python3
 
     def divide_two(cells, _):
         return (add_one(cells) / 2)
@@ -725,7 +725,7 @@ first needs to be deserialized from Scala to Python and then serialized
 from Python back to Scala. Because of this, it is recommended to chain
 together all functions to avoid unnecessary serialization overhead.
 
-.. code:: ipython3
+.. code:: python3
 
     def minus_two(tile):
         return gps.Tile.from_numpy_array(tile.cells - 2, no_data_value=tile.no_data_value)
@@ -746,12 +746,12 @@ values are ``int``\ s.
 For more informaiton on the ``Histogram`` class, please see the
 ``Histogram`` [guide].
 
-.. code:: ipython3
+.. code:: python3
 
     # Returns a Histogram whose underlying values are floats
     tiled_raster_layer.get_histogram()
 
-.. code:: ipython3
+.. code:: python3
 
     # Returns a Histogram whose underlying values are ints
     tiled_raster_layer.get_class_histogram()
@@ -762,7 +762,7 @@ Finding the Quantile Breaks for the Layer
 If you wish to find the quantile breaks for a layer without a
 ``Histogram``, then you can use the ``get_quantile_breaks`` method.
 
-.. code:: ipython3
+.. code:: python3
 
     tiled_raster_layer.get_quantile_breaks(num_breaks=3)
 
@@ -774,7 +774,7 @@ There is another version of ``get_quantile_breaks`` called
 However, if there are too many values within the layer, then memory
 errors could occur.
 
-.. code:: ipython3
+.. code:: python3
 
     tiled_raster_layer.get_quantile_breaks_exact_int(num_breaks=3)
 
@@ -785,7 +785,7 @@ The ``get_min_max`` method will find the min and max value for the
 layer. The result will always be ``(float, float)`` regardless of the
 data type of the cells.
 
-.. code:: ipython3
+.. code:: python3
 
     tiled_raster_layer.get_min_max()
 
@@ -802,14 +802,14 @@ both classes.
 Cache
 ~~~~~
 
-.. code:: ipython3
+.. code:: python3
 
     raster_layer.cache()
 
 Persist
 ~~~~~~~
 
-.. code:: ipython3
+.. code:: python3
 
     # If no level is given, then MEMORY_ONLY will be used
     tiled_raster_layer.persist()
@@ -817,20 +817,20 @@ Persist
 Unpersist
 ~~~~~~~~~
 
-.. code:: ipython3
+.. code:: python3
 
     tiled_raster_layer.unpersist()
 
 getNumberOfPartitions
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. code:: ipython3
+.. code:: python3
 
     raster_layer.getNumPartitions()
 
 Count
 ~~~~~
 
-.. code:: ipython3
+.. code:: python3
 
     raster_layer.count()
