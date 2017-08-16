@@ -58,6 +58,14 @@ object GeoTiffRDD {
         else
           None
 
+      val partitionBytes =
+        if (javaMap.contains("partition_bytes") && !intMap.contains("max_tile_size"))
+          Some(javaMap.get("partition_bytes").asInstanceOf[Long])
+        else if (!intMap.contains("max_tile_size"))
+          default.partitionBytes
+        else
+          None
+
       val getS3Client: () => S3Client =
         stringMap.get("s3_client") match {
           case Some(client) =>
@@ -76,6 +84,7 @@ object GeoTiffRDD {
         timeFormat = stringMap.getOrElse("time_format", default.timeFormat),
         maxTileSize = intMap.get("max_tile_size"),
         numPartitions = intMap.get("num_partitions"),
+        partitionBytes = partitionBytes,
         chunkSize = intMap.get("chunk_size"),
         getS3Client = getS3Client)
     }
