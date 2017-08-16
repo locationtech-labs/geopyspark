@@ -1,0 +1,69 @@
+name: geopyspark
+
+full_name: GeoPySpark
+
+description: >
+  Python bindings for GeoTrellis
+
+impact: >
+  GeoPySpark allows the Scala/Spark based geospatial framework GeoTrellis to be used from Python, particularly in Jupyter notebooks.
+
+owner_type: project
+
+stage: beta
+
+testable: true
+
+licenses:
+  geopyspark:
+    name: Apache-2.0
+    url: https://github.com/locationtech-labs/geopyspark/blob/master/LICENSE
+
+# partners:
+# -
+
+contact:
+- url: https://github.com/locationtech-labs/geopyspark/issues
+  text: GitHub Issue Tracker
+
+team:
+- github: echeipesh
+- github: jamesmcclain
+- github: jbouffard
+- github: jpolchlo
+- github: lossyrob
+
+type: app
+
+milestones:
+- "August 2017: Version 0.2.0 released"
+
+# parent:
+
+links:
+- url: https://github.com/locationtech-labs/geopyspark/releases
+  text: Releases
+
+# blogTag:
+# -
+
+stack:
+- Python:3
+- Scala:2.11
+- Spark:2.2
+- GeoTrellis:1.2.0-SNAPSHOT
+
+services:
+- name: Travis CI
+  category: build
+
+# users:
+# -
+
+tags:
+- python
+- big-data
+- geospatial
+- spark
+- tile-server
+- geotrellis
