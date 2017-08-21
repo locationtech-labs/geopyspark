@@ -39,19 +39,6 @@ def read_layer_metadata(uri,
     return store.layer(layer_name, layer_zoom).layer_metadata()
 
 
-@deprecated
-def read(layer_type,
-         uri,
-         layer_name,
-         layer_zoom,
-         options=None,
-         num_partitions=None,
-         **kwargs):
-    """Deprecated in favor of :meth:`~geopyspark.geotrellis.catalog.query`."""
-
-    return query(uri, layer_name, layer_zoom, num_partitions=num_partitions)
-
-
 def read_value(uri,
                layer_name,
                layer_zoom,

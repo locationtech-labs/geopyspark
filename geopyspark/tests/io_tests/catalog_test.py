@@ -5,7 +5,7 @@ import pytest
 from shapely.geometry import box
 
 from geopyspark.geotrellis import Extent, SpatialKey, GlobalLayout
-from geopyspark.geotrellis.catalog import read, read_value, query, read_layer_metadata, AttributeStore
+from geopyspark.geotrellis.catalog import read_value, query, read_layer_metadata, AttributeStore
 from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.tests.base_test_class import BaseTestClass
