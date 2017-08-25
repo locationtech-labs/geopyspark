@@ -55,7 +55,7 @@ class CatalogTest(BaseTestClass):
         self.assertEqual(tiled, None)
 
     @pytest.mark.skipif('TRAVIS' in os.environ,
-                         reason="test_query_1 causes issues on Travis")
+                        reason="test_query_1 causes issues on Travis")
     def test_query1(self):
         intersection = box(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520)
         queried = query(self.uri, self.layer_name, 11, intersection)
@@ -92,9 +92,9 @@ class CatalogTest(BaseTestClass):
         self.assertEqual(queried.to_numpy_rdd().first()[0], SpatialKey(1450, 996))
 
     def test_query_crs(self):
-        intersection = box(8348915.46680623, 543988.943201519, 8348915.4669, 543988.943201520)
+        intersection = box(74.99958369653905, 4.8808219582513095, 74.99958369738141, 4.880821958251324)
         queried = query(self.uri, self.layer_name, 11, intersection,
-                        query_proj=3857)
+                        query_proj=4326)
 
         self.assertEqual(queried.to_numpy_rdd().first()[0], SpatialKey(1450, 996))
 
@@ -133,6 +133,7 @@ class CatalogTest(BaseTestClass):
         store.layer(layer_name, 34).delete("val")
         with pytest.raises(KeyError):
             store.layer(layer_name, 34)["val"]
+
 
 if __name__ == "__main__":
     unittest.main()
