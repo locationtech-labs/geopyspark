@@ -40,6 +40,18 @@ def get(layer_type,
         num_partitions (int, optional): The number of repartitions Spark
             will make when the data is repartitioned. If ``None``, then the
             data will not be repartitioned.
+        partition_bytes (int, optional): The desired number of bytes per partition.
+            This is will ensure that at least one item is assigned for each partition.
+            If ``None`` and ``max_tile_size`` is not set, then the default size per
+            partition is 128 Mb.
+
+            Note:
+                This option is only available when reading from S3.
+
+            Note:
+                This option is incompatible with the ``max_tile_size`` option.
+                If both are set, then ``max_tile_size`` will be used instead of
+                ``partition_bytes``.
         chunk_size (int, optional): How many bytes of the file should be
             read in at a time. If ``None``, then files will be read in 65536
             byte chunks.
