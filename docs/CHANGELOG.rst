@@ -107,3 +107,15 @@ functions as well as a few other minor changes/additions.
     reading from S3.
   - Setting ``max_tile_size`` and ``num_partitions`` in ``geotiff.get`` will now
     work when trying to read geotiffs from S3.
+
+
+0.2.2
+------
+
+0.2.2 fixes the naming issue brought about in 0.2.1 where the backend jar and
+the docs had the incorrect version number.
+
+
+**geopyspark**
+
+  - Fixed version numbers for docs and jar.
