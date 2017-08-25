@@ -32,7 +32,7 @@ os.chdir('..')
 jar = 'geotrellis-backend-assembly-0.2.0.jar'
 
 if not path.isfile(path.join('geopyspark/jars', jar)):
-    url = 'https://github.com/locationtech-labs/geopyspark/releases/download/v0.2.0/'
+    url = 'https://github.com/locationtech-labs/geopyspark/releases/download/v0.2.1/'
     subprocess.call(['curl', '-L', url+jar, '-o', path.join('geopyspark/jars', jar)])
 
 sys.path.insert(0, path.abspath(os.curdir))

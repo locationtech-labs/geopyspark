@@ -86,3 +86,24 @@ changes will be discussed below.
   - Updated all of the docstrings to reflect the new changes.
   - All of the documentation has been updated to reflect the new chnagtes.
   - Example jupyter notebooks have been added.
+
+
+0.2.1
+------
+
+0.2.1 adds two major bug fixes for the ``catalog.query`` and ``geotiff.get``
+functions as well as a few other minor changes/additions.
+
+
+**geopyspark**
+
+  - Updated description in ``setup.py``.
+
+**geopyspark.geotrellis**
+
+  - Fixed a bug in ``catalog.query`` where the query would fail if the geometry
+    used for querying was in a different projection than the source layer.
+  - ``partition_bytes`` can now be set in the ``geotiff.get`` function when
+    reading from S3.
+  - Setting ``max_tile_size`` and ``num_partitions`` in ``geotiff.get`` will now
+    work when trying to read geotiffs from S3.
