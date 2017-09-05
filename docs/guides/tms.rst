@@ -12,11 +12,10 @@ Note that the following examples rely on this common boilerplate code:
 
 .. code-block:: python
 
-   from geopyspark import geopyspark_conf
-   from geopyspark.geotrellis.tms import TMS
+   import geopyspark as gps
    from pyspark import SparkContext
 
-   conf = geopyspark_conf(appName="demo")
+   conf = gps.geopyspark_conf(appName="demo")
    sc = SparkContext(conf=conf)
 
 Basic Example
@@ -27,17 +26,16 @@ layer with some custom color map.  This is accomplished easily:
 
 .. code-block:: python
 
-   from geopyspark.geotrellis.color import ColorMap
-   cm = ColorMap.nlcd_colormap()
+   cm = gps.ColorMap.nlcd_colormap()
 
-   tms = TMS.build(('s3://azavea-datahub/catalog', 'nlcd-tms-epsg3857'), display=cm)
+   tms = gps.TMS.build(('s3://azavea-datahub/catalog', 'nlcd-tms-epsg3857'), display=cm)
 
 Of course, other color maps can be used.  See the documentation for
 :class:`~geopyspark.geotrellis.color.ColorMap` for more details.
    
 :code:`TMS.build` can display data from catalogs—which are represented as a
 string-string pair containing the URI of the catalog root and the name of the
-layer—or from a ``geopyspark.geotrellis.layer.Pyramid`` object.  One may also
+layer—or from a :class:`~geopyspark.geotrellis.layer.Pyramid` object.  One may also
 specify a list of any combination of these sources; more on multiple sources
 below.
 
@@ -48,10 +46,22 @@ Providing neither will result in a TMS server accessible from localhost on a
 random port.  If the server should be accessible from the outside world, a
 ``host`` value of ``"0.0.0.0"`` may be used.
 
-A call to ``bind`` is then followed by a call to :meth:`tms.url_pattern`,
+A call to :meth:`tms.bind` is then followed by a call to :meth:`tms.url_pattern`,
 which provides a string that gives the template for the tiles furnished by the
 TMS server.  This template string may be copied directly into geojson.io_, for
-example.
+example.  When the TMS server is no longer needed, its resources can be freed
+by a call to :meth:`tms.unbind`.
+
+.. code-block:: python
+
+   # set up the TMS server to serve from 'localhost' on a random port
+   tms.bind()
+
+   tms.url_pattern
+
+   # (browse the the TMS-served layer in some interface)
+
+   tms.unbind()
 
 In the event that one is using GeoPySpark from within the GeoNotebook
 environment, ``bind`` should not be used, and the following code should be
@@ -79,7 +89,7 @@ Python function to convert some tile data into an image that may be served via
 the TMS server.
 
 The general approach is to develop a function taking a
-:class:`geopyspark.geotrellis.Tile` that returns a byte array containing the
+:class:`~geopyspark.geotrellis.Tile` that returns a byte array containing the
 resulting image, encoded as PNG or JPG.  The following example uses this
 rendering function approach to apply the same simple color map as above.
 
@@ -163,7 +173,7 @@ rendering function approach to apply the same simple color map as above.
 
       return img
 
-   tms = TMS.build(('s3://azavea-datahub/catalog', 'nlcd-tms-epsg3857'), display=render_nlcd)
+   tms = gps.TMS.build(('s3://azavea-datahub/catalog', 'nlcd-tms-epsg3857'), display=render_nlcd)
 
 You will likely observe noticeably slower performance compared to the earlier
 example.  This is because the contents of each tile must be transferred from
@@ -210,7 +220,7 @@ some of the helper functions from the previous example.
 
       return img
     
-   tms = TMS.build([
+   tms = gps.TMS.build([
       ('s3://azavea-datahub/catalog', 'us-ned-tms-epsg3857'),
       ('s3://azavea-datahub/catalog', 'nlcd-tms-epsg3857')],
       display=comp)

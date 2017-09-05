@@ -116,6 +116,7 @@ a need for it.
   guides/layers
   guides/catalog
   guides/map-algebra
+  guides/tms
 
 .. toctree::
   :maxdepth: 2
