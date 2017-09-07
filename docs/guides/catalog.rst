@@ -402,3 +402,130 @@ Querying by Space and Time
               layer_zoom=7,
               query_geom=multi_poly,
               time_intervals=[min_key.instant, max_key.instant])
+
+AttributeStore
+--------------
+
+When writing a layer GeoTrellis uses an ``AttributeStore`` to write layer metadata required to read and query the layer later.
+This class can be used outside of catalog ``write`` and ``query`` functions to inspect available layers and store additional, user defined, attributes.
+
+Creating AttributeStore
+~~~~~~~~~~~~~~~~~~~~~~~
+
+``AttributeStore`` can be created from the same ``URI`` that is given to ``write`` and ``query`` functions.
+
+.. code:: python3
+
+   store = gps.AttributeStore(uri='file:///tmp/spatial-catalog')
+
+   # Check if layer exists
+   store.contains('spatial-layer', 11)
+
+   # List layers stored in the catalog, giving list of AttributeStore.Attributes
+   attributes_list = store.layers
+
+   # Ask for layer attributes by name
+   attributes = store.layer('spatial-layer', 11)
+
+   # Read layer metadata
+   attributes.layer_metadata()
+
+
+User Defined Attributes
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Internally ``AttributeStore`` is a key-value store where key is a tuple of layer name and zoom and values are encoded as JSON.
+The layer metadata is stored under attribute named ``metadata``. Care should be taken to not overwrite this attribute.
+
+.. code:: python3
+
+   # Reading layer metadata as underlying JSON value
+   attributes.read("metadata")
+
+::
+
+ {'header': {'format': 'file',
+   'keyClass': 'geotrellis.spark.SpatialKey',
+   'path': 'spatial-layer/11',
+   'valueClass': 'geotrellis.raster.MultibandTile'},
+  'keyIndex': {'properties': {'keyBounds': {'maxKey': {'col': 1485, 'row': 996}, 'minKey': {'col': 1479, 'row': 984}}},
+   'type': 'zorder'},
+  'metadata': {'bounds': {'maxKey': {'col': 1485, 'row': 996},
+    'minKey': {'col': 1479, 'row': 984}},
+   'cellType': 'int16',
+   'crs': '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs ',
+   'extent': {'xmax': 9024345.159093022,
+    'xmin': 8905559.263461886,
+    'ymax': 781182.2141882492,
+    'ymin': 542452.4856863784},
+   'layoutDefinition': {'extent': {'xmax': 20037508.342789244,
+     'xmin': -20037508.342789244,
+     'ymax': 20037508.342789244,
+     'ymin': -20037508.342789244},
+    'tileLayout': {'layoutCols': 2048, 'layoutRows': 2048, 'tileCols': 256, 'tileRows': 256}}},
+  'schema': {...}
+ }
+
+
+Otherwise you are free to store any additional attribute that is associated with the layer.
+``AttributeStore.Attributes`` provides ``write`` and ``read`` functions that accept and provide a dictionary.
+
+.. code:: python3
+
+   attributes.write("notes", {'a': 3, 'b': 5})
+   notes_dict = attributes.read("notes)
+
+A common use case for this is to store the layer histogram when writing a layer so it may be used for rendering later.
+
+.. code:: python3
+
+   # Calculate the histogram
+   hist = spatial_tiled_layer.get_histogram()
+
+   # GeoPySpark classes have to_dict as a convention when appropriate
+   hist_dict = hist.to_dict()
+
+   # Writing a dictionary that gets encoded as JSON
+   attributes.write("histogram", hist_dict)
+
+   # Reverse the process
+   hist_read_dict = attributes.read("histogram")
+
+   # GeoPySpark classes have from_dict static method as a convention
+   hist_read = gps.Histogram.from_dict(hist_read_dict)
+
+   # Use the histogram after round trip
+   hist.min_max()
+
+
+AttributeStore Caching
+~~~~~~~~~~~~~~~~~~~~~~
+
+An instance of ``AttributeStore`` keeps an in memory cache of attributes recently accessed.
+This is done because a common access pattern to check layer existence, read the layer and decode the layer will produce repeated requests for layer metadata.
+Depending on the backend used this may add considerable overhead and expense.
+
+When writing a workflow that places heavy demand on ``AttributeStore`` reading it is worth while keeping track of a class instance and reusing it
+
+.. code:: python3
+
+   # Retrieve already created instance if its been asked for before
+   store = gps.AttributeStore.cached(uri='file:///tmp/spatial-catalog')
+
+   # Catalog functions have optional store parameter that allows its reuse
+   gps.write(uri='file:///tmp/spatial-catalog',
+          layer_name='spatial-layer',
+          tiled_raster_layer=spatial_tiled_layer,
+          store=store)
+
+   gps.query(uri="file:///tmp/spatial-catalog",
+          layer_name="spatial-layer",
+          layer_zoom=11,
+          store=store)
+
+   gps.read_value(uri="file:///tmp/spatial-catalog",
+          layer_name="spatial-layer",
+          layer_zoom=11,
+          col=min_key.col,
+          row=min_key.row,
+          store=store)
