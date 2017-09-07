@@ -406,7 +406,7 @@ Querying by Space and Time
 AttributeStore
 --------------
 
-When writing a layer GeoTrellis uses an ``AttributeStore`` to write layer metadata required to read and query the layer later.
+When writing a layer, GeoTrellis uses an :class:`~geopyspark.geotrellis.catalog.AttributeStore` to write layer metadata required to read and query the layer later.
 This class can be used outside of catalog ``write`` and ``query`` functions to inspect available layers and store additional, user defined, attributes.
 
 Creating AttributeStore
@@ -434,7 +434,7 @@ Creating AttributeStore
 User Defined Attributes
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Internally ``AttributeStore`` is a key-value store where key is a tuple of layer name and zoom and values are encoded as JSON.
+Internally :class:`~geopyspark.geotrellis.catalog.AttributeStore` is a key-value store where key is a tuple of layer name and zoom and values are encoded as JSON.
 The layer metadata is stored under attribute named ``metadata``. Care should be taken to not overwrite this attribute.
 
 .. code:: python3
@@ -468,7 +468,7 @@ The layer metadata is stored under attribute named ``metadata``. Care should be 
 
 
 Otherwise you are free to store any additional attribute that is associated with the layer.
-``AttributeStore.Attributes`` provides ``write`` and ``read`` functions that accept and provide a dictionary.
+:class:`~geopyspark.geotrellis.catalog.AttributeStore.Attributes` provides ``write`` and ``read`` functions that accept and provide a dictionary.
 
 .. code:: python3
 
@@ -501,11 +501,11 @@ A common use case for this is to store the layer histogram when writing a layer 
 AttributeStore Caching
 ~~~~~~~~~~~~~~~~~~~~~~
 
-An instance of ``AttributeStore`` keeps an in memory cache of attributes recently accessed.
+An instance of :class:`~geopyspark.geotrellis.catalog.AttributeStore` keeps an in memory cache of attributes recently accessed.
 This is done because a common access pattern to check layer existence, read the layer and decode the layer will produce repeated requests for layer metadata.
 Depending on the backend used this may add considerable overhead and expense.
 
-When writing a workflow that places heavy demand on ``AttributeStore`` reading it is worth while keeping track of a class instance and reusing it
+When writing a workflow that places heavy demand on :class:`~geopyspark.geotrellis.catalog.AttributeStore` reading it is worth while keeping track of a class instance and reusing it
 
 .. code:: python3
 
