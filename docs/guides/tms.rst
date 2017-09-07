@@ -40,17 +40,19 @@ specify a list of any combination of these sources; more on multiple sources
 below.
 
 Once a TMS server is constructed, we need to make the contents visible by
-binding the server.  The :meth:`tms.bind` method can take a ``host`` and/or a
-``port``, where the former is a string, and the latter is an integer.
-Providing neither will result in a TMS server accessible from localhost on a
-random port.  If the server should be accessible from the outside world, a
-``host`` value of ``"0.0.0.0"`` may be used.
+binding the server.  The :meth:`~geopyspark.geotrellis.tms.bind` method can
+take a ``host`` and/or a ``port``, where the former is a string, and the
+latter is an integer.  Providing neither will result in a TMS server
+accessible from localhost on a random port.  If the server should be
+accessible from the outside world, a ``host`` value of ``"0.0.0.0"`` may be
+used.
 
-A call to :meth:`tms.bind` is then followed by a call to :meth:`tms.url_pattern`,
-which provides a string that gives the template for the tiles furnished by the
-TMS server.  This template string may be copied directly into geojson.io_, for
-example.  When the TMS server is no longer needed, its resources can be freed
-by a call to :meth:`tms.unbind`.
+A call to :meth:`~geopyspark.geotrellis.tms.bind` is then followed by a call
+to :meth:`~geopyspark.geotrellis.tms.url_pattern`, which provides a string
+that gives the template for the tiles furnished by the TMS server.  This
+template string may be copied directly into geojson.io_, for example.  When
+the TMS server is no longer needed, its resources can be freed by a call to
+:meth:`~geopyspark.geotrellis.tms.unbind`.
 
 .. code-block:: python
 
@@ -189,9 +191,10 @@ It is also possible to combine data from various sources at the time of
 display.  Of course, one could use map algebra to produce a composite layer,
 but if the input layers are large, this could potentially be a time-consuming
 operation.  The TMS server allows for a list of sources to be supplied; these
-may be any combination of ``Pyramid`` objects and catalogs.  We then may
-supply a function that takes a list of :class:`~geopyspark.geotrellis.Tile`
-instances and produces the bytes of an image as in the single-layer case.
+may be any combination of :class:`~geopyspark.geotrellis.layer.Pyramid`
+objects and catalogs.  We then may supply a function that takes a list of
+:class:`~geopyspark.geotrellis.Tile` instances and produces the bytes of an
+image as in the single-layer case.
 
 The following example masks the NLCD layer to areas above 1371 meters, using
 some of the helper functions from the previous example.
