@@ -412,7 +412,7 @@ This class can be used outside of catalog ``write`` and ``query`` functions to i
 Creating AttributeStore
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-``AttributeStore`` can be created from the same ``URI`` that is given to ``write`` and ``query`` functions.
+:class:`~geopyspark.geotrellis.catalog.AttributeStore` can be created from the same ``URI`` that is given to ``write`` and ``query`` functions.
 
 .. code:: python3
 
