@@ -406,7 +406,7 @@ Querying by Space and Time
 AttributeStore
 --------------
 
-When writing a layer, GeoTrellis uses an :class:`~geopyspark.geotrellis.catalog.AttributeStore` to write layer metadata required to read and query the layer later.
+When writing a layer, GeoPySpark uses an :class:`~geopyspark.geotrellis.catalog.AttributeStore` to write layer metadata required to read and query the layer later.
 This class can be used outside of catalog ``write`` and ``query`` functions to inspect available layers and store additional, user defined, attributes.
 
 Creating AttributeStore
