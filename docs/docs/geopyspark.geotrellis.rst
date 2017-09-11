@@ -82,6 +82,13 @@ geopyspark.geotrellis.rasterize module
    :members:
    :inherited-members:
 
+geopyspark.geotrellis.tms module
+--------------------------------
+
+.. automodule:: geopyspark.geotrellis.tms
+   :members:
+   :inherited-members:
+      
 geopyspark.geotrellis.histogram module
 -------------------------------------------
 
