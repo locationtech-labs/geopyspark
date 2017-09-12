@@ -1,35 +1,3 @@
-
-.. code:: python3
-
-   import geopyspark as gps
-   import numpy as np
-    
-   from pyspark import SparkContext
-   from shapely.geometry import Point, MultiPolygon, LineString, box
-
-.. code:: python3
-
-   conf = gps.geopyspark_conf(master="local[*]", appName="map-algebra")
-   pysc = SparkContext(conf=conf)
-
-.. code:: python3
-
-   # Setting up the data
-    
-   cells = np.array([[[3, 4, 1, 1, 1],
-                      [7, 4, 0, 1, 0],
-                      [3, 3, 7, 7, 1],
-                      [0, 7, 2, 0, 0],
-                      [6, 6, 6, 5, 5]]], dtype='int32')
-    
-   extent = gps.ProjectedExtent(extent = gps.Extent(0, 0, 5, 5), epsg=4326)
-    
-   layer = [(extent, gps.Tile.from_numpy_array(numpy_array=cells))]
-      
-   rdd = pysc.parallelize(layer)
-   raster_layer = gps.RasterLayer.from_numpy_rdd(gps.LayerType.SPATIAL, rdd)
-   tiled_layer = raster_layer.tile_to_layout(layout=gps.LocalLayout(tile_size=5))
-
 Map Algebra
 ===========
 
@@ -52,9 +20,35 @@ roughly equivalent to a 2d convolution operation.
 and if a local operation requires multiple inputs, those inputs must
 have the same layout and projection.
 
-**Note**: Throughout this guide, this ``.lookup(0, 0)[0].cells`` is used
-on the resulting layer. This call simply retrieves the numpy array of
-the first tile within the layer.
+Before begining, all examples in this guide need the following boilerplate
+code:
+
+.. code:: python3
+
+   import geopyspark as gps
+   import numpy as np
+
+   from pyspark import SparkContext
+   from shapely.geometry import Point, MultiPolygon, LineString, box
+
+   conf = gps.geopyspark_conf(master="local[*]", appName="map-algebra")
+   pysc = SparkContext(conf=conf)
+
+   # Setting up the data
+
+   cells = np.array([[[3, 4, 1, 1, 1],
+                      [7, 4, 0, 1, 0],
+                      [3, 3, 7, 7, 1],
+                      [0, 7, 2, 0, 0],
+                      [6, 6, 6, 5, 5]]], dtype='int32')
+
+   extent = gps.ProjectedExtent(extent = gps.Extent(0, 0, 5, 5), epsg=4326)
+
+   layer = [(extent, gps.Tile.from_numpy_array(numpy_array=cells))]
+
+   rdd = pysc.parallelize(layer)
+   raster_layer = gps.RasterLayer.from_numpy_rdd(gps.LayerType.SPATIAL, rdd)
+   tiled_layer = raster_layer.tile_to_layout(layout=gps.LocalLayout(tile_size=5))
 
 Local Operations
 ----------------
@@ -65,23 +59,16 @@ Local operations on ``TiledRasterLayer``\ s can use ``int``\ s,
 
 .. code:: python3
 
-    tiled_layer.lookup(0, 0)[0].cells
+    (tiled_layer + 1)
 
-.. code:: python3
+    (2 - (tiled_layer * 3))
 
-    (tiled_layer + 1).lookup(0, 0)[0].cells
+    ((tiled_layer + tiled_layer) / (tiled_layer + 1))
 
-.. code:: python3
-
-    (2 - (tiled_layer * 3)).lookup(0, 0)[0].cells
-
-.. code:: python3
-
-    ((tiled_layer + tiled_layer) / (tiled_layer + 1)).lookup(0, 0)[0].cells
-
-``Pyramid``\ s can also be used in local operations. The types that can
-be used in local operations with ``Pyramid``\ s are: ``int``\ s,
-``float``\ s, ``TiledRasterLayer``\ s, and other ``Pyramid``\ s.
+A :class:`~geopyspark.geotrellis.layer.Pyramid` can also be used in local
+operations. The types that can be used in local operations with
+``Pyramid``\ s are: ``int``\ s, ``float``\ s, ``TiledRasterLayer``\ s,
+and other ``Pyramid``\ s.
 
 **Note**: Like with ``TiledRasterLayer``, performing calculations on
 multiple ``Pyramid``\ s or ``TiledRasterLayer``\ s means they must all
@@ -91,13 +78,8 @@ have the same layout and projection.
 
     # Creating out Pyramid
     pyramid = tiled_layer.pyramid()
-    pyramid
-
-.. code:: python3
 
     pyramid + 1
-
-.. code:: python3
 
     (pyramid - tiled_layer) * 2
 
@@ -112,88 +94,84 @@ Likewise, an operation can be choosen from the enum class,
 
 .. code:: python3
 
-    # This creates an instance of Square with an extent of 1. This means that each operation will be performed on a 3x3
+    # This creates an instance of Square with an extent of 1. This means that
+    # each operation will be performed on a 3x3
     # neighborhood.
-    
+
     '''
     A square neighborhood with an extent of 1.
     o = source cell
     x = cells that fall within the neighbhorhood
-    
+
     x x x
     x o x
     x x x
     '''
-    
+
     square = gps.Square(extent=1)
-
-.. code:: python3
-
-    # Values in the original Tile
-    tiled_layer.lookup(0, 0)[0].cells
 
 Mean
 ^^^^
 
 .. code:: python3
 
-    tiled_layer.focal(operation=gps.Operation.MEAN, neighborhood=square).lookup(0, 0)[0].cells
+    tiled_layer.focal(operation=gps.Operation.MEAN, neighborhood=square)
 
 Median
 ^^^^^^
 
 .. code:: python3
 
-    tiled_layer.focal(operation=gps.Operation.MEDIAN, neighborhood=square).lookup(0, 0)[0].cells
+    tiled_layer.focal(operation=gps.Operation.MEDIAN, neighborhood=square)
 
 Mode
 ^^^^
 
 .. code:: python3
 
-    tiled_layer.focal(operation=gps.Operation.MODE, neighborhood=square).lookup(0, 0)[0].cells
+    tiled_layer.focal(operation=gps.Operation.MODE, neighborhood=square)
 
 Sum
 ^^^
 
 .. code:: python3
 
-    tiled_layer.focal(operation=gps.Operation.SUM, neighborhood=square).lookup(0, 0)[0].cells
+    tiled_layer.focal(operation=gps.Operation.SUM, neighborhood=square)
 
 Standard Deviation
 ^^^^^^^^^^^^^^^^^^
 
 .. code:: python3
 
-    tiled_layer.focal(operation=gps.Operation.STANDARD_DEVIATION, neighborhood=square).lookup(0, 0)[0].cells
+    tiled_layer.focal(operation=gps.Operation.STANDARD_DEVIATION, neighborhood=square)
 
 Min
 ^^^
 
 .. code:: python3
 
-    tiled_layer.focal(operation=gps.Operation.MIN, neighborhood=square).lookup(0, 0)[0].cells
+    tiled_layer.focal(operation=gps.Operation.MIN, neighborhood=square)
 
 Max
 ^^^
 
 .. code:: python3
 
-    tiled_layer.focal(operation=gps.Operation.MAX, neighborhood=square).lookup(0, 0)[0].cells
+    tiled_layer.focal(operation=gps.Operation.MAX, neighborhood=square)
 
 Slope
 ^^^^^
 
 .. code:: python3
 
-    tiled_layer.focal(operation=gps.Operation.SLOPE, neighborhood=square).lookup(0, 0)[0].cells
+    tiled_layer.focal(operation=gps.Operation.SLOPE, neighborhood=square)
 
 Aspect
 ^^^^^^
 
 .. code:: python3
 
-    tiled_layer.focal(operation=gps.Operation.ASPECT, neighborhood=square).lookup(0, 0)[0].cells
+    tiled_layer.focal(operation=gps.Operation.ASPECT, neighborhood=square)
 
 Miscellaneous Raster Operations
 --------------------------------
@@ -252,15 +230,15 @@ Polygonal Mean
 Cost Distance
 ^^^^^^^^^^^^^^
 
-``cost_distance`` is an iterative method for approximating the weighted
-distance from a raster cell to a given geometry. The ``cost_distance``
-function takes in a geometry and a “friction layer” which essentially
-describes how difficult it is to traverse each raster cell. Cells that
-fall within the geometry have a final cost of zero, while friction cells
-that contain noData values will correspond to noData values in the final
-result. All other cells have a value that describes the minimum cost of
-traversing from that cell to the geometry. If the friction layer is
-uniform, this function approximates the Euclidean distance, modulo some
+:meth:`~geopyspark.geotrellis.cost_distance.cost_distance` is an iterative
+method for approximating the weighted distance from a raster cell to a given
+geometry. The ``cost_distance`` function takes in a geometry and a
+“friction layer” which essentially describes how difficult it is to traverse
+each raster cell. Cells that fall within the geometry have a final cost of
+zero, while friction cells that contain noData values will correspond to
+noData values in the final result. All other cells have a value that describes
+the minimum cost of traversing from that cell to the geometry. If the friction
+layer is uniform, this function approximates the Euclidean distance, modulo some
 scalar value.
 
 .. code:: python3
@@ -270,29 +248,26 @@ scalar value.
                                      [1.0, 1.0, 1.0, 1.0, 1.0],
                                      [1.0, 1.0, 1.0, 1.0, 1.0],
                                      [1.0, 1.0, 1.0, 1.0, 0.0]]])
-    
+
     tile = gps.Tile.from_numpy_array(numpy_array=cost_distance_cells, no_data_value=~1.0)
     cost_distance_extent = gps.ProjectedExtent(extent=gps.Extent(xmin=0.0, ymin=0.0, xmax=5.0, ymax=5.0), epsg=4326)
     cost_distance_layer = [(cost_distance_extent, tile)]
-    
+
     cost_distance_rdd = pysc.parallelize(cost_distance_layer)
     cost_distance_raster_layer = gps.RasterLayer.from_numpy_rdd(gps.LayerType.SPATIAL, cost_distance_rdd)
     cost_distance_tiled_layer = cost_distance_raster_layer.tile_to_layout(layout=gps.LocalLayout(tile_size=5))
 
-.. code:: python3
-
-    result = gps.cost_distance(friction_layer=cost_distance_tiled_layer, geometries=[Point(0.0, 5.0)], max_distance=144000.0)
-    result.to_numpy_rdd().first()[1].cells[0]
+    gps.cost_distance(friction_layer=cost_distance_tiled_layer, geometries=[Point(0.0, 5.0)], max_distance=144000.0)
 
 Rasterization
 ^^^^^^^^^^^^^^
 
 It may be desirable to convert vector data into a raster layer. For
-this, we provide the ``rasterize`` function, which determines the set of
-pixel values covered by each vector element, and assigns a supplied
-value to that set of pixels in a target raster. If, for example, one had
-a set of polygons representing counties in the US, and a value for, say,
-the median income within each county, a raster could be made
+this, we provide the :meth:`~geopyspark.geotrellis.rasterize.rasterize`
+function, which determines the set of pixel values covered by each vector
+element, and assigns a supplied value to that set of pixels in a target raster.
+If, for example, one had a set of polygons representing counties in the US, and
+a value for, say, the median income within each county, a raster could be made
 representing these data.
 
 GeoPySpark's ``rasterize`` function takes a list of any number of
@@ -308,7 +283,7 @@ Rasterize MultiPolygons
     raster_poly_1 = box(0.0, 0.0, 5.0, 10.0)
     raster_poly_2 = box(3.0, 6.0, 15.0, 20.0)
     raster_poly_3 = box(13.5, 17.0, 30.0, 20.0)
-    
+
     raster_multi_poly = MultiPolygon([raster_poly_1, raster_poly_2, raster_poly_3])
 
 .. code:: python3

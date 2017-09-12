@@ -1,33 +1,35 @@
+Catalog
+=======
+
+The ``catalog`` module allows for users to retrieve information, query,
+and write to/from GeoTrellis layers.
+
+Before begining, all examples in this guide need the following boilerplate
+code:
+
+.. code::
+
+   curl -o /tmp/cropped.tif https://s3.amazonaws.com/geopyspark-test/example-files/cropped.tif
 
 .. code:: python3
 
    import datetime
    import geopyspark as gps
    import numpy as np
-    
+
    from pyspark import SparkContext
    from shapely.geometry import MultiPolygon, box
-
-.. code:: python3
-
-   !curl -o /tmp/cropped.tif https://s3.amazonaws.com/geopyspark-test/example-files/cropped.tif
-
-.. code:: python3
 
    conf = gps.geopyspark_conf(master="local[*]", appName="layers")
    pysc = SparkContext(conf=conf)
 
-.. code:: python3
-
    # Setting up the Spatial Data to be used in this example
-    
+
    spatial_raster_layer = gps.geotiff.get(layer_type=gps.LayerType.SPATIAL, uri="/tmp/cropped.tif")
    spatial_tiled_layer = spatial_raster_layer.tile_to_layout(layout=gps.GlobalLayout(), target_crs=3857)
 
-.. code:: python3
-
    # Setting up the Spatial-Temporal Data to be used in this example
-    
+
    def make_raster(x, y, v, cols=4, rows=4, crs=4326):
        cells = np.zeros((1, rows, cols), dtype='float32')
        cells.fill(v)
@@ -35,25 +37,20 @@
        extent = gps.TemporalProjectedExtent(extent = gps.Extent(x, y, x + cols, y + rows),
                                             epsg=crs,
                                             instant=datetime.datetime.now())
-        
+
        return (extent, gps.Tile.from_numpy_array(cells))
-                
+
    layer = [
        make_raster(0, 0, v=1),
        make_raster(3, 2, v=2),
        make_raster(6, 0, v=3)
    ]
-      
+
    rdd = pysc.parallelize(layer)
    space_time_raster_layer = gps.RasterLayer.from_numpy_rdd(gps.LayerType.SPACETIME, rdd)
    space_time_tiled_layer = space_time_raster_layer.tile_to_layout(layout=gps.GlobalLayout(tile_size=5))
    space_time_pyramid = space_time_tiled_layer.pyramid()
 
-Catalog
-=======
-
-The ``catalog`` module allows for users to retrieve information, query,
-and write to/from GeoTrellis layers.
 
 What is a Catalog?
 ------------------
@@ -130,9 +127,10 @@ backend and the API of GeoPySpark.
 Saving Data to a Backend
 ------------------------
 
-The ``write`` function will save a given ``TiledRasterLayer`` to a
-specified backend. If the catalog does not exist when calling this
-function, then it will be created along with the saved layer.
+The :meth:`~geopyspark.geotrellis.catalog.write` function will save a
+given :class:`~geopyspark.geotrellis.layer.TiledRasterLayer` to a specified
+backend. If the catalog does not exist when calling this function, then it
+will be created along with the saved layer.
 
 **Note**: It is not possible to save a layer to a catalog if the layer
 name and zoom already exist. If you wish to overwrite an existing, saved
@@ -185,9 +183,9 @@ units of time that can be used to space apart data in the catalog.
 Saving a Pyramid
 ~~~~~~~~~~~~~~~~
 
-For those that are unfamiliar with the ``Pyramid`` class, please see the
-[Pyramid section] of the visualization guide. Otherwise, please continue
-on.
+For those that are unfamiliar with the :class:`~gepyspark.geotrellis.layer.Pyramid`
+class, please see the [Pyramid section] of the visualization guide. Otherwise,
+please continue on.
 
 As of right now, there is no way to directly save a ``Pyramid``.
 However, because a ``Pyramid`` is just a collection of
@@ -208,10 +206,10 @@ through the layers of the ``Pyramid`` and save one individually.
 Reading Metadata From a Saved Layer
 -----------------------------------
 
-It is possible to retrieve the ``Metadata`` for a layer without reading
-in the whole layer. This is done using the ``read_layer_metadata``
-function. There is no difference between spatial and spatial-temporal
-layers when using this function.
+It is possible to retrieve the :class:`~geopyspark.geotrellis.Metadata` for a layer
+without reading in the whole layer. This is done using the
+:meth:`~geopyspark.geotrellis.catalog.read_layer_metadata` function.
+There is no difference between spatial and spatial-temporal layers when using this function.
 
 .. code:: python3
 
@@ -229,8 +227,9 @@ Reading a Tile From a Saved Layer
 ---------------------------------
 
 One can read a single tile that has been saved to a layer using the
-``read_value`` function. This will either return a ``Tile`` or ``None``
-depending on whether or not the specified tile exists.
+:meth:`~geopyspark.geotrellis.catalog.read_value` function. This will either
+return a :class:`~geopyspark.geotrellis.Tile` or ``None`` depending on whether
+or not the specified tile exists.
 
 Reading a Tile From a Saved, Spatial Layer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -239,7 +238,7 @@ Reading a Tile From a Saved, Spatial Layer
 
     # The Tile being read will be the smallest key of the layer
     min_key = spatial_tiled_layer.layer_metadata.bounds.minKey
-    
+
     gps.read_value(uri="file:///tmp/spatial-catalog",
                    layer_name="spatial-layer",
                    layer_zoom=11,
@@ -253,7 +252,7 @@ Reading a Tile From a Saved, Spatial-Temporal Layer
 
     # The Tile being read will be the largest key of the layer
     max_key = space_time_tiled_layer.layer_metadata.bounds.maxKey
-    
+
     gps.read_value(uri="file:///tmp/spacetime-catalog",
                    layer_name="spacetime-layer",
                    layer_zoom=7,
@@ -267,8 +266,9 @@ Reading a Layer
 There are two ways one can read a layer in GeoPySpark: reading the
 entire layer or just portions of it. The former will be the goal
 discussed in this section. While all of the layer will be read, the
-function for doing so is called, ``query``. There is no difference
-between spatial and spatial-temporal layers when using this function.
+function for doing so is called, :meth:`~geopyspark.geotrellis.catalog.query`.
+There is no difference between spatial and spatial-temporal layers when using
+this function.
 
 **Note**: What distinguishes between a full and partial read is the
 parameters given to ``query``. If no filters were given, then the whole
@@ -296,7 +296,7 @@ One can query an area of a spatial layer that covers the region of
 interest by providing a geometry that represents this region. This area
 can be represented as: ``shapely.geometry`` (specifically ``Polygon``\ s
 and ``MultiPolygon``\ s), the ``wkb`` representation of the geometry, or
-an ``Extent``.
+an :class:`~geopyspark.geotrellis.Extent`.
 
 **Note**: It is important that the given geometry is in the same
 projection as the queried layer. Otherwise, either the wrong area or
@@ -311,7 +311,7 @@ given are in the same projection.
 .. code:: python3
 
     layer_extent = spatial_tiled_layer.layer_metadata.extent
-    
+
     # Creates a Polygon from the cropped Extent of the Layer
     poly = box(layer_extent.xmin+100, layer_extent.ymin+100, layer_extent.xmax-100, layer_extent.ymax-100)
 
@@ -351,7 +351,7 @@ the geometry is in.
     # Because we queried the whole Extent of the layer, we should have gotten back the whole thing.
     querried_extent = querried_spatial_layer.layer_metadata.layout_definition.extent
     base_extent = spatial_tiled_layer.layer_metadata.layout_definition.extent
-    
+
     querried_extent == base_extent
 
 Querying a Spatial-Temporal Layer
@@ -366,7 +366,7 @@ Querying by Time
 .. code:: python3
 
     min_key = space_time_tiled_layer.layer_metadata.bounds.minKey
-    
+
     # Returns a TiledRasterLayer whose keys intersect the given time interval.
     # In this case, the entire layer will be read.
     gps.query(uri="file:///tmp/spacetime-catalog",

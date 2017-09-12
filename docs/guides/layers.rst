@@ -1,3 +1,12 @@
+Working With Layers
+===================
+
+Before begining, all examples in this guide need the following boilerplate
+code:
+
+.. code::
+
+   curl -o /tmp/cropped.tif https://s3.amazonaws.com/geopyspark-test/example-files/cropped.tif
 
 .. code:: python3
 
@@ -5,21 +14,13 @@
    import numpy as np
    import pyproj
    import geopyspark as gps
-    
+
    from pyspark import SparkContext
    from shapely.geometry import box
-
-.. code:: python3
-
-   !curl -o /tmp/cropped.tif https://s3.amazonaws.com/geopyspark-test/example-files/cropped.tif
-
-.. code:: python3
 
    conf = gps.geopyspark_conf(master="local[*]", appName="layers")
    pysc = SparkContext(conf=conf)
 
-Working With Layers
-===================
 
 How is Data Stored and Represented in GeoPySpark?
 -------------------------------------------------
@@ -32,7 +33,8 @@ library.
 GeoPySpark does not work with PySpark ``RDD``\ s, but rather, uses
 Python classes that are wrappers for Scala classes that contain and work
 with a Scala ``RDD``. Specifically, these wrapper classes are
-``RasterLayer`` and ``TiledRasterLayer``, which will be discussed in
+:class:`~geopyspark.geotrellis.layer.RasterLayer` and
+:class:`~geopyspark.geotrellis.layer.TiledRasterLayer`, which will be discussed in
 more detail later.
 
 Layers Are More Than RDDs
@@ -46,9 +48,9 @@ a “layer”, we mean both the ``RDD`` and its attributes.
 
 The ``RDD``\ s contained by GeoPySpark layers contain tuples which have
 type ``(K, V)``, where ``K`` represents the key, and ``V`` represents
-the value. ``V`` will always be a ``Tile``, but ``K`` differs depending
-on both the wrapper class and the nature of the data itself. More on
-this below.
+the value. ``V`` will always be a :class:`~geopyspark.geotrellis.Tile`,
+but ``K`` differs depending on both the wrapper class and the nature of
+the data itself. More on this below.
 
 RasterLayer
 ~~~~~~~~~~~
@@ -62,7 +64,8 @@ is to act as a way station on the path to acquiring *tiled data* that
 adheres to a specified layout.
 
 The ``RDD``\ s contained by ``RasterLayer`` objects have key type,
-``K``, of either ``ProjectedExtent`` or ``TemporalProjectedExtent``,
+``K``, of either :class:`~geopyspark.geotrellis.ProjectedExtent` or
+:class:`~geopyspark.geotrellis.TemporalProjectedExtent`,
 when the layer type is ``SPATIAL`` or ``SPACETIME``, respectively.
 
 TiledRasterLayer
@@ -77,8 +80,8 @@ work with. It is with this class that the user will be able to, for
 example, perform map algebra, create pyramids, and save the layer. See
 below for the definitions and specific examples of these operations.
 
-In the case of ``TiledRasterLayer``, ``K`` is either ``SpatialKey`` or
-``SpaceTimeKey``.
+In the case of ``TiledRasterLayer``, ``K`` is either :class:`~geopyspark.geotrellis.SpatialKey`
+or :class:`~geopyspark.geotrellis.SpaceTimeKey`.
 
 RasterLayer
 -----------
@@ -94,26 +97,25 @@ From PySpark RDDs
 ^^^^^^^^^^^^^^^^^
 
 The first option is to create a ``RasterLayer`` from a PySpark ``RDD``
-via the ``from_numpy_rdd`` class method. This step can be a bit more
-involved, as it requires the data within the PySpark RDD to be formatted
-in a specific way (see `How is Data Stored and Represented in
-GeoPySpark <#How-is-Data-Stored-and-Represented-in-GeoPySpark?>`__ for
-more information).
+via the :meth:`~geopyspark.geotrellis.layer.RasterLayer.from_numpy_rdd` class method.
+This step can be a bit more involved, as it requires the data within the
+PySpark RDD to be formatted in a specific way (see `How is Data Stored and Represented in GeoPySpark <#how-is-data-stored-and-represented-in-geopyspark>`__
+for more information).
 
 The following example constructs an ``RDD`` from a tuple. The first
 element is a ``ProjectedExtent`` because we have decided to make the
 data spatial. If we were dealing with spatial-temproal data, then
-``TemporalProjectedExtent`` would be the first element. A ``Tile`` will
-always be the second element of the tuple.
+``TemporalProjectedExtent`` would be the first element. A
+``Tile`` will always be the second element of the tuple.
 
 .. code:: python3
 
     arr = np.ones((1, 16, 16), dtype='int')
     tile = gps.Tile.from_numpy_array(numpy_array=np.array(arr), no_data_value=-500)
-    
+
     extent = gps.Extent(0.0, 1.0, 2.0, 3.0)
     projected_extent = gps.ProjectedExtent(extent=extent, epsg=3857)
-    
+
     rdd = pysc.parallelize([(projected_extent, tile), (projected_extent, tile)])
     multiband_raster_layer = gps.RasterLayer.from_numpy_rdd(layer_type=gps.LayerType.SPATIAL, numpy_rdd=rdd)
     multiband_raster_layer
@@ -121,10 +123,11 @@ always be the second element of the tuple.
 From GeoTiffs
 ^^^^^^^^^^^^^
 
-The ``get`` function in the ``geopyspark.geotrellis.geotiff`` module
-creates an instance of ``RasterLayer`` from GeoTiffs. These files can be
-located on either your local file system, HDFS, or S3. In this example,
-a GeoTiff with spatial data is read locally.
+The :meth:`~geopyspark.geotrellis.geotiff.get` function in the
+``geopyspark.geotrellis.geotiff`` module creates an instance of
+``RasterLayer`` from GeoTiffs. These files can be located on either
+your local file system, HDFS, or S3. In this example, a GeoTiff with
+spatial data is read locally.
 
 .. code:: python3
 
@@ -142,10 +145,11 @@ contents of the layer can be found in the [visualization guide].
 Converting to a Python RDD
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By using ``to_numpy_rdd``, the base ``RasterLayer`` will be serialized
-into a Python ``RDD``. This will convert all of the first values within
-each tuple to either ``ProjectedExtent`` or ``TemporalProjectedExtent``,
-and the second value to ``Tile``.
+By using :meth:`~geopyspark.geotrellis.layer.RasterLayer.to_numpy_rdd`, the
+base ``RasterLayer`` will be serialized into a Python ``RDD``. This will
+convert all of the first values within each tuple to either
+``ProjectedExtent`` or ``TemporalProjectedExtent``, and the second
+value to ``Tile``.
 
 .. code:: python3
 
@@ -160,19 +164,20 @@ SpaceTime Layer to Spatial Layer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you're working with a spatial-temporal layer and would like to
-convert it to a spatial layer, then you can use the ``to_spatial_layer``
+convert it to a spatial layer, then you can use the
+:meth:`~geopyspark.geotrellis.layer.RasterLayer.to_spatial_layer``
 method. This changes the keys of the ``RDD`` within the layer by
 converting ``TemporalProjectedExtent`` to ``ProjectedExtent``.
 
 .. code:: python3
 
     # Creating the space time layer
-    
+
     instant = datetime.datetime.now()
     temporal_projected_extent = gps.TemporalProjectedExtent(extent=projected_extent.extent,
                                                             epsg=projected_extent.epsg,
                                                             instant=instant)
-    
+
     space_time_rdd = pysc.parallelize([temporal_projected_extent, tile])
     space_time_layer = gps.RasterLayer.from_numpy_rdd(layer_type=gps.LayerType.SPACETIME, numpy_rdd=space_time_rdd)
     space_time_layer
@@ -180,18 +185,18 @@ converting ``TemporalProjectedExtent`` to ``ProjectedExtent``.
 .. code:: python3
 
     # Converting the SpaceTime layer to a Spatial layer
-    
+
     space_time_layer.to_spatial_layer()
 
 Collecting Metadata
 ^^^^^^^^^^^^^^^^^^^
 
-The ``Metadata`` of a layer contains information of the values within
-it. This data pertains to the layout, projection, and extent of the data
+The :class:`~geopyspark.geotrellis.Metadata` of a layer contains information of the
+values within it. This data pertains to the layout, projection, and extent of the data
 found within the layer.
 
-``collect_metadata`` will return the ``Metadata`` of the layer that fits
-the ``layout`` given.
+:meth:`~geopyspark.geotrellis.layer.RasterLayer.collect_metadata` will return the
+``Metadata`` of the layer that fits the ``layout`` given.
 
 .. code:: python3
 
@@ -210,15 +215,15 @@ the ``layout`` given.
     extent = gps.Extent(0.0, 0.0, 33.0, 33.0)
     tile_layout = gps.TileLayout(2, 2, 256, 256)
     layout_definition = gps.LayoutDefinition(extent, tile_layout)
-    
+
     raster_layer.collect_metadata(layout=layout_definition)
 
 Reproject
 ^^^^^^^^^
 
-``reproject`` will change the projection the rasters within the layer to
-the given ``target_crs``. This method does not sample past the tiles'
-boundaries.
+:meth:`~geopyspark.geotrellis.layer.RasterLayer.reproject` will change the
+projection of the rasters within the layer to the given ``target_crs``. This
+method does not sample past the tiles' boundaries.
 
 .. code:: python3
 
@@ -233,19 +238,19 @@ boundaries.
 Tiling Data to a Layout
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-``tile_to_layout`` will tile and format the rasters within a
-``RasterLayer`` to a given layout. The result of this tiling is a new
-instance of ``TiledRasterLayer``. This output contains the same data as
-its source ``RasterLayer``, however, the information contained within it
-will now be orginized according to the given layout.
+:meth:`~geopyspark.geotrellis.layer.RasterLayer.tile_to_layout` will tile and
+format the rasters within a ``RasterLayer`` to a given layout. The result of
+this tiling is a new instance of ``TiledRasterLayer``. This output contains
+the same data as its source ``RasterLayer``, however, the information
+contained within it will now be orginized according to the given layout.
 
 During this step it is also possible to reproject the ``RasterLayer``.
 This can be done by specifying the ``target_crs`` to reproject to.
 Reprojecting using this method produces a different result than what is
 returned by the ``reproject`` method. Whereas the latter does not sample
 past the boundaries of rasters within the layer, the former does. This
-is important as anything with a ``GlobalLayout`` needs to sample past
-the boundaries of the rasters.
+is important as anything with a :class:`~geopyspark.geotrellis.GlobalLayout`
+needs to sample past the boundaries of the rasters.
 
 From Metadata
 '''''''''''''
@@ -310,41 +315,41 @@ From PySpark RDD
 ^^^^^^^^^^^^^^^^
 
 Like ``RasterLayer``\ s, ``TiledRasterLayer``\ s can be created from
-``RDD``\ s using ``from_numpy_rdd``. What is different, however, is that
-``Metadata`` must also be passed in during initialization. This makes
-creating ``TiledRasterLayer``\ s this way a little bit more arduous.
+``RDD``\ s using :meth:`~geopyspark.geotrellis.layer.TiledRasterLayer.from_numpy_rdd`.
+What is different, however, is that :class:`~geopyspark.geotrellis.Metadata`
+must also be passed in during initialization. This makes creating
+``TiledRasterLayer``\ s this way a little bit more arduous.
 
 The following example constructs an ``RDD`` from a tuple. The first
 element is a ``SpatialKey`` because we have decided to make the data
-spatial. If we were dealing with spatial-temproal data, then
-``SpaceTimeKey`` would be the first element. ``Tile`` will always be the
-second element of the tuple.
+spatial. See `How is Data Stored and Represented in GeoPySpark <#how-is-data-stored-and-represented-in-geopyspark>`__
+for more information.
 
 .. code:: python3
 
     data = np.zeros((1, 512, 512), dtype='float32')
     tile = gps.Tile.from_numpy_array(numpy_array=data, no_data_value=-1.0)
     instant = datetime.datetime.now()
-    
+
     layer = [(gps.SpaceTimeKey(row=0, col=0, instant=instant), tile),
              (gps.SpaceTimeKey(row=1, col=0, instant=instant), tile),
              (gps.SpaceTimeKey(row=0, col=1, instant=instant), tile),
              (gps.SpaceTimeKey(row=1, col=1, instant=instant), tile)]
-    
+
     rdd = pysc.parallelize(layer)
-    
+
     extent = gps.Extent(0.0, 0.0, 33.0, 33.0)
     layout = gps.TileLayout(2, 2, 512, 512)
     bounds = gps.Bounds(gps.SpaceTimeKey(col=0, row=0, instant=instant), gps.SpaceTimeKey(col=1, row=1, instant=instant))
     layout_definition = gps.LayoutDefinition(extent, layout)
-    
+
     metadata = gps.Metadata(
         bounds=bounds,
         crs='+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs ',
         cell_type='float32ud-1.0',
         extent=extent,
         layout_definition=layout_definition)
-    
+
     space_time_tiled_layer = gps.TiledRasterLayer.from_numpy_rdd(layer_type=gps.LayerType.SPACETIME,
                                                                  numpy_rdd=rdd, metadata=metadata)
     space_time_tiled_layer
@@ -362,10 +367,10 @@ in the [map algebra guide].
 Converting to a Python RDD
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By using ``to_numpy_rdd``, the base ``TiledRasterLayer`` will be
-serialized into a Python ``RDD``. This will convert all of the first
-values within each tuple to either ``SpatialKey`` or ``SpaceTimeKey``,
-and the second value to ``Tile``.
+By using :meth:`~geopyspark.geotrellis.layer.TiledRasterLayer.to_numpy_rdd`,
+the base ``TiledRasterLayer`` will be serialized into a Python ``RDD``.
+This will convert all of the first values within each tuple to either
+``SpatialKey`` or ``SpaceTimeKey``, and the second value to ``Tile``.
 
 .. code:: python3
 
@@ -379,24 +384,25 @@ SpaceTime Layer to Spatial Layer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you're working with a spatiotemporal layer and would like to convert
-it to a spatial layer, then you can use the ``to_spatial_layer`` method.
+it to a spatial layer, then you can use the
+:meth:`~geopyspark.geotrellis.layer.TiledRasterLayer.to_spatial_layer` method.
 This changes the keys of the ``RDD`` within the layer by converting
 ``SpaceTimeKey`` to ``SpatialKey``.
 
 .. code:: python3
 
     # Creating the space time layer
-    
+
     instant = datetime.datetime.now()
     space_time_key = gps.SpaceTimeKey(col=0, row=0, instant=instant)
-    
+
     metadata = gps.Metadata(
         bounds=gps.Bounds(space_time_key, space_time_key),
         cell_type='int16',
         crs = '+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs ',
         extent=extent,
         layout_definition=layout_definition)
-    
+
     space_time_rdd = pysc.parallelize([space_time_key, tile])
     space_time_layer = gps.TiledRasterLayer.from_numpy_rdd(layer_type=gps.LayerType.SPACETIME,
                                                            numpy_rdd=space_time_rdd,
@@ -406,15 +412,15 @@ This changes the keys of the ``RDD`` within the layer by converting
 .. code:: python3
 
     # Converting the SpaceTime layer to a Spatial layer
-    
+
     space_time_layer.to_spatial_layer()
 
 Repartitioning
 ^^^^^^^^^^^^^^
 
 While not an ``RDD``, ``TiledRasterLayer`` does contain an underlying
-``RDD``, and thus, it can be repartitioned using the ``repartition``
-method.
+``RDD``, and thus, it can be repartitioned using the
+:meth:`~geopyspark.geotrellis.layer.TiledRasterLayer.repartition` method.
 
 .. code:: python3
 
@@ -425,31 +431,33 @@ Lookup
 ^^^^^^
 
 If there is a particular tile within the layer that is of interest, it
-is possible to retrieve it as a ``Tile`` using the ``lookup`` method.
+is possible to retrieve it as a ``Tile`` using the
+:meth:`~geopyspark.geotrellis.layer.TiledRasterLayer.lookup` method.
 
 .. code:: python3
 
     min_key = tiled_raster_layer.layer_metadata.bounds.minKey
-    
+
     # Retrieve the Tile that is located at the smallest column and row of the layer
     tiled_raster_layer.lookup(col=min_key.col, row=min_key.row)
 
 Masking
 ^^^^^^^
 
-By using ``mask`` method, the ``TiledRasterRDD`` can be masekd using one
+By using :meth:`~geopyspark.geotrellis.layer.TiledRasterLayer.mask`
+method, the ``TiledRasterRDD`` can be masekd using one
 or more Shapely geometries.
 
 .. code:: python3
 
     layer_extent = tiled_raster_layer.layer_metadata.extent
-    
+
     # Polygon to mask a region of the layer
     mask = box(layer_extent.xmin,
                layer_extent.ymin,
                layer_extent.xmin + 20,
                layer_extent.ymin + 20)
-    
+
     tiled_raster_layer.mask(geometries=mask)
 
 .. code:: python3
@@ -458,15 +466,15 @@ or more Shapely geometries.
                  layer_extent.ymin + 50,
                  layer_extent.xmax - 20,
                  layer_extent.ymax - 20)
-    
+
     # Multiple Polygons can be given to mask the layer
     tiled_raster_layer.mask(geometries=[mask, mask_2])
 
 Normalize
 ^^^^^^^^^
 
-``normalize`` will linearly transform the data within the layer such
-that all values fall within a given range.
+:meth:`~geopyspark.geotrellis.layer.TiledRasterLayer.normalize` will linearly
+transform the data within the layer such that all values fall within a given range.
 
 .. code:: python3
 
@@ -481,8 +489,9 @@ pyramided. That is, we create a level-of-detail hierarchy that covers
 the same geographical extent, while each level of the pyramid uses one
 quarter as many pixels as the next level. This allows us to zoom in and
 out when the layer is being displayed without using extraneous detail.
-The ``pyramid`` method will produce an instance of ``Pyramid`` that will
-contain within it multiple ``TiledRasterLayer``\ s. Each layer
+The :meth:`~geopyspark.geotrellis.layer.TiledRasterLayer.pyramid` method
+will produce an instance of :class:`~geopyspark.geotrellis.layer.Pyramid`
+that will contain within it multiple ``TiledRasterLayer``\ s. Each layer
 corresponds to a zoom level, and the number of levels depends on the
 ``zoom_level`` of the source layer. With the max zoom of the ``Pyramid``
 being the source layer's ``zoom_level``, and the lowest zoom being 0.
@@ -514,18 +523,18 @@ changed to 0 since the area being represented changes to just the tiles.
 .. code:: python3
 
     reprojected_tiled_raster_layer = tiled_raster_layer.reproject(target_crs=3857)
-    
+
     # The zoom_level and crs of the TiledRasterLayer after reprojecting
     reprojected_tiled_raster_layer.zoom_level, reprojected_tiled_raster_layer.layer_metadata.crs
 
 Stitching
 ^^^^^^^^^
 
-Using ``stitch`` will produce a single ``Tile`` by stitching together
-all of the tiles within the ``TiledRasterLayer``. This can only be done
-with spatial layers, and is not recommended if the data contained within
-the layer is large, as it can cause a crash due to the size of the
-resulting ``Tile``.
+Using :meth:`~geopyspark.geotrellis.layer.TiledRasterLayer.stitch` will produce
+a single ``Tile`` by stitching together all of the tiles within the
+``TiledRasterLayer``. This can only be done with spatial layers, and is not
+recommended if the data contained within the layer is large, as it can cause a
+crash due to the size of the resulting ``Tile``.
 
 .. code:: python3
 
@@ -535,8 +544,8 @@ resulting ``Tile``.
 Saving a Stitched Layer
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``save_stitched`` method both stitches and saves a layer as a
-GeoTiff.
+The :meth:`~geopyspark.geotrellis.layer.TiledRasterLayer.save_stitched` method
+both stitches and saves a layer as a GeoTiff.
 
 .. code:: python3
 
@@ -549,13 +558,13 @@ is stitched.
 .. code:: python3
 
     layer_extent = tiled_raster_layer.layer_metadata.layout_definition.extent
-    
+
     # Only a portion of the stitched layer needs to be saved, so we will create a sub Extent to crop to.
     sub_exent = gps.Extent(xmin=layer_extent.xmin + 10,
                            ymin=layer_extent.ymin + 10,
                            xmax=layer_extent.xmax - 10,
                            ymax=layer_extent.ymax - 10)
-    
+
     tiled_raster_layer.save_stitched(path='/tmp/cropped-stitched.tif', crop_bounds=sub_exent)
 
 .. code:: python3
@@ -569,7 +578,8 @@ Tiling Data to a Layout
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 This is similar to ``RasterLayer``'s ``tile_to_layout`` method, except
-for one important detail. If performing a ``tile_to_layout`` on a
+for one important detail. If performing a
+:meth:`~geopyspark.geotrellis.layer.TiledRasterLayer.tile_to_layout` on a
 ``TiledRasterLayer`` that contains a ``zoom_level``, that ``zoom_level``
 could be lost or changed depending on the ``layout`` and/or
 ``target_crs`` chosen. Thus, it is important to keep that in mind in
@@ -696,7 +706,7 @@ together all functions to avoid unnecessary serialization overhead.
 
     def add_one(cells, _):
         return cells + 1
-    
+
     # Mapping with a single funciton
     raster_layer.map_cells(add_one)
 
@@ -704,7 +714,7 @@ together all functions to avoid unnecessary serialization overhead.
 
     def divide_two(cells, _):
         return (add_one(cells) / 2)
-    
+
     # Chaning together two functions to be mapped
     raster_layer.map_cells(divide_two)
 
@@ -729,7 +739,7 @@ together all functions to avoid unnecessary serialization overhead.
 
     def minus_two(tile):
         return gps.Tile.from_numpy_array(tile.cells - 2, no_data_value=tile.no_data_value)
-    
+
     raster_layer.map_tiles(minus_two)
 
 Calculating the Histogram for the Layer
