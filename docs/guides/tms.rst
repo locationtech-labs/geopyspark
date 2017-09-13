@@ -32,7 +32,7 @@ layer with some custom color map.  This is accomplished easily:
 
 Of course, other color maps can be used.  See the documentation for
 :class:`~geopyspark.geotrellis.color.ColorMap` for more details.
-   
+
 :code:`TMS.build` can display data from catalogs—which are represented as a
 string-string pair containing the URI of the catalog root and the name of the
 layer—or from a :class:`~geopyspark.geotrellis.layer.Pyramid` object.  One may also
