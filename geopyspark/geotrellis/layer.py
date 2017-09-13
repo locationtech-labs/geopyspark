@@ -315,7 +315,7 @@ class RasterLayer(CachableLayer, TileLayer):
     def __init__(self, layer_type, srdd):
         CachableLayer.__init__(self)
         self.pysc = get_spark_context()
-        self.layer_type = layer_type
+        self.layer_type = LayerType(layer_type)
         self.srdd = srdd
 
     @classmethod
@@ -735,7 +735,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
     def __init__(self, layer_type, srdd):
         CachableLayer.__init__(self)
         self.pysc = get_spark_context()
-        self.layer_type = layer_type
+        self.layer_type = LayerType(layer_type)
         self.srdd = srdd
 
         self.is_floating_point_layer = self.srdd.isFloatingPointLayer()
@@ -1268,7 +1268,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             self.srdd.saveStitched(path)
 
     def star_series(self, geometries, fn):
-        if not self.layer_type == LayerType.SPACETIME:
+        if self.layer_type != LayerType.SPACETIME:
             raise ValueError("Only Spatio-Temporal layers can use this function.")
 
         if not isinstance(geometries, list):
