@@ -11,6 +11,7 @@ import geotrellis.raster._
 import geotrellis.raster.distance._
 import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
+import geotrellis.raster.mapalgebra.local._
 import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
 import geotrellis.raster.resample.ResampleMethod
@@ -44,6 +45,9 @@ import org.apache.spark.SparkContext._
 import java.util.ArrayList
 import scala.reflect._
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+
+import spire.syntax.cfor._
 
 
 abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag] extends TileLayer[K] {
@@ -285,6 +289,39 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag] exten
       case poly: Polygon => singleTileLayerRDD.polygonalSumDouble(poly)
       case multi: MultiPolygon => singleTileLayerRDD.polygonalSumDouble(multi)
     }
+
+  def aggregateByCell(operation: String): TiledRasterLayer[K] = {
+    val bands: RDD[(K, Array[ArrayBuffer[Tile]])] =
+      rdd.combineByKey(
+        (multi: MultibandTile) => {
+          val arr = Array.ofDim[ArrayBuffer[Tile]](multi.bandCount)
+
+          cfor(0)(_ < arr.size, _ + 1) { x =>
+            arr(x) = ArrayBuffer(multi.band(x))
+          }
+
+          arr
+        },
+        (acc: Array[ArrayBuffer[Tile]], multi: MultibandTile) =>
+          acc.zip(multi.bands.toBuffer).map {
+            case (arr: ArrayBuffer[Tile], tile: Tile) => tile +=: arr
+          },
+        (acc1: Array[ArrayBuffer[Tile]], acc2: Array[ArrayBuffer[Tile]]) =>
+          acc1.zip(acc2) map { case (x, y) => x ++=: y }
+        )
+
+    val result: RDD[(K, Array[Tile])] =
+      operation match {
+        case SUM => bands.mapValues { x => x.map { tiles => tiles.reduce( _ localAdd _ ) } }
+        case MIN => bands.mapValues { x => x.map(Min(_)) }
+        case MAX => bands.mapValues { x => x.map(Max(_)) }
+        case MEAN => bands.mapValues { x => x.map(Mean(_)) }
+        case VARIANCE => bands.mapValues { x => x.map(Variance(_)) }
+        case STANDARDDEVIATION => bands.mapValues { x => x.map { tiles => Sqrt(Variance(tiles)) } }
+      }
+
+    withRDD(result.mapValues { tiles => MultibandTile(tiles) } )
+  }
 
   def isFloatingPointLayer(): Boolean = rdd.metadata.cellType.isFloatingPoint
 

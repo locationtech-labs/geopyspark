@@ -131,6 +131,7 @@ class Operation(Enum):
     MIN = 'Min'
     ASPECT = 'Aspect'
     SLOPE = 'Slope'
+    VARIANCE = 'Variance'
     STANDARD_DEVIATION = 'StandardDeviation'
 
 
