@@ -420,4 +420,22 @@ object SpatialTiledRasterLayer {
 
     SpatialTiledRasterLayer(Some(z), MultibandTileLayerRDD(mbtileRDD, metadata))
   }
+
+  def unionLayers(sc: SparkContext, layers: ArrayList[SpatialTiledRasterLayer]): SpatialTiledRasterLayer = {
+    val scalaLayers = layers.asScala
+
+    val result = sc.union(scalaLayers.map(_.rdd))
+
+    val firstLayer = scalaLayers.head
+    val zoomLevel = firstLayer.zoomLevel
+
+    var unionedMetadata = firstLayer.rdd.metadata
+
+    for (x <- 1 until scalaLayers.size) {
+      val otherMetadata = scalaLayers(x).rdd.metadata
+      unionedMetadata = unionedMetadata.combine(otherMetadata)
+    }
+
+    SpatialTiledRasterLayer(zoomLevel, ContextRDD(result, unionedMetadata))
+  }
 }

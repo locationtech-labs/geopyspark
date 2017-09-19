@@ -1,6 +1,7 @@
 package geopyspark.geotrellis
 
 import GeoTrellisUtils._
+
 import geotrellis.proj4._
 import geotrellis.raster._
 import geotrellis.raster.io.geotiff.{GeoTiffOptions, MultibandGeoTiff, Tags}
@@ -10,12 +11,19 @@ import geotrellis.spark.io._
 import geotrellis.spark.reproject._
 import geotrellis.spark.tiling._
 import geotrellis.vector._
+
 import org.apache.spark.api.java.JavaRDD
+import org.apache.spark._
 import org.apache.spark.rdd._
+
 import protos.tupleMessages.ProtoTuple
 import protos.extentMessages.ProtoProjectedExtent
 
 import scala.util.{Either, Left, Right}
+import scala.collection.JavaConverters._
+
+import java.util.ArrayList
+
 import spray.json._
 
 
@@ -147,4 +155,10 @@ object ProjectedRasterLayer {
 
   def apply(rdd: RDD[(ProjectedExtent, MultibandTile)]): ProjectedRasterLayer =
     new ProjectedRasterLayer(rdd)
+
+  def unionLayers(
+    sc: SparkContext,
+    layers: ArrayList[ProjectedRasterLayer]
+  ): ProjectedRasterLayer =
+    ProjectedRasterLayer(sc.union(layers.asScala.map(_.rdd)))
 }

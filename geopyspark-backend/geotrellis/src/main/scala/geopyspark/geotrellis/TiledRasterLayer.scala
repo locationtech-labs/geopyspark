@@ -50,7 +50,7 @@ import scala.collection.mutable.ArrayBuffer
 import spire.syntax.cfor._
 
 
-abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag] extends TileLayer[K] {
+abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Boundable] extends TileLayer[K] {
   import Constants._
 
   type keyType = K
