@@ -25,6 +25,7 @@ object Constants {
 
   final val MEAN = "Mean"
   final val SUM = "Sum"
+  final val VARIANCE = "Variance"
   final val STANDARDDEVIATION = "StandardDeviation"
   final val SLOPE = "Slope"
   final val ASPECT = "Aspect"

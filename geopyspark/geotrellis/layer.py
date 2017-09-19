@@ -944,6 +944,52 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                                                self.layer_metadata,
                                                self.zoom_level)
 
+    def aggregate_by_cell(self, operation):
+        """Computes an aggregate summary for each cell of all of the values for each key.
+
+        The ``operation`` given is a local map algebra function that will be applied
+        to all values that share the same key. If there are multiple copies of the same
+        key in the layer, then this method will reduce all instances of the ``(K, Tile)``
+        pairs into a single element. This resulting ``(K, Tile)``\'s ``Tile`` will contain the
+        aggregate summaries of each cell of the reduced ``Tile``\s that had the same ``K``.
+
+        Note:
+            Not all :class:`~geoypspark.geotrellis.constants.Operation`\s are supported.
+            Only ``SUM``, ``MIN``, ``MAX``, ``MEAN``, ``VARIANCE``, AND ``STANDARD_DEVIATION``
+            can be used.
+
+        Note:
+            If calculating ``VARIANCE`` or ``STANDARD_DEVIATION``, then any ``K``
+            that is a single copy will have a resulting ``Tile`` that is filled with
+            ``NoData`` values. This is because the variance of a single element is
+            undefined.
+
+        Args:
+            operation (str or :class:`~geopyspark.geotrellis.constants.Operation`): The aggregate
+                operation to be performed.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
+        """
+
+        aggregate_operations = [
+            Operation.SUM,
+            Operation.MEAN,
+            Operation.MIN,
+            Operation.MAX,
+            Operation.VARIANCE,
+            Operation.STANDARD_DEVIATION
+        ]
+
+        operation = Operation(operation)
+
+        if operation not in aggregate_operations:
+            raise ValueError("Cannot perform aggregation with this operation", operation)
+
+        result = self.srdd.aggregateByCell(operation.value)
+
+        return TiledRasterLayer(self.layer_type, result)
+
     def to_geotiff_rdd(self,
                        storage_method=StorageMethod.STRIPED,
                        rows_per_strip=None,
