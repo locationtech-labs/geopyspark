@@ -9,13 +9,21 @@ import geotrellis.spark.io._
 import geotrellis.spark.io.json._
 import geotrellis.spark.tiling.{FloatingLayoutScheme, LayoutDefinition, LayoutScheme, ZoomedLayoutScheme}
 import geotrellis.spark.reproject._
+
 import org.apache.spark.api.java.JavaRDD
+import org.apache.spark._
 import org.apache.spark.rdd.RDD
+
 import protos.tupleMessages.ProtoTuple
 import protos.extentMessages.ProtoTemporalProjectedExtent
-import spray.json._
 
 import scala.util.{Either, Left, Right}
+import scala.collection.JavaConverters._
+
+import java.util.ArrayList
+
+import spray.json._
+
 
 class TemporalRasterLayer(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]) extends RasterLayer[TemporalProjectedExtent] {
 
@@ -158,4 +166,10 @@ object TemporalRasterLayer {
 
   def apply(rdd: RDD[(TemporalProjectedExtent, MultibandTile)]): TemporalRasterLayer =
     new TemporalRasterLayer(rdd)
+
+  def unionLayers(
+    sc: SparkContext,
+    layers: ArrayList[TemporalRasterLayer]
+  ): TemporalRasterLayer =
+    TemporalRasterLayer(sc.union(layers.asScala.map(_.rdd)))
 }

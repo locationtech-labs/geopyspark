@@ -590,6 +590,7 @@ from .layer import *
 from .neighborhood import *
 from .rasterize import *
 from .tms import *
+from .union import *
 
 __all__ += catalog.__all__
 __all__ += color.__all__
@@ -603,3 +604,4 @@ __all__ += layer.__all__
 __all__ += neighborhood.__all__
 __all__ += ['rasterize']
 __all__ += tms.__all__
+__all__ += ['union']
