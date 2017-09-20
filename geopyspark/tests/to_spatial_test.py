@@ -131,7 +131,7 @@ class ToSpatialLayerTest(BaseTestClass):
             self.assertTrue(x in expected)
 
     def test_to_spatial_target_time_tiled_layer(self):
-        converted = self.tiled_raster_rdd.to_spatial_layer(target_time=self.time_2)
+        converted = self.tiled_raster_rdd.to_spatial_layer(target_time=self.time_2, merge_duplicates=True)
         keys = converted.to_numpy_rdd().keys().collect()
         values = converted.to_numpy_rdd().values().collect()
 
