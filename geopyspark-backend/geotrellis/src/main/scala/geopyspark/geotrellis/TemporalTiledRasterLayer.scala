@@ -361,17 +361,11 @@ class TemporalTiledRasterLayer(
     PythonTranslator.toPython[(SpaceTimeKey, Array[Byte]), ProtoTuple](geotiffRDD)
   }
 
-  def toSpatialLayer(instant: Long, mergeDuplicates: Boolean): SpatialTiledRasterLayer = {
+  def toSpatialLayer(instant: Long): SpatialTiledRasterLayer = {
     val spatialRDD =
-      if (mergeDuplicates)
-        rdd
-          .filter { case (key, _) => key.instant == instant }
-          .map { x => (x._1.spatialKey, x._2) }
-          .merge()
-      else
-        rdd
-          .filter { case (key, _) => key.instant == instant }
-          .map { x => (x._1.spatialKey, x._2) }
+      rdd
+        .filter { case (key, _) => key.instant == instant }
+        .map { x => (x._1.spatialKey, x._2) }
 
     val (minKey, maxKey) = (spatialRDD.keys.min(), spatialRDD.keys.max())
 
@@ -381,12 +375,8 @@ class TemporalTiledRasterLayer(
     SpatialTiledRasterLayer(zoomLevel, ContextRDD(spatialRDD, spatialMetadata))
   }
 
-  def toSpatialLayer(mergeDuplicates: Boolean): SpatialTiledRasterLayer = {
-    val spatialRDD =
-      if (mergeDuplicates)
-        rdd.map { x => (x._1.spatialKey, x._2) }.merge()
-      else
-        rdd.map { x => (x._1.spatialKey, x._2) }
+  def toSpatialLayer(): SpatialTiledRasterLayer = {
+    val spatialRDD = rdd.map { x => (x._1.spatialKey, x._2) }
 
     val bounds = rdd.metadata.bounds.get
     val spatialMetadata =

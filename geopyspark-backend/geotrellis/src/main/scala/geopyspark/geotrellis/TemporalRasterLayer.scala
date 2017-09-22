@@ -139,26 +139,17 @@ class TemporalRasterLayer(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]
     PythonTranslator.toPython[(TemporalProjectedExtent, Array[Byte]), ProtoTuple](geotiffRDD)
   }
 
-  def toSpatialLayer(instant: Long, mergeDuplicates: Boolean): ProjectedRasterLayer = {
+  def toSpatialLayer(instant: Long): ProjectedRasterLayer = {
     val spatialRDD =
-      if (mergeDuplicates)
-        rdd
-          .filter { case (key, _) => key.instant == instant }
-          .map { x => (x._1.projectedExtent, x._2) }
-          .merge()
-      else
-        rdd
-          .filter { case (key, _) => key.instant == instant }
-          .map { x => (x._1.projectedExtent, x._2) }
+      rdd
+        .filter { case (key, _) => key.instant == instant }
+        .map { x => (x._1.projectedExtent, x._2) }
 
     ProjectedRasterLayer(spatialRDD)
   }
 
-  def toSpatialLayer(mergeDuplicates: Boolean): ProjectedRasterLayer =
-    if (mergeDuplicates)
-      ProjectedRasterLayer(rdd.map { x => (x._1.projectedExtent, x._2) }.merge())
-    else
-      ProjectedRasterLayer(rdd.map { x => (x._1.projectedExtent, x._2) })
+  def toSpatialLayer(): ProjectedRasterLayer =
+    ProjectedRasterLayer(rdd.map { x => (x._1.projectedExtent, x._2) })
 
   def collectKeys(): java.util.ArrayList[Array[Byte]] =
     PythonTranslator.toPython[TemporalProjectedExtent, ProtoTemporalProjectedExtent](rdd.keys.collect)

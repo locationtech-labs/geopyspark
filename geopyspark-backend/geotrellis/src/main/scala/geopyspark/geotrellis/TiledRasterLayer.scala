@@ -323,7 +323,7 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
     withRDD(result.mapValues { tiles => MultibandTile(tiles) } )
   }
 
-  def mergeDuplicateKeys(numPartitions: Integer): TiledRasterLayer[K] =
+  def merge(numPartitions: Integer): TiledRasterLayer[K] =
     numPartitions match {
       case i: Integer => withRDD(
         ContextRDD(

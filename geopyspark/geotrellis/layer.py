@@ -128,14 +128,14 @@ def _reproject(target_crs, layout, resample_method, layer):
         raise TypeError("%s can not be used as target layout." % layout)
 
 
-def _to_spatial_layer(layer, target_time, merge_duplicates):
+def _to_spatial_layer(layer, target_time):
     if layer.layer_type == LayerType.SPATIAL:
         raise ValueError("The given already has a layer_type of LayerType.SPATIAL")
 
     if target_time:
-        return layer.srdd.toSpatialLayer(_convert_to_unix_time(target_time), merge_duplicates)
+        return layer.srdd.toSpatialLayer(_convert_to_unix_time(target_time))
     else:
-        return layer.srdd.toSpatialLayer(merge_duplicates)
+        return layer.srdd.toSpatialLayer()
 
 
 class TileLayer(object):
@@ -435,7 +435,7 @@ class RasterLayer(CachableLayer, TileLayer):
 
         return create_python_rdd(result, ser)
 
-    def to_spatial_layer(self, target_time=None, merge_duplicates=False):
+    def to_spatial_layer(self, target_time=None):
         """Converts a ``RasterLayer`` with a ``layout_type`` of ``LayoutType.SPACETIME`` to a
         ``RasterLayer`` with a ``layout_type`` of ``LayoutType.SPATIAL``.
 
@@ -443,10 +443,6 @@ class RasterLayer(CachableLayer, TileLayer):
             target_time (``datetime.datetime``, optional): The instance of interest. If set, the
                 resulting ``RasterLayer`` will only contain keys that contained the given instance.
                 If ``None``, then all values within the layer will be kept.
-            merge_duplicates (bool, optional): Indicates if the resulting spatial layer should
-                merge together its values to ensure one instance of each key. This is done
-                using the same merging logic used in :meth:`~geopyspark.RasterLayer.merge_duplicate_keys`.
-                Defaults to ``False``.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.RasterLayer`
@@ -455,7 +451,7 @@ class RasterLayer(CachableLayer, TileLayer):
             ValueError: If the layer already has a ``layout_type`` of ``LayoutType.SPATIAL``.
         """
 
-        return RasterLayer(LayerType.SPATIAL, _to_spatial_layer(self, target_time, merge_duplicates))
+        return RasterLayer(LayerType.SPATIAL, _to_spatial_layer(self, target_time))
 
     def bands(self, band):
         """Select a subsection of bands from the ``Tile``\s within the layer.
@@ -581,7 +577,7 @@ class RasterLayer(CachableLayer, TileLayer):
         else:
             return [temporal_projected_extent_decoder(key) for key in self.srdd.collectKeys()]
 
-    def merge_duplicate_keys(self, num_partitions=None):
+    def merge(self, num_partitions=None):
         """Merges the ``Tile`` of each ``K`` together to produce a single ``Tile``.
 
         This method will reduce each value by its key within the layer to produce a single
@@ -603,7 +599,7 @@ class RasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.RasterLayer`
         """
 
-        result = self.srdd.mergeDuplicateKeys(num_partitions)
+        result = self.srdd.merge(num_partitions)
 
         return RasterLayer(self.layer_type, result)
 
@@ -858,7 +854,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         return create_python_rdd(result, ser)
 
-    def to_spatial_layer(self, target_time=None, merge_duplicates=False):
+    def to_spatial_layer(self, target_time=None):
         """Converts a ``TiledRasterLayer`` with a ``layout_type`` of ``LayoutType.SPACETIME`` to a
         ``TiledRasterLayer`` with a ``layout_type`` of ``LayoutType.SPATIAL``.
 
@@ -866,10 +862,6 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             target_time (``datetime.datetime``, optional): The instance of interest. If set, the
                 resulting ``TiledRasterLayer`` will only contain keys that contained the given
                 instance. If ``None``, then all values within the layer will be kept.
-            merge_duplicates (bool, optional): Indicates if the resulting spatial layer should
-                merge together its values to ensure one instance of each key. This is done
-                using the same merging logic used in :meth:`~geopyspark.TiledRasterLayer.merge_duplicate_keys`.
-                Defaults to ``False``.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
@@ -878,7 +870,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             ValueError: If the layer already has a ``layout_type`` of ``LayoutType.SPATIAL``.
         """
 
-        return TiledRasterLayer(LayerType.SPATIAL, _to_spatial_layer(self, target_time, merge_duplicates))
+        return TiledRasterLayer(LayerType.SPATIAL, _to_spatial_layer(self, target_time))
 
     def collect_keys(self):
         """Returns a list of all of the keys in the layer.
@@ -897,7 +889,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         else:
             return [space_time_key_decoder(key) for key in self.srdd.collectKeys()]
 
-    def merge_duplicate_keys(self, num_partitions=None):
+    def merge(self, num_partitions=None):
         """Merges the ``Tile`` of each ``K`` together to produce a single ``Tile``.
 
         This method will reduce each value by its key within the layer to produce a single
@@ -919,7 +911,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        result = self.srdd.mergeDuplicateKeys(num_partitions)
+        result = self.srdd.merge(num_partitions)
 
         return TiledRasterLayer(self.layer_type, result)
 

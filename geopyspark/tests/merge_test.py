@@ -61,7 +61,7 @@ class MergeTest(BaseTestClass):
         rdd = self.pysc.parallelize(pe_layer)
         layer = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 
-        actual = layer.merge_duplicate_keys()
+        actual = layer.merge()
 
         self.assertEqual(actual.srdd.rdd().count(), 2)
 
@@ -84,7 +84,7 @@ class MergeTest(BaseTestClass):
         rdd = self.pysc.parallelize(pe_layer)
         layer = RasterLayer.from_numpy_rdd(LayerType.SPACETIME, rdd)
 
-        actual = layer.merge_duplicate_keys()
+        actual = layer.merge()
 
         self.assertEqual(actual.srdd.rdd().count(), 2)
 
@@ -115,7 +115,7 @@ class MergeTest(BaseTestClass):
         rdd = self.pysc.parallelize(key_layer)
         layer = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, md)
 
-        actual = layer.merge_duplicate_keys()
+        actual = layer.merge()
 
         self.assertEqual(actual.srdd.rdd().count(), 2)
 
@@ -146,7 +146,7 @@ class MergeTest(BaseTestClass):
         rdd = self.pysc.parallelize(temp_key_layer)
         layer = TiledRasterLayer.from_numpy_rdd(LayerType.SPACETIME, rdd, temp_md)
 
-        actual = layer.merge_duplicate_keys()
+        actual = layer.merge()
 
         self.assertEqual(actual.srdd.rdd().count(), 2)
 
