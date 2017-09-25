@@ -323,6 +323,19 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
     withRDD(result.mapValues { tiles => MultibandTile(tiles) } )
   }
 
+  def merge(numPartitions: Integer): TiledRasterLayer[K] =
+    numPartitions match {
+      case i: Integer => withRDD(
+        ContextRDD(
+          rdd
+            .asInstanceOf[RDD[(K, MultibandTile)]]
+            .merge(Some(new HashPartitioner(i))),
+            rdd.metadata
+          )
+        )
+      case null => withRDD(ContextRDD(rdd.asInstanceOf[RDD[(K, MultibandTile)]].merge(), rdd.metadata))
+    }
+
   def isFloatingPointLayer(): Boolean = rdd.metadata.cellType.isFloatingPoint
 
   protected def withRDD(result: RDD[(K, MultibandTile)]): TiledRasterLayer[K]

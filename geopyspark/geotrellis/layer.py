@@ -577,6 +577,32 @@ class RasterLayer(CachableLayer, TileLayer):
         else:
             return [temporal_projected_extent_decoder(key) for key in self.srdd.collectKeys()]
 
+    def merge(self, num_partitions=None):
+        """Merges the ``Tile`` of each ``K`` together to produce a single ``Tile``.
+
+        This method will reduce each value by its key within the layer to produce a single
+        ``(K, V)`` for every ``K``. In order to achieve this, each ``Tile`` that shares a
+        ``K`` is merged together to form a single ``Tile``. This is done by replacing
+        one ``Tile``\'s cells with another's. Not all cells, if any, may be replaced, however.
+        The following steps are taken to determine if a cell's value should be replaced:
+
+            1. If the cell contains a ``NoData`` value, then it will be replaced.
+            2. If no ``NoData`` value is set, then a cell with a value of 0 will be replaced.
+            3. If neither of the above are true, then the cell retain its value.
+
+        Args:
+            num_partitions (int, optional): The number of partitions that the resulting
+                layer should be partitioned with. If ``None``, then the ``num_partitions``
+                will the number of partitions the layer curretly has.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.RasterLayer`
+        """
+
+        result = self.srdd.merge(num_partitions)
+
+        return RasterLayer(self.layer_type, result)
+
     def collect_metadata(self, layout=LocalLayout()):
         """Iterate over the RDD records and generates layer metadata desribing the contained
         rasters.
@@ -862,6 +888,32 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             return [spatial_key_decoder(key) for key in self.srdd.collectKeys()]
         else:
             return [space_time_key_decoder(key) for key in self.srdd.collectKeys()]
+
+    def merge(self, num_partitions=None):
+        """Merges the ``Tile`` of each ``K`` together to produce a single ``Tile``.
+
+        This method will reduce each value by its key within the layer to produce a single
+        ``(K, V)`` for every ``K``. In order to achieve this, each ``Tile`` that shares a
+        ``K`` is merged together to form a single ``Tile``. This is done by replacing
+        one ``Tile``\'s cells with another's. Not all cells, if any, may be replaced, however.
+        The following steps are taken to determine if a cell's value should be replaced:
+
+            1. If the cell contains a ``NoData`` value, then it will be replaced.
+            2. If no ``NoData`` value is set, then a cell with a value of 0 will be replaced.
+            3. If neither of the above are true, then the cell retain its value.
+
+        Args:
+            num_partitions (int, optional): The number of partitions that the resulting
+                layer should be partitioned with. If ``None``, then the ``num_partitions``
+                will the number of partitions the layer curretly has.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
+        """
+
+        result = self.srdd.merge(num_partitions)
+
+        return TiledRasterLayer(self.layer_type, result)
 
     def bands(self, band):
         """Select a subsection of bands from the ``Tile``\s within the layer.

@@ -144,13 +144,12 @@ class TemporalRasterLayer(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]
       rdd
         .filter { case (key, _) => key.instant == instant }
         .map { x => (x._1.projectedExtent, x._2) }
-        .merge()
 
     ProjectedRasterLayer(spatialRDD)
   }
 
   def toSpatialLayer(): ProjectedRasterLayer =
-    ProjectedRasterLayer(rdd.map { x => (x._1.projectedExtent, x._2) }.merge())
+    ProjectedRasterLayer(rdd.map { x => (x._1.projectedExtent, x._2) })
 
   def collectKeys(): java.util.ArrayList[Array[Byte]] =
     PythonTranslator.toPython[TemporalProjectedExtent, ProtoTemporalProjectedExtent](rdd.keys.collect)

@@ -366,7 +366,6 @@ class TemporalTiledRasterLayer(
       rdd
         .filter { case (key, _) => key.instant == instant }
         .map { x => (x._1.spatialKey, x._2) }
-        .merge()
 
     val (minKey, maxKey) = (spatialRDD.keys.min(), spatialRDD.keys.max())
 
@@ -377,7 +376,8 @@ class TemporalTiledRasterLayer(
   }
 
   def toSpatialLayer(): SpatialTiledRasterLayer = {
-    val spatialRDD = rdd.map { x => (x._1.spatialKey, x._2) }.merge()
+    val spatialRDD = rdd.map { x => (x._1.spatialKey, x._2) }
+
     val bounds = rdd.metadata.bounds.get
     val spatialMetadata =
       rdd.metadata.copy(bounds = Bounds(bounds.minKey.spatialKey, bounds.maxKey.spatialKey))
