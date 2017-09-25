@@ -36,7 +36,7 @@ class ProtoBufSerializer(FramedSerializer):
         decoder = create_partial_tuple_decoder(key_type=key_type)
         encoder = create_partial_tuple_encoder(key_type=key_type)
 
-        return AutoBatchedSerializer(cls(decoder, encoder))
+        return cls(decoder, encoder)
 
     @classmethod
     def create_value_serializer(cls, value_type):
