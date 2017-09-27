@@ -15,6 +15,7 @@ import scala.collection.concurrent._
 import scala.collection.JavaConversions._
 import scala.util.{Try, Failure, Success}
 
+
 trait TileReader {
   def startup(): Unit = {}
   def shutdown(): Unit = {}
@@ -44,13 +45,11 @@ object TileReaders {
   private class CatalogTileReader(
     valueReader: ValueReader[LayerId],
     catalog: String,
-    overzooming: Boolean
+    overzooming: Boolean,
+    zoomLevels: Seq[Int],
+    maxZoom: Int
   ) extends TileReader {
-
     private val layers = TrieMap.empty[Int, Reader[SpatialKey, Tile]]
-    private val zoomLevels = 
-      for { LayerId(name, zoom) <- valueReader.attributeStore.layerIds if name == catalog } yield zoom
-    private val maxZoom = zoomLevels.max
 
     def retrieve(zoom: Int, x: Int, y: Int) = {
       Future {
@@ -65,6 +64,37 @@ object TileReaders {
           val key = SpatialKey(x, y)
           val reader = layers.getOrElseUpdate(zoom, valueReader.reader[SpatialKey, Tile](LayerId(catalog, zoom)))
           Try(MultibandTile(reader(key))) match {
+            case Success(tile) => Some(tile)
+            case Failure(_: ValueNotFoundError) => None
+            case Failure(e: Throwable) => throw e
+          }
+        }
+      }
+    }
+  }
+
+  private class CatalogMultibandTileReader(
+    valueReader: ValueReader[LayerId],
+    catalog: String,
+    overzooming: Boolean,
+    zoomLevels: Seq[Int],
+    maxZoom: Int
+  ) extends TileReader {
+    private val layers = TrieMap.empty[Int, Reader[SpatialKey, MultibandTile]]
+
+    def retrieve(zoom: Int, x: Int, y: Int): Future[Option[MultibandTile]] = {
+      Future {
+        if (overzooming && zoom > maxZoom) {
+          val reader = layers.getOrElseUpdate(maxZoom, valueReader.reader[SpatialKey, MultibandTile](LayerId(catalog, maxZoom)))
+          Try(rezoom(zoom, x, y, maxZoom, k => reader(k))) match {
+            case Success(tile) => Some(tile)
+            case Failure(_: ValueNotFoundError) => None
+            case Failure(e: Throwable) => throw e
+          }
+        } else {
+          val key = SpatialKey(x, y)
+          val reader = layers.getOrElseUpdate(zoom, valueReader.reader[SpatialKey, MultibandTile](LayerId(catalog, zoom)))
+          Try(reader(key)) match {
             case Success(tile) => Some(tile)
             case Failure(_: ValueNotFoundError) => None
             case Failure(e: Throwable) => throw e
@@ -148,13 +178,13 @@ object TileReaders {
                   val rdd = levels(maxZoom)
                   val kps = reqs.map{ case QueueRequest(_, x, y, promise) => (SpatialKey(x, y), promise) }
                   val dz = zoom - maxZoom
-                  val remap: SpatialKey => SpatialKey = { 
-                    case SpatialKey(x, y) => SpatialKey((x / math.pow(2, dz)).toInt, (y / math.pow(2, dz)).toInt) 
+                  val remap: SpatialKey => SpatialKey = {
+                    case SpatialKey(x, y) => SpatialKey((x / math.pow(2, dz)).toInt, (y / math.pow(2, dz)).toInt)
                   }
                   val keys = kps.map{ case (key, _) => remap(key) }.toSet
                   val rawTiles = new MultiValueRDDFunctions(rdd).multilookup(keys)
                   val fetch: SpatialKey => MultibandTile = { toFind => rawTiles.find{ case (rddKey, _) => rddKey == toFind }.get._2 }
-                  kps.foreach{ case (key, promise) => 
+                  kps.foreach{ case (key, promise) =>
                     promise success (Try(rezoom(zoom, key._1, key._2, maxZoom, fetch)).toOption)
                   }
                 } else
@@ -209,15 +239,36 @@ object TileReaders {
 
   def createCatalogReader(uriString: String, layerName: String, overzooming: Boolean): TileReader = {
     val uri = new java.net.URI(uriString)
-
     val valueReader = ValueReader(uri)
+    val attributeStore = valueReader.attributeStore
 
-    new CatalogTileReader(valueReader, layerName, overzooming)
+    val ids = attributeStore.layerIds
+    val zoomLevels = for { LayerId(name, zoom) <- ids if name == layerName } yield zoom
+    val maxZoom = zoomLevels.max
+
+    val valueClass = attributeStore.readHeader[LayerHeader](ids.head).valueClass
+
+    valueClass match {
+      case "geotrellis.raster.Tile" =>
+        new CatalogTileReader(
+          valueReader,
+          layerName,
+          overzooming,
+          zoomLevels,
+          maxZoom)
+      case "geotrellis.raster.MultibandTile" =>
+        new CatalogMultibandTileReader(
+          valueReader,
+          layerName,
+          overzooming,
+          zoomLevels,
+          maxZoom)
+    }
   }
 
   def createSpatialRddReader(
     levels: java.util.HashMap[Int, TiledRasterLayer[SpatialKey]],
-    system: ActorSystem, 
+    system: ActorSystem,
     overzooming: Boolean
   ): TileReader = {
     val tiles = levels.mapValues(_.rdd)
