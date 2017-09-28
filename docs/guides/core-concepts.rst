@@ -120,6 +120,8 @@ layer as well as the area covered by the grid.
     layout_definition = gps.LayoutDefinition(extent=extent, tileLayout=tile_layout)
     layout_definition
 
+.. _strategies:
+
 Tiling Strategies
 -----------------
 

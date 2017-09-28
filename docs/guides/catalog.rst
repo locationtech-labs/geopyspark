@@ -184,8 +184,8 @@ Saving a Pyramid
 ~~~~~~~~~~~~~~~~
 
 For those that are unfamiliar with the :class:`~gepyspark.geotrellis.layer.Pyramid`
-class, please see the [Pyramid section] of the visualization guide. Otherwise,
-please continue on.
+class, please see the :ref:`pyramid` section of the visualization guide.
+Otherwise, please continue on.
 
 As of right now, there is no way to directly save a ``Pyramid``.
 However, because a ``Pyramid`` is just a collection of

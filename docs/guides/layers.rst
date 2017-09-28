@@ -140,7 +140,7 @@ Using RasterLayer
 This next section goes over the methods of ``RasterLayer``. It should be
 noted that not all methods contained within this class will be covered.
 More information on the methods that deal with the visualization of the
-contents of the layer can be found in the [visualization guide].
+contents of the layer can be found in the :ref:`visualizing`.
 
 Converting to a Python RDD
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -360,9 +360,9 @@ Using TiledRasterLayers
 This section will go over the methods found within ``TiledRasterLayer``.
 Like with ``RasterLayer``, not all methods within this class will be
 covered in this guide. More information on the methods that deal with
-the visualization of the contents of the layer can be found in the
-[visualization guide]; and those that deal with map algebra can be found
-in the [map algebra guide].
+the visualization of the contents of the layer can be found in
+:ref:`visualizing`; and those that deal with
+map algebra can be found in the [map algebra guide].
 
 Converting to a Python RDD
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -496,8 +496,8 @@ corresponds to a zoom level, and the number of levels depends on the
 ``zoom_level`` of the source layer. With the max zoom of the ``Pyramid``
 being the source layer's ``zoom_level``, and the lowest zoom being 0.
 
-For more information on the ``Pyramiding`` class, see the [visualization
-guide].
+For more information on the ``Pyramid`` class, see the :ref:`pyramid`
+section of the visualization guide.
 
 .. code:: python3
 
@@ -798,6 +798,8 @@ data type of the cells.
 .. code:: python3
 
     tiled_raster_layer.get_min_max()
+
+.. _rdd-methods:
 
 RDD Methods
 -----------
