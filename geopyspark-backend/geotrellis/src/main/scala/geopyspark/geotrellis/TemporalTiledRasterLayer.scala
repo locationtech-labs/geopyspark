@@ -15,7 +15,7 @@ import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
 import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
-import geotrellis.raster.resample.ResampleMethod
+import geotrellis.raster.resample.{ResampleMethod, PointResampleMethod, Resample}
 import geotrellis.spark._
 import geotrellis.spark.costdistance.IterativeCostDistance
 import geotrellis.spark.io._
@@ -44,10 +44,11 @@ import org.apache.spark.rdd._
 import org.apache.spark.SparkContext._
 
 import java.util.ArrayList
-import java.time.ZonedDateTime
+import java.time.{ZonedDateTime, ZoneId}
 
 import scala.reflect._
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 
 class TemporalTiledRasterLayer(
@@ -387,6 +388,94 @@ class TemporalTiledRasterLayer(
 
   def collectKeys(): java.util.ArrayList[Array[Byte]] =
     PythonTranslator.toPython[SpaceTimeKey, ProtoSpaceTimeKey](rdd.keys.collect)
+
+  def getPointValues(
+    points: java.util.Map[Long, Array[Byte]],
+    resampleMethod: PointResampleMethod
+  ): java.util.Map[Long, (Long, Array[Double])] = {
+    val mapTrans = rdd.metadata.layout.mapTransform
+
+    val idedKeys: Map[Long, Point] =
+      points
+        .asScala
+        .mapValues { WKB.read(_).asInstanceOf[Point] }
+        .toMap
+
+    val pointKeys =
+      idedKeys
+        .foldLeft(Map[SpatialKey, Array[(Long, Point)]]()) {
+          case (acc, elem) =>
+            val pointKey = mapTrans(elem._2)
+
+            acc.get(pointKey) match {
+              case Some(arr) => acc + (pointKey -> (elem +: arr))
+              case None => acc + (pointKey -> Array(elem))
+            }
+        }
+
+    val matchedKeys =
+      resampleMethod match {
+        case r: PointResampleMethod => _getPointValues(pointKeys, mapTrans, r)
+        case _ => _getPointValues(pointKeys, mapTrans)
+      }
+
+    val remainingKeys = idedKeys.keySet diff matchedKeys.keySet
+
+    if (remainingKeys.isEmpty)
+      matchedKeys.asJava
+    else
+      remainingKeys.foldLeft(matchedKeys){ case (acc, elem) =>
+        acc + (elem -> null)
+      }.asJava
+  }
+
+  def _getPointValues(
+    pointKeys: Map[SpatialKey, Array[(Long, Point)]],
+    mapTrans: MapKeyTransform,
+    resampleMethod: PointResampleMethod
+  ): Map[Long, (Long, Array[Double])] = {
+    val resamplePoint = (tile: Tile, extent: Extent, point: Point) => {
+      Resample(resampleMethod, tile, extent).resampleDouble(point)
+    }
+
+    rdd.flatMap { case (k, v) =>
+      pointKeys.get(k.getComponent[SpatialKey]) match {
+        case Some(arr) =>
+          val keyExtent = mapTrans(k)
+          val rasterExtent = RasterExtent(keyExtent, v.cols, v.rows)
+
+          arr.map { case (id, point) =>
+            (id -> (k.instant, v.bands.map { resamplePoint(_, keyExtent, point) } toArray))
+          }
+        case None => Seq()
+      }
+    }.collect().toMap
+  }
+
+  def _getPointValues(
+    pointKeys: Map[SpatialKey, Array[(Long, Point)]],
+    mapTrans: MapKeyTransform
+  ): Map[Long, (Long, Array[Double])] =
+    rdd.flatMap { case (k, v) =>
+      pointKeys.get(k.getComponent[SpatialKey]) match {
+        case Some(arr) =>
+          val keyExtent = mapTrans(k)
+          val rasterExtent = RasterExtent(keyExtent, v.cols, v.rows)
+
+          arr.map { case (id, point) =>
+            val (gridCol, gridRow) = rasterExtent.mapToGrid(point)
+
+            val values = Array.ofDim[Double](v.bandCount)
+
+            cfor(0)(_ < v.bandCount, _ + 1){ index =>
+              values(index) = v.band(index).getDouble(gridCol, gridRow)
+            }
+
+            (id -> (k.instant, values))
+          }
+        case None => Seq()
+      }
+    }.collect().toMap
 }
 
 

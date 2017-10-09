@@ -6,7 +6,7 @@ when performing operations.
 import json
 import datetime
 import shapely.wkb
-from shapely.geometry import Polygon, MultiPolygon
+from shapely.geometry import Polygon, MultiPolygon, Point
 from geopyspark.geotrellis.protobufcodecs import (multibandtile_decoder,
                                                   projected_extent_decoder,
                                                   temporal_projected_extent_decoder,
@@ -1479,6 +1479,140 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         srdd = self.srdd.normalize(float(old_min), float(old_max), float(new_min), float(new_max))
 
         return TiledRasterLayer(self.layer_type, srdd)
+
+    def get_point_values(self, points, resample_method=None):
+        """Returns the values of the layer at given points.
+
+        Note:
+            Only points that are contained within a layer will be sampled.
+            This means that if a point lies on the southern or eastern boundary
+            of a cell, it will not be sampled.
+
+        Args:
+            points([shapely.geometry.Point] or {k: shapely.geometry.Point}):
+                Either a list of, or a dictionary whose values are ``shapely.geometry.Point``\s.
+                If a dictionary, then the type of its keys does not matter.
+                These points must be in the same projection as the tiles within the layer.
+            resample_method(str or :class:`~gepyspark.ResampleMethod`, optional): The resampling method
+                to use before obtaining the point values. If not specified, then ``None`` is used.
+
+                Note:
+                    Not all ``ResampleMethod``\s can be used to resample point values.
+                    ``ResampleMethod.NEAREST_NEIGHBOR``, ``ResampleMethod.BILINEAR```,
+                    ``ResampleMethod.CUBIC_CONVOLUTION``, and ``ResampleMethod.CUBIC_SPLINE``
+                    are the only ones that can be used.
+
+        Returns:
+            The return type will vary depending on the type of ``points`` and the ``layer_type`` of
+            the sampled layer.
+
+            If ``points`` is a ``list`` and the ``layer_type`` is ``SPATIAL``:
+                [(shapely.geometry.Point, [float])]
+
+            If ``points`` is a ``list`` and the ``layer_type`` is ``SPACETIME``:
+                [(shapely.geometry.Point, datetime.datetime, [float])]
+
+            If ``points`` is a ``dict`` and the ``layer_type`` is ``SPATIAL``:
+                {k: (shapely.geometry.Point, [float])}
+
+            If ``points`` is a ``dict`` and the ``layer_type`` is ``SPACETIME``:
+                {k: (shapely.geometry.Point, datetime.datetime, [float])}
+
+            The ``shapely.geometry.Point`` in all of these returns is the original sampled point
+            given. The ``[float]`` are the sampled values, one for each band. If the ``layer_type``
+            was ``SPACETIME``, then the timestamp will also be included in the results represented
+            by a ``datetime.datetime`` instance.
+
+            Note:
+                The sampled values will always be returned as ``float``\s. Regardless of the
+                ``cellType`` of the layer.
+
+            If ``points`` was given as a ``dict`` then the keys of that dictionary will be the
+            keys in the returned ``dict``.
+        """
+
+        if resample_method:
+            resample_method = ResampleMethod(resample_method)
+
+            point_resampling_methods = [
+                ResampleMethod.NEAREST_NEIGHBOR,
+                ResampleMethod.BILINEAR,
+                ResampleMethod.CUBIC_CONVOLUTION,
+                ResampleMethod.CUBIC_SPLINE
+            ]
+
+            if resample_method not in point_resampling_methods:
+                raise ValueError(resample_method, "Cannot be used to resample point values")
+
+        ided_points = {}
+        ided_bytes = {}
+
+        def to_datetime(instant):
+            return datetime.datetime.utcfromtimestamp(instant / 1000)
+
+        if isinstance(points, list):
+            list_result = []
+
+            types = [type(x) for x in points]
+
+            if Point not in types or len(set(types)) > 1:
+                raise TypeError(set(types), "found, but only shapely Points can sample values")
+
+            for point in points:
+                point_id = id(point)
+
+                ided_bytes[point_id] = shapely.wkb.dumps(point)
+                ided_points[point_id] = point
+
+            scala_result = self.srdd.getPointValues(ided_bytes, resample_method)
+
+            if self.layer_type == LayerType.SPATIAL:
+                for key, value in scala_result.items():
+                    list_result.append((ided_points[key], list(value) if value else None))
+            else:
+                for key, value in scala_result.items():
+                    list_result.append(
+                        (ided_points[key],
+                         to_datetime(value._1()) if value else None,
+                         list(value._2()) if value else None
+                        )
+                    )
+
+            return list_result
+
+        elif isinstance(points, dict):
+            ided_labels = {}
+            dict_result = {}
+
+            types = [type(x) for x in points.values()]
+
+            if Point not in types or len(set(types)) > 1:
+                raise TypeError(set(types), "found, but only shapely Points can sample values")
+
+            for key, value in points.items():
+                point_id = id(value)
+
+                ided_points[point_id] = value
+                ided_bytes[point_id] = shapely.wkb.dumps(value)
+                ided_labels[point_id] = key
+
+            scala_result = self.srdd.getPointValues(ided_bytes, resample_method)
+
+            if self.layer_type == LayerType.SPATIAL:
+                for key, value in scala_result.items():
+                    dict_result[ided_labels[key]] = (ided_points[key], list(value) if value else None)
+            else:
+                for key, value in scala_result.items():
+                    dict_result[ided_labels[key]] = (
+                        ided_points[key],
+                        to_datetime(value._1()) if value else None,
+                        list(value._2()) if value else None
+                    )
+
+            return dict_result
+        else:
+            raise TypeError("Expected a list or dict. Instead got", type(points))
+
 
     @staticmethod
     def _process_polygonal_summary(geometry, operation):
