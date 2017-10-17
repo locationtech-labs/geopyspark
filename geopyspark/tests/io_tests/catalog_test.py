@@ -13,7 +13,7 @@ from geopyspark.tests.python_test_utils import geotiff_test_path
 
 
 class CatalogTest(BaseTestClass):
-    rdd = get(LayerType.SPATIAL, geotiff_test_path("srtm_52_11.tif"))
+    rdd = get(LayerType.SPATIAL, geotiff_test_path("srtm_52_11.tif"), max_tile_size=6001)
 
     metadata = rdd.collect_metadata()
     reprojected = rdd.tile_to_layout(layout=GlobalLayout(zoom=11), target_crs="EPSG:3857")
