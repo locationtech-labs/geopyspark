@@ -18,6 +18,7 @@ import geotrellis.raster.render._
 import geotrellis.raster.resample.{ResampleMethod, PointResampleMethod, Resample}
 import geotrellis.spark._
 import geotrellis.spark.costdistance.IterativeCostDistance
+import geotrellis.spark.filter._
 import geotrellis.spark.io._
 import geotrellis.spark.io.json._
 import geotrellis.spark.mapalgebra.local._
@@ -476,6 +477,36 @@ class TemporalTiledRasterLayer(
         case None => Seq()
       }
     }.collect().toMap
+
+  def filterByTimes(
+    times: java.util.ArrayList[String]
+  ): TemporalTiledRasterLayer = {
+    val bounds: KeyBounds[SpatialKey] = KeyBounds(rdd.metadata.gridBounds)
+    val minKey = bounds.minKey
+    val maxKey = bounds.maxKey
+    val timeBoundaries: Array[KeyBounds[SpaceTimeKey]] =
+      times
+        .asScala
+        .grouped(2)
+        .map { list =>
+          list match {
+            case scala.collection.mutable.Buffer(a, b) =>
+              KeyBounds(
+                SpaceTimeKey(minKey.col, minKey.row, ZonedDateTime.parse(a)),
+                SpaceTimeKey(maxKey.col, maxKey.row, ZonedDateTime.parse(b))
+              )
+            case scala.collection.mutable.Buffer(a) =>
+              KeyBounds(
+                SpaceTimeKey(minKey.col, minKey.row, ZonedDateTime.parse(a)),
+                SpaceTimeKey(maxKey.col, maxKey.row, ZonedDateTime.parse(a))
+              )
+          }
+        }.toArray
+
+    val filteredRDD = rdd.filterByKeyBounds(timeBoundaries)
+
+    TemporalTiledRasterLayer(zoomLevel, filteredRDD)
+  }
 }
 
 

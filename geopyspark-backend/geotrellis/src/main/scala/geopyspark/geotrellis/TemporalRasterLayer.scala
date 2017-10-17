@@ -21,6 +21,7 @@ import scala.util.{Either, Left, Right}
 import scala.collection.JavaConverters._
 
 import java.util.ArrayList
+import java.time.{ZonedDateTime, ZoneId}
 
 import spray.json._
 
@@ -153,6 +154,31 @@ class TemporalRasterLayer(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]
 
   def collectKeys(): java.util.ArrayList[Array[Byte]] =
     PythonTranslator.toPython[TemporalProjectedExtent, ProtoTemporalProjectedExtent](rdd.keys.collect)
+
+  def filterByTimes(
+    times: java.util.ArrayList[String]
+  ): TemporalRasterLayer = {
+    val timeBoundaries: Array[(Long, Long)] =
+      times
+        .asScala
+        .grouped(2)
+        .map { list =>
+          list match {
+            case scala.collection.mutable.Buffer(a, b) =>
+              (ZonedDateTime.parse(a).toInstant.toEpochMilli, ZonedDateTime.parse(b).toInstant.toEpochMilli)
+            case scala.collection.mutable.Buffer(a) =>
+              (ZonedDateTime.parse(a).toInstant.toEpochMilli, ZonedDateTime.parse(a).toInstant.toEpochMilli)
+          }
+        }.toArray
+
+      val inRange = (tpe: TemporalProjectedExtent, range: (Long, Long)) =>
+        range._1 <= tpe.instant && tpe.instant <= range._2
+
+    val filteredRDD =
+      rdd.filter { case (key, _) => timeBoundaries.filter(inRange(key, _)).size != 0 }
+
+    TemporalRasterLayer(filteredRDD)
+  }
 }
 
 
