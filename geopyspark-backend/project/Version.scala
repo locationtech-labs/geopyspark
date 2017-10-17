@@ -4,5 +4,4 @@ object Version {
   val scala       = "2.11.11"
   val crossScala  = Seq("2.11.11", "2.10.6")
   val scalaTest   = "2.2.0"
-  val akka        = "2.4.3"
 }

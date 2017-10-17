@@ -14,10 +14,10 @@ libraryDependencies ++= Seq(
   "org.locationtech.geotrellis" %% "geotrellis-s3-testkit" % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-spark"      % Version.geotrellis,
   "org.typelevel"               %% "cats"                  % "0.9.0",
-  "com.typesafe.akka"     %% "akka-actor"                        % Version.akka,
-  "com.typesafe.akka"     %% "akka-http-experimental"            % Version.akka,
-  "com.typesafe.akka"     %% "akka-http-spray-json-experimental" % Version.akka,
-  "net.sf.py4j"           % "py4j"                               % "0.10.5"
+  "com.typesafe.akka"     %% "akka-actor"                  % "2.5.6",
+  "com.typesafe.akka"     %% "akka-http"                   % "10.0.10",
+  "com.typesafe.akka"     %% "akka-http-spray-json"        % "10.0.10",
+  "net.sf.py4j"           % "py4j"                         % "0.10.5"
 )
 
 dependencyOverrides += "com.amazonaws" % "aws-java-sdk-s3" % "1.11.105"
