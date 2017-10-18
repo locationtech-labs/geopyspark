@@ -11,13 +11,22 @@ from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.geotrellis.constants import LayerType
 
 
-class CostDistanceTest(BaseTestClass):
-    cells = np.array([[
+class PolygonalSummariesTest(BaseTestClass):
+    cells_1 = np.array([[
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 0.0]]])
+
+    cells_2 = np.array([[
+        [1.0, 1.0, 1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0, 1.0, 0.0]]])
+
+    cells = np.array([cells_1, cells_2])
 
     layer = [(SpatialKey(0, 0), Tile(cells, 'FLOAT', -1.0)),
              (SpatialKey(1, 0), Tile(cells, 'FLOAT', -1.0,)),
@@ -49,25 +58,25 @@ class CostDistanceTest(BaseTestClass):
         polygon = Polygon([(0.0, 0.0), (0.0, 33.0), (33.0, 33.0), (33.0, 0.0), (0.0, 0.0)])
         result = self.tiled_rdd.polygonal_min(polygon, float)
 
-        self.assertEqual(result, 0.0)
+        self.assertEqual(result, [0.0, 0.0])
 
     def test_polygonal_max(self):
         polygon = Polygon([(1.0, 1.0), (1.0, 10.0), (10.0, 10.0), (10.0, 1.0)])
         result = self.tiled_rdd.polygonal_max(polygon, float)
 
-        self.assertEqual(result, 1.0)
+        self.assertEqual(result, [1.0, 1.0])
 
     def test_polygonal_sum(self):
         polygon = Polygon([(0.0, 0.0), (0.0, 33.0), (33.0, 33.0), (33.0, 0.0), (0.0, 0.0)])
         result = self.tiled_rdd.polygonal_sum(polygon, float)
 
-        self.assertEqual(result, 96.0)
+        self.assertEqual(result, [96.0, 96.0])
 
     def test_polygonal_mean(self):
         polygon = Polygon([(1.0, 1.0), (1.0, 10.0), (10.0, 10.0), (10.0, 1.0)])
         result = self.tiled_rdd.polygonal_mean(polygon)
 
-        self.assertEqual(result, 1.0)
+        self.assertEqual(result, [1.0, 1.0])
 
 
 if __name__ == "__main__":

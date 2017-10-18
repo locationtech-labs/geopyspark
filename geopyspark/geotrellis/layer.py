@@ -1621,10 +1621,10 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         if not isinstance(geometry, bytes):
             raise TypeError("Expected geometry to be bytes but given this instead", type(geometry))
 
-        return operation(geometry)
+        return list(operation(geometry))
 
     def polygonal_min(self, geometry, data_type):
-        """Finds the min value that is contained within the given geometry.
+        """Finds the min value for each band that is contained within the given geometry.
 
         Args:
             geometry (shapely.geometry.Polygon or shapely.geometry.MultiPolygon or bytes): A
@@ -1634,7 +1634,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 float.
 
         Returns:
-            int or float depending on ``data_type``.
+            [int] or [float] depending on ``data_type``.
 
         Raises:
             TypeError: If ``data_type`` is not an int or float.
@@ -1648,7 +1648,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             raise TypeError("data_type must be either int or float.")
 
     def polygonal_max(self, geometry, data_type):
-        """Finds the max value that is contained within the given geometry.
+        """Finds the max value for each band that is contained within the given geometry.
 
         Args:
             geometry (shapely.geometry.Polygon or shapely.geometry.MultiPolygon or bytes): A
@@ -1658,7 +1658,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 float.
 
         Returns:
-            int or float depending on ``data_type``.
+            [int] or [float] depending on ``data_type``.
 
         Raises:
             TypeError: If ``data_type`` is not an int or float.
@@ -1672,7 +1672,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             raise TypeError("data_type must be either int or float.")
 
     def polygonal_sum(self, geometry, data_type):
-        """Finds the sum of all of the values that are contained within the given geometry.
+        """Finds the sum of all of the values in each band that are contained within the given geometry.
 
         Args:
             geometry (shapely.geometry.Polygon or shapely.geometry.MultiPolygon or bytes): A
@@ -1682,7 +1682,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 float.
 
         Returns:
-            int or float depending on ``data_type``.
+            [int] or [float] depending on ``data_type``.
 
         Raises:
             TypeError: If ``data_type`` is not an int or float.
@@ -1696,7 +1696,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             raise TypeError("data_type must be either int or float.")
 
     def polygonal_mean(self, geometry):
-        """Finds the mean of all of the values that are contained within the given geometry.
+        """Finds the mean of all of the values for each band that are contained within the given geometry.
 
         Args:
             geometry (shapely.geometry.Polygon or shapely.geometry.MultiPolygon or bytes): A
@@ -1704,7 +1704,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 should be computed; or a WKB representation of the geometry.
 
         Returns:
-            float
+            [float]
         """
 
         return self._process_polygonal_summary(geometry, self.srdd.polygonalMean)

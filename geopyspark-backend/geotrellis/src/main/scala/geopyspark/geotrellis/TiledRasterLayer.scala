@@ -243,51 +243,46 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
       }
     }
 
-  def singleTileLayerRDD: TileLayerRDD[K] = TileLayerRDD(
-    rdd.mapValues({ v => v.band(0) }),
-    rdd.metadata
-  )
-
-  def polygonalMin(geom: Array[Byte]): Int =
+  def polygonalMin(geom: Array[Byte]): Array[Int] =
     WKB.read(geom) match {
-      case poly: Polygon => singleTileLayerRDD.polygonalMin(poly)
-      case multi: MultiPolygon => singleTileLayerRDD.polygonalMin(multi)
+      case poly: Polygon => rdd.polygonalMin(poly)
+      case multi: MultiPolygon => rdd.polygonalMin(multi)
     }
 
-  def polygonalMinDouble(geom: Array[Byte]): Double =
+  def polygonalMinDouble(geom: Array[Byte]): Array[Double] =
     WKB.read(geom) match {
-      case poly: Polygon => singleTileLayerRDD.polygonalMinDouble(poly)
-      case multi: MultiPolygon => singleTileLayerRDD.polygonalMinDouble(multi)
+      case poly: Polygon => rdd.polygonalMinDouble(poly)
+      case multi: MultiPolygon => rdd.polygonalMinDouble(multi)
     }
 
-  def polygonalMax(geom: Array[Byte]): Int =
+  def polygonalMax(geom: Array[Byte]): Array[Int] =
     WKB.read(geom) match {
-      case poly: Polygon => singleTileLayerRDD.polygonalMax(poly)
-      case multi: MultiPolygon => singleTileLayerRDD.polygonalMax(multi)
+      case poly: Polygon => rdd.polygonalMax(poly)
+      case multi: MultiPolygon => rdd.polygonalMax(multi)
     }
 
-  def polygonalMaxDouble(geom: Array[Byte]): Double =
+  def polygonalMaxDouble(geom: Array[Byte]): Array[Double] =
     WKB.read(geom) match {
-      case poly: Polygon => singleTileLayerRDD.polygonalMaxDouble(poly)
-      case multi: MultiPolygon => singleTileLayerRDD.polygonalMaxDouble(multi)
+      case poly: Polygon => rdd.polygonalMaxDouble(poly)
+      case multi: MultiPolygon => rdd.polygonalMaxDouble(multi)
     }
 
-  def polygonalMean(geom: Array[Byte]): Double =
+  def polygonalMean(geom: Array[Byte]): Array[Double] =
     WKB.read(geom) match {
-      case poly: Polygon => singleTileLayerRDD.polygonalMean(poly)
-      case multi: MultiPolygon => singleTileLayerRDD.polygonalMean(multi)
+      case poly: Polygon => rdd.polygonalMean(poly)
+      case multi: MultiPolygon => rdd.polygonalMean(multi)
     }
 
-  def polygonalSum(geom: Array[Byte]): Long =
+  def polygonalSum(geom: Array[Byte]): Array[Long] =
     WKB.read(geom) match {
-      case poly: Polygon => singleTileLayerRDD.polygonalSum(poly)
-      case multi: MultiPolygon => singleTileLayerRDD.polygonalSum(multi)
+      case poly: Polygon => rdd.polygonalSum(poly)
+      case multi: MultiPolygon => rdd.polygonalSum(multi)
     }
 
-  def polygonalSumDouble(geom: Array[Byte]): Double =
+  def polygonalSumDouble(geom: Array[Byte]): Array[Double] =
     WKB.read(geom) match {
-      case poly: Polygon => singleTileLayerRDD.polygonalSumDouble(poly)
-      case multi: MultiPolygon => singleTileLayerRDD.polygonalSumDouble(multi)
+      case poly: Polygon => rdd.polygonalSumDouble(poly)
+      case multi: MultiPolygon => rdd.polygonalSumDouble(multi)
     }
 
   def aggregateByCell(operation: String): TiledRasterLayer[K] = {
