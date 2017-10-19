@@ -13,7 +13,7 @@ from geopyspark.tests.base_test_class import BaseTestClass
 
 class ToGeoTiffTest(BaseTestClass):
     dir_path = geotiff_test_path("all-ones.tif")
-    rdd = get(LayerType.SPATIAL, dir_path)
+    rdd = get(LayerType.SPATIAL, dir_path, max_tile_size=1024)
     metadata = rdd.collect_metadata()
 
     mapped_types = {
