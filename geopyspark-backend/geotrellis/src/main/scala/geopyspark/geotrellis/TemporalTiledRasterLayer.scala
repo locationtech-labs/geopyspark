@@ -195,20 +195,16 @@ class TemporalTiledRasterLayer(
     zoom: Option[Int],
     resampleMethod: ResampleMethod
   ): TiledRasterLayer[SpaceTimeKey] = {
-    val mapKeyTransform =
-      MapKeyTransform(
-        layoutDefinition.extent,
-        layoutDefinition.layoutCols,
-        layoutDefinition.layoutRows)
-
+    val baseTransform = rdd.metadata.layout.mapTransform
+    val targetTransform = layoutDefinition.mapTransform
     val crs = rdd.metadata.crs
 
-    val temporalRDD = rdd.map { x =>
-      (TemporalProjectedExtent(mapKeyTransform(x._1), rdd.metadata.crs, x._1.instant), x._2)
+    val temporalRDD = rdd.map { case (k, v) =>
+      (TemporalProjectedExtent(baseTransform(k), crs, k.instant), v)
     }
 
     val bounds = rdd.metadata.bounds.get
-    val spatialBounds = KeyBounds(mapKeyTransform(rdd.metadata.extent))
+    val spatialBounds = KeyBounds(targetTransform(rdd.metadata.extent))
     val retiledLayerMetadata = rdd.metadata.copy(
       layout = layoutDefinition,
       bounds = KeyBounds(
