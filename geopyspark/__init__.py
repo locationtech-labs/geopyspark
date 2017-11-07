@@ -59,7 +59,7 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
             console
         additional_jar_dirs (list, optional): A list of directory locations that
             might contain JAR files needed by the current script.  Already
-            includes $(cwd)/jars.
+            includes $(pwd)/jars.
 
     Returns:
         SparkConf
@@ -81,11 +81,6 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
 
     current_location = os.path.dirname(os.path.realpath(__file__))
     cwd = os.getcwd()
-
-    if 'GEOPYSPARK_JARS_PATH' in os.environ:
-        additional_jar_dirs = os.environ['GEOPYSPARK_JARS_PATH'].split(':')
-    else:
-        additional_jar_dirs = []
 
     local_prefixes = [
         os.path.abspath(os.path.join(current_location, 'jars')),
