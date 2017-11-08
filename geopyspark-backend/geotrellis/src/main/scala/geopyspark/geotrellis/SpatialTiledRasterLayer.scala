@@ -172,14 +172,8 @@ class SpatialTiledRasterLayer(
   def mask(geometries: Seq[MultiPolygon]): TiledRasterLayer[SpatialKey] =
     SpatialTiledRasterLayer(zoomLevel, Mask(rdd, geometries, Mask.Options.DEFAULT))
 
-  def stitch: Array[Byte] = {
-    val contextRDD = ContextRDD(
-      rdd.mapValues({ v => v.band(0) }),
-      rdd.metadata
-    )
-
-    PythonTranslator.toPython[Tile, ProtoTile](contextRDD.stitch.tile)
-  }
+  def stitch: Array[Byte] =
+    PythonTranslator.toPython[MultibandTile, ProtoMultibandTile](ContextRDD(rdd, rdd.metadata).stitch.tile)
 
   def saveStitched(path: String): Unit =
     saveStitched(path, None, None)
@@ -199,12 +193,9 @@ class SpatialTiledRasterLayer(
     cropBounds: Option[java.util.Map[String, Double]],
     cropDimensions: Option[ArrayList[Int]]
   ): Unit = {
-    val contextRDD = ContextRDD(
-      rdd.map({ case (k, v) => (k, v.band(0)) }),
-      rdd.metadata
-    )
+    val contextRDD = ContextRDD(rdd, rdd.metadata)
 
-    val stitched: Raster[Tile] = contextRDD.stitch()
+    val stitched: Raster[MultibandTile] = contextRDD.stitch()
 
     val adjusted = {
       val cropped =
