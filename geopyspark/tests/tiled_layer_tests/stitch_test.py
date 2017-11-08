@@ -18,10 +18,10 @@ class StitchTest(BaseTestClass):
         [1.0, 1.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0, 0.0]]])
 
-    layer = [(SpatialKey(0, 0), Tile(cells, 'FLOAT', -1.0)),
-             (SpatialKey(1, 0), Tile(cells, 'FLOAT', -1.0,)),
-             (SpatialKey(0, 1), Tile(cells, 'FLOAT', -1.0,)),
-             (SpatialKey(1, 1), Tile(cells, 'FLOAT', -1.0,))]
+    layer = [(SpatialKey(0, 0), Tile(np.array([cells, cells]), 'FLOAT', -1.0)),
+             (SpatialKey(1, 0), Tile(np.array([cells, cells]), 'FLOAT', -1.0,)),
+             (SpatialKey(0, 1), Tile(np.array([cells, cells]), 'FLOAT', -1.0,)),
+             (SpatialKey(1, 1), Tile(np.array([cells, cells]), 'FLOAT', -1.0,))]
     rdd = BaseTestClass.pysc.parallelize(layer)
 
     extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 33.0, 'ymax': 33.0}
@@ -45,7 +45,7 @@ class StitchTest(BaseTestClass):
 
     def test_stitch(self):
         result = self.raster_rdd.stitch()
-        self.assertTrue(result.cells.shape == (1, 10, 10))
+        self.assertTrue(result.cells.shape == (2, 10, 10))
 
 
 if __name__ == "__main__":

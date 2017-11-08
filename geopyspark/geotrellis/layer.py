@@ -1329,7 +1329,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             raise ValueError("Only TiledRasterLayers with a layer_type of Spatial can use stitch()")
 
         value = self.srdd.stitch()
-        ser = ProtoBufSerializer.create_value_serializer("Tile")
+        ser = ProtoBufSerializer.create_value_serializer("MultibandTile")
         return ser.loads(value)[0]
 
     def save_stitched(self, path, crop_bounds=None, crop_dimensions=None):
