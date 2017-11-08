@@ -51,6 +51,7 @@ class LayerWriterWrapper(attributeStore: AttributeStore, uri: String) {
       case ("zorder", "minutes") => ZCurveKeyIndexMethod.byMinute
       case ("zorder", "hours") => ZCurveKeyIndexMethod.byHour
       case ("zorder", "days") => ZCurveKeyIndexMethod.byDay
+      case ("zorder", "weeks") => ZCurveKeyIndexMethod.byDays(7)
       case ("zorder", "months") => ZCurveKeyIndexMethod.byMonth
       case ("zorder", "years") => ZCurveKeyIndexMethod.byYear
       case ("hilbert", _) => {
