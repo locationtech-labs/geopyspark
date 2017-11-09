@@ -171,4 +171,7 @@ object TemporalRasterLayer {
     layers: ArrayList[TemporalRasterLayer]
   ): TemporalRasterLayer =
     TemporalRasterLayer(sc.union(layers.asScala.map(_.rdd)))
+
+  def combineBands(sc: SparkContext, layers: ArrayList[TemporalRasterLayer]): TemporalRasterLayer =
+    TemporalRasterLayer(TileLayer.combineBands[TemporalProjectedExtent, TemporalRasterLayer](sc, layers))
 }

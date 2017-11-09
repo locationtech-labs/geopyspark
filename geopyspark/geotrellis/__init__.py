@@ -57,6 +57,26 @@ def crs_to_proj4(crs):
     return scala_crs.toProj4String()
 
 
+def check_layers(base_layer, base_layer_type, layers):
+    if not all(isinstance(x, type(base_layer)) for x in layers[1:]):
+        raise TypeError("All of the layers to be unioned must be the same type")
+
+    if isinstance(base_layer, RasterLayer):
+        return True
+    else:
+        base_layout = base_layer.layer_metadata.layout_definition.tileLayout
+        base_crs = base_layer.layer_metadata.crs
+
+        for layer in layers[1:]:
+            layout = layer.layer_metadata.layout_definition.tileLayout
+            crs = layer.layer_metadata.crs
+
+            if layout != base_layout or crs != base_crs:
+                raise ValueError("The layers to be unioned must have the same TileLayout and CRS")
+
+        return True
+
+
 class Tile(namedtuple("Tile", 'cells cell_type no_data_value')):
     """Represents a raster in GeoPySpark.
 
@@ -591,6 +611,7 @@ from .neighborhood import *
 from .rasterize import *
 from .tms import *
 from .union import *
+from .combine_bands import *
 
 __all__ += catalog.__all__
 __all__ += color.__all__
@@ -605,3 +626,4 @@ __all__ += neighborhood.__all__
 __all__ += ['rasterize']
 __all__ += tms.__all__
 __all__ += ['union']
+__all__ += ['combine_bands']

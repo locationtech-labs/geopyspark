@@ -161,4 +161,7 @@ object ProjectedRasterLayer {
     layers: ArrayList[ProjectedRasterLayer]
   ): ProjectedRasterLayer =
     ProjectedRasterLayer(sc.union(layers.asScala.map(_.rdd)))
+
+  def combineBands(sc: SparkContext, layers: ArrayList[ProjectedRasterLayer]): ProjectedRasterLayer =
+    ProjectedRasterLayer(TileLayer.combineBands[ProjectedExtent, ProjectedRasterLayer](sc, layers))
 }
