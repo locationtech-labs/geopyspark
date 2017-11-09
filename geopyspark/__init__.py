@@ -75,6 +75,9 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
     if master:
         conf.setMaster(master)
 
+    if 'GEOPYSPARK_JARS_PATH' in os.environ:
+        additional_jar_dirs = additional_jar_dirs + os.environ['GEOPYSPARK_JARS_PATH'].split(':')
+
     conf.set(key='spark.ui.enabled', value='false')
     conf.set(key='spark.serializer', value='org.apache.spark.serializer.KryoSerializer')
     conf.set(key='spark.kryo.registrator', value='geotrellis.spark.io.kryo.KryoRegistrator')
