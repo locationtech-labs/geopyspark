@@ -43,18 +43,27 @@ class LayerWriterWrapper(attributeStore: AttributeStore, uri: String) {
 
   private def getTemporalIndexMethod(
     timeString: String,
+    timeResolution: String,
     indexStrategy: String
   ) =
-    (indexStrategy, timeString) match {
-      case ("zorder", "millis") => ZCurveKeyIndexMethod.byMilliseconds(1)
-      case ("zorder", "seconds") => ZCurveKeyIndexMethod.bySecond
-      case ("zorder", "minutes") => ZCurveKeyIndexMethod.byMinute
-      case ("zorder", "hours") => ZCurveKeyIndexMethod.byHour
-      case ("zorder", "days") => ZCurveKeyIndexMethod.byDay
-      case ("zorder", "weeks") => ZCurveKeyIndexMethod.byDays(7)
-      case ("zorder", "months") => ZCurveKeyIndexMethod.byMonth
-      case ("zorder", "years") => ZCurveKeyIndexMethod.byYear
-      case ("hilbert", _) => {
+    (indexStrategy, timeString, timeResolution) match {
+      case ("zorder", "millis", null) => ZCurveKeyIndexMethod.byMilliseconds(1)
+      case ("zorder", "millis", r) => ZCurveKeyIndexMethod.byMilliseconds(r.toLong)
+      case ("zorder", "seconds", null) => ZCurveKeyIndexMethod.bySecond
+      case ("zorder", "seconds", r) => ZCurveKeyIndexMethod.bySeconds(r.toInt)
+      case ("zorder", "minutes", null) => ZCurveKeyIndexMethod.byMinute
+      case ("zorder", "minutes", r) => ZCurveKeyIndexMethod.byMinutes(r.toInt)
+      case ("zorder", "hours", null) => ZCurveKeyIndexMethod.byHour
+      case ("zorder", "hours", r) => ZCurveKeyIndexMethod.byHours(r.toInt)
+      case ("zorder", "days", null) => ZCurveKeyIndexMethod.byDay
+      case ("zorder", "days", r) => ZCurveKeyIndexMethod.byDays(r.toInt)
+      case ("zorder", "weeks", null) => ZCurveKeyIndexMethod.byDays(7)
+      case ("zorder", "weeks", r) => ZCurveKeyIndexMethod.byDays(r.toInt * 7)
+      case ("zorder", "months", null) => ZCurveKeyIndexMethod.byMonth
+      case ("zorder", "months", r) => ZCurveKeyIndexMethod.byMonths(r.toInt)
+      case ("zorder", "years", null) => ZCurveKeyIndexMethod.byYear
+      case ("zorder", "years", r) => ZCurveKeyIndexMethod.byYears(r.toInt)
+      case ("hilbert", _, _) => {
         timeString.split(",") match {
           case Array(minDate, maxDate, resolution) =>
             HilbertKeyIndexMethod(ZonedDateTime.parse(minDate),
@@ -86,6 +95,7 @@ class LayerWriterWrapper(attributeStore: AttributeStore, uri: String) {
     layerName: String,
     temporalRDD: TiledRasterLayer[SpaceTimeKey],
     timeString: String,
+    timeResolution: String,
     indexStrategy: String
   ): Unit = {
     val id =
@@ -93,7 +103,7 @@ class LayerWriterWrapper(attributeStore: AttributeStore, uri: String) {
         case Some(zoom) => LayerId(layerName, zoom)
         case None => LayerId(layerName, 0)
       }
-    val indexMethod = getTemporalIndexMethod(timeString, indexStrategy)
+    val indexMethod = getTemporalIndexMethod(timeString, timeResolution, indexStrategy)
     layerWriter.write(id, temporalRDD.rdd, indexMethod)
   }
 }
