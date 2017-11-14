@@ -546,4 +546,12 @@ object TemporalTiledRasterLayer {
 
     TemporalTiledRasterLayer(zoomLevel, ContextRDD(result, unionedMetadata))
   }
+
+  def combineBands(sc: SparkContext, layers: ArrayList[TemporalTiledRasterLayer]): TemporalTiledRasterLayer = {
+    val baseLayer: TemporalTiledRasterLayer = layers.get(0)
+    val result: RDD[(SpaceTimeKey, MultibandTile)] =
+      TileLayer.combineBands[SpaceTimeKey, TemporalTiledRasterLayer](sc, layers)
+
+    TemporalTiledRasterLayer(baseLayer.zoomLevel, ContextRDD(result, baseLayer.rdd.metadata))
+  }
 }

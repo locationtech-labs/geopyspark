@@ -13,6 +13,7 @@ import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.tiling._
 import geotrellis.vector._
+import org.apache.spark._
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd._
 import org.apache.spark.storage.StorageLevel
@@ -26,6 +27,8 @@ import spire.std.any._
 import scala.reflect.{ClassTag, classTag}
 import scala.collection.JavaConverters._
 import scala.util.Try
+
+import java.util.ArrayList
 
 abstract class TileLayer[K: ClassTag] {
   def rdd: RDD[(K, MultibandTile)]
@@ -239,4 +242,41 @@ object TileLayer {
       case NOCOMPRESSION => NoCompression
       case DEFLATECOMPRESSION => DeflateCompression
     }
+
+  def combineBands[K: ClassTag, L <: TileLayer[K]: ClassTag](
+    sc: SparkContext,
+    layers: ArrayList[L]
+  ): RDD[(K, MultibandTile)] = {
+    val scalaLayers = layers.asScala.toArray
+
+    val rdds: Array[RDD[(K, MultibandTile)]] =
+      scalaLayers.map { case (v: L) => v.rdd }
+
+    val arr = Array.ofDim[RDD[(K, (Int, MultibandTile))]](rdds.size)
+
+    for ((layer, index) <- rdds.zipWithIndex) {
+      arr(index) = layer.mapValues { (index, _) }
+    }
+
+    val unioned = sc.union(arr.toSeq)
+
+    val bands: RDD[(K, Map[Int, Vector[Tile]])] =
+      unioned.combineByKey(
+        (value: (Int, MultibandTile)) =>
+          Map(value._1 -> value._2.bands),
+        (bandMap: Map[Int, Vector[Tile]], value: (Int, MultibandTile)) =>
+          bandMap + (value._1 -> value._2.bands),
+        (m1: Map[Int, Vector[Tile]], m2: Map[Int, Vector[Tile]]) =>
+          m1 ++ m2
+      )
+
+    bands.mapValues { case (v: Map[Int, Vector[Tile]]) =>
+      MultibandTile(
+        v.toSeq
+          .sortWith(_._1 < _._1)
+          .map { case (_, values) => values }
+          .flatten
+        )
+    }
+  }
 }

@@ -517,4 +517,12 @@ object SpatialTiledRasterLayer {
 
     SpatialTiledRasterLayer(zoomLevel, ContextRDD(result, unionedMetadata))
   }
+
+  def combineBands(sc: SparkContext, layers: ArrayList[SpatialTiledRasterLayer]): SpatialTiledRasterLayer = {
+    val baseLayer: SpatialTiledRasterLayer = layers.get(0)
+    val result: RDD[(SpatialKey, MultibandTile)] =
+      TileLayer.combineBands[SpatialKey, SpatialTiledRasterLayer](sc, layers)
+
+    SpatialTiledRasterLayer(baseLayer.zoomLevel, ContextRDD(result, baseLayer.rdd.metadata))
+  }
 }
