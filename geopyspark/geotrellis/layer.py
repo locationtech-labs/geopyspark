@@ -6,6 +6,7 @@ when performing operations.
 import json
 import datetime
 import shapely.wkb
+import pytz
 from shapely.geometry import Polygon, MultiPolygon, Point
 from geopyspark.geotrellis.protobufcodecs import (multibandtile_decoder,
                                                   projected_extent_decoder,
@@ -723,6 +724,39 @@ class RasterLayer(CachableLayer, TileLayer):
 
     def __repr__(self):
         return "RasterLayer(layer_type={})".format(self.layer_type)
+
+    def filter_by_times(self, time_intervals):
+        """Filters a ``SPACETIME`` layer by keeping only the values whose keys fall within
+        a the given time interval(s).
+
+        Args:
+            time_intervals (``[datetime.datetime]``): A list of the time intervals to query.
+                This list can have one or multiple elements. If just a single element, then only
+                exact matches with that given time will be kept. If there are multiple times given,
+                then they are each paired together so that they form ranges of time. In the case
+                where there are an odd number of elements, then the remaining time will be treated
+                as a single query and not a range.
+
+        Note:
+            If nothing intersects the given ``time_intervals``, then the returned ``RasterLayer``
+            will be empty.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.RasterLayer`
+        """
+
+        if self.layer_type == LayerType.SPATIAL:
+            raise TypeError("Only layers of type SPACETIME can be filtered by time")
+
+        for x, time in enumerate(time_intervals):
+            if time.tzinfo:
+                time_intervals[x] = time.astimezone(pytz.utc).isoformat()
+            else:
+                time_intervals[x] = time.replace(tzinfo=pytz.utc).isoformat()
+
+        result = self.srdd.filterByTimes(time_intervals)
+
+        return RasterLayer(self.layer_type, result)
 
 
 class TiledRasterLayer(CachableLayer, TileLayer):
@@ -1480,6 +1514,39 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         return TiledRasterLayer(self.layer_type, srdd)
 
+    def filter_by_times(self, time_intervals):
+        """Filters a ``SPACETIME`` layer by keeping only the values whose keys fall within
+        a the given time interval(s).
+
+        Args:
+            time_intervals (``[datetime.datetime]``): A list of the time intervals to query.
+                This list can have one or multiple elements. If just a single element, then only
+                exact matches with that given time will be kept. If there are multiple times given,
+                then they are each paired together so that they form ranges of time. In the case
+                where there are an odd number of elements, then the remaining time will be treated
+                as a single query and not a range.
+
+        Note:
+            If nothing intersects the given ``time_intervals``, then the returned ``TiledRasterLayer``
+            will be empty.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
+        """
+
+        if self.layer_type == LayerType.SPATIAL:
+            raise TypeError("Only layers of type SPACETIME can be filtered by time")
+
+        for x, time in enumerate(time_intervals):
+            if time.tzinfo:
+                time_intervals[x] = time.astimezone(pytz.utc).isoformat()
+            else:
+                time_intervals[x] = time.replace(tzinfo=pytz.utc).isoformat()
+
+        result = self.srdd.filterByTimes(time_intervals)
+
+        return TiledRasterLayer(self.layer_type, result)
+
     def get_point_values(self, points, resample_method=None):
         """Returns the values of the layer at given points.
 
@@ -1612,7 +1679,6 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             return dict_result
         else:
             raise TypeError("Expected a list or dict. Instead got", type(points))
-
 
     @staticmethod
     def _process_polygonal_summary(geometry, operation):
