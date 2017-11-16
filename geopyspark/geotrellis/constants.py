@@ -116,6 +116,7 @@ class TimeUnit(Enum):
     MINUTES = 'minutes'
     HOURS = 'hours'
     DAYS = 'days'
+    WEEKS = 'weeks'
     MONTHS = 'months'
     YEARS = 'years'
 
