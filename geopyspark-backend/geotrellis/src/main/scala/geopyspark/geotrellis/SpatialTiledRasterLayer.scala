@@ -114,16 +114,6 @@ class SpatialTiledRasterLayer(
     SpatialTiledRasterLayer(zoom, tileLayer)
   }
 
-  def tileToLayout(
-    layoutType: LayoutType,
-    resampleMethod: ResampleMethod
-  ): TiledRasterLayer[SpatialKey] = {
-    val (layoutDefinition, zoom) =
-      layoutType.layoutDefinitionWithZoom(rdd.metadata.crs, rdd.metadata.extent, rdd.metadata.cellSize)
-
-    tileToLayout(layoutDefinition, zoom, resampleMethod)
-  }
-
   def pyramid(resampleMethod: ResampleMethod): Array[TiledRasterLayer[SpatialKey]] = {
     require(! rdd.metadata.bounds.isEmpty, "Can not pyramid an empty RDD")
     val part = rdd.partitioner.getOrElse(new HashPartitioner(rdd.partitions.length))
