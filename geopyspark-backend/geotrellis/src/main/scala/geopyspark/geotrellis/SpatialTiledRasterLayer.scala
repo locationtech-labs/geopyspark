@@ -24,6 +24,7 @@ import geotrellis.spark.mapalgebra.local._
 import geotrellis.spark.mapalgebra.focal._
 import geotrellis.spark.mask.Mask
 import geotrellis.spark.pyramid._
+import geotrellis.spark.rasterize._
 import geotrellis.spark.reproject._
 import geotrellis.spark.tiling._
 import geotrellis.spark.util._
@@ -436,16 +437,17 @@ object SpatialTiledRasterLayer {
     val maptrans = ld.mapTransform
     val fullEnvelope = geoms.map(_.envelope).reduce(_ combine _)
     val gb @ GridBounds(cmin, rmin, cmax, rmax) = maptrans(fullEnvelope)
+    val partitioner = new HashPartitioner(Option(numPartitions).map(_.toInt).getOrElse(math.max(gb.size / 512, 1)))
 
     val geomsRdd = sc.parallelize(geoms)
     import geotrellis.raster.rasterize.Rasterizer.Options
     val tiles = RasterizeRDD.fromGeometry(
       geoms = geomsRdd,
       layout = ld,
-      ct = cellType,
+      cellType = cellType,
       value = fillValue,
       options = Option(options).getOrElse(Options.DEFAULT),
-      numPartitions = Option(numPartitions).map(_.toInt).getOrElse(math.max(gb.size / 512, 1)))
+      partitioner = partitioner)
     val metadata = TileLayerMetadata(cellType, ld, maptrans(gb), srcCRS, KeyBounds(gb))
     SpatialTiledRasterLayer(Some(requestedZoom),
       MultibandTileLayerRDD(tiles.mapValues(MultibandTile(_)), metadata))
