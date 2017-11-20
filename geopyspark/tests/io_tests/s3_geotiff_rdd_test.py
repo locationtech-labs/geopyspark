@@ -99,12 +99,15 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
 
     def test_windowed_tiles(self):
         geotrellis_tiles = self.read_multiband_geotrellis({"s3Client": "mock", "maxTileSize": 256})
-        geotrellis_tiles = [tile[1] for tile in geotrellis_tiles.to_numpy_rdd().collect()]
+        geotrellis_tiles = geotrellis_tiles.to_numpy_rdd().values().collect()
+        sorted_1 = sorted(geotrellis_tiles, key=lambda x: x.cells[0, 0, 0])
+
         rasterio_tiles = self.read_geotiff_rasterio([self.file_path], True)
+        sorted_2 = sorted(rasterio_tiles, key=lambda x: x['cells'][0, 0, 0])
 
         self.windowed_result_checker(geotrellis_tiles)
 
-        for x, y in zip(geotrellis_tiles, rasterio_tiles):
+        for x, y in zip(sorted_1, sorted_2):
             print('\n')
             print('This is read in from geotrellis', x.cells.shape)
             print('This is read in from rasterio', y['cells'].shape)

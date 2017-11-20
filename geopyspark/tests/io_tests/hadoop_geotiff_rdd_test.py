@@ -51,13 +51,14 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
     def read_singleband_geotrellis(self, options=None):
         if options is None:
             result = get(LayerType.SPATIAL,
-                         self.dir_path)
+                         self.dir_path,
+                         max_tile_size=512)
         else:
             result = get(LayerType.SPATIAL,
                          self.dir_path,
                          max_tile_size=256)
 
-        return [tile[1] for tile in result.to_numpy_rdd().collect()]
+        return result.to_numpy_rdd().values().collect()
 
     def test_whole_tiles(self):
         geotrellis_tiles = self.read_singleband_geotrellis()
@@ -74,13 +75,16 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
 
     def test_windowed_tiles(self):
         geotrellis_tiles = self.read_singleband_geotrellis(True)
+        sorted_1 = sorted(geotrellis_tiles, key=lambda x: (x.cells[0, 0, 0], x.cells[0, 255, 255]))
 
         file_paths = self.get_filepaths(self.dir_path)
         rasterio_tiles = self.read_geotiff_rasterio(file_paths, True)
+        sorted_2 = sorted(rasterio_tiles, key=lambda x: (x['cells'][0, 0, 0], x['cells'][0, 255, 255]))
 
         self.windowed_result_checker(geotrellis_tiles)
 
-        for x, y in zip(geotrellis_tiles, rasterio_tiles):
+        for x, y in zip(sorted_1, sorted_2):
+            self.assertEqual(x.cells.shape, y['cells'].shape)
             self.assertTrue((x.cells == y['cells']).all())
             self.assertEqual(x.no_data_value, y['no_data_value'])
 

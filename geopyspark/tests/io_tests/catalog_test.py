@@ -4,7 +4,7 @@ import pytest
 
 from shapely.geometry import box
 
-from geopyspark.geotrellis import Extent, SpatialKey, GlobalLayout
+from geopyspark.geotrellis import Extent, SpatialKey, GlobalLayout, LocalLayout
 from geopyspark.geotrellis.catalog import read_value, query, read_layer_metadata, AttributeStore
 from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.geotiff import get
@@ -16,7 +16,7 @@ class CatalogTest(BaseTestClass):
     rdd = get(LayerType.SPATIAL, geotiff_test_path("srtm_52_11.tif"), max_tile_size=6001)
 
     metadata = rdd.collect_metadata()
-    reprojected = rdd.tile_to_layout(layout=GlobalLayout(zoom=11), target_crs="EPSG:3857")
+    reprojected = rdd.tile_to_layout(layout=GlobalLayout(zoom=11), target_crs=3857)
     result = reprojected.pyramid()
 
     dir_path = geotiff_test_path("catalog/")
@@ -30,11 +30,15 @@ class CatalogTest(BaseTestClass):
 
     def test_read(self):
         for x in range(11, 0, -1):
-            actual_layer = query(self.uri, self.layer_name, x)
-            expected_layer = self.result.levels[x]
+            actual_layer = query(self.uri, self.layer_name, x).tile_to_layout(LocalLayout(), self.metadata.crs)
+            expected_layer = self.result.levels[x].tile_to_layout(LocalLayout(), self.metadata.crs)
 
-            self.assertDictEqual(actual_layer.layer_metadata.to_dict(),
-                                 expected_layer.layer_metadata.to_dict())
+            actual_md = actual_layer.layer_metadata
+            expected_md = expected_layer.layer_metadata
+
+            self.assertEqual(actual_md.tile_layout, expected_md.tile_layout)
+            self.assertEqual(actual_md.layout_definition, expected_md.layout_definition)
+            self.assertEqual(actual_md.bounds, expected_md.bounds)
 
     def test_read_value(self):
         tiled = read_value(self.uri,
