@@ -237,6 +237,27 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
   def localAbs(): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y.localAbs() }) })
 
+  def localPow(i: Int): TiledRasterLayer[K] =
+    withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y ** i }) })
+
+  def localPow(d: Double): TiledRasterLayer[K] =
+    withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y ** d }) })
+
+  def localPow(other: TiledRasterLayer[K]): TiledRasterLayer[K] =
+    withRDD(rdd.combineValues(other.rdd) {
+      case (x: MultibandTile, y: MultibandTile) => {
+        val tiles: Vector[Tile] =
+          x.bands.zip(y.bands).map(tup => tup._1 ** tup._2)
+        MultibandTile(tiles)
+      }
+    })
+
+  def reverseLocalPow(i: Int): TiledRasterLayer[K] =
+    withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y.localPowValue(i) }) })
+
+  def reverseLocalPow(d: Double): TiledRasterLayer[K] =
+    withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y.localPowValue(d) }) })
+
   def convertDataType(newType: String): TiledRasterLayer[_] =
     withRDD(rdd.convert(CellType.fromName(newType)))
 
