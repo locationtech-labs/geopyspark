@@ -30,6 +30,7 @@ import scala.collection.mutable
 
 import geopyspark.geotrellis.PythonTranslator
 
+
 class LayerReaderWrapper(sc: SparkContext) {
 
   def query(
@@ -61,8 +62,12 @@ class LayerReaderWrapper(sc: SparkContext) {
         // Aim for ~16MB per partition
         val tilesPerPartition = (1 << 24) / tileBytes
         // TODO: consider temporal dimension size as well
-        val expectedTileCount: Long = layerQuery(layerMetadata).map(_.toGridBounds.sizeLong).reduce( _ + _)
-        math.max(1, (expectedTileCount / tilesPerPartition).toInt)
+        val expectedTileCounts: Seq[Long] = layerQuery(layerMetadata).map(_.toGridBounds.sizeLong)
+        try {
+          math.max(1, (expectedTileCounts.reduce( _ + _) / tilesPerPartition).toInt)
+        } catch {
+          case e: java.lang.UnsupportedOperationException => 1
+        }
       }
 
     header.keyClass match {
@@ -115,8 +120,6 @@ class LayerReaderWrapper(sc: SparkContext) {
         new TemporalTiledRasterLayer(Some(zoom), rdd)
     }
   }
-
-
 
   private def applySpatialFilter[K: SpatialComponent: Boundable, M](
     layerQuery: LayerQuery[K, M],

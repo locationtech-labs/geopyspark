@@ -166,6 +166,10 @@ def query(uri,
                 Only layers that were made from spatial, singleband GeoTiffs can query a ``Point``.
                 All other types are restricted to ``Polygon`` and ``MulitPolygon``.
 
+            Note:
+                If the queried region does not intersect the layer, then an empty layer will be
+                returned.
+
             If not specified, then the entire layer will be read.
         time_intervals (``[datetime.datetime]``, optional): A list of the time intervals to query.
             This parameter is only used when querying spatial-temporal data. The default value is,
