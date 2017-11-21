@@ -54,7 +54,7 @@ for you:
 
 
   # Create the SparkContext
-  conf = gps.create_geopyspark_conf(appName="geopyspark-example", master="local[*]")
+  conf = gps.geopyspark_conf(appName="geopyspark-example", master="local[*]")
   sc = SparkContext(conf=conf)
 
   # Read in the NLCD tif that has been saved locally.
