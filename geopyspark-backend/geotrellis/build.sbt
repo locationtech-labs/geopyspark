@@ -2,6 +2,7 @@ name := "geotrellis-backend"
 
 resolvers ++= Seq(
   "Location Tech GeoTrellis Snapshots" at "https://repo.locationtech.org/content/repositories/geotrellis-snapshots",
+  "Location Tech GeoTrellis resleases" at "https://repo.locationtech.org/content/groups/releases",
   Resolver.mavenLocal
 )
 
