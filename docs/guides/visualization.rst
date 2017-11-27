@@ -133,6 +133,8 @@ resulting ``Pyramid`` will only have as many levels as the source
     result = pyramided + small_pyramid
     result.levels
 
+.. _cmap:
+
 ColorMap
 --------
 

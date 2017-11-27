@@ -16,7 +16,7 @@ code:
    import geopyspark as gps
 
    from pyspark import SparkContext
-   from shapely.geometry import box
+   from shapely.geometry import box, Point
 
    conf = gps.geopyspark_conf(master="local[*]", appName="layers")
    pysc = SparkContext(conf=conf)
@@ -391,29 +391,9 @@ This changes the keys of the ``RDD`` within the layer by converting
 
 .. code:: python3
 
-    # Creating the space time layer
-
-    instant = datetime.datetime.now()
-    space_time_key = gps.SpaceTimeKey(col=0, row=0, instant=instant)
-
-    metadata = gps.Metadata(
-        bounds=gps.Bounds(space_time_key, space_time_key),
-        cell_type='int16',
-        crs = '+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs ',
-        extent=extent,
-        layout_definition=layout_definition)
-
-    space_time_rdd = pysc.parallelize([space_time_key, tile])
-    space_time_layer = gps.TiledRasterLayer.from_numpy_rdd(layer_type=gps.LayerType.SPACETIME,
-                                                           numpy_rdd=space_time_rdd,
-                                                           metadata=metadata)
-    space_time_layer
-
-.. code:: python3
-
     # Converting the SpaceTime layer to a Spatial layer
 
-    space_time_layer.to_spatial_layer()
+    space_time_tiled_layer.to_spatial_layer()
 
 Repartitioning
 ^^^^^^^^^^^^^^
@@ -605,6 +585,126 @@ retiling a ``TiledRasterLayer``.
     # zoom_level will reamin the same in the resulting TiledRasterLayer
     tiled_raster_layer.tile_to_layout(layout=gps.GlobalLayout(zoom=11))
 
+
+Getting Point Values
+^^^^^^^^^^^^^^^^^^^^^
+
+:meth:`~geopyspark.geotrellis.layer.TiledRasterLayer.get_point_values` takes
+a collection of ``shapely.geometry.Point``\s and returns the value(s) that are
+at the given point in the layer. The number of values returned depends on the
+number of bands the values have, as there will be one value per band.
+
+It is also possible to pass in a ``ResampleMethod`` to this method, but not all
+are supported. The following are all of the ``ResampleMethod``\s that can
+be used to calculate point values:
+
+  - ``ResampleMethod.NEAREST_NEIGHBOR``
+  - ``ResampleMethod.BILINEAR``
+  - ``ResampleMethod.CUBIC_CONVOLUTION``
+  - ``ResampleMethod.CUBIC_SPLINE``
+
+
+Getting the Point Values From a SPATIAL Layer
+'''''''''''''''''''''''''''''''''''''''''''''''
+
+When using ``get_point_values`` on a layer with a ``LayerType`` of
+``SPATIAL``, the results will be paired as ``(shapely.geometry.Point, [float])``.
+Where each given ``Point`` will be paired with the values it intersects.
+
+.. code:: python3
+
+   # Creating the points
+   extent = tiled_raster_layer.layer_metadata.extent
+
+   p1 = Point(extent.xmin, extent.ymin + 0.5)
+   p2 = Point(extent.xmax , extent.ymax - 1.0)
+
+Giving a [shapely.geometry.Point] to get_point_values
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+When ``points`` is given as a ``[shapely.geometry.Point]``,
+then the ouput will be a ``[(shapely.geometry.Point, [float])]``.
+
+.. code:: python3
+
+   tiled_raster_layer.get_point_values(points=[p1, p2])
+
+Giving a {k: shapely.geometry.Point} to get_point_values
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+When ``points`` is given as a ``{k: shapely.geometry.Point}``,
+then the ouput will be a ``{k: (shapely.geometry.Point, [float])}``.
+
+.. code:: python3
+
+   tiled_raster_layer.get_point_values(points={'point 1': p1, 'point 2': p2})
+
+Getting the Point Values From a SPACETIME Layer
+'''''''''''''''''''''''''''''''''''''''''''''''
+
+When using ``get_point_values`` on a layer with a ``LayerType`` of
+``SPACETIME``, the results will be paired as ``(shapely.geometry.Point, datetime.datetime, [float])``.
+Where each given ``Point`` will be paired with the values it intersects and those
+values' corresponding timestamps.
+
+.. code:: python3
+
+   st_extent = space_time_tiled_layer.layer_metadata.extent
+
+   p1 = Point(st_extent.xmin, st_extent.ymin + 0.5)
+   p2 = Point(st_extent.xmax , st_extent.ymax - 1.0)
+
+Giving a [shapely.geometry.Point] to get_point_values
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+When ``points`` is given as a ``[shapely.geometry.Point]``,
+then the ouput will be a ``[(shapely.geometry.Point, datetime.datetime, [float])]``.
+
+.. code:: python3
+
+   space_time_tiled_layer.get_point_values(points=[p1, p2])
+
+Giving a {k: shapely.geometry.Point} to get_point_values
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+When ``points`` is given as a ``{k: shapely.geometry.Point}``,
+then the ouput will be a ``{k: (shapely.geometry.Point, datetime.datetime, [float])}``.
+
+.. code:: python3
+
+   space_time_tiled_layer.get_point_values(points={'point 1': p1, 'point 2': p2})
+
+Aggregating the Values of Each Cell
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:meth:`~geopyspark.geotrellis.layer.TiledRasterLayer.aggregate_by_cell` will
+compute an aggregate summary for each cell of all values for each key. Thus,
+if there are multiple copies of the same key in the layer, then the resulting
+layer will contain just a single instance of that key with its corresponding
+value being the aggregate summary of all the values that share that key.
+
+Not all ``Operation``\s are supported. The following ones can be used in
+``aggregate_by_cell``:
+
+  - ``Operation.SUM``
+  - ``Operation.MIN``
+  - ``Operation.MAX``
+  - ``Operation.MEAN``
+  - ``Operation.VARIANCE``
+  - ``Operation.STANDARD_DEVIATION``
+
+.. code:: python3
+
+   unioned_layer = gps.union(layers=[tiled_raster_layer, tiled_raster_layer + 1])
+
+   # Sum the values of the unioned_layer
+   unioned_layer.aggregate_by_cell(operation=gps.Operation.SUM)
+
+   # Get the max value for each cell
+   unioned_layer.aggregate_by_cell(operation=gps.Operation.MAX)
+
+
+
 General Methods
 ---------------
 
@@ -616,6 +716,20 @@ section will go over these methods.
 **Note**: In the following examples, both ``RasterLayer``\ s and
 ``TiledRasterLayer``\ s will be used. However, they can easily be
 subsituted with the other class.
+
+Unioning Layers Togther
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+To combine the contents of multiple layers together, one can use
+the ``union`` method. This will produce either a new ``RasterLayer``
+or ``TiledRasterLayer`` that contains all of the elements from the
+given layers.
+
+**Note**: The resulting layer can contain duplicate keys.
+
+.. code:: python3
+
+   gps.union(layers=[tiled_raster_layer, tiled_raster_layer])
 
 Selecting a SubSection of Bands
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -638,6 +752,93 @@ reading them in.
 
     # Selecting the first and second bands from the layer
     multiband_raster_layer.bands([0, 1])
+
+
+Combining Bands of Two Or More Layers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``combine_bands`` method will concatenate the bands of values that share a key between
+two or more layers. Thus, the resulting layer will contain a new ``Tile`` for each shared
+key where the ``Tile`` will contain all of the bands from the given layers.
+
+The order in which the layers are passed into ``combine_bands`` matters. Where the resulting
+values' bands will be ordered based on their position of their respective layer.
+
+.. code:: python3
+
+    # Setting up example RDD
+    twos = np.ones((1, 16, 16), dtype='int') + 1
+    twos_tile = gps.Tile.from_numpy_array(numpy_array=np.array(twos), no_data_value=-500)
+
+    twos_rdd = pysc.parallelize([(projected_extent, twos_tile)])
+    twos_raster_layer = gps.RasterLayer.from_numpy_rdd(layer_type=gps.LayerType.SPATIAL, numpy_rdd=twos_rdd)
+
+.. code:: python3
+
+   # The resulting values of the layer will have 2 bands: the first will be all ones,
+   # and the last band will be all twos
+   gps.combine_bands(layers=[multiband_raster_layer, twos_raster_layer])
+
+.. code:: python3
+
+   # The resulting values of the layer will have 2 bands: the first will be all twos and the
+   # other band will be all ones
+   gps.combine_bands(layers=[twos_raster_layer, multiband_raster_layer])
+
+
+Collecting the Keys of a Layer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To collect all of the keys of a layer, use the ``collect_keys`` method.
+
+.. code:: python3
+
+  # Returns a list of ProjectedExtents
+  multiband_raster_layer.collect_keys()
+
+  # Returns a list of a SpatialKeys
+  tiled_raster_layer.collect_keys()
+
+  # Returns a list of SpaceTimeKeys
+  space_time_tiled_layer.collect_keys()
+
+
+Filtering a Layer By Times
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Using the ``filter_by_times`` method will produce a layer whose
+values fall within the given time interval(s).
+
+Filtering By a Single Instant
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A single ``datetime.datetime`` instance can be used to filter the layer.
+If that is the case then only exact matches with the given time will be
+kept.
+
+.. code:: python
+
+   space_time_layer.filter_by_times(time_intervals=[instant])
+
+Filtering By Intervals
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Various time intervals can also be given as well, and any keys whose
+``instant`` falls within the time spans will be kept in the layer.
+
+.. code:: python3
+
+   end_date_1 = instant + datetime.timedelta(days=3)
+   end_date_2 = instant + datetime.timedelta(days=5)
+
+   # Will filter out any value whose key does not fall in the range of
+   # instant and end_date_1
+   space_time_layer.filter_by_times(time_intervals=[instant, end_date_1])
+
+   # Will filter out any value whose key does not fall in the range of
+   # instant and end_date_1 OR whose key does not match end_date_2
+   space_time_layer.filter_by_times(time_intervals=[instant, end_date_1, end_date_2])
+
 
 Converting the Data Type of the Rasters' Cells
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -682,6 +883,49 @@ the ``data_type`` of the cells also needs to be given. This is either
                                                      data_type=int,
                                                      classification_strategy=gps.ClassificationStrategy.GREATER_THAN_OR_EQUAL_TO)
     reclassified.to_numpy_rdd().first()[1]
+
+
+Merging the Values of a Layer Together
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By using the ``merge`` method, all values that share a key within
+the layer will be merged together to form a new, single value.
+This is accomplished by replacing the cells of one value with another's.
+However, not all cells, if any, may be replaced. When merging the cell
+of values, the following steps are taken to determine if a cell's value
+should be changed:
+
+  1. If the cell contains a ``NoData`` value, then it will be replaced.
+  2. If no ``NoData`` value is set, then a cell with a vlue of 0 will be replaced.
+  3. if neither of the above are true, then the cell retains its value.
+
+.. code:: python3
+
+    # Creating the layers
+    no_data = np.full((1, 4, 4), -1)
+    zeros = np.zeros((1, 4, 4))
+
+    def create_layer(no_data_value=None):
+        data_tile = gps.Tile.from_numpy_array(numpy_array=no_data, no_data_value=no_data_value)
+        zeros_tile = gps.Tile.from_numpy_array(numpy_array=zeros, no_data_value=no_data_value)
+
+        layer_rdd = pysc.parallelize([(projected_extent, data_tile), (projected_extent, zeros_tile)])
+        return gps.RasterLayer.from_numpy_rdd(layer_type=gps.LayerType.SPATIAL, numpy_rdd=layer_rdd)
+
+    # Resulting layer has a no_data_value of -1
+    no_data_layer = create_layer(-1)
+
+    # Resutling layer has no no_data_value
+    no_no_data_layer = create_layer()
+
+.. code:: python3
+
+   # The resulting merged value will be all zeros since -1 is the noData value
+   no_data_layer.merge()
+
+   # The resulting merged value will be all -1's as ``no_data_value`` was set.
+   no_no_data_layer.merge()
+
 
 Mapping Over the Cells
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -798,6 +1042,89 @@ data type of the cells.
 .. code:: python3
 
     tiled_raster_layer.get_min_max()
+
+
+Converting the Values of a Layer to PNGs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Via the ``to_png_rdd`` method, one can convert each value within a layer
+to a PNG in the form of ``bytes``. In order to convert each value to a PNG,
+one needs to supply a ``ColorMap``. For more information on the ``ColorMap``
+class, please see the :ref:`cmap` section of the docs.
+
+In addition to converting each value to a PNG, the resulting collection of
+``(K, V)``\s will be held in a Python ``RDD``.
+
+.. code:: python3
+
+   hist = tiled_raster_layer.get_histogram()
+   cmap = gps.ColorMap.build(hist, 'viridis')
+
+   tiled_raster_layer.to_png_rdd(color_map=cmap)
+
+
+Converting the Values of a Layer to GeoTiffs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Similar to ``to_png_rdd``, only ``to_geotiff_rdd`` will return a
+Python ``RDD[(K, bytes)]`` where the ``bytes`` represent a GeoTiff.
+
+Selecting a StorageMethod
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There are two different ways the segments of a GeoTiff can be
+formatted: ``StorageMethod.STRIPED`` or ``StorageMethod.TILED``.
+This is represented by the ``storage_method`` parameter.
+By default, ``StorageMethod.STRIPED`` is used.
+
+Selecting the Size of the Segments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There are two different parameters that control the size of each
+segment: ``rows_per_strip`` and ``tile_dimensions``. Only one of
+these values needs to be set, and that is determined by what the
+``storage_method`` is.
+
+If the ``storage_method`` is ``StorageMethod.STRIPED``, then
+``rows_per_strip`` will be the parameter to change. By default,
+the ``rows_per_strip`` will be calculated so that each strip
+is 8K or less.
+
+If the ``storage_method`` is ``StorageMethod.TILED``, then
+``tile_dimensions`` can be set. This is given as a ``(int, int)``
+where the first value is the number of ``cols`` and the second
+is the number of ``rows```. By default, the ``tile_dimensions``
+is ``(256, 256)``.
+
+Selecting a CompressionMethod
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The two types of compressions that can be chosen are: ``Compression.NO_COMPRESSION``
+or ``Compression.DEFLATE_COMPRESSION``. By default, the ``compression`` parameter
+is set to ``Compression.NO_COMPRESSION``.
+
+Selecting a ColorSpace
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``color_space`` parameter determines how the colors should be organized in each
+GeoTiff. By default, it's ``ColorSpace.BLACK_IS_ZERO``.
+
+Passing in a ColorMap
+^^^^^^^^^^^^^^^^^^^^^^
+
+A ``ColorMap`` instance can be passed in so that the resulting GeoTiffs are in a
+different gradiant. By default, ``color_map`` is ``None``. To learn more about
+``ColorMap``, see the :ref:`cmap` section of the docs.
+
+.. code:: python3
+
+   # Creates an RDD[(K, bytes)] with the default parameters
+   tiled_raster_layer.to_geotiff_rdd()
+
+   # Creates an RDD whose GeoTiffs are tiled with a size of (128, 128)
+   tiled_raster_layer.to_geotiff_rdd(storage_method=gps.StorageMethod.TILED, tile_dimensions=(128, 128))
+
+
 
 .. _rdd-methods:
 
