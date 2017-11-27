@@ -41,12 +41,12 @@ class UnionSpatialTest(BaseTestClass):
         BaseTestClass.pysc._gateway.close()
 
     def test_union_of_raster_layers(self):
-        result = union(self.layer_1, self.layer_2)
+        result = union([self.layer_1, self.layer_2])
 
         self.assertTrue(result.srdd.rdd().count(), 2)
 
     def test_union_of_tiled_raster_layers(self):
-        result = union(self.tiled_layer_1, self.tiled_layer_2)
+        result = union([self.tiled_layer_1, self.tiled_layer_2])
 
         bounds_1 = self.tiled_layer_1.layer_metadata.bounds
         bounds_2 = self.tiled_layer_2.layer_metadata.bounds
@@ -88,12 +88,12 @@ class UnionTemporalTest(BaseTestClass):
         BaseTestClass.pysc._gateway.close()
 
     def test_union_of_raster_layers(self):
-        result = union(self.layer_1, self.layer_2)
+        result = union([self.layer_1, self.layer_2])
 
         self.assertTrue(result.srdd.rdd().count(), 2)
 
     def test_union_of_tiled_raster_layers(self):
-        result = union(self.tiled_layer_1, self.tiled_layer_2)
+        result = union([self.tiled_layer_1, self.tiled_layer_2])
 
         bounds_1 = self.tiled_layer_1.layer_metadata.bounds
         bounds_2 = self.tiled_layer_2.layer_metadata.bounds

@@ -6,7 +6,7 @@ from geopyspark.geotrellis.layer import RasterLayer, TiledRasterLayer
 __all__ = ['union']
 
 
-def union(*layers):
+def union(layers):
     """Unions togther two or more ``RasterLayer``\s or ``TiledRasterLayer``\s.
 
     All layers must have the same ``layer_type``. If the layers are ``TiledRasterLayer``\s,
@@ -18,8 +18,8 @@ def union(*layers):
         duplicates of that key. One copy for each instance of the key.
 
     Args:
-        layers (*:class:`~geopyspark.RasterLayer` or *:class:`~geopyspark.TiledRasterLayer`): An
-            arbitrary number (that is more than one) of layers to be unioned together.
+        layers ([:class:`~geopyspark.RasterLayer`] or [:class:`~geopyspark.TiledRasterLayer`] or (:class:`~geopyspark.RasterLayer`) or (:class:`~geopyspark.TiledRasterLayer`)): A
+            colection of two or more ``RasterLayer``\s or ``TiledRasterLayer``\s layers to be unioned together.
 
     Returns:
         :class:`~geopyspark.RasterLayer` or :class:`~geopyspark.TiledRasterLayer`
