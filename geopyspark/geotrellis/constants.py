@@ -10,6 +10,30 @@ __all__ = ['NO_DATA_INT', 'LayerType', 'IndexingMethod', 'ResampleMethod', 'Time
 NO_DATA_INT = -2147483648
 
 
+"""The default size of each tile in the resulting layer."""
+DEFAULT_MAX_TILE_SIZE = 256
+
+
+"""The default byte size of each partition."""
+DEFAULT_PARTITION_BYTES = 1281 * 1024 * 1024
+
+
+"""The default number of bytes that should be read in at a time."""
+DEFAULT_CHUNK_SIZE = 65536
+
+
+"""The default name of the GeoTiff tag that contains the timestamp for the tile."""
+DEFAULT_GEOTIFF_TIME_TAG = "TIFFTAG_DATETIME"
+
+
+"""The default pattern that will be parsed from the timeTag."""
+DEFAULT_GEOTIFF_TIME_FORMAT = "yyyy:MM:dd HH:mm:ss"
+
+
+"""The default S3 Client to use when reading layers in."""
+DEFAULT_S3_CLIENT = "default"
+
+
 class LayerType(Enum):
     """The type of the key within the tuple of the wrapped RDD."""
 
