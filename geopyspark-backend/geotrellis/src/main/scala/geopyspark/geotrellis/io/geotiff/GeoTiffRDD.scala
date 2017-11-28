@@ -8,15 +8,14 @@ import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.s3._
 import geotrellis.spark.io.s3.testkit._
 
-import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
 
 import java.net.URI
-import java.util.Map
 import scala.reflect._
 
 import org.apache.spark._
 import org.apache.hadoop.fs.Path
+
 
 object GeoTiffRDD {
   import Constants._
@@ -24,14 +23,14 @@ object GeoTiffRDD {
   object HadoopGeoTiffRDDOptions {
     def default = HadoopGeoTiffRDD.Options.DEFAULT
 
-    def setValues(javaMap: java.util.Map[String, Any]): HadoopGeoTiffRDD.Options = {
-      val stringValues = Array("time_tag", "time_format", "crs")
-
-      val (stringMap, intMap) = GeoTrellisUtils.convertToScalaMap(javaMap, stringValues)
-
+    def setValues(
+      intMap: Map[String, Int],
+      stringMap: Map[String, String],
+      partitionBytes: Option[Long]
+    ): HadoopGeoTiffRDD.Options = {
       val crs: Option[CRS] =
         if (stringMap.contains("crs"))
-          Some(CRS.fromName(stringMap("crs")))
+          TileLayer.getCRS(stringMap("crs"))
         else
           None
 
@@ -41,28 +40,23 @@ object GeoTiffRDD {
         timeFormat = stringMap.getOrElse("time_format", default.timeFormat),
         maxTileSize = intMap.get("max_tile_size"),
         numPartitions = intMap.get("num_partitions"),
-        chunkSize = intMap.get("chunk_size"))
+        partitionBytes = partitionBytes,
+        chunkSize = intMap.get("chunk_size")
+      )
     }
   }
 
   object S3GeoTiffRDDOptions {
     def default = S3GeoTiffRDD.Options.DEFAULT
 
-    def setValues(javaMap: java.util.Map[String, Any]): S3GeoTiffRDD.Options = {
-      val stringValues = Array("time_tag", "time_format", "s3_client", "crs")
-      val (stringMap, intMap) = GeoTrellisUtils.convertToScalaMap(javaMap, stringValues)
-
+    def setValues(
+      intMap: Map[String, Int],
+      stringMap: Map[String, String],
+      partitionBytes: Option[Long]
+    ): S3GeoTiffRDD.Options = {
       val crs: Option[CRS] =
         if (stringMap.contains("crs"))
-          Some(CRS.fromName(stringMap("crs")))
-        else
-          None
-
-      val partitionBytes =
-        if (javaMap.contains("partition_bytes") && !intMap.contains("max_tile_size"))
-          Some(javaMap.get("partition_bytes").asInstanceOf[Long])
-        else if (!intMap.contains("max_tile_size"))
-          default.partitionBytes
+          TileLayer.getCRS(stringMap("crs"))
         else
           None
 
@@ -86,7 +80,9 @@ object GeoTiffRDD {
         numPartitions = intMap.get("num_partitions"),
         partitionBytes = partitionBytes,
         chunkSize = intMap.get("chunk_size"),
-        getS3Client = getS3Client)
+        delimiter = stringMap.get("delimiter"),
+        getS3Client = getS3Client
+      )
     }
   }
 
@@ -94,23 +90,30 @@ object GeoTiffRDD {
     sc: SparkContext,
     keyType: String,
     paths: java.util.List[String],
-    options: java.util.Map[String, Any]
+    options: java.util.Map[String, Any],
+    partitionBytes: String
   ): RasterLayer[_] = {
     val uris = paths.map{ path => new URI(path) }
+    val (stringMap, intMap) = GeoTrellisUtils.convertToScalaMap(options)
+    val bytes = Some(partitionBytes.toLong)
 
     uris
       .map { uri =>
         uri.getScheme match {
           case S3 =>
-            if (options isEmpty)
-              getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.default)
-            else
-              getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.setValues(options))
+            getS3GeoTiffRDD(
+              sc,
+              keyType,
+              uri,
+              S3GeoTiffRDDOptions.setValues(intMap, stringMap, bytes)
+            )
           case _ =>
-            if (options isEmpty)
-              getHadoopGeoTiffRDD(sc, keyType, new Path(uri), HadoopGeoTiffRDDOptions.default)
-            else
-              getHadoopGeoTiffRDD(sc, keyType, new Path(uri), HadoopGeoTiffRDDOptions.setValues(options))
+              getHadoopGeoTiffRDD(
+                sc,
+                keyType,
+                new Path(uri),
+                HadoopGeoTiffRDDOptions.setValues(intMap, stringMap, bytes)
+              )
         }
       }
       .reduce{ (r1, r2) =>

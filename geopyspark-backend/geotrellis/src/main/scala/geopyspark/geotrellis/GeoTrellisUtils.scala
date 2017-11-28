@@ -16,7 +16,6 @@ import org.apache.spark.rdd._
 
 import scala.collection.JavaConverters._
 import collection.JavaConversions._
-import java.util.Map
 
 
 object GeoTrellisUtils {
@@ -25,18 +24,19 @@ object GeoTrellisUtils {
   def seqToIterable[T](seq: Seq[T]): java.util.Iterator[T] = seq.toIterator.asJava
 
   def convertToScalaMap(
-    javaMap: java.util.Map[String, Any],
-    stringValues: Array[String]
-  ): (scala.collection.Map[String, String], scala.collection.Map[String, Int]) = {
+    javaMap: java.util.Map[String, Any]
+  ): (Map[String, String], Map[String, Int]) = {
     val scalaMap = javaMap.asScala
 
     val intMap =
-      scalaMap.filterKeys(x => !(stringValues.contains(x)))
+      scalaMap.filterKeys(x => INTKEYS.contains(x))
         .mapValues(x => x.asInstanceOf[Int])
+        .toMap
 
     val stringMap =
-      scalaMap.filterKeys(x => stringValues.contains(x))
+      scalaMap.filterKeys(x => STRINGKEYS.contains(x))
         .mapValues(x => x.asInstanceOf[String])
+        .toMap
 
     (stringMap, intMap)
   }
