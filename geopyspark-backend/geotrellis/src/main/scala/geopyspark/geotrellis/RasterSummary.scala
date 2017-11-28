@@ -8,7 +8,6 @@ import geotrellis.util._
 import geotrellis.vector.{Extent, ProjectedExtent}
 import org.apache.spark.rdd.RDD
 
-import scala.collection.immutable.HashMap
 import scala.reflect.ClassTag
 
 case class RasterSummary[K](
@@ -56,9 +55,11 @@ object RasterSummary {
         // the spatial KeyBounds are set outside this call.
         val boundsKey = key.translate(SpatialKey(0,0))
         val cellSize = CellSize(extent, grid.cols, grid.rows)
-        HashMap(crs -> RasterSummary(crs, grid.cellType, cellSize, extent, KeyBounds(boundsKey, boundsKey), 1))
+        (crs -> RasterSummary(crs, grid.cellType, cellSize, extent, KeyBounds(boundsKey, boundsKey), 1))
       }
-      .reduce { (m1, m2) => m1.merged(m2){ case ((k,v1), (_,v2)) => (k,v1 combine v2) } }
-      .values.toSeq
+      .reduceByKey { _ combine _ }
+      .values
+      .collect
+      .toSeq
   }
 }
