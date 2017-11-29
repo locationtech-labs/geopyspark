@@ -303,7 +303,7 @@ an :class:`~geopyspark.geotrellis.Extent`.
 
 **Note**: It is important that the given geometry is in the same
 projection as the queried layer. Otherwise, either the wrong area
-will be returned or an exception will be thrown.
+will be returned or an empty layer will be returned.
 
 When the Queried Geometry is in the Same Projection as the Layer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -398,6 +398,26 @@ Querying by Space and Time
               layer_zoom=7,
               query_geom=multi_poly,
               time_intervals=[min_key.instant, max_key.instant])
+
+Non-Intersecting Queries
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In the event that neither the ``query_geom`` nor ``time_intervals`` intersects the layer,
+then an empty ``TiledRasterLayer`` will be returned.
+
+.. code:: python3
+
+    # A non-intersecting geometry that we will use to query our layer.
+    bad_area = box(-100, -100, 0, 0)
+
+    # This will return an empty TiledRasterLayer
+    empty_layer = gps.query(uri="file:///tmp/spatial-catalog",
+                            layer_name="spatial-layer",
+                            layer_zoom=11,
+                            query_geom=bad_area)
+
+    empty_layer.isEmpty()
+
 
 AttributeStore
 --------------
