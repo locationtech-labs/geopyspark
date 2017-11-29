@@ -20,8 +20,6 @@ libraryDependencies ++= Seq(
   "net.sf.py4j"           % "py4j"                         % "0.10.5"
 )
 
-dependencyOverrides += "com.amazonaws" % "aws-java-sdk-s3" % "1.11.105"
-
 assemblyMergeStrategy in assembly := {
   case "reference.conf" => MergeStrategy.concat
   case "application.conf" => MergeStrategy.concat
