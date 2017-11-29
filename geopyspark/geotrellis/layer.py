@@ -284,6 +284,15 @@ class CachableLayer(object):
 
         return self.srdd.rdd().count()
 
+    def isEmpty(self):
+        """Returns a bool that is True if the layer is empty and False if it is not.
+
+        Returns:
+            bool: Are there elements within the layer
+        """
+
+        return self.srdd.rdd().isEmpty()
+
 
 class RasterLayer(CachableLayer, TileLayer):
     """A wrapper of a RDD that contains GeoTrellis rasters.
