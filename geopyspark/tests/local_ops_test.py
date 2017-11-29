@@ -121,6 +121,27 @@ class LocalOpertaionsTest(BaseTestClass):
 
         self.assertTrue((actual == arr).all())
 
+    def test_abs_operations(self):
+        arr = np.array([[[-10, -10, -10, 10],
+                         [-20, -20, -20, 20],
+                         [-10, -10, 10, 10],
+                         [-20, -20, 20, 20]]], dtype=int)
+
+        expected = np.array([[[10, 10, 10, 10],
+                              [20, 20, 20, 20],
+                              [10, 10, 10, 10],
+                              [20, 20, 20, 20]]], dtype=int)
+
+        tile = Tile(arr, 'INT', -500)
+        rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
+
+        tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, self.metadata)
+
+        result = abs(tiled)
+        actual = result.to_numpy_rdd().first()[1].cells
+
+        self.assertTrue((actual == expected).all())
+
 
 if __name__ == "__main__":
     unittest.main()

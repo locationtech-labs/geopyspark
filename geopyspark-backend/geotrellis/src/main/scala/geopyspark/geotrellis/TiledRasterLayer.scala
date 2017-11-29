@@ -234,6 +234,9 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
       }
     })
 
+  def localAbs(): TiledRasterLayer[K] =
+    withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y.localAbs() }) })
+
   def convertDataType(newType: String): TiledRasterLayer[_] =
     withRDD(rdd.convert(CellType.fromName(newType)))
 

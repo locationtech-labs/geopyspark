@@ -1826,6 +1826,12 @@ class TiledRasterLayer(CachableLayer, TileLayer):
     def __rtruediv__(self, value):
         return self._process_operation(value, self.srdd.reverseLocalDivide)
 
+    def __abs__(self):
+        srdd = self.srdd.localAbs()
+
+        return TiledRasterLayer(self.layer_type, srdd)
+
+
     def __str__(self):
         return "TiledRasterLayer(layer_type={}, zoom_level={}, is_floating_point_layer={})".format(
             self.layer_type, self.zoom_level, self.is_floating_point_layer)
