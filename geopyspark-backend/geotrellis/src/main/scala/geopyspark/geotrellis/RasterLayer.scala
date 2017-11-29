@@ -38,7 +38,7 @@ import scala.collection.immutable.HashMap
 /**
  * RDD of Rasters, untiled and unsorted
  */
-abstract class RasterLayer[K](implicit ev0: ClassTag[K], ev1: Component[K, ProjectedExtent]) extends TileLayer[K] {
+abstract class RasterLayer[K](implicit ev0: ClassTag[K], ev1: Component[K, ProjectedExtent]) extends TileLayer[K] with Serializable {
   def rdd: RDD[(K, MultibandTile)]
 
   def toProtoRDD(): JavaRDD[Array[Byte]]
