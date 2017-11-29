@@ -1,97 +1,82 @@
 geopyspark.geotrellis package
 =============================
 
-.. automodule:: geopyspark.geotrellis
+.. autoclass:: geopyspark.geotrellis.Tile
    :members:
    :undoc-members:
    :inherited-members:
 
-geopyspark.geotrellis.ProtoBufCodecs module
-----------------------------------------------
-
-.. autoclass:: geopyspark.geotrellis.protobuf
-   :members:
-
-geopyspark.geotrellis.ProtoBufSerializer module
-------------------------------------------------
-
-.. autoclass:: geopyspark.geotrellis.protobufserializer.ProtoBufSerializer
-   :members:
-
-geopyspark.geotrellis.catalog module
--------------------------------------
-
-.. automodule:: geopyspark.geotrellis.catalog
+.. autoclass:: geopyspark.geotrellis.Extent
    :members:
    :inherited-members:
 
-geopyspark.geotrellis.constants module
----------------------------------------
-
-.. automodule:: geopyspark.geotrellis.constants
-   :members:
-   :undoc-members:
-   :inherited-members:
-
-geopyspark.geotrellis.geotiff module
------------------------------------------
-
-.. automodule:: geopyspark.geotrellis.geotiff
+.. autoclass:: geopyspark.geotrellis.ProjectedExtent
    :members:
    :inherited-members:
 
-geopyspark.geotrellis.neighborhood module
---------------------------------------------
-
-.. automodule:: geopyspark.geotrellis.neighborhood
+.. autoclass:: geopyspark.geotrellis.TemporalProjectedExtent
    :members:
    :inherited-members:
 
-geopyspark.geotrellis.layer module
-------------------------------------
-
-.. automodule:: geopyspark.geotrellis.layer
+.. autoclass:: geopyspark.geotrellis.GlobalLayout
    :members:
    :inherited-members:
 
-geopyspark.geotrellis.cost_distance module
--------------------------------------------
-
-.. automodule:: geopyspark.geotrellis.cost_distance
+.. autoclass:: geopyspark.geotrellis.LocalLayout
    :members:
    :inherited-members:
 
-geopyspark.geotrellis.euclidean_distance module
-------------------------------------------------
-
-.. automodule:: geopyspark.geotrellis.euclidean_distance
+.. autoclass:: geopyspark.geotrellis.LocalLayout
    :members:
    :inherited-members:
 
-geopyspark.geotrellis.hillshade module
--------------------------------------------
-
-.. automodule:: geopyspark.geotrellis.hillshade
+.. autoclass:: geopyspark.geotrellis.TileLayout
    :members:
    :inherited-members:
 
-geopyspark.geotrellis.rasterize module
--------------------------------------------
-
-.. automodule:: geopyspark.geotrellis.rasterize
+.. autoclass:: geopyspark.geotrellis.LayoutDefinition
    :members:
    :inherited-members:
 
-geopyspark.geotrellis.tms module
---------------------------------
-
-.. automodule:: geopyspark.geotrellis.tms
+.. autoclass:: geopyspark.geotrellis.SpatialKey
    :members:
    :inherited-members:
-      
-geopyspark.geotrellis.histogram module
--------------------------------------------
 
-.. automodule:: geopyspark.geotrellis.histogram
+.. autoclass:: geopyspark.geotrellis.SpaceTimeKey
    :members:
    :inherited-members:
+
+.. autoclass:: geopyspark.geotrellis.RasterizerOptions
+   :members:
+   :inherited-members:
+
+.. autoclass:: geopyspark.geotrellis.Bounds
+   :members:
+   :inherited-members:
+
+.. autoclass:: geopyspark.geotrellis.Metadata
+   :members:
+   :inherited-members:
+
+.. toctree::
+  :maxdepth: 2
+  :caption: Modules
+  :glob:
+  :hidden:
+
+  geopyspark.geotrellis.catalog
+  geopyspark.geotrellis.color
+  geopyspark.geotrellis.combine_bands
+  geopyspark.geotrellis.constants
+  geopyspark.geotrellis.cost_distance
+  geopyspark.geotrellis.euclidean_distance
+  geopyspark.geotrellis.geotiff
+  geopyspark.geotrellis.hillshade
+  geopyspark.geotrellis.histogram
+  geopyspark.geotrellis.layer
+  geopyspark.geotrellis.neighborhood
+  geopyspark.geotrellis.protobufcodecs
+  geopyspark.geotrellis.protobufserializer
+  geopyspark.geotrellis.rasterize
+  geopyspark.geotrellis.tms
+  geopyspark.geotrellis.union

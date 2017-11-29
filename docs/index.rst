@@ -129,8 +129,8 @@ a need for it.
   tutorials/reading-in-sentinel-data
 
 .. toctree::
-  :maxdepth: 4
-  :caption: Docs
+  :maxdepth: 2
+  :caption: API Reference
   :glob:
   :hidden:
 
