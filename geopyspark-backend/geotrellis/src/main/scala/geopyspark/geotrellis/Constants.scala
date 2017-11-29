@@ -47,4 +47,7 @@ object Constants {
 
   final val STRIPED = "Striped"
   final val TILED = "Tiled"
+
+  final val INTKEYS = Array("max_tile_size", "num_partitions", "chunk_size")
+  final val STRINGKEYS = Array("crs", "time_tag", "time_format", "delimiter", "s3_client")
 }
