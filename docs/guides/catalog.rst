@@ -286,6 +286,9 @@ Querying a Layer
 
 When only a certain section of the layer is of interest, one can
 retrieve these areas of the layer through the ``query`` method.
+The resulting ``TiledRasterLayer`` will contain all of the ``Tile``\s
+that the queried intersects, not just the area itself.
+
 Depending on the type of data being queried, there are a couple of ways
 to filter what will be returned.
 
@@ -299,8 +302,8 @@ and ``MultiPolygon``\ s), the ``wkb`` representation of the geometry, or
 an :class:`~geopyspark.geotrellis.Extent`.
 
 **Note**: It is important that the given geometry is in the same
-projection as the queried layer. Otherwise, either the wrong area or
-nothing will be returned.
+projection as the queried layer. Otherwise, either the wrong area
+will be returned or an exception will be thrown.
 
 When the Queried Geometry is in the Same Projection as the Layer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -327,8 +330,8 @@ When the Queried Geometry is in a Different Projection than the Layer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As stated above, it is important that both the geometry and layer are in
-the same projection. If the two are in different CRSs, then this can be
-resolved by setting the ``proj_query`` parameter to whatever projection
+the same projection. If the two are in different ``CRS``\s, then this can
+be resolved by setting the ``proj_query`` parameter to whatever projection
 the geometry is in.
 
 .. code:: python3
@@ -337,16 +340,12 @@ the geometry is in.
     metadata = spatial_tiled_layer.tile_to_layout(layout=gps.GlobalLayout(), target_crs=4326).layer_metadata
     metadata.layout_definition.extent, spatial_tiled_layer.layer_metadata.layout_definition.extent
 
-.. code:: python3
-
     # Queries the area of the Extent and returns any intersections
     querried_spatial_layer = gps.query(uri="file:///tmp/spatial-catalog",
                                        layer_name="spatial-layer",
                                        layer_zoom=11,
                                        query_geom=metadata.layout_definition.extent.to_polygon,
                                        query_proj="EPSG:4326")
-
-.. code:: python3
 
     # Because we queried the whole Extent of the layer, we should have gotten back the whole thing.
     querried_extent = querried_spatial_layer.layer_metadata.layout_definition.extent
@@ -358,7 +357,8 @@ Querying a Spatial-Temporal Layer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In addition to being able to query a geometry, spatial-temporal data can
-also be filtered by time as well.
+also be filtered by time as well. These times are given as ``datetime.datetime``
+instances.
 
 Querying by Time
 ^^^^^^^^^^^^^^^^
@@ -373,8 +373,6 @@ Querying by Time
               layer_name="spacetime-layer",
               layer_zoom=7,
               time_intervals=[min_key.instant, max_key.instant])
-
-.. code:: python3
 
     # It's possible to query a single time interval. By doing so, only Tiles that contain the time given will be
     # returned.
@@ -392,8 +390,6 @@ Querying by Space and Time
     poly_1 = box(140.0, 60.0, 150.0, 65.0)
     poly_2 = box(160.0, 70.0, 179.0, 89.0)
     multi_poly = MultiPolygon(poly_1, poly_2)
-
-.. code:: python3
 
     # Returns a TiledRasterLayer that contains the tiles which intersect the given polygons and are within the
     # specified time interval.
