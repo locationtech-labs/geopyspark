@@ -149,13 +149,10 @@ class TMS(object):
         if not host:
             host = "localhost"
 
-        try:
-            if requested_port:
-                self.server.bind(host, requested_port)
-            else:
-                self.server.bind(host)
-        except:
-            raise RuntimeError("Problem binding TMS server")
+        if requested_port:
+            self.server.bind(host, requested_port)
+        else:
+            self.server.bind(host)
 
         self.bound = True
         self._port = self.server.port()
