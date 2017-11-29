@@ -106,7 +106,12 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
   def tileToLayout(
     layoutType: LayoutType,
     resampleMethod: ResampleMethod
-  ): TiledRasterLayer[K]
+  ): TiledRasterLayer[K] = {
+    val (layoutDefinition, zoom) =
+      layoutType.layoutDefinitionWithZoom(rdd.metadata.crs, rdd.metadata.extent, rdd.metadata.cellSize)
+
+    tileToLayout(layoutDefinition, zoom, resampleMethod)
+  }
 
   def tileToLayout(
     layOutDefinition: LayoutDefinition,
