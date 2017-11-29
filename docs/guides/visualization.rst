@@ -71,7 +71,7 @@ a ``TiledRasterLayer`` has a ``zoom_level`` of 12 then the resulting
 
 .. code:: python3
 
-    tiled_layer.pyramid()
+    pyramided = tiled_layer.pyramid()
 
 Contrusting a Pyramid Manually
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -92,7 +92,8 @@ within a ``Pyramid`` via the :meth:`~geopyspark.Pyramid.get_histogram` method.
 
 .. code:: python3
 
-    pyramided.get_histogram()
+    hist = pyramided.get_histogram()
+    hist
 
 RDD Methods
 ~~~~~~~~~~~
@@ -119,8 +120,6 @@ getting a result where nothing has changed if neither of the
 
     pyramided + 1
 
-.. code:: python3
-
     (2 * (pyramided + 2)) / 3
 
 When performing operations on two or more ``Pyramid``\ s, if the
@@ -130,11 +129,9 @@ resulting ``Pyramid`` will only have as many levels as the source
 
 .. code:: python3
 
-    gps.Pyramid({x: tiled_layer.tile_to_layout(gps.GlobalLayout(zoom=x)) for x in range(0, 5)})
-
-.. code:: python3
-
-    pyramided + small_pyramid
+    small_pyramid = gps.Pyramid({x: tiled_layer.tile_to_layout(gps.GlobalLayout(zoom=x)) for x in range(0, 5)})
+    result = pyramided + small_pyramid
+    result.levels
 
 ColorMap
 --------
@@ -199,7 +196,7 @@ From a Histogram
 
 .. code:: python3
 
-    gps.ColorMap.from_histogram(histogram=hist, color_list=color_ramp)
+    gps.ColorMap.from_histogram(histogram=hist, color_list=colors_color_ramp)
 
 From a List of Colors
 ^^^^^^^^^^^^^^^^^^^^^
@@ -251,7 +248,7 @@ same inputs used in the previous examples.
 .. code:: python3
 
     # build using a Histogram
-    gps.ColorMap.build(breaks=hist, colors=color_ramp)
+    gps.ColorMap.build(breaks=hist, colors=colors_color_ramp)
 
     # It is also possible to pass in the name of Matplotlib color ramp instead of constructing it yourself
     gps.ColorMap.build(breaks=hist, colors="viridis")

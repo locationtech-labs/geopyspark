@@ -344,7 +344,7 @@ the geometry is in.
                                        layer_name="spatial-layer",
                                        layer_zoom=11,
                                        query_geom=metadata.layout_definition.extent.to_polygon,
-                                       query_proj="EPSG:3857")
+                                       query_proj="EPSG:4326")
 
 .. code:: python3
 
@@ -473,7 +473,7 @@ Otherwise you are free to store any additional attribute that is associated with
 .. code:: python3
 
    attributes.write("notes", {'a': 3, 'b': 5})
-   notes_dict = attributes.read("notes)
+   notes_dict = attributes.read("notes")
 
 A common use case for this is to store the layer histogram when writing a layer so it may be used for rendering later.
 
@@ -510,20 +510,20 @@ When writing a workflow that places heavy demand on :class:`~geopyspark.geotrell
 .. code:: python3
 
    # Retrieve already created instance if its been asked for before
-   store = gps.AttributeStore.cached(uri='file:///tmp/spatial-catalog')
+   store = gps.AttributeStore.cached(uri='file:///tmp/spatial-catalog-2')
 
    # Catalog functions have optional store parameter that allows its reuse
-   gps.write(uri='file:///tmp/spatial-catalog',
+   gps.write(uri='file:///tmp/spatial-catalog-2',
           layer_name='spatial-layer',
           tiled_raster_layer=spatial_tiled_layer,
           store=store)
 
-   gps.query(uri="file:///tmp/spatial-catalog",
+   gps.query(uri="file:///tmp/spatial-catalog-2",
           layer_name="spatial-layer",
           layer_zoom=11,
           store=store)
 
-   gps.read_value(uri="file:///tmp/spatial-catalog",
+   gps.read_value(uri="file:///tmp/spatial-catalog-2",
           layer_name="spatial-layer",
           layer_zoom=11,
           col=min_key.col,

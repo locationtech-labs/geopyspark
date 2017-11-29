@@ -249,7 +249,7 @@ scalar value.
                                      [1.0, 1.0, 1.0, 1.0, 1.0],
                                      [1.0, 1.0, 1.0, 1.0, 0.0]]])
 
-    tile = gps.Tile.from_numpy_array(numpy_array=cost_distance_cells, no_data_value=~1.0)
+    tile = gps.Tile.from_numpy_array(numpy_array=cost_distance_cells, no_data_value=-1.0)
     cost_distance_extent = gps.ProjectedExtent(extent=gps.Extent(xmin=0.0, ymin=0.0, xmax=5.0, ymax=5.0), epsg=4326)
     cost_distance_layer = [(cost_distance_extent, tile)]
 
@@ -289,7 +289,7 @@ Rasterize MultiPolygons
 .. code:: python3
 
     # Creates a TiledRasterLayer that contains the MultiPolygon with a CRS of EPSG:3857 at zoom level 5.
-    gps.rasterize(geoms=[raster_mulit_poly], crs=4326, zoom=5, fill_value=1)
+    gps.rasterize(geoms=[raster_multi_poly], crs=4326, zoom=5, fill_value=1)
 
 Rasterize LineStrings
 ~~~~~~~~~~~~~~~~~~~~~
@@ -311,4 +311,4 @@ Rasterize Polygons and LineStrings
 .. code:: python3
 
     # Creates a TiledRasterLayer with both the LineStrings and the MultiPolygon
-    gps.rasterize(geoms=[line_1, line_2, line_3, raster_mulit_poly], crs=4326, zoom=5, fill_value=2)
+    gps.rasterize(geoms=[line_1, line_2, line_3, raster_multi_poly], crs=4326, zoom=5, fill_value=2)
