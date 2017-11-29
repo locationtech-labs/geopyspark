@@ -1,4 +1,3 @@
-
 Reading in Sentinel-2 Images
 ============================
 
@@ -40,9 +39,9 @@ this
 
 .. code:: python3
 
-    !curl -o /tmp/B01.jp2 http://sentinel-s2-l1c.s3.amazonaws.com/tiles/32/T/NM/2017/1/4/0/B01.jp2
-    !curl -o /tmp/B09.jp2 http://sentinel-s2-l1c.s3.amazonaws.com/tiles/32/T/NM/2017/1/4/0/B09.jp2
-    !curl -o /tmp/B10.jp2 http://sentinel-s2-l1c.s3.amazonaws.com/tiles/32/T/NM/2017/1/4/0/B10.jp2
+    curl -o /tmp/B01.jp2 http://sentinel-s2-l1c.s3.amazonaws.com/tiles/32/T/NM/2017/1/4/0/B01.jp2
+    curl -o /tmp/B09.jp2 http://sentinel-s2-l1c.s3.amazonaws.com/tiles/32/T/NM/2017/1/4/0/B09.jp2
+    curl -o /tmp/B10.jp2 http://sentinel-s2-l1c.s3.amazonaws.com/tiles/32/T/NM/2017/1/4/0/B10.jp2
 
 The Code
 --------
@@ -54,7 +53,7 @@ Now that we have the files, we can begin to read them into GeoPySpark.
     import rasterio
     import geopyspark as gps
     import numpy as np
-    
+
     from pyspark import SparkContext
 
 .. code:: python3
@@ -74,11 +73,11 @@ raster.
 
     jp2s = ["/tmp/B01.jp2", "/tmp/B09.jp2", "/tmp/B10.jp2"]
     arrs = []
-    
+
     for jp2 in jp2s:
         with rasterio.open(jp2) as f:
             arrs.append(f.read(1))
-    
+
     data = np.array(arrs, dtype=arrs[0].dtype)
     data
 
@@ -93,7 +92,7 @@ for more information on what the following instances represent.
 
     # Create an Extent instance from rasterio's bounds
     extent = gps.Extent(*f.bounds)
-    
+
     # The EPSG code can also be obtained from the information read in via rasterio
     projected_extent = gps.ProjectedExtent(extent=extent, epsg=int(f.crs.to_dict()['init'][5:]))
     projected_extent
@@ -144,5 +143,7 @@ Where to Go From Here
 
 By creating a ``RasterLayer``, we can now work with and analyze the data
 within it. If you wish to know more about these operations, please see
-the following guides: `Layers Guide <layers.ipynb>`__,
-[map-algebra-guide], [visulation-guide], and the [catalog-guide].
+the following guides: `Layers Guide <../guides/layers.html>`__,
+`Map Algebra Guide <../guides/map-algebra.html>`__
+`Visulation Guide <../guides/visualization.html>`__,
+and the `Catalog Guide <../guides/catalog.html>`__.
