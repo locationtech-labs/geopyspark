@@ -28,7 +28,17 @@ layer with some custom color map.  This is accomplished easily:
 
    cm = gps.ColorMap.nlcd_colormap()
 
-   tms = gps.TMS.build(('s3://azavea-datahub/catalog', 'nlcd-tms-epsg3857'), display=cm)
+   layers = []
+
+   # Reads in the first 3 levels of the layer
+   for zoom in range(0, 4):
+      layers.append(gps.query(uri="s3://azavea-datahub/catalog",
+                              layer_name="nlcd-tms-epsg3857",
+                              layer_zoom=zoom))
+
+   nlcd_pyramid = gps.Pyramid(layers)
+
+   tms = gps.TMS.build(source=nlcd_pyramid, display=cm)
 
 Of course, other color maps can be used.  See the documentation for
 :class:`~geopyspark.geotrellis.color.ColorMap` for more details.
@@ -175,7 +185,7 @@ rendering function approach to apply the same simple color map as above.
 
       return img
 
-   tms = gps.TMS.build(('s3://azavea-datahub/catalog', 'nlcd-tms-epsg3857'), display=render_nlcd)
+   tms = gps.TMS.build(nlcd_pyramid, display=render_nlcd)
 
 You will likely observe noticeably slower performance compared to the earlier
 example.  This is because the contents of each tile must be transferred from
@@ -200,8 +210,17 @@ The following example masks the NLCD layer to areas above 1371 meters, using
 some of the helper functions from the previous example.
 
 .. code-block:: python
-                
+
    from scipy.interpolate import interp2d
+
+   layers = []
+
+   for zoom in range(0, 4):
+      layers.append(gps.query(uri="s3://azavea-datahub/catalog",
+                              layer_name="us-ned-tms-epsg3857",
+                              layer_zoom=zoom))
+
+   ned_pyramid = gps.Pyramid(layers)
 
    def comp(tiles):
       elev256 = tiles[0].cells[0]
@@ -223,10 +242,7 @@ some of the helper functions from the previous example.
 
       return img
     
-   tms = gps.TMS.build([
-      ('s3://azavea-datahub/catalog', 'us-ned-tms-epsg3857'),
-      ('s3://azavea-datahub/catalog', 'nlcd-tms-epsg3857')],
-      display=comp)
+   tms = gps.TMS.build([ned_pyramid, nlcd_pyramid], display=comp)
 
 This example shows the major pitfall likely to be encountered in this
 approach: tiles of different size must be somehow combined.  NLCD tiles are

@@ -1,4 +1,3 @@
-
 Ingesting an Image
 ==================
 
@@ -22,7 +21,7 @@ instance due to permission requirements needed to access the file.
 
 .. code:: python3
 
-    !curl -o /tmp/cropped.tif https://s3.amazonaws.com/geopyspark-test/example-files/cropped.tif
+    curl -o /tmp/cropped.tif https://s3.amazonaws.com/geopyspark-test/example-files/cropped.tif
 
 What is an Ingest?
 ------------------
@@ -43,7 +42,7 @@ With our file downloaded we can begin the ingest.
 .. code:: python3
 
     import geopyspark as gps
-    
+
     from pyspark import SparkContext
 
 Setting Up the SparkContext

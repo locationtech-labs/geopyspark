@@ -721,9 +721,9 @@ Unioning Layers Togther
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 To combine the contents of multiple layers together, one can use
-the ``union`` method. This will produce either a new ``RasterLayer``
-or ``TiledRasterLayer`` that contains all of the elements from the
-given layers.
+the :meth:`~geopyspark.geotrellis.union.union` method. This will
+produce either a new ``RasterLayer`` or ``TiledRasterLayer`` that
+contains all of the elements from the given layers.
 
 **Note**: The resulting layer can contain duplicate keys.
 
@@ -757,9 +757,10 @@ reading them in.
 Combining Bands of Two Or More Layers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``combine_bands`` method will concatenate the bands of values that share a key between
-two or more layers. Thus, the resulting layer will contain a new ``Tile`` for each shared
-key where the ``Tile`` will contain all of the bands from the given layers.
+The :meth:`~geopyspark.geotrellis.combine_bands.combine_bands` method will concatenate the
+bands of values that share a key between two or more layers. Thus, the resulting layer will
+contain a new ``Tile`` for each shared key where the ``Tile`` will contain all of the bands
+from the given layers.
 
 The order in which the layers are passed into ``combine_bands`` matters. Where the resulting
 values' bands will be ordered based on their position of their respective layer.
@@ -1173,3 +1174,10 @@ Count
 .. code:: python3
 
     raster_layer.count()
+
+isEmpty
+~~~~~~~~
+
+.. code:: python3
+
+   raster_layer.isEmpty()

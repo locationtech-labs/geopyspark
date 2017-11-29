@@ -13,7 +13,7 @@ code:
 
 .. code:: python3
 
-    !curl -o /tmp/cropped.tif https://s3.amazonaws.com/geopyspark-test/example-files/cropped.tif
+    curl -o /tmp/cropped.tif https://s3.amazonaws.com/geopyspark-test/example-files/cropped.tif
 
 .. code:: python3
 

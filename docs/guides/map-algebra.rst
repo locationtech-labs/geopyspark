@@ -54,8 +54,8 @@ Local Operations
 ----------------
 
 Local operations on ``TiledRasterLayer``\ s can use ``int``\ s,
-``float``\ s, or other ``TiledRasterLayer``\ s. ``+``, ``-``, ``*``, and
-``/`` are all of the local operations that currently supported.
+``float``\ s, or other ``TiledRasterLayer``\ s. ``+``, ``-``, ``*``,
+``/``, ``**``, and ``abs`` are all of the local operations that currently supported.
 
 .. code:: python3
 
@@ -64,6 +64,10 @@ Local operations on ``TiledRasterLayer``\ s can use ``int``\ s,
     (2 - (tiled_layer * 3))
 
     ((tiled_layer + tiled_layer) / (tiled_layer + 1))
+
+    abs(tiled_layer)
+
+    2 ** tiled_layer
 
 A :class:`~geopyspark.geotrellis.layer.Pyramid` can also be used in local
 operations. The types that can be used in local operations with
