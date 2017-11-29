@@ -142,6 +142,55 @@ class LocalOpertaionsTest(BaseTestClass):
 
         self.assertTrue((actual == expected).all())
 
+    def test_pow_int(self):
+        arr = np.zeros((1, 4, 4))
+
+        tile = Tile(arr, 'FLOAT', -500)
+        rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
+        tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, self.metadata)
+
+        result = tiled ** 5
+        actual = result.to_numpy_rdd().first()[1].cells
+
+        self.assertTrue((actual == 0).all())
+
+    def test_rpow_int(self):
+        arr = np.full((1, 4, 4), 2, dtype='int16')
+
+        tile = Tile(arr, 'int16', -500)
+        rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
+        tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, self.metadata)
+
+        result = 3 ** tiled
+        actual = result.to_numpy_rdd().first()[1].cells
+
+        self.assertTrue((actual == 9).all())
+
+    def test_rpow_double(self):
+        arr = np.full((1, 4, 4), 3.0, dtype='int64')
+
+        tile = Tile(arr, 'FLOAT', -500)
+        rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
+        tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, self.metadata)
+
+        result = 0.0 ** tiled
+        actual = result.to_numpy_rdd().first()[1].cells
+
+        self.assertTrue((actual == 0.0).all())
+
+    def test_pow_layer(self):
+        arr = np.zeros((1, 4, 4))
+        twos = arr + 2
+
+        tile = Tile(twos, 'FLOAT', -500)
+        rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
+        tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, self.metadata)
+
+        result = tiled ** tiled
+        actual = result.to_numpy_rdd().first()[1].cells
+
+        self.assertTrue((actual == 4).all())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1831,6 +1831,11 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         return TiledRasterLayer(self.layer_type, srdd)
 
+    def __pow__(self, value):
+        return self._process_operation(value, self.srdd.localPow)
+
+    def __rpow__(self, value):
+        return self._process_operation(value, self.srdd.reverseLocalPow)
 
     def __str__(self):
         return "TiledRasterLayer(layer_type={}, zoom_level={}, is_floating_point_layer={})".format(
