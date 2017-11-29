@@ -104,7 +104,7 @@ a need for it.
   :caption: Home
   :hidden:
 
-  changelog <CHANGELOG>
+  Changelog <CHANGELOG>
   contributing
 
 .. toctree::
