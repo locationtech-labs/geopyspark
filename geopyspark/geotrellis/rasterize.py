@@ -1,4 +1,4 @@
-import shapely.wkb
+from shapely.wkb import dumps
 from geopyspark import get_spark_context
 from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.geotrellis.layer import TiledRasterLayer
@@ -11,7 +11,8 @@ def rasterize(geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=
     """Rasterizes a Shapely geometries.
 
     Args:
-        geoms ([shapely.geometry]): List of shapely geometries to rasterize.
+        geoms ([shapely.geometry] or (shapely.geometry) or pyspark.RDD[shapely.geometry]): Either
+            a list, tuple, or a Python RDD of shapely geometries to rasterize.
         crs (str or int): The CRS of the input geometry.
         zoom (int): The zoom level of the output raster.
         fill_value (int or float): Value to burn into pixels intersectiong geometry
@@ -29,13 +30,33 @@ def rasterize(geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=
         crs = str(crs)
 
     pysc = get_spark_context()
-    wkb_geoms = [shapely.wkb.dumps(g) for g in geoms]
-    srdd = pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterLayer.rasterizeGeometry(pysc._jsc.sc(),
-                                                                                             wkb_geoms,
-                                                                                             crs,
-                                                                                             zoom,
-                                                                                             float(fill_value),
-                                                                                             CellType(cell_type).value,
-                                                                                             options,
-                                                                                             num_partitions)
+    rasterizer = pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterLayer.rasterizeGeometry
+
+    if isinstance(geoms, (list, tuple)):
+        wkb_geoms = [dumps(g) for g in geoms]
+
+        srdd = rasterizer(pysc._jsc.sc(),
+                          wkb_geoms,
+                          crs,
+                          zoom,
+                          float(fill_value),
+                          CellType(cell_type).value,
+                          options,
+                          num_partitions)
+
+    else:
+        wkb_rdd = geoms.map(lambda geom: dumps(geom))
+
+        # If this is False then the WKBs will be serialized
+        # when going to Scala resulting in garbage
+        wkb_rdd._bypass_serializer = True
+
+        srdd = rasterizer(wkb_rdd._jrdd.rdd(),
+                          crs,
+                          zoom,
+                          float(fill_value),
+                          CellType(cell_type).value,
+                          options,
+                          num_partitions)
+
     return TiledRasterLayer(LayerType.SPATIAL, srdd)
