@@ -50,4 +50,8 @@ object Constants {
 
   final val INTKEYS = Array("max_tile_size", "num_partitions", "chunk_size")
   final val STRINGKEYS = Array("crs", "time_tag", "time_format", "delimiter", "s3_client")
+
+  final val NODATACELLS = "NoData"
+  final val DATACELLS = "Data"
+  final val ALLCELLS = "All"
 }

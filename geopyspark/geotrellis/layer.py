@@ -36,7 +36,8 @@ from geopyspark.geotrellis.constants import (Operation,
                                              StorageMethod,
                                              ColorSpace,
                                              Compression,
-                                             NO_DATA_INT
+                                             NO_DATA_INT,
+                                             TargetCell
                                             )
 from geopyspark.geotrellis.neighborhood import Neighborhood
 
@@ -1783,6 +1784,31 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         """
 
         return self._process_polygonal_summary(geometry, self.srdd.polygonalMean)
+
+    def tobler(self, z_factor=1.0, target_cell=TargetCell.ALL):
+        """Generates a Tobler walking speed layer from an elevation layer.
+
+        Note:
+            This method has a known issue where the Tobler calculation is
+            direction agnostic. Thus, all slopes are assumed to be uphill.
+            This can result it incorrect results. A fix is currently being
+            worked on.
+
+        z_factor (float, optional): How many x and y units in a single z unit.
+            This is a conversion factor between map and elevation units. Defaults
+            to 1.0.
+        target_cell (str or :class:`~geopyspark.geotrellis.constants.TargetCell`, optional):
+            Which cells should be used in the calculation of the Tobler walk speed layer.
+            Defaults to ``TargetCell.ALL``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
+        """
+
+        target_cell = TargetCell(target_cell)
+        result = self.srdd.tobler(z_factor, target_cell.value)
+
+        return TiledRasterLayer(self.layer_type, result)
 
     def _process_operation(self, value, operation):
         if isinstance(value, int) or isinstance(value, float):
