@@ -1,6 +1,6 @@
 from shapely.wkb import dumps
 from geopyspark import get_spark_context
-from geopyspark.geotrellis.constants import LayerType, CellType
+from geopyspark.geotrellis.constants import LayerType, CellType, Partitioner
 from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 
@@ -11,8 +11,15 @@ from geopyspark.vector_pipe.vector_pipe_protobufcodecs import (feature_cellvalue
 __all__ = ['rasterize', 'rasterize_features']
 
 
-def rasterize(geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=None, num_partitions=None):
-    """Rasterizes a collection of Shapely geometries.
+def rasterize(geoms,
+              crs,
+              zoom,
+              fill_value,
+              cell_type=CellType.FLOAT64,
+              options=None,
+              num_partitions=None,
+              partitioner=Partitioner.HASH_PARTITIONER):
+    """Rasterizes a Shapely geometries.
 
     Args:
         geoms ([shapely.geometry] or (shapely.geometry) or pyspark.RDD[shapely.geometry]): Either
@@ -25,6 +32,8 @@ def rasterize(geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=
         options (:class:`~geopyspark.geotrellis.RasterizerOptions`, optional): Pixel intersection options.
         num_partitions (int, optional): The number of repartitions Spark will make when the data is
             repartitioned. If ``None``, then the data will not be repartitioned.
+        partitioner (str or :class:`~geopyspark.geotrellis.constants.Partitioner, optional): The partitioner
+            that will be used to partition the resulting layer. Defaults to ``Partitioner.HASH_PARTITIONER``.
 
     Returns:
         :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
@@ -35,6 +44,7 @@ def rasterize(geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=
 
     pysc = get_spark_context()
     rasterizer = pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterLayer.rasterizeGeometry
+    partitioner = Partitioner(partitioner).value
 
     if isinstance(geoms, (list, tuple)):
         wkb_geoms = [dumps(g) for g in geoms]
@@ -46,7 +56,8 @@ def rasterize(geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=
                           float(fill_value),
                           CellType(cell_type).value,
                           options,
-                          num_partitions)
+                          num_partitions,
+                          partitioner)
 
     else:
         wkb_rdd = geoms.map(lambda geom: dumps(geom))
@@ -61,7 +72,8 @@ def rasterize(geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=
                           float(fill_value),
                           CellType(cell_type).value,
                           options,
-                          num_partitions)
+                          num_partitions,
+                          partitioner)
 
     return TiledRasterLayer(LayerType.SPATIAL, srdd)
 

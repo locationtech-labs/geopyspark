@@ -60,4 +60,7 @@ object Constants {
 
   final val METERSATEQUATOR = 11320
   final val FEETATEQUATOR = 365217.6
+
+  final val HASH = "HashPartitioner"
+  final val SPATIAL = "SpatialPartitioner"
 }

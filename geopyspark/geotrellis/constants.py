@@ -6,7 +6,7 @@ __all__ = ['NO_DATA_INT', 'LayerType', 'IndexingMethod', 'ResampleMethod', 'Time
            'Operation', 'Neighborhood', 'ClassificationStrategy', 'CellType', 'ColorRamp',
            'DEFAULT_MAX_TILE_SIZE', 'DEFAULT_PARTITION_BYTES', 'DEFAULT_CHUNK_SIZE',
            'DEFAULT_GEOTIFF_TIME_TAG', 'DEFAULT_GEOTIFF_TIME_FORMAT', 'DEFAULT_S3_CLIENT',
-           'StorageMethod', 'ColorSpace', 'Compression', 'Unit']
+           'StorageMethod', 'ColorSpace', 'Compression', 'Unit', 'Partitioner']
 
 
 """The NoData value for ints in GeoTrellis."""
@@ -285,8 +285,21 @@ class Compression(Enum):
     NO_COMPRESSION = "NoCompression"
     DEFLATE_COMPRESSION = "DeflateCompression"
 
+
 class Unit(Enum):
     """Represents the units of elevation."""
 
     METERS = "Meters"
     FEET = "Feet"
+
+
+class Partitioner(Enum):
+    """Partitioners to reparttion a layer.
+
+    There are currently two supported Partitioners:
+        - ``HASH_PARTITIONER`` Spark's HashPartitioner
+        - ``SPATIAL_PARTITIONER`` partitions data based on they key of each element.
+    """
+
+    HASH_PARTITIONER = "HashPartitioner"
+    SPATIAL_PARTITIONER = "SpatialPartitioner"

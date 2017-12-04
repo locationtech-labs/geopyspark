@@ -121,9 +121,9 @@ class SpatialTiledRasterLayer(
     SpatialTiledRasterLayer(zoom, tileLayer)
   }
 
-  def pyramid(resampleMethod: ResampleMethod): Array[TiledRasterLayer[SpatialKey]] = {
+  def pyramid(resampleMethod: ResampleMethod, partitioner: String): Array[TiledRasterLayer[SpatialKey]] = {
     require(! rdd.metadata.bounds.isEmpty, "Can not pyramid an empty RDD")
-    val part = rdd.partitioner.getOrElse(new HashPartitioner(rdd.partitions.length))
+    val part = TileLayer.getPartitioner(rdd.partitions.length, partitioner)
     val (baseZoom, scheme) =
       zoomLevel match {
         case Some(zoom) =>
@@ -458,7 +458,8 @@ object SpatialTiledRasterLayer {
     fillValue: Double,
     cellType: String,
     options: Rasterizer.Options,
-    numPartitions: Integer
+    numPartitions: Integer,
+    layerPartitioner: String
   ): SpatialTiledRasterLayer = {
     val geomRDD = geomWKB.map { WKB.read }
     val fullEnvelope = geomRDD.map(_.envelope).reduce(_ combine _)
@@ -471,7 +472,8 @@ object SpatialTiledRasterLayer {
       cellType,
       fullEnvelope,
       options,
-      numPartitions)
+      numPartitions,
+      layerPartitioner)
   }
 
   def rasterizeGeometry(
@@ -482,7 +484,8 @@ object SpatialTiledRasterLayer {
     fillValue: Double,
     cellType: String,
     options: Rasterizer.Options,
-    numPartitions: Integer
+    numPartitions: Integer,
+    layerPartitioner: String
   ): SpatialTiledRasterLayer = {
     val geoms = geomWKB.asScala.map(WKB.read)
     val fullEnvelope = geoms.map(_.envelope).reduce(_ combine _)
@@ -496,7 +499,8 @@ object SpatialTiledRasterLayer {
       cellType,
       fullEnvelope,
       options,
-      numPartitions)
+      numPartitions,
+      layerPartitioner)
   }
 
   def rasterizeGeometry(
@@ -507,7 +511,8 @@ object SpatialTiledRasterLayer {
     requestedCellType: String,
     extent: Extent,
     options: Rasterizer.Options,
-    numPartitions: Integer
+    numPartitions: Integer,
+    layerPartitioner: String
   ): SpatialTiledRasterLayer = {
     import geotrellis.raster.rasterize.Rasterizer.Options
 
@@ -516,7 +521,8 @@ object SpatialTiledRasterLayer {
     val LayoutLevel(z, ld) = ZoomedLayoutScheme(srcCRS).levelForZoom(requestedZoom)
     val maptrans = ld.mapTransform
     val gb @ GridBounds(cmin, rmin, cmax, rmax) = maptrans(extent)
-    val partitioner = new HashPartitioner(Option(numPartitions).map(_.toInt).getOrElse(math.max(gb.size / 512, 1)))
+    val partitions = Option(numPartitions).map(_.toInt).getOrElse(math.max(gb.size / 512, 1))
+    val partitioner = TileLayer.getPartitioner(partitions, layerPartitioner)
 
     val tiles = RasterizeRDD.fromGeometry(
       geoms = geomRDD,

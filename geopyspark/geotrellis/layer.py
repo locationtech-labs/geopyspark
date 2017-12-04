@@ -36,7 +36,8 @@ from geopyspark.geotrellis.constants import (Operation,
                                              StorageMethod,
                                              ColorSpace,
                                              Compression,
-                                             NO_DATA_INT
+                                             NO_DATA_INT,
+                                             Partitioner
                                             )
 from geopyspark.geotrellis.neighborhood import Neighborhood
 
@@ -587,7 +588,7 @@ class RasterLayer(CachableLayer, TileLayer):
         else:
             return [temporal_projected_extent_decoder(key) for key in self.srdd.collectKeys()]
 
-    def merge(self, num_partitions=None):
+    def merge(self, num_partitions=None, partitioner=Partitioner.HASH_PARTITIONER):
         """Merges the ``Tile`` of each ``K`` together to produce a single ``Tile``.
 
         This method will reduce each value by its key within the layer to produce a single
@@ -604,12 +605,16 @@ class RasterLayer(CachableLayer, TileLayer):
             num_partitions (int, optional): The number of partitions that the resulting
                 layer should be partitioned with. If ``None``, then the ``num_partitions``
                 will the number of partitions the layer curretly has.
+            partitioner (str or :class:`~geopyspark.geotrellis.constants.Partitioner`, optional):
+                The partitioner that should be used to repartition the data. The default is
+                ``Partitioner.HASH_PARTITIONER``.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.RasterLayer`
         """
 
-        result = self.srdd.merge(num_partitions)
+        partitioner = Partitioner(partitioner).value
+        result = self.srdd.merge(num_partitions, partitioner)
 
         return RasterLayer(self.layer_type, result)
 
@@ -932,7 +937,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         else:
             return [space_time_key_decoder(key) for key in self.srdd.collectKeys()]
 
-    def merge(self, num_partitions=None):
+    def merge(self, num_partitions=None, partitioner=Partitioner.HASH_PARTITIONER):
         """Merges the ``Tile`` of each ``K`` together to produce a single ``Tile``.
 
         This method will reduce each value by its key within the layer to produce a single
@@ -949,12 +954,16 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             num_partitions (int, optional): The number of partitions that the resulting
                 layer should be partitioned with. If ``None``, then the ``num_partitions``
                 will the number of partitions the layer curretly has.
+            partitioner (str or :class:`~geopyspark.geotrellis.constants.Partitioner`, optional):
+                The partitioner that should be used to repartition the data. The default is
+                ``Partitioner.HASH_PARTITIONER``.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        result = self.srdd.merge(num_partitions)
+        partitioner = Partitioner(partitioner).value
+        result = self.srdd.merge(num_partitions, partitioner)
 
         return TiledRasterLayer(self.layer_type, result)
 
@@ -1190,18 +1199,24 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         return TiledRasterLayer(self.layer_type, srdd)
 
-    def repartition(self, num_partitions=None):
-        """Repartition underlying RDD using HashPartitioner.
-        If ``num_partitions`` is None, existing number of partitions will be used.
+    def repartition(self, num_partitions=None, partitioner=Partitioner.HASH_PARTITIONER):
+        """Repartition underlying RDD using the given partitioner.
 
         Args:
-            num_partitions(int, optional): Desired number of partitions
+            num_partitions(int, optional): Desired number of partitions. If ``None``,
+                then the exisiting number of partitions will be used.
+            partitioner (str or :class:`~geopyspark.geotrellis.constants.Partitioner`, optional):
+                The partitioner that should be used to repartition the data. The default is
+                ``Partitioner.HASH_PARTITIONER``.
 
         Returns:
             :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
         """
+
         num_partitions = num_partitions or self.getNumPartitions()
-        return TiledRasterLayer(self.layer_type, self.srdd.repartition(num_partitions))
+        partitioner = Partitioner(partitioner).value
+
+        return TiledRasterLayer(self.layer_type, self.srdd.repartition(num_partitions, partitioner))
 
     def lookup(self, col, row):
         """Return the value(s) in the image of a particular ``SpatialKey`` (given by col and row).
@@ -1286,13 +1301,16 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         return TiledRasterLayer(self.layer_type, srdd)
 
-    def pyramid(self, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
+    def pyramid(self, resample_method=ResampleMethod.NEAREST_NEIGHBOR, partitioner=Partitioner.HASH_PARTITIONER):
         """Creates a layer ``Pyramid`` where the resolution is halved per level.
 
         Args:
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use when building the pyramid.
                 Default is ``ResampleMethods.NEAREST_NEIGHBOR``.
+            partitioner (str or :class:`~geopyspark.geotrellis.constants.Partitioner`, optional):
+                The partitioner that should be used to repartition the data. The default is
+                ``Partitioner.HASH_PARTITIONER``.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.Pyramid`.
@@ -1302,7 +1320,8 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         """
 
         resample_method = ResampleMethod(resample_method)
-        result = self.srdd.pyramid(resample_method)
+        partitioner = Partitioner(partitioner).value
+        result = self.srdd.pyramid(resample_method, partitioner)
         return Pyramid([TiledRasterLayer(self.layer_type, srdd) for srdd in result])
 
     def focal(self, operation, neighborhood=None, param_1=None, param_2=None, param_3=None):

@@ -4,22 +4,44 @@ import rasterio
 import pytest
 import numpy as np
 
+<<<<<<< ce5e03f7210966d893129311d1dd5b3945075bf7:geopyspark/tests/geotrellis/geotiff_raster_rdd_test.py
 from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.tests.python_test_utils import file_path
+=======
+from geopyspark.geotrellis.constants import LayerType, CellType, Partitioner
+from geopyspark.tests.python_test_utils import geotiff_test_path
+>>>>>>> Exposed Partitioner options in the API:geopyspark/tests/geotiff_raster_rdd_test.py
 from geopyspark.geotrellis import Extent, ProjectedExtent, Tile
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
+<<<<<<< ce5e03f7210966d893129311d1dd5b3945075bf7:geopyspark/tests/geotrellis/geotiff_raster_rdd_test.py
 class Multiband(BaseTestClass):
     dir_path = file_path("all-ones.tif")
+=======
+class GeoTiffRasterRDDTest(BaseTestClass):
+    dir_path = geotiff_test_path("all-ones.tif")
+>>>>>>> Exposed Partitioner options in the API:geopyspark/tests/geotiff_raster_rdd_test.py
     result = get(LayerType.SPATIAL, dir_path, max_tile_size=256)
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
         BaseTestClass.pysc._gateway.close()
+
+    def test_repartition(self):
+        md = self.result.collect_metadata()
+        laid_out_rdd = BaseTestClass.rdd.tile_to_layout(md)
+        repartitioned = laid_out_rdd.repartition(2)
+        self.assertEqual(repartitioned.getNumPartitions(), 2)
+
+    def test_repartition_with_partitioner(self):
+        tiled = self.result.tile_to_layout()
+        repartitioned = tiled.repartition(2, Partitioner.SPATIAL_PARTITIONER)
+
+        self.assertEqual(repartitioned.getNumPartitions(), 2)
 
     def test_to_numpy_rdd(self, option=None):
         pyrdd = self.result.to_numpy_rdd()
