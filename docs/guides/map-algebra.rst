@@ -274,10 +274,10 @@ If, for example, one had a set of polygons representing counties in the US, and
 a value for, say, the median income within each county, a raster could be made
 representing these data.
 
-GeoPySpark's ``rasterize`` function takes a list of any number of
-Shapely geometries, converts them to rasters, tiles the rasters to a
-given layout, and then produces a ``TiledRasterLayer`` with these tiled
-values.
+GeoPySpark's ``rasterize`` function can take a ``[shapely.geometry]``,
+``(shapely.geometry)``, or a ``PythonRDD[shapely.geometry]``. These geometries will be
+converted to rasters, then tiled to a given layout, and then be returned as a
+``TiledRasterLayer`` which contains these tiled values.
 
 Rasterize MultiPolygons
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -292,8 +292,18 @@ Rasterize MultiPolygons
 
 .. code:: python3
 
-    # Creates a TiledRasterLayer that contains the MultiPolygon with a CRS of EPSG:3857 at zoom level 5.
+    # Creates a TiledRasterLayer with a CRS of EPSG:4326 at zoom level 5.
     gps.rasterize(geoms=[raster_multi_poly], crs=4326, zoom=5, fill_value=1)
+
+Rasterize a PythonRDD of Polygons
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code:: python3
+
+    poly_rdd = pysc.parallelize([raster_poly_1, raster_poly_2, raster_poly_3])
+
+    # Creates a TiledRasterLayer with a CRS of EPSG:3857 at zoom level 5.
+    gps.rasterize(geoms=poly_rdd, crs=3857, zoom=3, fill_value=10)
 
 Rasterize LineStrings
 ~~~~~~~~~~~~~~~~~~~~~
@@ -314,5 +324,5 @@ Rasterize Polygons and LineStrings
 
 .. code:: python3
 
-    # Creates a TiledRasterLayer with both the LineStrings and the MultiPolygon
+    # Creates a TiledRasterLayer from both LineStrings and MultiPolygons
     gps.rasterize(geoms=[line_1, line_2, line_3, raster_multi_poly], crs=4326, zoom=5, fill_value=2)

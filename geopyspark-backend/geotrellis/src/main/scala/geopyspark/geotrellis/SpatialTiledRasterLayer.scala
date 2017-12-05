@@ -416,23 +416,75 @@ object SpatialTiledRasterLayer {
   ): SpatialTiledRasterLayer =
     new SpatialTiledRasterLayer(zoomLevel, rdd)
 
-  def rasterizeGeometry(sc: SparkContext, geomWKB: ArrayList[Array[Byte]], geomCRSStr: String,
-    requestedZoom: Int, fillValue: Double, cellTypeString: String, options: Rasterizer.Options,
+  def rasterizeGeometry(
+    geomWKB: RDD[Array[Byte]],
+    geomCRS: String,
+    requestedZoom: Int,
+    fillValue: Double,
+    cellType: String,
+    options: Rasterizer.Options,
     numPartitions: Integer
-  ): TiledRasterLayer[SpatialKey]= {
-    val cellType = CellType.fromName(cellTypeString)
+  ): SpatialTiledRasterLayer = {
+    val geomRDD = geomWKB.map { WKB.read }
+    val fullEnvelope = geomRDD.map(_.envelope).reduce(_ combine _)
+
+    rasterizeGeometry(
+      geomRDD,
+      geomCRS,
+      requestedZoom,
+      fillValue,
+      cellType,
+      fullEnvelope,
+      options,
+      numPartitions)
+  }
+
+  def rasterizeGeometry(
+    sc: SparkContext,
+    geomWKB: ArrayList[Array[Byte]],
+    geomCRS: String,
+    requestedZoom: Int,
+    fillValue: Double,
+    cellType: String,
+    options: Rasterizer.Options,
+    numPartitions: Integer
+  ): SpatialTiledRasterLayer = {
     val geoms = geomWKB.asScala.map(WKB.read)
-    val srcCRS = TileLayer.getCRS(geomCRSStr).get
+    val fullEnvelope = geoms.map(_.envelope).reduce(_ combine _)
+    val geomRDD = sc.parallelize(geoms)
+
+    rasterizeGeometry(
+      geomRDD,
+      geomCRS,
+      requestedZoom,
+      fillValue,
+      cellType,
+      fullEnvelope,
+      options,
+      numPartitions)
+  }
+
+  def rasterizeGeometry(
+    geomRDD: RDD[Geometry],
+    geomCRS: String,
+    requestedZoom: Int,
+    fillValue: Double,
+    requestedCellType: String,
+    extent: Extent,
+    options: Rasterizer.Options,
+    numPartitions: Integer
+  ): SpatialTiledRasterLayer = {
+    import geotrellis.raster.rasterize.Rasterizer.Options
+
+    val cellType = CellType.fromName(requestedCellType)
+    val srcCRS = TileLayer.getCRS(geomCRS).get
     val LayoutLevel(z, ld) = ZoomedLayoutScheme(srcCRS).levelForZoom(requestedZoom)
     val maptrans = ld.mapTransform
-    val fullEnvelope = geoms.map(_.envelope).reduce(_ combine _)
-    val gb @ GridBounds(cmin, rmin, cmax, rmax) = maptrans(fullEnvelope)
+    val gb @ GridBounds(cmin, rmin, cmax, rmax) = maptrans(extent)
     val partitioner = new HashPartitioner(Option(numPartitions).map(_.toInt).getOrElse(math.max(gb.size / 512, 1)))
 
-    val geomsRdd = sc.parallelize(geoms)
-    import geotrellis.raster.rasterize.Rasterizer.Options
     val tiles = RasterizeRDD.fromGeometry(
-      geoms = geomsRdd,
+      geoms = geomRDD,
       layout = ld,
       cellType = cellType,
       value = fillValue,
