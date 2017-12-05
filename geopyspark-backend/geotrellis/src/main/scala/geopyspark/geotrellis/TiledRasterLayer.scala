@@ -11,6 +11,7 @@ import geotrellis.raster._
 import geotrellis.raster.distance._
 import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
+import geotrellis.raster.mapalgebra.focal.Square
 import geotrellis.raster.mapalgebra.local._
 import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
@@ -313,6 +314,28 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
       case poly: Polygon => rdd.polygonalSumDouble(poly)
       case multi: MultiPolygon => rdd.polygonalSumDouble(multi)
     }
+
+  def tobler(
+    zFactor: Double,
+    targetCell: String
+  ): TiledRasterLayer[K] = {
+    val n = Square(1)
+    val target = TileLayer.getTarget(targetCell)
+    val singlebandRDD: TileLayerRDD[K] = rdd.withContext(_.mapValues(_.band(0)))
+    val cellSize = singlebandRDD.metadata.layout.cellSize
+
+    val toblerCalc = (tile: Tile, bounds: Option[GridBounds], cellSize: CellSize) =>
+      Tobler(tile, n, bounds, cellSize, zFactor, target)
+
+    val result: TileLayerRDD[K] =
+      singlebandRDD
+        .withContext {
+          _.mapValues(Tobler(_, n, Some(singlebandRDD.metadata.gridBounds), cellSize, zFactor, target))
+        }
+        .mapContext(_.copy(cellType = DoubleConstantNoDataCellType))
+
+    withRDD(result.withContext(_.mapValues(MultibandTile(_))))
+  }
 
   def aggregateByCell(operation: String): TiledRasterLayer[K] = {
     val bands: RDD[(K, Array[ArrayBuffer[Tile]])] =

@@ -111,7 +111,7 @@ class FocalTest(BaseTestClass):
 
         self.assertTrue(result.to_numpy_rdd().first()[1].cells[0][1][0] >= 6)
 
-    def test_focal_sum_square(self):
+    def test_focal_sum_square_with_square(self):
         square = Square(extent=1.0)
         result = self.raster_rdd.focal(
             operation=Operation.SUM,
@@ -136,6 +136,9 @@ class FocalTest(BaseTestClass):
                                        param_1=2, param_2=1)
 
         self.assertEqual(result.to_numpy_rdd().first()[1].cells[0][0][0], -1)
+
+    def test_tobler(self):
+        result = self.raster_rdd.tobler()
 
 
 if __name__ == "__main__":

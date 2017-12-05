@@ -4,6 +4,7 @@ import Constants._
 import geopyspark.geotrellis.GeoTrellisUtils._
 import geotrellis.proj4._
 import geotrellis.raster._
+import geotrellis.raster.mapalgebra.focal._
 import geotrellis.raster.render._
 import geotrellis.raster.histogram._
 import geotrellis.raster.io.geotiff._
@@ -241,6 +242,13 @@ object TileLayer {
     compressionType match {
       case NOCOMPRESSION => NoCompression
       case DEFLATECOMPRESSION => DeflateCompression
+    }
+
+  def getTarget(target: String): TargetCell =
+    target match {
+      case ALLCELLS => TargetCell.All
+      case DATACELLS => TargetCell.Data
+      case NODATACELLS => TargetCell.NoData
     }
 
   def combineBands[K: ClassTag, L <: TileLayer[K]: ClassTag](
