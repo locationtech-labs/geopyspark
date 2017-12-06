@@ -1,5 +1,7 @@
 package geopyspark.geotrellis.tms
 
+import geopyspark.geotrellis._
+
 import geotrellis.raster._
 import geotrellis.raster.render._
 import geotrellis.spark._
@@ -70,7 +72,7 @@ object TMSServerRoutes {
             .retrieve(zoom, x, y)
             .map(_.map{tile =>
               if (renderer.requiresEncoding()) {
-                renderer.renderEncoded(geopyspark.geotrellis.PythonTranslator.toPython(tile))
+                renderer.renderEncoded(geopyspark.util.PythonTranslator.toPython(tile))
               } else {
                 renderer.render(tile)
               }
@@ -95,7 +97,7 @@ object TMSServerRoutes {
             .map(
               _.map(array =>
                 if (compositer.requiresEncoding()) {
-                  compositer.compositeEncoded(array.map{tile => geopyspark.geotrellis.PythonTranslator.toPython(tile)})
+                  compositer.compositeEncoded(array.map{tile => geopyspark.util.PythonTranslator.toPython(tile)})
                 } else {
                   compositer.composite(array)
                 }
