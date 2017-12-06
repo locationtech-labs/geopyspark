@@ -23,6 +23,7 @@ setup_args = dict(
     ],
     packages=[
         'geopyspark',
+        'geopyspark.command',
         'geopyspark.geotrellis',
         'geopyspark.geotrellis.protobuf',
         'geopyspark.vector_pipe',
