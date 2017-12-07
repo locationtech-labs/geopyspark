@@ -15,23 +15,10 @@ import scala.util.{Failure, Success => S}
 object OSMReader {
   def read(
     ss: SparkSession,
-    source: String,
-    view: String,
-    loggingStrategy: String
+    source: String
   ): FeaturesCollection =
     osm.fromORC(source)(ss) match {
       case Failure(e) => null
-      case S((ns, ws, rs)) =>
-        if (view == VectorPipeConstants.SNAPSHOT)
-          loggingStrategy match {
-            case VectorPipeConstants.NOTHING =>
-              FeaturesCollection(osm.snapshotFeatures(VectorPipe.logNothing, ns, ws, rs))
-            case VectorPipeConstants.LOG4J =>
-              FeaturesCollection(osm.snapshotFeatures(VectorPipe.logToLog4j, ns, ws, rs))
-            case VectorPipeConstants.STD =>
-              FeaturesCollection(osm.snapshotFeatures(VectorPipe.logToStdout, ns, ws, rs))
-          }
-        else
-          FeaturesCollection(historicalFeatures(ns, ws))
+      case S((ns, ws, rs)) => FeaturesCollection(osm.features(ns, ws, rs))
     }
 }

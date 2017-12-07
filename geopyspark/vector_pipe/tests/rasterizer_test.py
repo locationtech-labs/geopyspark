@@ -2,7 +2,6 @@ import unittest
 import pytest
 
 from geopyspark.vector_pipe import osm_reader, Feature, CellValue
-from geopyspark.vector_pipe.vector_pipe_constants import LoggingStrategy
 from geopyspark.tests.base_test_class import BaseTestClass
 
 from geopyspark.geotrellis.rasterize import rasterize_features
@@ -17,9 +16,7 @@ class RasterizationTest(BaseTestClass):
         BaseTestClass.pysc._gateway.close()
 
     def test_rasterization(self):
-        read = osm_reader.read("/tmp/andorra.orc",
-                               view='Historical',
-                               logging_strategy='Nothing')
+        read = osm_reader.read("/tmp/andorra.orc")
 
         lines = read.get_line_features_rdd()
         polys = read.get_polygon_features_rdd()
