@@ -14,7 +14,7 @@ libraryDependencies ++= Seq(
   "org.locationtech.geotrellis" %% "geotrellis-s3-testkit" % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-spark"      % Version.geotrellis,
   "org.typelevel"               %% "cats"                  % "0.9.0",
-  "com.azavea" %% "vectorpipe" % "0.1.0"
+  "com.azavea" %% "vectorpipe" % "0.2.0"
 )
 
 assemblyMergeStrategy in assembly := {
