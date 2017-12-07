@@ -3,6 +3,12 @@ from geopyspark import get_spark_context
 from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
+<<<<<<< 9f7a7d3dbf1ebced23b772436bb87b2e2f8c4ab5
+=======
+
+from geopyspark.vector_pipe.vector_pipe_protobufcodecs import (feature_cellvalue_decoder,
+                                                               feature_cellvalue_encoder)
+>>>>>>> Created the rasterize_features and rasterizeFeaturesWithZIndex methods in Python and Scala, respectively
 
 from geopyspark.vector_pipe.vector_pipe_protobufcodecs import (feature_cellvalue_decoder,
                                                                feature_cellvalue_encoder)
@@ -72,7 +78,11 @@ def rasterize_features(features,
                        cell_type=CellType.FLOAT64,
                        options=None,
                        num_partitions=None,
+<<<<<<< 9f7a7d3dbf1ebced23b772436bb87b2e2f8c4ab5
                        zindex_cell_type=CellType.INT8):
+=======
+                       zindex_cell_type=CellType.INT8RAW):
+>>>>>>> Created the rasterize_features and rasterizeFeaturesWithZIndex methods in Python and Scala, respectively
 
     if isinstance(crs, int):
         crs = str(crs)
