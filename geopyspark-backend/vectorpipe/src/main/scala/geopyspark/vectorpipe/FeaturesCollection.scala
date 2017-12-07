@@ -12,12 +12,15 @@ import vectorpipe.osm._
 import org.apache.spark.rdd._
 import org.apache.spark.api.java.JavaRDD
 
+import spray.json._
+import DefaultJsonProtocol._
+
 
 class FeaturesCollection(
-  points: RDD[Feature[Point, ElementMeta]],
-  lines: RDD[Feature[Line, ElementMeta]],
-  polygons: RDD[Feature[Polygon, ElementMeta]],
-  multiPolygons: RDD[Feature[MultiPolygon, ElementMeta]]
+  val points: RDD[Feature[Point, ElementMeta]],
+  val lines: RDD[Feature[Line, ElementMeta]],
+  val polygons: RDD[Feature[Polygon, ElementMeta]],
+  val multiPolygons: RDD[Feature[MultiPolygon, ElementMeta]]
 ) {
 
   def toProtoPoints: JavaRDD[Array[Byte]] =
@@ -31,6 +34,34 @@ class FeaturesCollection(
 
   def toProtoMultiPolygons: JavaRDD[Array[Byte]] =
     PythonTranslator.toPython[Feature[Geometry, ElementMeta], ProtoFeature](multiPolygons.asInstanceOf[RDD[Feature[Geometry, ElementMeta]]])
+
+  def getPointTags: String =
+    points
+      .map { _.data.tags }
+      .reduce { _ ++: _ }
+      .toJson
+      .compactPrint
+
+  def getLineTags: String =
+    lines
+      .map { _.data.tags }
+      .reduce { _ ++: _ }
+      .toJson
+      .compactPrint
+
+  def getPolygonTags: String =
+    polygons
+      .map { _.data.tags }
+      .reduce { _ ++: _ }
+      .toJson
+      .compactPrint
+
+  def getMultiPolygonTags: String =
+    multiPolygons
+      .map { _.data.tags }
+      .reduce { _ ++: _ }
+      .toJson
+      .compactPrint
 }
 
 
