@@ -16,9 +16,15 @@ from geopyspark.vector_pipe import Feature, Properties, CellValue
 
 # Decoders
 
+def from_pb_tags(pb_tags):
+    if list(pb_tags.tags):
+        return {tags.key: tags.value for tags in pb_tags.tags}
+    else:
+        return {}
+
 def from_pb_properties(pb_metadata):
     time = parser.parse(pb_metadata.timestamp)
-    tags = {tags.key: tags.value for tags in pb_metadata.tags}
+    tags = from_pb_tags(pb_metadata.tags)
 
     return Properties(
         element_id=pb_metadata.id,

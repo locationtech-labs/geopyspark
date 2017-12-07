@@ -8,7 +8,7 @@ from geopyspark.vector_pipe.vector_pipe_protobufcodecs import (feature_cellvalue
                                                                feature_cellvalue_encoder)
 
 
-__all__ = ['rasterize']
+__all__ = ['rasterize', 'rasterize_features']
 
 
 def rasterize(geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=None, num_partitions=None):
@@ -72,7 +72,7 @@ def rasterize_features(features,
                        cell_type=CellType.FLOAT64,
                        options=None,
                        num_partitions=None,
-                       zindex_cell_type=CellType.INT8RAW):
+                       zindex_cell_type=CellType.INT8):
 
     if isinstance(crs, int):
         crs = str(crs)
