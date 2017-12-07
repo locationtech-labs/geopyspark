@@ -27,3 +27,14 @@ message ProtoTag {
   string key = 1;
   string value = 2;
 }
+
+
+message ProtoFeatureCellValue {
+  bytes geom = 1;
+  ProtoCellValue cellValue = 2;
+}
+
+message ProtoCellValue {
+  double value = 1;
+  double zindex = 2;
+}
