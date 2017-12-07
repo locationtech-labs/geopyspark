@@ -16,7 +16,7 @@ class FeatureSchemaTest(BaseTestClass):
     fw = BaseTestClass.pysc._jvm.geopyspark.vectorpipe.tests.schemas.FeatureWrapper
 
     java_rdd = fw.testOut(sc)
-    ser = ProtoBufSerializer(feature_decoder, None)
+    ser = ProtoBufSerializer(feature_decoder, feature_encoder)
 
     rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
 
