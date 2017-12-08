@@ -151,5 +151,8 @@ __all__ = ['geopyspark_conf']
 
 from . import geotrellis
 from .geotrellis import *
+from . import vector_pipe
+from .vector_pipe import *
 
 __all__.extend(geotrellis.__all__)
+__all__.extend(vector_pipe.__all__)
