@@ -7,6 +7,9 @@ from geopyspark.vector_pipe.features_collection import FeaturesCollection
 from pyspark.sql import SparkSession
 
 
+__all__ = ['read']
+
+
 def read(source):
     pysc = get_spark_context()
     session = SparkSession.builder.config(conf=pysc.getConf()).enableHiveSupport().getOrCreate()
