@@ -10,11 +10,15 @@ from pyspark.sql import SparkSession
 __all__ = ['read']
 
 
-def read(source):
+def from_orc(source):
     pysc = get_spark_context()
     session = SparkSession.builder.config(conf=pysc.getConf()).enableHiveSupport().getOrCreate()
-
-    features = pysc._jvm.geopyspark.vectorpipe.io.OSMReader.read(session._jsparkSession,
-                                                                 source)
-
+    features = pysc._jvm.geopyspark.vectorpipe.io.OSMReader.fromORC(session._jsparkSession, source)
     return FeaturesCollection(features)
+
+def from_dataframe(dataframe):
+    pysc = get_spark_context()
+    features = pysc._jvm.geopyspark.vectorpipe.io.OSMReader.fromDataFrame(dataframe._jdf)
+    return FeaturesCollection(features)
+
+

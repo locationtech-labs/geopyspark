@@ -8,7 +8,6 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.apache.spark"            %% "spark-core"            % "2.0.0" % "provided",
   "org.apache.spark"            %% "spark-hive"            % "2.2.0" % "provided",
   "org.locationtech.geotrellis" %% "geotrellis-s3"         % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-s3-testkit" % Version.geotrellis,

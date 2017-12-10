@@ -13,12 +13,18 @@ import scala.util.{Failure, Success => S}
 
 
 object OSMReader {
-  def read(
+  def fromORC(
     ss: SparkSession,
     source: String
-  ): FeaturesCollection =
-    osm.fromORC(source)(ss) match {
-      case Failure(e) => null
-      case S((ns, ws, rs)) => FeaturesCollection(osm.features(ns, ws, rs))
-    }
+  ): FeaturesCollection = {
+    val (ns, ws, rs) = osm.fromORC(source)(ss).get
+    FeaturesCollection(osm.features(ns, ws, rs))
+  }
+
+  def fromDataFrame(
+    elements: Dataset[Row]
+  ): FeaturesCollection = {
+    val (ns, ws, rs) = osm.fromDataFrame(elements)
+    FeaturesCollection(osm.features(ns, ws, rs))
+  }
 }
