@@ -32,7 +32,7 @@ setup_args = dict(
         'geopyspark.tests.geotrellis.schema_tests',
         'geopyspark.tests.geotrellis.tiled_layer_tests',
         'geopyspark.tests.geotrellis.io_tests',
-        'geopyspark.tests.vectorpipe',
+        'geopyspark.tests.vector_pipe',
         'geopyspark.jars',
     ],
     entry_points={
