@@ -4,6 +4,6 @@ ignore=tests,command,protobuf,geopyspark.geotrellis.converters
 
 [MESSAGE CONTROL]
 
-disable=R,W,I,missing-docstring,too-many-arguments,too-few-public-members,too-few-public-methods,no-member,line-too-long,protected-access,invalid-name,import-error,anomalous-backslash-in-string,too-many-statements,too-many-public-methods,slots-on-old-class,no-name-in-module,too-many-instance-attributes,too-many-lines,bad-builtin,too-many-locals,redefined-builtin,redefined-variable-type,too-many-branches,superfluous-parens,no-else-return,ungrouped-imports,assigning-non-slot,wrong-import-position
+disable=R,W,I,missing-docstring,too-many-arguments,too-few-public-members,too-few-public-methods,no-member,line-too-long,protected-access,invalid-name,import-error,anomalous-backslash-in-string,too-many-statements,too-many-public-methods,slots-on-old-class,no-name-in-module,too-many-instance-attributes,too-many-lines,bad-builtin,too-many-locals,redefined-builtin,redefined-variable-type,too-many-branches,superfluous-parens,no-else-return,ungrouped-imports,assigning-non-slot,wrong-import-position,wrong-import-order,old-style-class
 
 reports=no
