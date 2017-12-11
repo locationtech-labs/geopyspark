@@ -7,7 +7,7 @@ from geopyspark.vector_pipe.features_collection import FeaturesCollection
 from pyspark.sql import SparkSession
 
 
-__all__ = ['read']
+__all__ = ['from_orc', 'from_dataframe']
 
 
 def from_orc(source):
@@ -20,5 +20,3 @@ def from_dataframe(dataframe):
     pysc = get_spark_context()
     features = pysc._jvm.geopyspark.vectorpipe.io.OSMReader.fromDataFrame(dataframe._jdf)
     return FeaturesCollection(features)
-
-
