@@ -5,3 +5,4 @@ rasterio>=1.0a7
 setuptools
 protobuf>=3.3.0
 pytz
+python-dateutil>=2.6.1
