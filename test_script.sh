@@ -3,7 +3,7 @@
 testpath="geopyspark/tests/"
 testpattern="*_test.py"
 
-for f in $testpath$testpattern $testpath/**/$testpattern;
+for f in $testpath/**/$testpattern $testpath/**/**/$testpattern;
 do
   pytest $f || { exit 1; }
 done

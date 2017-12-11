@@ -5,9 +5,8 @@ from geopyspark import geopyspark_conf
 from geopyspark.geotrellis import Extent, TileLayout
 from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.geotiff import get
-from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
+from geopyspark.tests.python_test_utils import check_directory, file_path
 from pyspark import SparkContext
-
 
 
 check_directory()
@@ -29,7 +28,7 @@ class BaseTestClass(unittest.TestCase):
 
     pysc = SparkContext(conf=conf)
 
-    dir_path = geotiff_test_path("all-ones.tif")
+    dir_path = file_path("all-ones.tif")
 
     rdd = get(LayerType.SPATIAL, dir_path, max_tile_size=1024)
     value = rdd.to_numpy_rdd().collect()[0]
