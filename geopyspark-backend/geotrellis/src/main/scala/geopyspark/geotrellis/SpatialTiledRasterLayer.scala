@@ -65,7 +65,8 @@ class SpatialTiledRasterLayer(
 
   def reproject(targetCRS: String, resampleMethod: ResampleMethod): SpatialTiledRasterLayer = {
     val crs = TileLayer.getCRS(targetCRS).get
-    val (zoom, reprojected) = rdd.reproject(crs, rdd.metadata.layout, resampleMethod)
+    val targetLayout = FloatingLayoutScheme(rdd.metadata.layout.tileCols, rdd.metadata.layout.tileRows)
+    val (zoom, reprojected) = rdd.reproject(crs, targetLayout, resampleMethod)
     new SpatialTiledRasterLayer(Some(zoom), reprojected)
   }
 
