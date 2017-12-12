@@ -1785,7 +1785,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         return self._process_polygonal_summary(geometry, self.srdd.polygonalMean)
 
-    def tobler(self, z_factor=1.0, target_cell=TargetCell.ALL):
+    def tobler(self):
         """Generates a Tobler walking speed layer from an elevation layer.
 
         Note:
@@ -1794,19 +1794,11 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             This can result it incorrect results. A fix is currently being
             worked on.
 
-        z_factor (float, optional): How many x and y units in a single z unit.
-            This is a conversion factor between map and elevation units. Defaults
-            to 1.0.
-        target_cell (str or :class:`~geopyspark.geotrellis.constants.TargetCell`, optional):
-            Which cells should be used in the calculation of the Tobler walk speed layer.
-            Defaults to ``TargetCell.ALL``.
-
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        target_cell = TargetCell(target_cell)
-        result = self.srdd.tobler(z_factor, target_cell.value)
+        result = self.srdd.tobler()
 
         return TiledRasterLayer(self.layer_type, result)
 
