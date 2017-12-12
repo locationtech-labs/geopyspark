@@ -286,10 +286,3 @@ class Compression(Enum):
     NO_COMPRESSION = "NoCompression"
     DEFLATE_COMPRESSION = "DeflateCompression"
 
-
-class TargetCell(Enum):
-    """Determines which cells in the layer should be used when running a computation."""
-
-    ALL = "All"
-    DATA = "Data"
-    NODATA = "NoData"
