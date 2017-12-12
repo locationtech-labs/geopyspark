@@ -151,7 +151,12 @@ class SpatialTiledRasterLayer(
       rdd.metadata
     )
 
-    val _neighborhood = getNeighborhood(operation, neighborhood, param1, param2, param3)
+    val _neighborhood =
+      if (operation == Constants.SLOPE || operation == Constants.ASPECT)
+        getNeighborhood(operation, neighborhood, 1.0, 0.0, 0.0)
+      else
+        getNeighborhood(operation, neighborhood, param1, param2, param3)
+
     val cellSize = rdd.metadata.layout.cellSize
     val op: ((Tile, Option[GridBounds]) => Tile) = getOperation(operation, _neighborhood, cellSize, param1)
 
