@@ -64,31 +64,31 @@ def feature_cellvalue_decoder(proto_bytes):
 # Encoders
 
 def to_pb_properties(metadata):
-    pb_tags = ProtoTags(tags=[ProtoTag(key=k, value=v) for k, v in metadata.tags.items()])
+    pb_tags = ProtoTags(tags=[ProtoTag(key=k, value=v) for k, v in metadata[8].items()])
 
     return ProtoMetadata(
-        id=metadata.element_id,
-        user=metadata.user,
-        uid=metadata.uid,
-        changeset=metadata.changeset,
-        version=metadata.version,
-        minorVersion=metadata.minor_version,
-        timestamp=str(metadata.timestamp),
-        visible=metadata.visible,
+        id=metadata[0],
+        user=metadata[1],
+        uid=metadata[2],
+        changeset=metadata[3],
+        version=metadata[4],
+        minorVersion=metadata[5],
+        timestamp=str(metadata[6]),
+        visible=metadata[7],
         tags=pb_tags)
 
 def to_pb_cellvalue(cv):
     return ProtoCellValue(value=cv.value, zindex=cv.zindex)
 
 def to_pb_feature(feature):
-    geom_bytes = dumps(feature.geometry)
-    pb_properties = to_pb_properties(feature.properties)
+    geom_bytes = dumps(feature[0])
+    pb_properties = to_pb_properties(feature[1])
 
     return ProtoFeature(geom=geom_bytes, metadata=pb_properties)
 
 def to_pb_feature_cellvalue(feature):
-    geom_bytes = dumps(feature.geometry)
-    cellvalue = to_pb_cellvalue(feature.properties)
+    geom_bytes = dumps(feature[0])
+    cellvalue = to_pb_cellvalue(feature[1])
 
     return ProtoFeatureCellValue(geom=geom_bytes, cellValue=cellvalue)
 
