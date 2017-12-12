@@ -254,7 +254,7 @@ class TemporalTiledRasterLayer(
       rdd.metadata
     )
 
-    val _neighborhood = getNeighborhood(operation, neighborhood, param1, param2, param3)
+    val _neighborhood = getNeighborhood(neighborhood, param1, param2, param3)
     val cellSize = rdd.metadata.layout.cellSize
     val op: ((Tile, Option[GridBounds]) => Tile) = getOperation(operation, _neighborhood, cellSize, param1)
 
