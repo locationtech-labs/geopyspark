@@ -9,7 +9,7 @@ import geotrellis.vector._
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.marshalling.{ToResponseMarshaller, ToResponseMarshallable}
+import akka.http.scaladsl.marshalling.{Marshaller, ToResponseMarshaller}
 import akka.http.scaladsl.model.{ContentType, HttpEntity, HttpResponse, MediaTypes, StatusCodes}
 import akka.http.scaladsl.model.MediaTypes.{`image/png`, `text/plain`}
 import akka.http.scaladsl.server.{Route, Directives}
@@ -53,6 +53,11 @@ trait TMSServerRoute extends Directives with AkkaSystem.LoggerExecutor {
     logger.info(s"[TIMING] $msg: ${java.text.NumberFormat.getIntegerInstance.format(end - start)} ms")
     v
   }
+
+  implicit def pngMarshaller: ToResponseMarshaller[Array[Byte]] = Marshaller.oneOf(
+    Marshaller.withFixedContentType(ContentType(`image/png`)) { img =>
+      HttpResponse(entity = HttpEntity(ContentType(`image/png`), img))
+    })
 }
 
 object TMSServerRoutes {
@@ -60,7 +65,7 @@ object TMSServerRoutes {
   private class RenderingTileRoute(reader: TileReader, renderer: TileRender) extends TMSServerRoute {
     def root: Route =
       pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
-        val tileFuture = 
+        val tileFuture =
           reader
             .retrieve(zoom, x, y)
             .map(_.map{tile =>
@@ -85,7 +90,7 @@ object TMSServerRoutes {
       pathPrefix("tile" / IntNumber / IntNumber / IntNumber) { (zoom, x, y) =>
         val tileFutures: List[Future[Option[MultibandTile]]] = readers.map(_.retrieve(zoom, x, y))
         val futureTiles: Future[Option[Array[MultibandTile]]] = tileFutures.sequence.map(_.sequence).map(_.map(_.toArray))
-        val composited: Future[Option[Array[Byte]]] = 
+        val composited: Future[Option[Array[Byte]]] =
           futureTiles
             .map(
               _.map(array =>
