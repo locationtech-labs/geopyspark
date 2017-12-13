@@ -322,8 +322,7 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
           tile.mapDouble { z =>
             val radians = z * math.Pi / 180.0
             val m = math.tan(radians)
-            val tobler_kph = 6 * (math.pow(2.718281828, (-3.5 * math.abs(m + 0.05))))
-            3.6 / tobler_kph
+            6 * (math.pow(math.E, (-3.5 * math.abs(m + 0.05))))
           }
         }
       }
