@@ -158,7 +158,6 @@ class Operation(Enum):
     MAX = 'Max'
     MIN = 'Min'
     ASPECT = 'Aspect'
-    SLOPE = 'Slope'
     VARIANCE = 'Variance'
     STANDARD_DEVIATION = 'StandardDeviation'
 
@@ -286,3 +285,7 @@ class Compression(Enum):
     NO_COMPRESSION = "NoCompression"
     DEFLATE_COMPRESSION = "DeflateCompression"
 
+class Units(Enum):
+
+    METERS = "Meters"
+    FEET = "Feet"
