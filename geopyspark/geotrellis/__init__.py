@@ -9,7 +9,7 @@ from shapely.geometry import box
 import pytz
 
 from geopyspark import get_spark_context
-from geopyspark.geotrellis.constants import CellType, NO_DATA_INT, Units
+from geopyspark.geotrellis.constants import CellType, NO_DATA_INT, Unit
 
 
 _EPOCH = datetime.datetime.utcfromtimestamp(0)
@@ -22,7 +22,23 @@ def _convert_to_unix_time(date_time):
         return int((date_time - _EPOCH).total_seconds() * 1000)
 
 
-def create_lat_lng_zfactor_calculator(units):
+def create_lat_lng_zfactor_calculator(unit):
+    """Produces the Scala class, ``ZFactorCalculator`` as a ``JavaObject``.
+
+    The resulting ``ZFactorCalculator`` produced using this method assumes that
+    the ``Tile``\s it will be deriving ``zfactor``\s from are in ``LatLng``
+    (aka ``epsg:4326``). This caculator can still be used on ``Tile``\s with
+    different projections, however, the resulting ``Slope`` calculations may
+    be off.
+
+    Args:
+        units (str or :class:`~geopyspark.geotrellis.constant.Unit`): The unit of elevation
+            in the target layer.
+
+    Returns:
+        ``py4j.JavaObject``
+    """
+
     pysc = get_spark_context()
     calculator = pysc._gateway.jvm.geopyspark.geotrellis.\
             ZFactorCalculator.createLatLngZFactorCalculator(Unit(unit).value)
@@ -30,6 +46,26 @@ def create_lat_lng_zfactor_calculator(units):
     return calculator
 
 def create_zfactor_calculator(mapped_zfactors):
+    """Produces the Scala class, ``ZFactorCalculator`` as a ``JavaObject``.
+
+    Unlike the ``ZFactorCalculator`` produced in
+    :meth:`~geopyspark.geotrellis.create_lat_lng_zfactor_calculator`, this resulting
+    ``ZFactorCalculator`` can used on ``Tile``\s in a different projection. However,
+    it cannot be used between different types of projections. For example, a
+    ``ZFactorCalculator`` produced for a Layer that is in ``WebMercator`` will not
+    create an accurate ``ZFactor`` for a Layer that is in ``LatLng``.
+
+    Args:
+        mapped_zfactors(dict): A ``dict`` that maps lattitudes to ``ZFactor``\s.
+           It is not required to supply a mapping for ever lattitude intersected
+           in the layer. Rather, based on the lattitudes given, a linear interpolation
+           will be performed and any lattitude not mapped will have its ``ZFactor``
+           derived from that interpolation.
+
+    Returns:
+        ``py4j.JavaObject``
+    """
+
     pysc = get_spark_context()
     string_map = {str(k): str(v) for k, v in mapped_zfactors.items()}
     calculator = pysc._gateway.jvm.geopyspark.geotrellis.\

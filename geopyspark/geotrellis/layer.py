@@ -1312,8 +1312,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             neighborhood (str or :class:`~geopyspark.geotrellis.neighborhood.Neighborhood`, optional):
                 The type of neighborhood to use in the focal operation. This can be represented by
                 either an instance of ``Neighborhood``, or by a constant.
-            param_1 (int or float, optional): If using ``Operation.SLOPE``, then this is the
-                zFactor, else it is the first argument of ``neighborhood``.
+            param_1 (int or float, optional): The first argument of ``neighborhood``.
             param_2 (int or float, optional): The second argument of the ``neighborhood``.
             param_3 (int or float, optional): The third argument of the ``neighborhood``.
 
@@ -1323,8 +1322,8 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
             Any ``param`` that is not set will default to 0.0.
 
-            If ``neighborhood`` is ``None`` then ``operation`` **must** be either
-            ``Operation.SLOPE`` or ``Operation.ASPECT``.
+            If ``neighborhood`` is ``None`` then ``operation`` **must** be
+            ``Operation.ASPECT``.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
@@ -1333,7 +1332,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             ValueError: If ``operation`` is not a known operation.
             ValueError: If ``neighborhood`` is not a known neighborhood.
             ValueError: If ``neighborhood`` was not set, and ``operation`` is not
-                ``Operation.SLOPE`` or ``Operation.ASPECT``.
+                ``Operation.ASPECT``.
         """
 
         operation = Operation(operation).value
@@ -1360,6 +1359,24 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         return TiledRasterLayer(self.layer_type, srdd)
 
     def slope(self, zfactor_calculator):
+        """Performs the Slope, focal operation on the first band of each ``Tile`` in the Layer.
+
+        The Slope operation will be carried out in a ``SQUARE`` neighborhood with with an
+        ``extent`` of 1.  A ``zfactor`` will be derived from the ``zfactor_calculator``
+        for each ``Tile`` in the Layer. The resulting Layer will have a ``cell_type``
+        of ``FLOAT64`` regardless of the input Layer's ``cell_type``; as well as
+        have a single band, that represents the calculated slope.
+
+        Args:
+            zfactor_calculator (py4j.JavaObject): A ``JavaObject`` that represents the
+                Scala ``ZFactorCalculator`` class. This can be created using either the
+                :meth:`~geopyspark.geotrellis.create_lat_lng_zfactor_calculator` or the
+                :meth:`~geopyspark.geotrellis.create_zfactor_calculator` methods.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
+        """
+
         srdd = self.srdd.slope(zfactor_calculator)
 
         return TiledRasterLayer(self.layer_type, srdd)

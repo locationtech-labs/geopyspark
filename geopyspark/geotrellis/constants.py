@@ -285,7 +285,8 @@ class Compression(Enum):
     NO_COMPRESSION = "NoCompression"
     DEFLATE_COMPRESSION = "DeflateCompression"
 
-class Units(Enum):
+class Unit(Enum):
+    """Represents the units of elevation."""
 
-    METERS = "Meters"
+    METER = "Meters"
     FEET = "Feet"
