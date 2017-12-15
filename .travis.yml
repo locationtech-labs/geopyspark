@@ -30,9 +30,9 @@ addons:
 install:
   - pushd geopyspark-backend &&
     ./sbt "project geotrellis-backend" assembly &&
-    cp geotrellis/target/scala-2.11/geotrellis-backend-assembly-0.3.0.jar ../geopyspark/jars &&
+    cp geotrellis/target/scala-2.11/geotrellis-backend-assembly-*.jar ../geopyspark/jars &&
     ./sbt "project vectorpipe" assembly &&
-    cp vectorpipe/target/scala-2.11/vectorpipe-assembly-0.3.0.jar ../geopyspark/jars &&
+    cp vectorpipe/target/scala-2.11/vectorpipe-assembly-*.jar ../geopyspark/jars &&
     popd
   - if [ ! -f archives/spark-2.1.1-bin-hadoop2.7.tgz ]; then
     pushd archives;
