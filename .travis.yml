@@ -60,3 +60,16 @@ script:
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
   - ./test_script.sh
   - pylint geopyspark
+
+deploy:
+  provide: script
+  script: "deploy.sh"
+  skip_cleanup: true
+  on:
+    repo: locationtech-labs/geopyspark
+    branch: master
+    jdk: oraclejdk8
+    scala: "2.11.8"
+
+after_deploy:
+  - rm -f "${HOME}/.bintray/.credentials"

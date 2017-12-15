@@ -24,6 +24,17 @@ lazy val commonSettings = Seq(
   addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
 )
 
+lazy val publishSettings =
+  Seq(
+    bintrayOrganization := Some("azavea"),
+    bintrayRepository := "maven",
+    bintrayVcsUrl := Some("https://github.com/locationtech-labs/geopyspark.git"),
+    publishMavenStyle := true,
+    publishArtifact in Test := false,
+    pomIncludeRepository := { _ => false},
+    homepage := Some(url("https://github.com/locationtech-labs/geopyspark"))
+  )
+
 resolvers ++= Seq(
   "Location Tech GeoTrellis Snapshots" at "https://repo.locationtech.org/content/repositories/geotrellis-snapshots",
   Resolver.mavenLocal
@@ -35,4 +46,4 @@ lazy val root = Project("root", file("."))
 
 lazy val geotrellisProject = Project("geotrellis-backend", file("geotrellis"))
   .settings(commonSettings: _*)
-  .dependsOn(root)
+  .settings(publishSettings: _*)
