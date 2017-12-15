@@ -378,4 +378,6 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
   def isFloatingPointLayer(): Boolean = rdd.metadata.cellType.isFloatingPoint
 
   protected def withRDD(result: RDD[(K, MultibandTile)]): TiledRasterLayer[K]
+
+  def withContextRDD(result: ContextRDD[K, MultibandTile, TileLayerMetadata[K]]): TiledRasterLayer[K]
 }

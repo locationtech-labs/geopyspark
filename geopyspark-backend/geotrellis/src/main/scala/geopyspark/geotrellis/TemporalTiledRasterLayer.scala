@@ -318,6 +318,11 @@ class TemporalTiledRasterLayer(
   def withRDD(result: RDD[(SpaceTimeKey, MultibandTile)]): TiledRasterLayer[SpaceTimeKey] =
     TemporalTiledRasterLayer(zoomLevel, MultibandTileLayerRDD(result, rdd.metadata))
 
+  def withContextRDD(
+    result: ContextRDD[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]]
+  ): TiledRasterLayer[SpaceTimeKey] =
+    TemporalTiledRasterLayer(zoomLevel, result)
+
   def toInt(converted: RDD[(SpaceTimeKey, MultibandTile)]): TiledRasterLayer[SpaceTimeKey] =
     TemporalTiledRasterLayer(zoomLevel, MultibandTileLayerRDD(converted, rdd.metadata))
 

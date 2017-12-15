@@ -269,6 +269,9 @@ class SpatialTiledRasterLayer(
   def withRDD(result: RDD[(SpatialKey, MultibandTile)]): TiledRasterLayer[SpatialKey] =
     SpatialTiledRasterLayer(zoomLevel, MultibandTileLayerRDD(result, rdd.metadata))
 
+  def withContextRDD(result: ContextRDD[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]]): TiledRasterLayer[SpatialKey] =
+    SpatialTiledRasterLayer(zoomLevel, result)
+
   def toInt(converted: RDD[(SpatialKey, MultibandTile)]): TiledRasterLayer[SpatialKey] =
     SpatialTiledRasterLayer(zoomLevel, MultibandTileLayerRDD(converted, rdd.metadata))
 
