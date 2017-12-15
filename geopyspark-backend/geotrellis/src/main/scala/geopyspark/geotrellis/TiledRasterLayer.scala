@@ -11,7 +11,6 @@ import geotrellis.raster._
 import geotrellis.raster.distance._
 import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
-import geotrellis.raster.mapalgebra.focal.Square
 import geotrellis.raster.mapalgebra.local._
 import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
@@ -129,6 +128,8 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
     param2: Double,
     param3: Double
   ): TiledRasterLayer[K]
+
+  def slope(zFactorCalculator: ZFactorCalculator): TiledRasterLayer[K]
 
   def costDistance(
     sc: SparkContext,

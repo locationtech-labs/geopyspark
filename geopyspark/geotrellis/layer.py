@@ -1350,12 +1350,17 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             srdd = self.srdd.focal(operation, nb(neighborhood).value,
                                    float(param_1), float(param_2), float(param_3))
 
-        elif not neighborhood and operation == Operation.SLOPE.value or operation == Operation.ASPECT.value:
+        elif not neighborhood and operation == Operation.ASPECT.value:
             z_factor = float(param_1 or 1.0)
             srdd = self.srdd.focal(operation, nb.SQUARE.value, z_factor, 0.0, 0.0)
 
         else:
-            raise ValueError("neighborhood must be set or the operation must be SLOPE or ASPECT")
+            raise ValueError("neighborhood must be set or the operation must be ASPECT")
+
+        return TiledRasterLayer(self.layer_type, srdd)
+
+    def slope(self, zfactor_calculator):
+        srdd = self.srdd.slope(zfactor_calculator)
 
         return TiledRasterLayer(self.layer_type, srdd)
 

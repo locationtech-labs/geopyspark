@@ -16,10 +16,12 @@ import geotrellis.raster.distance._
 import geotrellis.raster.histogram._
 import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
+import geotrellis.raster.mapalgebra.focal.{Square, Slope}
 import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
 import geotrellis.raster.resample.{ResampleMethod, PointResampleMethod, Resample}
 import geotrellis.spark._
+import geotrellis.spark.buffer._
 import geotrellis.spark.costdistance.IterativeCostDistance
 import geotrellis.spark.io._
 import geotrellis.spark.io.json._
@@ -166,6 +168,27 @@ class SpatialTiledRasterLayer(
       MultibandTileLayerRDD(result.mapValues{ x => MultibandTile(x) }, result.metadata)
 
     SpatialTiledRasterLayer(None, multibandRDD)
+  }
+
+  def slope(zFactorCalculator: ZFactorCalculator): SpatialTiledRasterLayer = {
+    val mt = rdd.metadata.mapTransform
+    val cellSize = rdd.metadata.cellSize
+
+    SpatialTiledRasterLayer(
+      zoomLevel,
+      rdd.withContext { rdd =>
+        rdd.bufferTiles(bufferSize = 1).mapPartitions[(SpatialKey, MultibandTile)](
+        { iter =>
+          iter.map { case (key, BufferedTile(tile, bounds)) =>
+            val zfactor = zFactorCalculator.deriveZFactor(mt.keyToExtent(key))
+            val slopeTile = Slope(tile.bands(0), Square(1), Some(bounds), cellSize, zfactor).interpretAs(FloatConstantNoDataCellType)
+
+            key -> MultibandTile(slopeTile)
+          }
+        }, preservesPartitioning = true
+        )
+      }.mapContext(_.copy(cellType = FloatConstantNoDataCellType))
+    )
   }
 
   def mask(geometries: Seq[MultiPolygon]): TiledRasterLayer[SpatialKey] =
