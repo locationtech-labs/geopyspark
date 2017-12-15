@@ -1,5 +1,6 @@
 """This subpackage contains the code that reads, writes, and processes data using GeoTrellis."""
 from collections import namedtuple
+import json
 import warnings
 import datetime
 import functools
@@ -8,7 +9,7 @@ from shapely.geometry import box
 import pytz
 
 from geopyspark import get_spark_context
-from geopyspark.geotrellis.constants import CellType, NO_DATA_INT
+from geopyspark.geotrellis.constants import CellType, NO_DATA_INT, Units
 
 
 _EPOCH = datetime.datetime.utcfromtimestamp(0)
@@ -19,6 +20,22 @@ def _convert_to_unix_time(date_time):
         return int((date_time.astimezone(pytz.utc) - _EPOCH.replace(tzinfo=pytz.utc)).total_seconds() * 1000)
     else:
         return int((date_time - _EPOCH).total_seconds() * 1000)
+
+
+def create_lat_lng_zfactor_calculator(units):
+    pysc = get_spark_context()
+    calculator = pysc._gateway.jvm.geopyspark.geotrellis.\
+            ZFactorCalculator.createLatLngZFactorCalculator(Unit(unit).value)
+
+    return calculator
+
+def create_zfactor_calculator(mapped_zfactors):
+    pysc = get_spark_context()
+    string_map = {str(k): str(v) for k, v in mapped_zfactors.items()}
+    calculator = pysc._gateway.jvm.geopyspark.geotrellis.\
+            ZFactorCalculator.createZFactorCalculator(json.dumps(string_map))
+
+    return calculator
 
 
 def deprecated(func):
@@ -586,7 +603,8 @@ class Metadata(object):
 
 
 __all__ = ["Tile", "Extent", "ProjectedExtent", "TemporalProjectedExtent", "SpatialKey", "SpaceTimeKey",
-           "Metadata", "TileLayout", "GlobalLayout", "LocalLayout", "LayoutDefinition", "Bounds", "RasterizerOptions"]
+           "Metadata", "TileLayout", "GlobalLayout", "LocalLayout", "LayoutDefinition", "Bounds", "RasterizerOptions",
+           "create_lat_lng_zfactor_calculator", "create_zfactor_calculator"]
 
 from . import catalog
 from . import color
