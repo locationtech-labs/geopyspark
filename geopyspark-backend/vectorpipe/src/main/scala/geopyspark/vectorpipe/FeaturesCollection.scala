@@ -36,32 +36,44 @@ class FeaturesCollection(
     PythonTranslator.toPython[Feature[Geometry, ElementMeta], ProtoFeature](multiPolygons.asInstanceOf[RDD[Feature[Geometry, ElementMeta]]])
 
   def getPointTags: String =
-    points
-      .map { _.data.tags }
-      .reduce { _ ++: _ }
-      .toJson
-      .compactPrint
+    if (points.isEmpty)
+      Map[String, String]().toJson.compactPrint
+    else
+      points
+        .map { _.data.tags }
+        .reduce { _ ++: _ }
+        .toJson
+        .compactPrint
 
   def getLineTags: String =
-    lines
-      .map { _.data.tags }
-      .reduce { _ ++: _ }
-      .toJson
-      .compactPrint
+    if (lines.isEmpty)
+      Map[String, String]().toJson.compactPrint
+    else
+      lines
+        .map { _.data.tags }
+        .reduce { _ ++: _ }
+        .toJson
+        .compactPrint
 
   def getPolygonTags: String =
-    polygons
-      .map { _.data.tags }
-      .reduce { _ ++: _ }
-      .toJson
-      .compactPrint
+    if (polygons.isEmpty)
+      Map[String, String]().toJson.compactPrint
+    else
+      polygons
+        .map { _.data.tags }
+        .reduce { _ ++: _ }
+        .toJson
+        .compactPrint
 
   def getMultiPolygonTags: String =
-    multiPolygons
-      .map { _.data.tags }
-      .reduce { _ ++: _ }
-      .toJson
-      .compactPrint
+    if (multiPolygons.isEmpty)
+      Map[String, String]().toJson.compactPrint
+    else
+      multiPolygons
+        .map { _.data.tags }
+        .reduce { _ ++: _ }
+        .toJson
+        .compactPrint
 }
 
 

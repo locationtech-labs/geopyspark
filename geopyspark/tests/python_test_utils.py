@@ -6,19 +6,19 @@ from zipfile import ZipFile as zipped
 from geopyspark.geopyspark_constants import CWD
 
 
-root_geotiff_dir = path.join(CWD, "tests/data_files/geotiff_test_files/")
+root_geotiff_dir = path.join(CWD, "tests/data_files/test_files/")
 files_path = path.relpath(root_geotiff_dir, os.getcwd())
 
-def geotiff_test_path(file_test_path):
+def file_path(file_test_path):
     return path.abspath(path.join(root_geotiff_dir, file_test_path))
 
 def check_directory():
-    test_path = path.join(CWD, "tests/data_files/geotiff_test_files/")
+    test_path = path.join(CWD, "tests/data_files/test_files/")
     if os.path.exists(test_path):
         test_path_time = os.path.getmtime(test_path)
     else:
         test_path_time = 0
-    zip_file = path.join(CWD, 'tests/data_files/geotiff_test_files.zip')
+    zip_file = path.join(CWD, 'tests/data_files/test_files.zip')
     zip_file_time = os.path.getmtime(zip_file)
 
     if test_path_time < zip_file_time:

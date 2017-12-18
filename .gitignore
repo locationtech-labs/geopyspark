@@ -94,7 +94,7 @@ ENV/
 .ropeproject
 
 # GeoTiff Test Files
-geopyspark/tests/data_files/geotiff_test_files/
+geopyspark/tests/data_files/test_files/
 notebooks
 
 # GeoPySpark-backend jar
