@@ -285,4 +285,3 @@ class Compression(Enum):
 
     NO_COMPRESSION = "NoCompression"
     DEFLATE_COMPRESSION = "DeflateCompression"
-
