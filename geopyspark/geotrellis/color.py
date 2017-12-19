@@ -2,6 +2,7 @@
 PNGs, and GeoTiffs.
 """
 import struct
+import numpy as np
 from geopyspark import get_spark_context
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geopyspark_utils import ensure_pyspark
@@ -94,8 +95,8 @@ class ColorMap(object):
         """Given breaks and colors, build a ``ColorMap`` object.
 
         Args:
-            breaks (dict or list or :class:`~geopyspark.geotrellis.Histogram`): If a ``dict`` then a
-                mapping from tile values to colors, the latter represented as integers
+            breaks (dict or list or ``np.ndarray`` or :class:`~geopyspark.geotrellis.Histogram`): If a
+                ``dict`` then a mapping from tile values to colors, the latter represented as integers
                 e.g., 0xff000080 is red at half opacity. If a ``list`` then tile values that
                 specify breaks in the color mapping. If a ``Histogram`` then a histogram from which
                 breaks can be derived.
@@ -130,6 +131,9 @@ class ColorMap(object):
                 color_list = get_colors_from_colors(colors)
         else:
             raise ValueError("Could not construct ColorMap from the given colors", colors)
+
+        if isinstance(breaks, np.ndarray):
+            breaks = list(breaks)
 
         if isinstance(breaks, list):
             return ColorMap.from_colors(breaks, color_list, no_data_color, fallback, classification_strategy)
