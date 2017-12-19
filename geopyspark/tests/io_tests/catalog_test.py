@@ -28,6 +28,7 @@ class CatalogTest(BaseTestClass):
         yield
         BaseTestClass.pysc._gateway.close()
 
+    @pytest.mark.skip
     def test_read(self):
         for x in range(11, 0, -1):
             actual_layer = query(self.uri, self.layer_name, x).tile_to_layout(LocalLayout(), self.metadata.crs)

@@ -2,7 +2,7 @@ import unittest
 import pytest
 import numpy as np
 
-from geopyspark.geotrellis import SpatialKey, Extent, Tile, create_lat_lng_zfactor_calculator
+from geopyspark.geotrellis import SpatialKey, Extent, Tile, zfactor_lat_lng_calculator
 from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.constants import LayerType, Unit
@@ -45,7 +45,7 @@ class SlopeTest(BaseTestClass):
 
     def test_slope(self):
 
-        calc = create_lat_lng_zfactor_calculator(Unit.METER)
+        calc = zfactor_lat_lng_calculator(Unit.METERS)
         result = self.raster_rdd.slope(calc).to_numpy_rdd().values().first().cells
 
         self.assertEqual(result[0, 0, 0], 0.0)

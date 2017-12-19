@@ -1370,8 +1370,8 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         Args:
             zfactor_calculator (py4j.JavaObject): A ``JavaObject`` that represents the
                 Scala ``ZFactorCalculator`` class. This can be created using either the
-                :meth:`~geopyspark.geotrellis.create_lat_lng_zfactor_calculator` or the
-                :meth:`~geopyspark.geotrellis.create_zfactor_calculator` methods.
+                :meth:`~geopyspark.geotrellis.zfactor_lat_lng_calculator` or the
+                :meth:`~geopyspark.geotrellis.zfactor_calculator` methods.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`

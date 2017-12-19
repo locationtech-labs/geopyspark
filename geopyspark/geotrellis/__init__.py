@@ -22,7 +22,7 @@ def _convert_to_unix_time(date_time):
         return int((date_time - _EPOCH).total_seconds() * 1000)
 
 
-def create_lat_lng_zfactor_calculator(unit):
+def zfactor_lat_lng_calculator(unit):
     """Produces the Scala class, ``ZFactorCalculator`` as a ``JavaObject``.
 
     The resulting ``ZFactorCalculator`` produced using this method assumes that
@@ -45,11 +45,11 @@ def create_lat_lng_zfactor_calculator(unit):
 
     return calculator
 
-def create_zfactor_calculator(mapped_zfactors):
+def zfactor_calculator(mapped_zfactors):
     """Produces the Scala class, ``ZFactorCalculator`` as a ``JavaObject``.
 
     Unlike the ``ZFactorCalculator`` produced in
-    :meth:`~geopyspark.geotrellis.create_lat_lng_zfactor_calculator`, this resulting
+    :meth:`~geopyspark.geotrellis.zfactor_lat_lng_calculator`, this resulting
     ``ZFactorCalculator`` can used on ``Tile``\s in a different projection. However,
     it cannot be used between different types of projections. For example, a
     ``ZFactorCalculator`` produced for a Layer that is in ``WebMercator`` will not
@@ -640,7 +640,7 @@ class Metadata(object):
 
 __all__ = ["Tile", "Extent", "ProjectedExtent", "TemporalProjectedExtent", "SpatialKey", "SpaceTimeKey",
            "Metadata", "TileLayout", "GlobalLayout", "LocalLayout", "LayoutDefinition", "Bounds", "RasterizerOptions",
-           "create_lat_lng_zfactor_calculator", "create_zfactor_calculator"]
+           "zfactor_lat_lng_calculator", "zfactor_calculator"]
 
 from . import catalog
 from . import color

@@ -13,6 +13,7 @@ class ReadingTest(BaseTestClass):
         yield
         BaseTestClass.pysc._gateway.close()
 
+    @pytest.mark.skip
     def test_reading(self):
         read = osm_reader.read("/tmp/andorra.orc")
         points = read.get_point_features_rdd()

@@ -50,8 +50,10 @@ lazy val utilProject = Project("util", file("util"))
 
 lazy val vectorPipeProject = Project("vectorpipe", file("vectorpipe"))
   .settings(commonSettings: _*)
-  .dependsOn(root, utilProject)
+  .settings(publishSettings: _*)
+  .dependsOn(utilProject)
 
 lazy val geotrellisProject = Project("geotrellis-backend", file("geotrellis"))
   .settings(commonSettings: _*)
-  .dependsOn(root, utilProject, vectorPipeProject)
+  .settings(publishSettings: _*)
+  .dependsOn(utilProject, vectorPipeProject)

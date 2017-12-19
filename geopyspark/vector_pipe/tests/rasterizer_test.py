@@ -15,6 +15,7 @@ class RasterizationTest(BaseTestClass):
         yield
         BaseTestClass.pysc._gateway.close()
 
+    @pytest.mark.skip
     def test_rasterization(self):
         read = osm_reader.read("/tmp/andorra.orc")
 
