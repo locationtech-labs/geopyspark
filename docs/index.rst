@@ -127,6 +127,7 @@ a need for it.
 
   tutorials/ingesting-an-image
   tutorials/reading-in-sentinel-data
+  tutorials/reading-and-rasterizing-osm-data
 
 .. toctree::
   :maxdepth: 2
