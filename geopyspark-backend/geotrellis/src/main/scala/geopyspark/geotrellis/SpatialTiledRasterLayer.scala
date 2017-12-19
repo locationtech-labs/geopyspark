@@ -1,11 +1,14 @@
 package geopyspark.geotrellis
 
+import geopyspark.util._
 import geopyspark.geotrellis._
 import geopyspark.geotrellis.GeoTrellisUtils._
+import geopyspark.vectorpipe._
 
 import protos.tileMessages._
 import protos.keyMessages._
 import protos.tupleMessages._
+import protos.featureMessages._
 
 import geotrellis.proj4._
 import geotrellis.raster._
@@ -13,10 +16,12 @@ import geotrellis.raster.distance._
 import geotrellis.raster.histogram._
 import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
+import geotrellis.raster.mapalgebra.focal.{Square, Slope}
 import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
 import geotrellis.raster.resample.{ResampleMethod, PointResampleMethod, Resample}
 import geotrellis.spark._
+import geotrellis.spark.buffer._
 import geotrellis.spark.costdistance.IterativeCostDistance
 import geotrellis.spark.io._
 import geotrellis.spark.io.json._
@@ -148,7 +153,12 @@ class SpatialTiledRasterLayer(
       rdd.metadata
     )
 
-    val _neighborhood = getNeighborhood(operation, neighborhood, param1, param2, param3)
+    val _neighborhood =
+      if (operation == Constants.SLOPE || operation == Constants.ASPECT)
+        getNeighborhood(neighborhood, 1.0, 0.0, 0.0)
+      else
+        getNeighborhood(neighborhood, param1, param2, param3)
+
     val cellSize = rdd.metadata.layout.cellSize
     val op: ((Tile, Option[GridBounds]) => Tile) = getOperation(operation, _neighborhood, cellSize, param1)
 
@@ -158,6 +168,27 @@ class SpatialTiledRasterLayer(
       MultibandTileLayerRDD(result.mapValues{ x => MultibandTile(x) }, result.metadata)
 
     SpatialTiledRasterLayer(None, multibandRDD)
+  }
+
+  def slope(zFactorCalculator: ZFactorCalculator): SpatialTiledRasterLayer = {
+    val mt = rdd.metadata.mapTransform
+    val cellSize = rdd.metadata.cellSize
+
+    SpatialTiledRasterLayer(
+      zoomLevel,
+      rdd.withContext { rdd =>
+        rdd.bufferTiles(bufferSize = 1).mapPartitions[(SpatialKey, MultibandTile)](
+        { iter =>
+          iter.map { case (key, BufferedTile(tile, bounds)) =>
+            val zfactor = zFactorCalculator.deriveZFactor(mt.keyToExtent(key))
+            val slopeTile = Slope(tile.bands(0), Square(1), Some(bounds), cellSize, zfactor).interpretAs(FloatConstantNoDataCellType)
+
+            key -> MultibandTile(slopeTile)
+          }
+        }, preservesPartitioning = true
+        )
+      }.mapContext(_.copy(cellType = FloatConstantNoDataCellType))
+    )
   }
 
   def mask(geometries: Seq[MultiPolygon]): TiledRasterLayer[SpatialKey] =
@@ -260,6 +291,9 @@ class SpatialTiledRasterLayer(
 
   def withRDD(result: RDD[(SpatialKey, MultibandTile)]): TiledRasterLayer[SpatialKey] =
     SpatialTiledRasterLayer(zoomLevel, MultibandTileLayerRDD(result, rdd.metadata))
+
+  def withContextRDD(result: ContextRDD[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]]): TiledRasterLayer[SpatialKey] =
+    SpatialTiledRasterLayer(zoomLevel, result)
 
   def toInt(converted: RDD[(SpatialKey, MultibandTile)]): TiledRasterLayer[SpatialKey] =
     SpatialTiledRasterLayer(zoomLevel, MultibandTileLayerRDD(converted, rdd.metadata))
@@ -491,6 +525,47 @@ object SpatialTiledRasterLayer {
       options = Option(options).getOrElse(Options.DEFAULT),
       partitioner = partitioner)
     val metadata = TileLayerMetadata(cellType, ld, maptrans(gb), srcCRS, KeyBounds(gb))
+    SpatialTiledRasterLayer(Some(requestedZoom),
+      MultibandTileLayerRDD(tiles.mapValues(MultibandTile(_)), metadata))
+  }
+
+  def rasterizeFeaturesWithZIndex(
+    featureRDD: RDD[Array[Byte]],
+    geomCRS: String,
+    requestedZoom: Int,
+    requestedCellType: String,
+    options: Rasterizer.Options,
+    numPartitions: Integer,
+    zIndexCellType: String
+  ): SpatialTiledRasterLayer = {
+    import geotrellis.raster.rasterize.Rasterizer.Options
+
+    val scalaRDD =
+      PythonTranslator.fromPython[Feature[Geometry, CellValue], ProtoFeatureCellValue](featureRDD, ProtoFeatureCellValue.parseFrom)
+
+    val fullEnvelope = scalaRDD.map(_.geom.envelope).reduce(_ combine _)
+
+    val cellType = CellType.fromName(requestedCellType)
+    val zCellType = CellType.fromName(zIndexCellType)
+
+    val srcCRS = TileLayer.getCRS(geomCRS).get
+    val LayoutLevel(z, ld) = ZoomedLayoutScheme(srcCRS).levelForZoom(requestedZoom)
+    val maptrans = ld.mapTransform
+    val gb @ GridBounds(cmin, rmin, cmax, rmax) = maptrans(fullEnvelope)
+    val partitioner = new HashPartitioner(Option(numPartitions).map(_.toInt).getOrElse(math.max(gb.size / 512, 1)))
+
+    val tiles =
+      RasterizeRDD.fromFeatureWithZIndex(
+        features = scalaRDD,
+        cellType = cellType,
+        layout = ld,
+        options = Option(options).getOrElse(Options.DEFAULT),
+        partitioner = partitioner,
+        zIndexCellType = zCellType
+      )
+
+    val metadata = TileLayerMetadata(cellType, ld, maptrans(gb), srcCRS, KeyBounds(gb))
+
     SpatialTiledRasterLayer(Some(requestedZoom),
       MultibandTileLayerRDD(tiles.mapValues(MultibandTile(_)), metadata))
   }

@@ -48,7 +48,6 @@ object GeoTrellisUtils {
   }
 
   def getNeighborhood(
-    operation: String,
     neighborhood: String,
     param1: Double,
     param2: Double,

@@ -44,6 +44,16 @@ scalaVersion := Version.scala
 
 lazy val root = Project("root", file("."))
 
+lazy val utilProject = Project("util", file("util"))
+  .settings(commonSettings: _*)
+  .settings(publishSettings: _*)
+
+lazy val vectorPipeProject = Project("vectorpipe", file("vectorpipe"))
+  .settings(commonSettings: _*)
+  .settings(publishSettings: _*)
+  .dependsOn(utilProject)
+
 lazy val geotrellisProject = Project("geotrellis-backend", file("geotrellis"))
   .settings(commonSettings: _*)
   .settings(publishSettings: _*)
+  .dependsOn(utilProject, vectorPipeProject)

@@ -36,8 +36,7 @@ from geopyspark.geotrellis.constants import (Operation,
                                              StorageMethod,
                                              ColorSpace,
                                              Compression,
-                                             NO_DATA_INT,
-                                             TargetCell
+                                             NO_DATA_INT
                                             )
 from geopyspark.geotrellis.neighborhood import Neighborhood
 
@@ -1313,8 +1312,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             neighborhood (str or :class:`~geopyspark.geotrellis.neighborhood.Neighborhood`, optional):
                 The type of neighborhood to use in the focal operation. This can be represented by
                 either an instance of ``Neighborhood``, or by a constant.
-            param_1 (int or float, optional): If using ``Operation.SLOPE``, then this is the
-                zFactor, else it is the first argument of ``neighborhood``.
+            param_1 (int or float, optional): The first argument of ``neighborhood``.
             param_2 (int or float, optional): The second argument of the ``neighborhood``.
             param_3 (int or float, optional): The third argument of the ``neighborhood``.
 
@@ -1324,8 +1322,8 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
             Any ``param`` that is not set will default to 0.0.
 
-            If ``neighborhood`` is ``None`` then ``operation`` **must** be either
-            ``Operation.SLOPE`` or ``Operation.ASPECT``.
+            If ``neighborhood`` is ``None`` then ``operation`` **must** be
+            ``Operation.ASPECT``.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
@@ -1334,7 +1332,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             ValueError: If ``operation`` is not a known operation.
             ValueError: If ``neighborhood`` is not a known neighborhood.
             ValueError: If ``neighborhood`` was not set, and ``operation`` is not
-                ``Operation.SLOPE`` or ``Operation.ASPECT``.
+                ``Operation.ASPECT``.
         """
 
         operation = Operation(operation).value
@@ -1351,11 +1349,35 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             srdd = self.srdd.focal(operation, nb(neighborhood).value,
                                    float(param_1), float(param_2), float(param_3))
 
-        elif not neighborhood and operation == Operation.SLOPE.value or operation == Operation.ASPECT.value:
-            srdd = self.srdd.focal(operation, nb.SQUARE.value, 1.0, 0.0, 0.0)
+        elif not neighborhood and operation == Operation.ASPECT.value:
+            z_factor = float(param_1 or 1.0)
+            srdd = self.srdd.focal(operation, nb.SQUARE.value, z_factor, 0.0, 0.0)
 
         else:
-            raise ValueError("neighborhood must be set or the operation must be SLOPE or ASPECT")
+            raise ValueError("neighborhood must be set or the operation must be ASPECT")
+
+        return TiledRasterLayer(self.layer_type, srdd)
+
+    def slope(self, zfactor_calculator):
+        """Performs the Slope, focal operation on the first band of each ``Tile`` in the Layer.
+
+        The Slope operation will be carried out in a ``SQUARE`` neighborhood with with an
+        ``extent`` of 1.  A ``zfactor`` will be derived from the ``zfactor_calculator``
+        for each ``Tile`` in the Layer. The resulting Layer will have a ``cell_type``
+        of ``FLOAT64`` regardless of the input Layer's ``cell_type``; as well as
+        have a single band, that represents the calculated slope.
+
+        Args:
+            zfactor_calculator (py4j.JavaObject): A ``JavaObject`` that represents the
+                Scala ``ZFactorCalculator`` class. This can be created using either the
+                :meth:`~geopyspark.geotrellis.zfactor_lat_lng_calculator` or the
+                :meth:`~geopyspark.geotrellis.zfactor_calculator` methods.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
+        """
+
+        srdd = self.srdd.slope(zfactor_calculator)
 
         return TiledRasterLayer(self.layer_type, srdd)
 
@@ -1785,7 +1807,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         return self._process_polygonal_summary(geometry, self.srdd.polygonalMean)
 
-    def tobler(self, z_factor=1.0, target_cell=TargetCell.ALL):
+    def tobler(self):
         """Generates a Tobler walking speed layer from an elevation layer.
 
         Note:
@@ -1794,19 +1816,11 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             This can result it incorrect results. A fix is currently being
             worked on.
 
-        z_factor (float, optional): How many x and y units in a single z unit.
-            This is a conversion factor between map and elevation units. Defaults
-            to 1.0.
-        target_cell (str or :class:`~geopyspark.geotrellis.constants.TargetCell`, optional):
-            Which cells should be used in the calculation of the Tobler walk speed layer.
-            Defaults to ``TargetCell.ALL``.
-
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        target_cell = TargetCell(target_cell)
-        result = self.srdd.tobler(z_factor, target_cell.value)
+        result = self.srdd.tobler()
 
         return TiledRasterLayer(self.layer_type, result)
 

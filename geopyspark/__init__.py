@@ -4,7 +4,7 @@ from pkg_resources import resource_filename
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
-from geopyspark.geopyspark_constants import JAR
+from geopyspark.geopyspark_constants import GEOTRELLIS_JAR, VECTORPIPE_JAR
 from pyspark import RDD, SparkConf, SparkContext
 from pyspark.serializers import AutoBatchedSerializer
 from py4j.java_gateway import JavaClass, JavaObject
@@ -98,10 +98,16 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
             with open(os.path.join(configuration)) as config_file:
                 possible_jars.append(os.path.relpath(config_file.read(), cwd))
 
-    jar = os.path.abspath(resource_filename('geopyspark.jars', JAR))
-    jar_dir = os.path.dirname(jar)
-    if jar_dir not in local_prefixes:
-        possible_jars.append(jar)
+    module_jars = [
+        os.path.abspath(resource_filename('geopyspark.jars', GEOTRELLIS_JAR)),
+        os.path.abspath(resource_filename('geopyspark.jars', VECTORPIPE_JAR))
+    ]
+
+    jar_dirs = [(jar, os.path.dirname(jar)) for jar in module_jars]
+
+    for jar, jar_dir in jar_dirs:
+        if jar_dir not in local_prefixes:
+            possible_jars.append(jar)
 
     returned = [glob.glob(jar_files) for jar_files in possible_jars]
     jars = [jar for sublist in returned for jar in sublist]
@@ -145,5 +151,8 @@ __all__ = ['geopyspark_conf']
 
 from . import geotrellis
 from .geotrellis import *
+from . import vector_pipe
+from .vector_pipe import *
 
 __all__.extend(geotrellis.__all__)
+__all__.extend(vector_pipe.__all__)

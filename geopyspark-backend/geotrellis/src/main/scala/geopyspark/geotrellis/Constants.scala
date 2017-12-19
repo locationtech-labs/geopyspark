@@ -54,4 +54,10 @@ object Constants {
   final val NODATACELLS = "NoData"
   final val DATACELLS = "Data"
   final val ALLCELLS = "All"
+
+  final val METERS = "Meters"
+  final val FEET = "Feet"
+
+  final val METERSATEQUATOR = 11320
+  final val FEETATEQUATOR = 365217.6
 }

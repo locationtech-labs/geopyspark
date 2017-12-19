@@ -1,5 +1,6 @@
 package geopyspark.geotrellis
 
+import geopyspark.util._
 import geopyspark.geotrellis._
 import geopyspark.geotrellis.GeoTrellisUtils._
 
@@ -13,10 +14,12 @@ import geotrellis.raster.distance._
 import geotrellis.raster.histogram._
 import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
+import geotrellis.raster.mapalgebra.focal.{Square, Slope}
 import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
 import geotrellis.raster.resample.{ResampleMethod, PointResampleMethod, Resample}
 import geotrellis.spark._
+import geotrellis.spark.buffer._
 import geotrellis.spark.costdistance.IterativeCostDistance
 import geotrellis.spark.filter._
 import geotrellis.spark.io._
@@ -253,7 +256,7 @@ class TemporalTiledRasterLayer(
       rdd.metadata
     )
 
-    val _neighborhood = getNeighborhood(operation, neighborhood, param1, param2, param3)
+    val _neighborhood = getNeighborhood(neighborhood, param1, param2, param3)
     val cellSize = rdd.metadata.layout.cellSize
     val op: ((Tile, Option[GridBounds]) => Tile) = getOperation(operation, _neighborhood, cellSize, param1)
 
@@ -263,6 +266,27 @@ class TemporalTiledRasterLayer(
       MultibandTileLayerRDD(result.mapValues{ x => MultibandTile(x) }, result.metadata)
 
     TemporalTiledRasterLayer(None, multibandRDD)
+  }
+
+  def slope(zFactorCalculator: ZFactorCalculator): TemporalTiledRasterLayer = {
+    val mt = rdd.metadata.mapTransform
+    val cellSize = rdd.metadata.cellSize
+
+    TemporalTiledRasterLayer(
+      zoomLevel,
+      rdd.withContext { rdd =>
+        rdd.bufferTiles(bufferSize = 1).mapPartitions[(SpaceTimeKey, MultibandTile)](
+        { iter =>
+          iter.map { case (key, BufferedTile(tile, bounds)) =>
+            val zfactor = zFactorCalculator.deriveZFactor(mt.keyToExtent(key))
+            val slopeTile = Slope(tile.bands(0), Square(1), Some(bounds), cellSize, zfactor).interpretAs(FloatConstantNoDataCellType)
+
+            key -> MultibandTile(slopeTile)
+          }
+        }, preservesPartitioning = true
+        )
+      }.mapContext(_.copy(cellType = FloatConstantNoDataCellType))
+    )
   }
 
   def costDistance(
@@ -316,6 +340,11 @@ class TemporalTiledRasterLayer(
 
   def withRDD(result: RDD[(SpaceTimeKey, MultibandTile)]): TiledRasterLayer[SpaceTimeKey] =
     TemporalTiledRasterLayer(zoomLevel, MultibandTileLayerRDD(result, rdd.metadata))
+
+  def withContextRDD(
+    result: ContextRDD[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]]
+  ): TiledRasterLayer[SpaceTimeKey] =
+    TemporalTiledRasterLayer(zoomLevel, result)
 
   def toInt(converted: RDD[(SpaceTimeKey, MultibandTile)]): TiledRasterLayer[SpaceTimeKey] =
     TemporalTiledRasterLayer(zoomLevel, MultibandTileLayerRDD(converted, rdd.metadata))
