@@ -27,13 +27,7 @@ setup_args = dict(
         'geopyspark.vector_pipe',
         'geopyspark.vector_pipe.protobuf',
         'geopyspark.command',
-        'geopyspark.tests',
-        'geopyspark.tests.geotrellis',
-        'geopyspark.tests.geotrellis.schema_tests',
-        'geopyspark.tests.geotrellis.tiled_layer_tests',
-        'geopyspark.tests.geotrellis.io_tests',
-        'geopyspark.tests.vector_pipe',
-        'geopyspark.jars',
+        'geopyspark.jars'
     ],
     entry_points={
         "console_scripts": ['geopyspark = geopyspark.command.configuration:main']
