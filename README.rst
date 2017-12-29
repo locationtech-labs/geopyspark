@@ -93,7 +93,7 @@ Requirement  Version
 Java         >=1.8
 Scala        >=2.11
 Python       3.3 - 3.6
-Hadoop       >=2.1.1
+Spark        >=2.1.1
 ============ ============
 
 Java 8 and Scala 2.11 are needed for GeoPySpark to work; as they are required by
