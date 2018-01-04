@@ -154,6 +154,21 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
     band: Int
   ): TiledRasterLayer[K]
 
+  def localMax(i: Int): TiledRasterLayer[K] =
+    withRDD(rdd.mapValues { x => MultibandTile(x.bands.map(_.localMax(i))) })
+
+  def localMax(d: Double): TiledRasterLayer[K] =
+    withRDD(rdd.mapValues { x => MultibandTile(x.bands.map(_.localMax(d))) })
+
+  def localMax(other: TiledRasterLayer[K]): TiledRasterLayer[K] =
+    withRDD(rdd.combineValues(other.rdd) {
+      case (x: MultibandTile, y: MultibandTile) => {
+        val tiles: Vector[Tile] =
+          x.bands.zip(y.bands).map { case (b1, b2) => Max(b1, b2) }
+        MultibandTile(tiles)
+      }
+    })
+
   def localAdd(i: Int): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y + i }) })
 

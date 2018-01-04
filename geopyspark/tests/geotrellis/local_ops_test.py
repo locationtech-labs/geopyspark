@@ -191,6 +191,31 @@ class LocalOpertaionsTest(BaseTestClass):
 
         self.assertTrue((actual == 4).all())
 
+    def test_max_int(self):
+        arr = np.zeros((1, 4, 4))
+
+        tile = Tile(arr, 'FLOAT', -500)
+        rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
+        tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, self.metadata)
+
+        result = tiled.local_max(4)
+        actual = result.to_numpy_rdd().first()[1].cells
+
+        self.assertTrue((actual == 4).all())
+
+    def test_max_layer(self):
+        arr = np.zeros((1, 4, 4))
+
+        tile = Tile(arr, 'FLOAT', -500)
+        rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
+        tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, self.metadata)
+
+        result = tiled.local_max(tiled + 1)
+        actual = result.to_numpy_rdd().first()[1].cells
+
+        self.assertTrue((actual == 1).all())
+
+
 
 if __name__ == "__main__":
     unittest.main()
