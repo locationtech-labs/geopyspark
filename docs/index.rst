@@ -127,6 +127,7 @@ a need for it.
 
   tutorials/ingesting-an-image
   tutorials/reading-in-sentinel-data
+  tutorials/reading-and-rasterizing-osm-data
 
 .. toctree::
   :maxdepth: 2
@@ -136,3 +137,4 @@ a need for it.
 
   docs/geopyspark
   docs/geopyspark.geotrellis
+  docs/geopyspark.vector_pipe
