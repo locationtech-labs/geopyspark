@@ -1842,6 +1842,28 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         return TiledRasterLayer(self.layer_type, srdd)
 
+    def local_max(self, value):
+        """Determines the maximum value for each cell of each ``Tile`` in the layer.
+
+        This method takes a ``max_constant`` that is compared to each cell in the
+        layer. If ``max_constant`` is larger, then the resulting cell value will
+        be that value. Otherwise, that cell will retain its original value.
+
+        Note:
+            ``NoData`` values are handled such that taking the max between
+            a normal value and ``NoData`` value will always result in ``NoData``.
+
+        Args:
+            value (int or float or :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`): The
+                constant value that will be compared to each cell. If this is a ``TiledRasterLayer``,
+                then ``Tile``\s who share a key will have each of their cell values compared.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
+        """
+
+        return self._process_operation(value, self.srdd.localMax)
+
     def __add__(self, value):
         return self._process_operation(value, self.srdd.localAdd)
 
