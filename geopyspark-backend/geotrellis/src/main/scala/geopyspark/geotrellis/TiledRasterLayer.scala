@@ -276,7 +276,7 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map { y => y.localPowValue(d) }) })
 
   def convertDataType(newType: String): TiledRasterLayer[_] =
-    withRDD(rdd.convert(CellType.fromName(newType)))
+    withContextRDD(rdd.convert(CellType.fromName(newType)).asInstanceOf[ContextRDD[K, MultibandTile, TileLayerMetadata[K]]])
 
   def normalize(oldMin: Double, oldMax: Double, newMin: Double, newMax: Double): TiledRasterLayer[K] =
     withRDD {
