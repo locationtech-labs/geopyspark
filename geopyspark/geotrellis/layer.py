@@ -558,7 +558,7 @@ class RasterLayer(CachableLayer, TileLayer):
 
         new_type = CellType(new_type).value
 
-        if no_data_value:
+        if no_data_value is not None:
             if 'bool' in new_type:
                 raise ValueError("Cannot add user defined types to Bool")
             elif 'raw' in new_type:
@@ -1150,19 +1150,21 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             ValueError: If ``no_data_value`` is set and ``new_type`` is a boolean.
         """
 
-        if no_data_value:
+        new_type = CellType(new_type).value
+
+        if no_data_value is not None:
             if 'bool' in new_type:
                 raise ValueError("Cannot add user defined types to Bool")
             elif 'raw' in new_type:
                 raise ValueError("Cannot add user defined types to raw values")
 
-            no_data_constant = CellType(new_type).value + "ud" + str(no_data_value)
+            no_data_constant = new_type + "ud" + str(no_data_value)
 
             return TiledRasterLayer(self.layer_type,
                                     self.srdd.convertDataType(no_data_constant))
         else:
             return TiledRasterLayer(self.layer_type,
-                                    self.srdd.convertDataType(CellType(new_type).value))
+                                    self.srdd.convertDataType(new_type))
 
     def reproject(self, target_crs, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Reproject rasters to ``target_crs``.
