@@ -4,26 +4,16 @@ import rasterio
 import pytest
 import numpy as np
 
-<<<<<<< ce5e03f7210966d893129311d1dd5b3945075bf7:geopyspark/tests/geotrellis/geotiff_raster_rdd_test.py
-from geopyspark.geotrellis.constants import LayerType, CellType
-from geopyspark.tests.python_test_utils import file_path
-=======
 from geopyspark.geotrellis.constants import LayerType, CellType, Partitioner
-from geopyspark.tests.python_test_utils import geotiff_test_path
->>>>>>> Exposed Partitioner options in the API:geopyspark/tests/geotiff_raster_rdd_test.py
+from geopyspark.tests.python_test_utils import file_path
 from geopyspark.geotrellis import Extent, ProjectedExtent, Tile
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
-<<<<<<< ce5e03f7210966d893129311d1dd5b3945075bf7:geopyspark/tests/geotrellis/geotiff_raster_rdd_test.py
-class Multiband(BaseTestClass):
-    dir_path = file_path("all-ones.tif")
-=======
 class GeoTiffRasterRDDTest(BaseTestClass):
-    dir_path = geotiff_test_path("all-ones.tif")
->>>>>>> Exposed Partitioner options in the API:geopyspark/tests/geotiff_raster_rdd_test.py
+    dir_path = file_path("all-ones.tif")
     result = get(LayerType.SPATIAL, dir_path, max_tile_size=256)
 
     @pytest.fixture(autouse=True)

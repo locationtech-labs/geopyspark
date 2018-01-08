@@ -543,7 +543,8 @@ object SpatialTiledRasterLayer {
     requestedCellType: String,
     options: Rasterizer.Options,
     numPartitions: Integer,
-    zIndexCellType: String
+    zIndexCellType: String,
+    layerPartitioner: String
   ): SpatialTiledRasterLayer = {
     import geotrellis.raster.rasterize.Rasterizer.Options
 
@@ -559,7 +560,8 @@ object SpatialTiledRasterLayer {
     val LayoutLevel(z, ld) = ZoomedLayoutScheme(srcCRS).levelForZoom(requestedZoom)
     val maptrans = ld.mapTransform
     val gb @ GridBounds(cmin, rmin, cmax, rmax) = maptrans(fullEnvelope)
-    val partitioner = new HashPartitioner(Option(numPartitions).map(_.toInt).getOrElse(math.max(gb.size / 512, 1)))
+    val partitions = Option(numPartitions).map(_.toInt).getOrElse(math.max(gb.size / 512, 1))
+    val partitioner = TileLayer.getPartitioner(partitions, layerPartitioner)
 
     val tiles =
       RasterizeRDD.fromFeatureWithZIndex(

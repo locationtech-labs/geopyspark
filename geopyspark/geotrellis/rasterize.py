@@ -84,7 +84,8 @@ def rasterize_features(features,
                        cell_type=CellType.FLOAT64,
                        options=None,
                        num_partitions=None,
-                       zindex_cell_type=CellType.INT8):
+                       zindex_cell_type=CellType.INT8,
+                       partitioner=Partitioner.HASH_PARTITIONER):
     """Rasterizes a collection of :class:`~geopyspark.vector_pipe.Feature`\s.
 
     Args:
@@ -107,6 +108,9 @@ def rasterize_features(features,
             repartitioned. If ``None``, then the data will not be repartitioned.
         zindex_cell_type (str or :class:`~geopyspark.geotrellis.constants.CellType`): Which data type
             the ``Z-Index`` cells are. Defaults to ``CellType.INT8``.
+        partitioner (str or :class:`~geopyspark.geotrellis.constants.Partitioner, optional): The partitioner
+            that will be used to partition the resulting layer. Defaults to ``Partitioner.HASH_PARTITIONER``.
+
 
     Returns:
         :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
@@ -114,6 +118,8 @@ def rasterize_features(features,
 
     if isinstance(crs, int):
         crs = str(crs)
+
+    partitioner = Partitioner(partitioner).value
 
     pysc = get_spark_context()
     rasterizer = pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterLayer.rasterizeFeaturesWithZIndex
@@ -127,6 +133,7 @@ def rasterize_features(features,
                       CellType(cell_type).value,
                       options,
                       num_partitions,
-                      CellType(zindex_cell_type).value)
+                      CellType(zindex_cell_type).value,
+                      partitioner)
 
     return TiledRasterLayer(LayerType.SPATIAL, srdd)
