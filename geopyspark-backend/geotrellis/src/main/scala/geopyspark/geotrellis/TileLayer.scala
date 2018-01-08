@@ -251,6 +251,12 @@ object TileLayer {
       case NODATACELLS => TargetCell.NoData
     }
 
+  def getPartitioner(partitions: Int, partitioner: String): Partitioner =
+    partitioner match {
+      case HASH => new HashPartitioner(partitions)
+      case SPATIAL => SpatialPartitioner(partitions)
+    }
+
   def combineBands[K: ClassTag, L <: TileLayer[K]: ClassTag](
     sc: SparkContext,
     layers: ArrayList[L]

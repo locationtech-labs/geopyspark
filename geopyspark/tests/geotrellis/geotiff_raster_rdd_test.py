@@ -4,7 +4,7 @@ import rasterio
 import pytest
 import numpy as np
 
-from geopyspark.geotrellis.constants import LayerType, CellType
+from geopyspark.geotrellis.constants import LayerType, CellType, Partitioner
 from geopyspark.tests.python_test_utils import file_path
 from geopyspark.geotrellis import Extent, ProjectedExtent, Tile
 from geopyspark.geotrellis.geotiff import get
@@ -12,7 +12,7 @@ from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
 
 
-class Multiband(BaseTestClass):
+class GeoTiffRasterRDDTest(BaseTestClass):
     dir_path = file_path("all-ones.tif")
     result = get(LayerType.SPATIAL, dir_path, max_tile_size=256)
 
@@ -20,6 +20,18 @@ class Multiband(BaseTestClass):
     def tearDown(self):
         yield
         BaseTestClass.pysc._gateway.close()
+
+    def test_repartition(self):
+        md = self.result.collect_metadata()
+        laid_out_rdd = BaseTestClass.rdd.tile_to_layout(md)
+        repartitioned = laid_out_rdd.repartition(2)
+        self.assertEqual(repartitioned.getNumPartitions(), 2)
+
+    def test_repartition_with_partitioner(self):
+        tiled = self.result.tile_to_layout()
+        repartitioned = tiled.repartition(2, Partitioner.SPATIAL_PARTITIONER)
+
+        self.assertEqual(repartitioned.getNumPartitions(), 2)
 
     def test_to_numpy_rdd(self, option=None):
         pyrdd = self.result.to_numpy_rdd()

@@ -224,9 +224,9 @@ class TemporalTiledRasterLayer(
     TemporalTiledRasterLayer(zoom, tileLayer)
   }
 
-  def pyramid(resampleMethod: ResampleMethod): Array[TiledRasterLayer[SpaceTimeKey]] = {
+  def pyramid(resampleMethod: ResampleMethod, partitioner: String): Array[TiledRasterLayer[SpaceTimeKey]] = {
     require(! rdd.metadata.bounds.isEmpty, "Can not pyramid an empty RDD")
-    val part = rdd.partitioner.getOrElse(new HashPartitioner(rdd.partitions.length))
+    val part = TileLayer.getPartitioner(rdd.partitions.length, partitioner)
     val (baseZoom, scheme) =
       zoomLevel match {
         case Some(zoom) =>

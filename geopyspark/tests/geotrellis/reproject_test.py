@@ -18,10 +18,6 @@ class ReprojectTest(BaseTestClass):
         yield
         BaseTestClass.pysc._gateway.close()
 
-    def test_repartition(self):
-        laid_out_rdd = BaseTestClass.rdd.tile_to_layout(self.metadata)
-        result = laid_out_rdd.repartition(2)
-        self.assertEqual(result.getNumPartitions(), 2)
 
     def test_same_crs_layout(self):
         result = BaseTestClass.rdd.tile_to_layout(layout=self.layout_def, target_crs="EPSG:4326")

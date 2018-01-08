@@ -5,6 +5,7 @@ import math
 
 import pytest
 
+from geopyspark.geotrellis.constants import Partitioner
 from shapely.geometry import Polygon
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis import rasterize
@@ -38,6 +39,20 @@ class RasterizeTest(BaseTestClass):
                                1)
 
         cells = raster_rdd.to_numpy_rdd().values().first().cells
+
+        for x in cells.flatten().tolist():
+            self.assertTrue(math.isnan(x))
+
+    def test_whole_area_with_spatial_partitioner(self):
+        polygon = Polygon([(0, 11), (11, 11), (11, 0), (0, 0)])
+
+        raster_rdd = rasterize([polygon],
+                               "EPSG:3857",
+                               11,
+                               1,
+                               partitioner=Partitioner.SPATIAL_PARTITIONER)
+
+        cells = raster_rdd.to_numpy_rdd().first()[1].cells
 
         for x in cells.flatten().tolist():
             self.assertTrue(math.isnan(x))
