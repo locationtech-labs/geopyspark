@@ -71,8 +71,7 @@ deploy:
     on:
       repo: locationtech-labs/geopyspark
       branch: master
-      jdk: oraclejdk8
-      scala: "2.11.8"
+      tags: false
 
 after_deploy:
   - rm -f "${HOME}/.bintray/.credentials"
