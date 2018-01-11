@@ -62,7 +62,7 @@ script:
   - pylint geopyspark
 
 before_deploy:
-  - export GEOPYSPARK_VERSION_SUFFIX="${TRAVIS_COMMIT:0:7}"
+  - export GEOPYSPARK_VERSION_SUFFIX="-${TRAVIS_COMMIT:0:7}"
 
 deploy:
   provide: script
