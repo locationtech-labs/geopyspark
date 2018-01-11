@@ -65,14 +65,14 @@ before_deploy:
   - export GEOPYSPARK_VERSION_SUFFIX="-${TRAVIS_COMMIT:0:7}"
 
 deploy:
-  provide: script
-  script: "deploy.sh"
-  skip_cleanup: true
-  on:
-    repo: locationtech-labs/geopyspark
-    branch: master
-    jdk: oraclejdk8
-    scala: "2.11.8"
+  - provider: script
+    script: ./deploy.sh
+    skip_cleanup: true
+    on:
+      repo: locationtech-labs/geopyspark
+      branch: master
+      jdk: oraclejdk8
+      scala: "2.11.8"
 
 after_deploy:
   - rm -f "${HOME}/.bintray/.credentials"
