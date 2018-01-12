@@ -73,3 +73,4 @@ deploy:
       repo: locationtech-labs/geopyspark
       all_branches: true
       tags: false
+      condition: "$TRAVIS_PYTHON_VERSION = 3.6"
