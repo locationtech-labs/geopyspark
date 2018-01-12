@@ -73,6 +73,3 @@ deploy:
       repo: locationtech-labs/geopyspark
       all_branches: true
       tags: false
-
-after_deploy:
-  - rm -f "${HOME}/.bintray/.credentials"
