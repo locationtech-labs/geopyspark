@@ -27,7 +27,7 @@ lazy val commonSettings = Seq(
 lazy val publishSettings =
   Seq(
     bintrayOrganization := Some("azavea"),
-    bintrayRepository := "maven",
+    bintrayRepository := "geopyspark",
     bintrayVcsUrl := Some("https://github.com/locationtech-labs/geopyspark.git"),
     publishMavenStyle := true,
     publishArtifact in Test := false,
