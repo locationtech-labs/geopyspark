@@ -70,7 +70,7 @@ deploy:
     skip_cleanup: true
     on:
       repo: locationtech-labs/geopyspark
-      branch: master
+      all_branches: true
       tags: false
 
 after_deploy:
