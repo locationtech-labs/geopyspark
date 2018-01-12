@@ -71,8 +71,5 @@ deploy:
     on:
       repo: locationtech-labs/geopyspark
       branch: master
-      jdk: oraclejdk8
-      scala: "2.11.8"
-
-after_deploy:
-  - rm -f "${HOME}/.bintray/.credentials"
+      tags: false
+      condition: "$TRAVIS_PYTHON_VERSION = 3.6"
