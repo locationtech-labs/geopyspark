@@ -12,6 +12,7 @@ branches:
     - master
     - refactor/performance-refactor
     - milestone/mvp
+    - test/bintray-publishing
 
 addons:
   apt:
