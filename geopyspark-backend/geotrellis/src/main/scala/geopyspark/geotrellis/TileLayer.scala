@@ -202,6 +202,17 @@ abstract class TileLayer[K: ClassTag] {
       case ps: PartitionStrategy => Tiler.Options(resampleMethod, ps.producePartitioner(rdd.getNumPartitions))
       case null => Tiler.Options(resampleMethod, None)
     }
+
+  def getPartitionStrategyName: String =
+    rdd.partitioner match {
+      case None => null
+      case Some(p) =>
+        p match {
+          case _: HashPartitioner => "HashPartitioner"
+          case _: SpatialPartitioner[K] => "SpatialPartitioner"
+          case _ => throw new Exception(s"$p has no partition strategy")
+        }
+    }
 }
 
 object TileLayer {

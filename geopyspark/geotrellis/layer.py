@@ -25,7 +25,9 @@ from geopyspark.geotrellis import (Metadata,
                                    GlobalLayout,
                                    LayoutDefinition,
                                    crs_to_proj4,
-                                   _convert_to_unix_time)
+                                   _convert_to_unix_time,
+                                   HashPartitionStrategy,
+                                   SpatialPartitionStrategy)
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
                                              Neighborhood as nb,
@@ -305,6 +307,25 @@ class CachableLayer(object):
         """
 
         return self.srdd.rdd().isEmpty()
+
+    def get_partition_strategy(self):
+        """Returns the partitioning strategy if the layer has one.
+
+        Returns:
+            :class:`~geopyspark.HashPartitioner` or :class:`~geopyspark.SpatialPartitioner` or ``None``
+        """
+
+        partition_name = self.srdd.getPartitionStrategyName()
+
+        if partition_name:
+            if partition_name == "HashPartitioner":
+                return HashPartitionStrategy(self.getNumPartitions())
+            else:
+                scala_partitioner = self.srdd.rdd().partitioner().get()
+
+                return SpatialPartitionStrategy(self.getNumPartitions(), scala_partitioner.getBits())
+        else:
+            return None
 
 
 class RasterLayer(CachableLayer, TileLayer):
