@@ -2,7 +2,14 @@
 from py4j.java_gateway import JavaClass
 from py4j.protocol import register_input_converter
 
-from geopyspark.geotrellis import RasterizerOptions, GlobalLayout, LocalLayout, CellType, LayoutDefinition
+from geopyspark.geotrellis import (RasterizerOptions,
+                                   GlobalLayout,
+                                   LocalLayout,
+                                   CellType,
+                                   LayoutDefinition,
+                                   HashPartitionStrategy,
+                                   SpatialPartitionStrategy)
+
 from geopyspark.geotrellis.constants import ResampleMethod
 
 
@@ -100,9 +107,32 @@ class LayoutDefinitionConverter:
 
         return ScalaLayoutDefinition(extent, tile_layout)
 
+class HashPartitionStrategyConverter:
+    def can_convert(self, object):
+        return isinstance(object, HashPartitionStrategy)
+
+    def convert(self, obj, gateway_client):
+
+        ScalaHashStrategy = JavaClass("geopyspark.geotrellis.HashPartitionStrategy", gateway_client)
+
+        return ScalaHashStrategy.apply(obj.num_partitions)
+
+
+class SpatialPartitionStrategyConverter:
+    def can_convert(self, object):
+        return isinstance(object, SpatialPartitionStrategy)
+
+    def convert(self, obj, gateway_client):
+
+        ScalaSpatialStrategy = JavaClass("geopyspark.geotrellis.SpatialPartitionStrategy", gateway_client)
+
+        return ScalaSpatialStrategy.apply(obj.num_partitions, obj.bits)
+
 
 register_input_converter(CellTypeConverter(), prepend=True)
 register_input_converter(RasterizerOptionsConverter(), prepend=True)
 register_input_converter(LayoutTypeConverter(), prepend=True)
 register_input_converter(ResampleMethodConverter(), prepend=True)
 register_input_converter(LayoutDefinitionConverter(), prepend=True)
+register_input_converter(HashPartitionStrategyConverter(), prepend=True)
+register_input_converter(SpatialPartitionStrategyConverter(), prepend=True)
