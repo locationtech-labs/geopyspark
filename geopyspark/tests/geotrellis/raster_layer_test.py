@@ -3,8 +3,16 @@ import unittest
 import numpy as np
 import pytest
 
-from geopyspark.geotrellis import SpatialKey, Tile, ProjectedExtent, Extent, RasterLayer, LocalLayout, TileLayout, \
-    GlobalLayout, LayoutDefinition
+from geopyspark.geotrellis import (SpatialKey,
+                                   Tile,
+                                   ProjectedExtent,
+                                   Extent,
+                                   RasterLayer,
+                                   LocalLayout,
+                                   TileLayout,
+                                   GlobalLayout,
+                                   LayoutDefinition,
+                                   SpatialPartitionStrategy)
 from shapely.geometry import Point
 from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -29,6 +37,12 @@ class RasterLayerTest(BaseTestClass):
     numpy_rdd = BaseTestClass.pysc.parallelize(layers)
     layer = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, numpy_rdd)
     metadata = layer.collect_metadata(GlobalLayout(5))
+
+    def test_to_to_layout_with_partitioner(self):
+        strategy = SpatialPartitionStrategy(4)
+        tiled = self.layer.tile_to_layout(LocalLayout(5), partition_strategy=strategy)
+
+        self.assertEqual(tiled.get_partition_strategy(), strategy)
 
     def test_tile_to_local_layout(self):
         tiled = self.layer.tile_to_layout(LocalLayout(5))

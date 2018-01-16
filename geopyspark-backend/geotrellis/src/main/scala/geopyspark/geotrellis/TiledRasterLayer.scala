@@ -58,8 +58,7 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
   def rdd: RDD[(K, MultibandTile)] with Metadata[TileLayerMetadata[K]]
   def zoomLevel: Option[Int]
 
-  def repartition(numPartitions: Int, partitioner: String): TiledRasterLayer[K] =
-    withRDD(rdd.partitionBy(TileLayer.getPartitioner(numPartitions, partitioner)))
+  def repartition(numPartitions: Int): TiledRasterLayer[K] = withRDD(rdd.repartition(numPartitions))
 
   def bands(band: Int): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(band) })
@@ -99,34 +98,38 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
 
   def tileToLayout(
     layoutDefinition: LayoutDefinition,
-    resampleMethod: ResampleMethod
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
   ): TiledRasterLayer[K] =
-    tileToLayout(layoutDefinition, None, resampleMethod)
+    tileToLayout(layoutDefinition, None, resampleMethod, partitionStrategy)
 
   def tileToLayout(
     layoutType: LayoutType,
-    resampleMethod: ResampleMethod
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
   ): TiledRasterLayer[K] = {
     val (layoutDefinition, zoom) =
       layoutType.layoutDefinitionWithZoom(rdd.metadata.crs, rdd.metadata.extent, rdd.metadata.cellSize)
 
-    tileToLayout(layoutDefinition, zoom, resampleMethod)
+    tileToLayout(layoutDefinition, zoom, resampleMethod, partitionStrategy)
   }
 
   def tileToLayout(
     layOutDefinition: LayoutDefinition,
     zoom: Option[Int],
-    resampleMethod: ResampleMethod
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
   ): TiledRasterLayer[K]
 
-  def pyramid(resampleMethod: ResampleMethod, partitioner: String): Array[_] // Array[TiledRasterLayer[K]]
+  def pyramid(resampleMethod: ResampleMethod, partitionStrategy: PartitionStrategy): Array[_] // Array[TiledRasterLayer[K]]
 
   def focal(
     operation: String,
     neighborhood: String,
     param1: Double,
     param2: Double,
-    param3: Double
+    param3: Double,
+    partitionStrategy: PartitionStrategy
   ): TiledRasterLayer[K]
 
   def slope(zFactorCalculator: ZFactorCalculator): TiledRasterLayer[K]
@@ -378,13 +381,13 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
     withRDD(result.mapValues { tiles => MultibandTile(tiles) } )
   }
 
-  def merge(numPartitions: Integer, partitioner: String): TiledRasterLayer[K] =
-    numPartitions match {
-      case i: Integer => withRDD(
+  def merge(partitionStrategy: PartitionStrategy): TiledRasterLayer[K] =
+    partitionStrategy match {
+      case ps: PartitionStrategy => withRDD(
         ContextRDD(
           rdd
             .asInstanceOf[RDD[(K, MultibandTile)]]
-            .merge(Some(TileLayer.getPartitioner(i, partitioner))),
+            .merge(ps.producePartitioner(rdd.getNumPartitions)),
             rdd.metadata
           )
         )

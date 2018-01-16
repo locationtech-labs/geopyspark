@@ -102,7 +102,8 @@ class SpatialTiledRasterLayer(
   def tileToLayout(
     layoutDefinition: LayoutDefinition,
     zoom: Option[Int],
-    resampleMethod: ResampleMethod
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
   ): TiledRasterLayer[SpatialKey] = {
     val baseTransform = rdd.metadata.layout.mapTransform
     val targetTransform = layoutDefinition.mapTransform
@@ -115,15 +116,22 @@ class SpatialTiledRasterLayer(
       bounds = KeyBounds(targetTransform(rdd.metadata.extent))
     )
 
+    val options = getTilerOptions(resampleMethod, partitionStrategy)
     val tileLayer =
-      MultibandTileLayerRDD(projectedRDD.tileToLayout(retiledLayerMetadata, resampleMethod), retiledLayerMetadata)
+      MultibandTileLayerRDD(projectedRDD.tileToLayout(retiledLayerMetadata, options), retiledLayerMetadata)
 
     SpatialTiledRasterLayer(zoom, tileLayer)
   }
 
-  def pyramid(resampleMethod: ResampleMethod, partitioner: String): Array[TiledRasterLayer[SpatialKey]] = {
+  def pyramid(resampleMethod: ResampleMethod, partitionStrategy: PartitionStrategy): Array[TiledRasterLayer[SpatialKey]] = {
     require(! rdd.metadata.bounds.isEmpty, "Can not pyramid an empty RDD")
-    val part = TileLayer.getPartitioner(rdd.partitions.length, partitioner)
+
+    val partitioner =
+      partitionStrategy match {
+        case ps: PartitionStrategy => ps.producePartitioner(rdd.getNumPartitions)
+        case null => None
+      }
+
     val (baseZoom, scheme) =
       zoomLevel match {
         case Some(zoom) =>
@@ -136,7 +144,7 @@ class SpatialTiledRasterLayer(
 
     Pyramid.levelStream(
       rdd, scheme, baseZoom, 0,
-      Pyramid.Options(resampleMethod=resampleMethod, partitioner=part)
+      Pyramid.Options(resampleMethod=resampleMethod, partitioner=partitioner)
     ).map{ x =>
       SpatialTiledRasterLayer(Some(x._1), x._2)
     }.toArray
@@ -147,7 +155,8 @@ class SpatialTiledRasterLayer(
     neighborhood: String,
     param1: Double,
     param2: Double,
-    param3: Double
+    param3: Double,
+    partitionStrategy: PartitionStrategy
   ): TiledRasterLayer[SpatialKey] = {
     val singleTileLayerRDD: TileLayerRDD[SpatialKey] = TileLayerRDD(
       rdd.mapValues({ v => v.band(0) }),
@@ -163,7 +172,13 @@ class SpatialTiledRasterLayer(
     val cellSize = rdd.metadata.layout.cellSize
     val op: ((Tile, Option[GridBounds]) => Tile) = getOperation(operation, _neighborhood, cellSize, param1)
 
-    val result: TileLayerRDD[SpatialKey] = FocalOperation(singleTileLayerRDD, _neighborhood)(op)
+    val result: TileLayerRDD[SpatialKey] =
+      partitionStrategy match {
+        case ps: PartitionStrategy =>
+          FocalOperation(singleTileLayerRDD, _neighborhood, ps.producePartitioner(rdd.getNumPartitions))(op)
+        case null =>
+          FocalOperation(singleTileLayerRDD, _neighborhood, None)(op)
+      }
 
     val multibandRDD: MultibandTileLayerRDD[SpatialKey] =
       MultibandTileLayerRDD(result.mapValues{ x => MultibandTile(x) }, result.metadata)
@@ -458,8 +473,7 @@ object SpatialTiledRasterLayer {
     fillValue: Double,
     cellType: String,
     options: Rasterizer.Options,
-    numPartitions: Integer,
-    layerPartitioner: String
+    partitionStrategy: PartitionStrategy
   ): SpatialTiledRasterLayer = {
     val geomRDD = geomWKB.map { WKB.read }
     val fullEnvelope = geomRDD.map(_.envelope).reduce(_ combine _)
@@ -472,8 +486,7 @@ object SpatialTiledRasterLayer {
       cellType,
       fullEnvelope,
       options,
-      numPartitions,
-      layerPartitioner)
+      partitionStrategy)
   }
 
   def rasterizeGeometry(
@@ -484,8 +497,7 @@ object SpatialTiledRasterLayer {
     fillValue: Double,
     cellType: String,
     options: Rasterizer.Options,
-    numPartitions: Integer,
-    layerPartitioner: String
+    partitionStrategy: PartitionStrategy
   ): SpatialTiledRasterLayer = {
     val geoms = geomWKB.asScala.map(WKB.read)
     val fullEnvelope = geoms.map(_.envelope).reduce(_ combine _)
@@ -499,8 +511,7 @@ object SpatialTiledRasterLayer {
       cellType,
       fullEnvelope,
       options,
-      numPartitions,
-      layerPartitioner)
+      partitionStrategy)
   }
 
   def rasterizeGeometry(
@@ -511,8 +522,7 @@ object SpatialTiledRasterLayer {
     requestedCellType: String,
     extent: Extent,
     options: Rasterizer.Options,
-    numPartitions: Integer,
-    layerPartitioner: String
+    partitionStrategy: PartitionStrategy
   ): SpatialTiledRasterLayer = {
     import geotrellis.raster.rasterize.Rasterizer.Options
 
@@ -521,8 +531,12 @@ object SpatialTiledRasterLayer {
     val LayoutLevel(z, ld) = ZoomedLayoutScheme(srcCRS).levelForZoom(requestedZoom)
     val maptrans = ld.mapTransform
     val gb @ GridBounds(cmin, rmin, cmax, rmax) = maptrans(extent)
-    val partitions = Option(numPartitions).map(_.toInt).getOrElse(math.max(gb.size / 512, 1))
-    val partitioner = TileLayer.getPartitioner(partitions, layerPartitioner)
+
+    val partitioner =
+      partitionStrategy match {
+        case ps: PartitionStrategy => ps.producePartitioner(math.max(gb.size / 512, 1))
+        case null => None
+      }
 
     val tiles = RasterizeRDD.fromGeometry(
       geoms = geomRDD,
@@ -531,7 +545,9 @@ object SpatialTiledRasterLayer {
       value = fillValue,
       options = Option(options).getOrElse(Options.DEFAULT),
       partitioner = partitioner)
+
     val metadata = TileLayerMetadata(cellType, ld, maptrans(gb), srcCRS, KeyBounds(gb))
+
     SpatialTiledRasterLayer(Some(requestedZoom),
       MultibandTileLayerRDD(tiles.mapValues(MultibandTile(_)), metadata))
   }
@@ -542,9 +558,8 @@ object SpatialTiledRasterLayer {
     requestedZoom: Int,
     requestedCellType: String,
     options: Rasterizer.Options,
-    numPartitions: Integer,
     zIndexCellType: String,
-    layerPartitioner: String
+    partitionStrategy: PartitionStrategy
   ): SpatialTiledRasterLayer = {
     import geotrellis.raster.rasterize.Rasterizer.Options
 
@@ -560,8 +575,12 @@ object SpatialTiledRasterLayer {
     val LayoutLevel(z, ld) = ZoomedLayoutScheme(srcCRS).levelForZoom(requestedZoom)
     val maptrans = ld.mapTransform
     val gb @ GridBounds(cmin, rmin, cmax, rmax) = maptrans(fullEnvelope)
-    val partitions = Option(numPartitions).map(_.toInt).getOrElse(math.max(gb.size / 512, 1))
-    val partitioner = TileLayer.getPartitioner(partitions, layerPartitioner)
+
+    val partitioner =
+      partitionStrategy match {
+        case ps: PartitionStrategy => ps.producePartitioner(math.max(gb.size / 512, 1))
+        case null => None
+      }
 
     val tiles =
       RasterizeRDD.fromFeatureWithZIndex(
