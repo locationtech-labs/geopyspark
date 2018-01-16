@@ -477,21 +477,44 @@ class RasterLayer(CachableLayer, TileLayer):
         return RasterLayer(LayerType.SPATIAL, _to_spatial_layer(self, target_time))
 
     def repartition(self, num_partitions=None):
-        """Repartition underlying RDD using the given partitioner.
+        """Repartitions the layer to have a different number of partitions.
 
         Args:
-            num_partitions(int, optional): Desired number of partitions. If ``None``,
-                then the exisiting number of partitions will be used.
-            partitioner (str or :class:`~geopyspark.geotrellis.constants.Partitioner`, optional):
-                The partitioner that should be used to repartition the data. The default is
-                ``Partitioner.HASH_PARTITIONER``.
+            num_partitions(int, optional): Desired number of partitions. Default is, ``None``
+                .If ``None``, then the exisiting number of partitions will be used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.RasterLayer`
         """
 
         if num_partitions:
             return RasterLayer(self.layer_type, self.srdd.repartition(num_partitions))
+        else:
+            return self
+
+    def partitionBy(self, partition_strategy=None):
+        """Repartitions the layer using the given partitioning strategy.
+
+        Args:
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+                Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
+                Default is, ``None``.
+
+                If ``None``, then the output layer will be the same as the source layer.
+
+                If ``partition_strategy`` is set but has no ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` specified in the strategy with the with same number of
+                partitions the source layer had.
+
+                If ``partition_strategy`` is set and has a ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` and number of partitions specified in the strategy.
+
+        Returns:
+            :class:`~geopyspark.RasterLayer`
+        """
+
+        if partition_strategy:
+            return RasterLayer(self.layer_type, self.srdd.partitionBy(partition_strategy))
         else:
             return self
 
@@ -1262,17 +1285,14 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         return TiledRasterLayer(self.layer_type, srdd)
 
     def repartition(self, num_partitions=None):
-        """Repartition underlying RDD using the given partitioner.
+        """Repartitions the layer to have a different number of partitions.
 
         Args:
-            num_partitions(int, optional): Desired number of partitions. If ``None``,
-                then the exisiting number of partitions will be used.
-            partitioner (str or :class:`~geopyspark.geotrellis.constants.Partitioner`, optional):
-                The partitioner that should be used to repartition the data. The default is
-                ``Partitioner.HASH_PARTITIONER``.
+            num_partitions(int, optional): Desired number of partitions. Default is, ``None``
+                .If ``None``, then the exisiting number of partitions will be used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.TiledRasterLayer`
         """
 
         if num_partitions:
@@ -1280,8 +1300,25 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         else:
             return self
 
+    def partitionBy(self, partition_strategy=None):
+        """Repartitions the layer using the given partitioning strategy.
+
+        Args:
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+                Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
+                Default is, ``None``.
+
+                If ``None``, then the output layer will be the same as the source layer.
+
+                If ``partition_strategy`` is set but has no ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` specified in the strategy with the with same number of
+                partitions the source layer had.
+
+                If ``partition_strategy`` is set and has a ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` and number of partitions specified in the strategy.
+
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.TiledRasterLayer`
         """
 
         if partition_strategy:

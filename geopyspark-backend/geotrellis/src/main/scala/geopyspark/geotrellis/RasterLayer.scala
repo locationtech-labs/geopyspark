@@ -43,6 +43,9 @@ abstract class RasterLayer[K](implicit ev0: ClassTag[K], ev1: Component[K, Proje
 
   def repartition(numPartitions: Int): RasterLayer[K] = withRDD(rdd.repartition(numPartitions))
 
+  def partitionBy(partitionStrategy: PartitionStrategy): RasterLayer[K] =
+    withRDD(rdd.partitionBy(partitionStrategy.producePartitioner(rdd.getNumPartitions).get))
+
   def toProtoRDD(): JavaRDD[Array[Byte]]
 
   def collectKeys(): java.util.ArrayList[Array[Byte]]
