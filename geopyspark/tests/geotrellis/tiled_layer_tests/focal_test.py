@@ -3,7 +3,7 @@ import os
 import pytest
 import unittest
 
-from geopyspark.geotrellis import SpatialKey, Extent, Tile
+from geopyspark.geotrellis import SpatialKey, Extent, Tile, SpatialPartitionStrategy, HashPartitionStrategy
 from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.constants import LayerType, Operation, Neighborhood
@@ -49,7 +49,8 @@ class FocalTest(BaseTestClass):
         result = self.raster_rdd.focal(
             operation=Operation.SUM,
             neighborhood=Neighborhood.SQUARE,
-            param_1=1.0)
+            param_1=1.0,
+            partition_strategy=HashPartitionStrategy())
 
         self.assertTrue(result.to_numpy_rdd().first()[1].cells[0][1][0] >= 6)
 
@@ -59,7 +60,8 @@ class FocalTest(BaseTestClass):
 
         result = self.raster_rdd.focal(
             operation=Operation.SUM,
-            neighborhood=neighborhood)
+            neighborhood=neighborhood,
+            partition_strategy=HashPartitionStrategy(2))
 
         self.assertTrue(result.to_numpy_rdd().first()[1].cells[0][1][0] >= 3)
 
@@ -69,7 +71,8 @@ class FocalTest(BaseTestClass):
 
         result = self.raster_rdd.focal(
             operation=Operation.SUM,
-            neighborhood=neighborhood)
+            neighborhood=neighborhood,
+            partition_strategy=SpatialPartitionStrategy(2))
 
         self.assertTrue(result.to_numpy_rdd().first()[1].cells[0][1][0] >= 4)
 
@@ -79,7 +82,8 @@ class FocalTest(BaseTestClass):
 
         result = self.raster_rdd.focal(
             operation=Operation.SUM,
-            neighborhood=neighborhood)
+            neighborhood=neighborhood,
+            partition_strategy=SpatialPartitionStrategy())
 
         self.assertTrue(result.to_numpy_rdd().first()[1].cells[0][1][0] >= 4)
 

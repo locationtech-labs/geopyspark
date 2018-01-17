@@ -51,16 +51,26 @@ class TemporalRasterLayer(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]
     ).toJson.compactPrint
   }
 
-  def tileToLayout(layerMetadata: String, resampleMethod: ResampleMethod): TiledRasterLayer[SpaceTimeKey] = {
+  def tileToLayout(
+    layerMetadata: String,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
+  ): TiledRasterLayer[SpaceTimeKey] = {
     val md = layerMetadata.parseJson.convertTo[TileLayerMetadata[SpaceTimeKey]]
-    new TemporalTiledRasterLayer(None, MultibandTileLayerRDD(rdd.tileToLayout(md, resampleMethod), md))
+    val options = getTilerOptions(resampleMethod, partitionStrategy)
+
+    new TemporalTiledRasterLayer(None, MultibandTileLayerRDD(rdd.tileToLayout(md, options), md))
   }
 
-  def tileToLayout(layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterLayer[SpaceTimeKey] = {
+  def tileToLayout(
+    layoutDefinition: LayoutDefinition,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
+  ): TiledRasterLayer[SpaceTimeKey] = {
     val sms = RasterSummary.collect[TemporalProjectedExtent, SpaceTimeKey](rdd)
     require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
-    val sm = sms.head
 
+    val sm = sms.head
     val metadata = TileLayerMetadata[SpaceTimeKey](
       sm.cellType,
       layoutDefinition,
@@ -69,15 +79,24 @@ class TemporalRasterLayer(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]
       sm.bounds.setSpatialBounds(layoutDefinition.mapTransform(sm.extent))
     )
 
-    TemporalTiledRasterLayer(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata, resampleMethod), metadata))
+    val options = getTilerOptions(resampleMethod, partitionStrategy)
+
+    TemporalTiledRasterLayer(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata, options), metadata))
   }
 
-  def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterLayer[SpaceTimeKey] ={
+  def tileToLayout(
+    layoutType: LayoutType,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
+  ): TiledRasterLayer[SpaceTimeKey] ={
     val sms = RasterSummary.collect[TemporalProjectedExtent, SpaceTimeKey](rdd)
     require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
+
     val sm = sms.head
     val (metadata, zoom) = sm.toTileLayerMetadata(layoutType)
-    val tiled = rdd.tileToLayout(metadata, resampleMethod)
+    val options = getTilerOptions(resampleMethod, partitionStrategy)
+    val tiled = rdd.tileToLayout(metadata, options)
+
     new TemporalTiledRasterLayer(zoom, MultibandTileLayerRDD(tiled, metadata))
   }
 
@@ -86,9 +105,15 @@ class TemporalRasterLayer(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]
     new TemporalRasterLayer(rdd.reproject(crs, resampleMethod))
   }
 
-  def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterLayer[SpaceTimeKey] = {
+  def reproject(
+    targetCRS: String,
+    layoutType: LayoutType,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
+  ): TiledRasterLayer[SpaceTimeKey] = {
     val crs = TileLayer.getCRS(targetCRS).get
-    val tiled = tileToLayout(LocalLayout(256), resampleMethod).rdd
+    val tiled = tileToLayout(LocalLayout(256), resampleMethod, partitionStrategy).rdd
+
     layoutType match {
       case GlobalLayout(tileSize, null, threshold) =>
         val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
@@ -109,10 +134,12 @@ class TemporalRasterLayer(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]
   def reproject(
     targetCRS: String,
     layoutDefinition: LayoutDefinition,
-    resampleMethod: ResampleMethod
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
   ): TiledRasterLayer[SpaceTimeKey] = {
-    val tiled = tileToLayout(layoutDefinition, resampleMethod).rdd
+    val tiled = tileToLayout(layoutDefinition, resampleMethod, partitionStrategy).rdd
     val (zoom, reprojected) = TileRDDReproject(tiled, TileLayer.getCRS(targetCRS).get, Right(layoutDefinition), resampleMethod)
+
     TemporalTiledRasterLayer(Some(zoom), reprojected)
   }
 

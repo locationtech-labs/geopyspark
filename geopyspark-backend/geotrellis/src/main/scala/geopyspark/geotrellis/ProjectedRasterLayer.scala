@@ -51,16 +51,26 @@ class ProjectedRasterLayer(val rdd: RDD[(ProjectedExtent, MultibandTile)]) exten
     ).toJson.compactPrint
   }
 
-  def tileToLayout(tileLayerMetadata: String, resampleMethod: ResampleMethod): TiledRasterLayer[SpatialKey] = {
+  def tileToLayout(
+    tileLayerMetadata: String,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
+  ): TiledRasterLayer[SpatialKey] = {
     val md = tileLayerMetadata.parseJson.convertTo[TileLayerMetadata[SpatialKey]]
-    new SpatialTiledRasterLayer(None, MultibandTileLayerRDD(rdd.tileToLayout(md, resampleMethod), md))
+    val options = getTilerOptions(resampleMethod, partitionStrategy)
+
+    new SpatialTiledRasterLayer(None, MultibandTileLayerRDD(rdd.tileToLayout(md, options), md))
   }
 
-  def tileToLayout(layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterLayer[SpatialKey] = {
+  def tileToLayout(
+    layoutDefinition: LayoutDefinition,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
+  ): TiledRasterLayer[SpatialKey] = {
     val sms = RasterSummary.collect[ProjectedExtent, SpatialKey](rdd)
     require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
-    val sm = sms.head
 
+    val sm = sms.head
     val metadata = TileLayerMetadata[SpatialKey](
       sm.cellType,
       layoutDefinition,
@@ -69,15 +79,24 @@ class ProjectedRasterLayer(val rdd: RDD[(ProjectedExtent, MultibandTile)]) exten
       sm.bounds.setSpatialBounds(layoutDefinition.mapTransform(sm.extent))
     )
 
-    SpatialTiledRasterLayer(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata, resampleMethod), metadata))
+    val options = getTilerOptions(resampleMethod, partitionStrategy)
+
+    SpatialTiledRasterLayer(None, MultibandTileLayerRDD(rdd.tileToLayout(metadata, options), metadata))
   }
 
-  def tileToLayout(layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterLayer[SpatialKey] = {
+  def tileToLayout(
+    layoutType: LayoutType,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
+  ): TiledRasterLayer[SpatialKey] = {
     val sms = RasterSummary.collect[ProjectedExtent, SpatialKey](rdd)
     require(sms.length == 1, s"Multiple raster CRS layers found: ${sms.map(_.crs).toList}")
+
     val sm = sms.head
     val (metadata, zoom) = sm.toTileLayerMetadata(layoutType)
-    val tiled = rdd.tileToLayout(metadata, resampleMethod)
+    val options = getTilerOptions(resampleMethod, partitionStrategy)
+    val tiled = rdd.tileToLayout(metadata, options)
+
     new SpatialTiledRasterLayer(zoom, MultibandTileLayerRDD(tiled, metadata))
   }
 
@@ -86,9 +105,15 @@ class ProjectedRasterLayer(val rdd: RDD[(ProjectedExtent, MultibandTile)]) exten
     new ProjectedRasterLayer(rdd.reproject(crs, resampleMethod))
   }
 
-  def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterLayer[SpatialKey] = {
+  def reproject(
+    targetCRS: String,
+    layoutType: LayoutType,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
+  ): TiledRasterLayer[SpatialKey] = {
     val crs = TileLayer.getCRS(targetCRS).get
-    val tiled = tileToLayout(LocalLayout(256), resampleMethod).rdd
+    val tiled = tileToLayout(LocalLayout(256), resampleMethod, partitionStrategy).rdd
+
     layoutType match {
       case GlobalLayout(tileSize, null, threshold) =>
         val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
@@ -109,10 +134,12 @@ class ProjectedRasterLayer(val rdd: RDD[(ProjectedExtent, MultibandTile)]) exten
   def reproject(
     target_crs: String,
     layoutDefinition: LayoutDefinition,
-    resampleMethod: ResampleMethod
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
   ): TiledRasterLayer[SpatialKey] = {
-    val tiled = tileToLayout(layoutDefinition, resampleMethod).rdd
+    val tiled = tileToLayout(layoutDefinition, resampleMethod, partitionStrategy).rdd
     val (zoom, reprojected) = TileRDDReproject(tiled, TileLayer.getCRS(target_crs).get, Right(layoutDefinition), resampleMethod)
+
     SpatialTiledRasterLayer(Some(zoom), reprojected)
   }
 

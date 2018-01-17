@@ -4,7 +4,14 @@ import rasterio
 import numpy as np
 import pytest
 
-from geopyspark.geotrellis import Extent, ProjectedExtent, TileLayout, Tile, LayoutDefinition, GlobalLayout, LocalLayout
+from geopyspark.geotrellis import (Extent,
+                                   ProjectedExtent,
+                                   TileLayout,
+                                   Tile,
+                                   LayoutDefinition,
+                                   GlobalLayout,
+                                   LocalLayout,
+                                   SpatialPartitionStrategy)
 from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.layer import Pyramid, RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -16,6 +23,29 @@ class PyramidingTest(BaseTestClass):
     def tearDown(self):
         yield
         BaseTestClass.pysc._gateway.close()
+
+    def test_pyraminding_with_partitioner(self):
+        arr = np.zeros((1, 16, 16))
+        epsg_code = 3857
+        extent = Extent(0.0, 0.0, 10.0, 10.0)
+
+        tile = Tile(arr, 'FLOAT', False)
+        projected_extent = ProjectedExtent(extent, epsg_code)
+
+        rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
+        raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
+        tile_layout = TileLayout(32, 32, 16, 16)
+        new_extent = Extent(-20037508.342789244, -20037508.342789244, 20037508.342789244,
+                            20037508.342789244)
+
+        layout_def = LayoutDefinition(new_extent, tile_layout)
+        laid_out = raster_rdd.tile_to_layout(GlobalLayout(tile_size=16))
+
+        strategy = SpatialPartitionStrategy(4)
+
+        pyramided = laid_out.pyramid(partition_strategy=strategy)
+
+        self.assertEqual(pyramided.levels[0].get_partition_strategy(), strategy)
 
     def test_correct_base(self):
         arr = np.zeros((1, 16, 16))

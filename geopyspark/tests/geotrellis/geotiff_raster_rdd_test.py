@@ -4,9 +4,9 @@ import rasterio
 import pytest
 import numpy as np
 
-from geopyspark.geotrellis.constants import LayerType, CellType, Partitioner
+from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.tests.python_test_utils import file_path
-from geopyspark.geotrellis import Extent, ProjectedExtent, Tile
+from geopyspark.geotrellis import Extent, ProjectedExtent, Tile, SpatialPartitionStrategy
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -27,11 +27,13 @@ class GeoTiffRasterRDDTest(BaseTestClass):
         repartitioned = laid_out_rdd.repartition(2)
         self.assertEqual(repartitioned.getNumPartitions(), 2)
 
-    def test_repartition_with_partitioner(self):
+    def test_partitionBy(self):
         tiled = self.result.tile_to_layout()
-        repartitioned = tiled.repartition(2, Partitioner.SPATIAL_PARTITIONER)
 
-        self.assertEqual(repartitioned.getNumPartitions(), 2)
+        strategy = SpatialPartitionStrategy(2)
+        repartitioned = tiled.partitionBy(strategy)
+
+        self.assertEqual(repartitioned.get_partition_strategy(), strategy)
 
     def test_to_numpy_rdd(self, option=None):
         pyrdd = self.result.to_numpy_rdd()
@@ -56,7 +58,7 @@ class GeoTiffRasterRDDTest(BaseTestClass):
         extent = Extent(0.0, 0.0, 10.0, 10.0)
         projected_extent = ProjectedExtent(extent, epsg_code)
 
-        tile = Tile(arr, 'FLOAT',float('nan'))
+        tile = Tile(arr, 'FLOAT', float('nan'))
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
         raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
 

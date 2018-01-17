@@ -494,6 +494,51 @@ class Bounds(namedtuple("Bounds", 'minKey maxKey')):
         return {'minKey': min_key_dict, 'maxKey': max_key_dict}
 
 
+class HashPartitionStrategy(namedtuple("HashPartitionStrategy", "num_partitions")):
+    """Represents a partitioning strategy for a layer that uses Spark's ``HashPartitioner``
+    with a set number of partitions.
+
+    Args:
+        num_partitions (int, optional): The number of partitions that should be used during
+            partitioning. Default is, ``None``. If ``None`` the resulting layer will have
+            a ``HashPartitioner`` with the number of partitions being either the same
+            as the input layer's, or a number computed by the method.
+
+    Returns:
+        :class:`~geopyspark.geotrellis.HashPartitionStrategy`
+    """
+
+    __slots__ = []
+
+    def __new__(cls, num_partitions=None):
+        return super(HashPartitionStrategy, cls).__new__(cls, num_partitions)
+
+class SpatialPartitionStrategy(namedtuple("SpatialPartitionStrategy", "num_partitions bits")):
+    """Represents a partitioning strategy for a layer that uses GeoPySpark's ``SpatialPartitioner``
+    with a set number of partitions.
+
+    This partitioner will try and group ``Tile``\s together that are spatially near each other in
+    the same partition. In order to do this, each ``Tile`` has their ``Key Index`` calculated
+    using the space filling curve index, ``Z-Curve``.
+
+    Args:
+        num_partitions (int, optional): The number of partitions that should be used during
+            partitioning. Default is, ``None``. If ``None`` the resulting layer will have
+            a ``HashPartitioner`` with the number of partitions being either the same
+            as the input layer's, or a number computed by the method.
+        bits (int, optional): How many bits the resulting ``Key Index`` of a ``Tile`` should
+            be shifted to the right. Default is, ``8``.
+
+    Returns:
+        :class:`~geopyspark.geotrellis.SpatialPartitionStrategy`
+    """
+
+    __slots__ = []
+
+    def __new__(cls, num_partitions=None, bits=8):
+        return super(SpatialPartitionStrategy, cls).__new__(cls, num_partitions, bits)
+
+
 class Metadata(object):
     """Information of the values within a ``RasterLayer`` or ``TiledRasterLayer``.
     This data pertains to the layout and other attributes of the data within the classes.
@@ -640,7 +685,7 @@ class Metadata(object):
 
 __all__ = ["Tile", "Extent", "ProjectedExtent", "TemporalProjectedExtent", "SpatialKey", "SpaceTimeKey",
            "Metadata", "TileLayout", "GlobalLayout", "LocalLayout", "LayoutDefinition", "Bounds", "RasterizerOptions",
-           "zfactor_lat_lng_calculator", "zfactor_calculator"]
+           "zfactor_lat_lng_calculator", "zfactor_calculator", "HashPartitionStrategy", "SpatialPartitionStrategy"]
 
 from . import catalog
 from . import color

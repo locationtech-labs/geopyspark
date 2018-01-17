@@ -13,6 +13,8 @@ import scala.reflect._
 class SpatialPartitioner[K: SpatialComponent](partitions: Int, bits: Int) extends Partitioner {
   def numPartitions: Int = partitions
 
+  def getBits: Int = bits
+
   def getPartition(key: Any): Int = {
     val k = key.asInstanceOf[K]
     val SpatialKey(col, row) = k.getComponent[SpatialKey]

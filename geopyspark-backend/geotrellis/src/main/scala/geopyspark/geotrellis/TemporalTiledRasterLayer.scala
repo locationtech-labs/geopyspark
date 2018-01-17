@@ -198,7 +198,8 @@ class TemporalTiledRasterLayer(
   def tileToLayout(
     layoutDefinition: LayoutDefinition,
     zoom: Option[Int],
-    resampleMethod: ResampleMethod
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
   ): TiledRasterLayer[SpaceTimeKey] = {
     val baseTransform = rdd.metadata.layout.mapTransform
     val targetTransform = layoutDefinition.mapTransform
@@ -218,15 +219,22 @@ class TemporalTiledRasterLayer(
       )
     )
 
+    val options = getTilerOptions(resampleMethod, partitionStrategy)
     val tileLayer =
-      MultibandTileLayerRDD(temporalRDD.tileToLayout(retiledLayerMetadata, resampleMethod), retiledLayerMetadata)
+      MultibandTileLayerRDD(temporalRDD.tileToLayout(retiledLayerMetadata, options), retiledLayerMetadata)
 
     TemporalTiledRasterLayer(zoom, tileLayer)
   }
 
-  def pyramid(resampleMethod: ResampleMethod, partitioner: String): Array[TiledRasterLayer[SpaceTimeKey]] = {
+  def pyramid(resampleMethod: ResampleMethod, partitionStrategy: PartitionStrategy): Array[TiledRasterLayer[SpaceTimeKey]] = {
     require(! rdd.metadata.bounds.isEmpty, "Can not pyramid an empty RDD")
-    val part = TileLayer.getPartitioner(rdd.partitions.length, partitioner)
+
+    val partitioner =
+      partitionStrategy match {
+        case ps: PartitionStrategy => ps.producePartitioner(rdd.getNumPartitions)
+        case null => None
+      }
+
     val (baseZoom, scheme) =
       zoomLevel match {
         case Some(zoom) =>
@@ -239,7 +247,7 @@ class TemporalTiledRasterLayer(
 
     Pyramid.levelStream(
       rdd, scheme, baseZoom, 0,
-      Pyramid.Options(resampleMethod=resampleMethod, partitioner=part)
+      Pyramid.Options(resampleMethod=resampleMethod, partitioner=partitioner)
     ).map{ x =>
       TemporalTiledRasterLayer(Some(x._1), x._2)
     }.toArray
@@ -250,7 +258,8 @@ class TemporalTiledRasterLayer(
     neighborhood: String,
     param1: Double,
     param2: Double,
-    param3: Double
+    param3: Double,
+    partitionStrategy: PartitionStrategy
   ): TiledRasterLayer[SpaceTimeKey] = {
     val singleTileLayerRDD: TileLayerRDD[SpaceTimeKey] = TileLayerRDD(
       rdd.mapValues({ v => v.band(0) }),
@@ -261,7 +270,13 @@ class TemporalTiledRasterLayer(
     val cellSize = rdd.metadata.layout.cellSize
     val op: ((Tile, Option[GridBounds]) => Tile) = getOperation(operation, _neighborhood, cellSize, param1)
 
-    val result: TileLayerRDD[SpaceTimeKey] = FocalOperation(singleTileLayerRDD, _neighborhood)(op)
+    val result: TileLayerRDD[SpaceTimeKey] =
+      partitionStrategy match {
+        case ps: PartitionStrategy =>
+          FocalOperation(singleTileLayerRDD, _neighborhood, ps.producePartitioner(rdd.getNumPartitions))(op)
+        case null =>
+          FocalOperation(singleTileLayerRDD, _neighborhood, None)(op)
+      }
 
     val multibandRDD: MultibandTileLayerRDD[SpaceTimeKey] =
       MultibandTileLayerRDD(result.mapValues{ x => MultibandTile(x) }, result.metadata)

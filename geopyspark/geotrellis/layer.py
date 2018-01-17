@@ -25,7 +25,9 @@ from geopyspark.geotrellis import (Metadata,
                                    GlobalLayout,
                                    LayoutDefinition,
                                    crs_to_proj4,
-                                   _convert_to_unix_time)
+                                   _convert_to_unix_time,
+                                   HashPartitionStrategy,
+                                   SpatialPartitionStrategy)
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
                                              Neighborhood as nb,
@@ -36,9 +38,7 @@ from geopyspark.geotrellis.constants import (Operation,
                                              StorageMethod,
                                              ColorSpace,
                                              Compression,
-                                             NO_DATA_INT,
-                                             Partitioner
-                                            )
+                                             NO_DATA_INT)
 from geopyspark.geotrellis.neighborhood import Neighborhood
 
 
@@ -106,17 +106,29 @@ def _to_geotiff_rdd(pysc, srdd, storage_method, rows_per_strip, tile_dimensions,
                                  band_tags or [])
 
 
-def _reproject(target_crs, layout, resample_method, layer):
+def _reproject(target_crs, layout, resample_method, partition_strategy, layer):
+    # The reproject Scala methods for RasterLayer and TiledRasterLayer are different
+    # so we need pick which one we're going to use.
+    def rasterlayer_reproject(source):
+        return layer.srdd.reproject(target_crs, source, resample_method, partition_strategy)
+
+    def tiledrasterlayer_reproject(source):
+        return layer.srdd.reproject(target_crs, source, resample_method)
+
+    if isinstance(layer, RasterLayer):
+        reproject_method = rasterlayer_reproject
+    else:
+        reproject_method = tiledrasterlayer_reproject
 
     if isinstance(layout, (LocalLayout, GlobalLayout, LayoutDefinition)):
-        srdd = layer.srdd.reproject(target_crs, layout, resample_method)
+        srdd = reproject_method(layout)
         return TiledRasterLayer(layer.layer_type, srdd)
 
     elif isinstance(layout, Metadata):
         if layout.crs != target_crs:
             raise ValueError("The layout needs to be in the same CRS as the target_crs")
 
-        srdd = layer.srdd.reproject(target_crs, layout.layout_definition, resample_method)
+        srdd = reproject_method(layout.layout_definition)
         return TiledRasterLayer(layer.layer_type, srdd)
 
     elif isinstance(layout, TiledRasterLayer):
@@ -124,7 +136,7 @@ def _reproject(target_crs, layout, resample_method, layer):
             raise ValueError("The layout needs to be in the same CRS as the target_crs")
 
         metadata = layout.layer_metadata
-        srdd = layer.srdd.reproject(target_crs, layout.layer_metadata.layout_definition, resample_method)
+        srdd = reproject_method(layout.layer_metadata.layout_definition)
         return TiledRasterLayer(layer.layer_type, srdd)
     else:
         raise TypeError("%s can not be used as target layout." % layout)
@@ -293,6 +305,25 @@ class CachableLayer(object):
         """
 
         return self.srdd.rdd().isEmpty()
+
+    def get_partition_strategy(self):
+        """Returns the partitioning strategy if the layer has one.
+
+        Returns:
+            :class:`~geopyspark.HashPartitioner` or :class:`~geopyspark.SpatialPartitioner` or ``None``
+        """
+
+        partition_name = self.srdd.getPartitionStrategyName()
+
+        if partition_name:
+            if partition_name == "HashPartitioner":
+                return HashPartitionStrategy(self.getNumPartitions())
+            else:
+                scala_partitioner = self.srdd.rdd().partitioner().get()
+
+                return SpatialPartitionStrategy(self.getNumPartitions(), scala_partitioner.getBits())
+        else:
+            return None
 
 
 class RasterLayer(CachableLayer, TileLayer):
@@ -464,6 +495,48 @@ class RasterLayer(CachableLayer, TileLayer):
 
         return RasterLayer(LayerType.SPATIAL, _to_spatial_layer(self, target_time))
 
+    def repartition(self, num_partitions=None):
+        """Repartitions the layer to have a different number of partitions.
+
+        Args:
+            num_partitions(int, optional): Desired number of partitions. Default is, ``None``
+                .If ``None``, then the exisiting number of partitions will be used.
+
+        Returns:
+            :class:`~geopyspark.RasterLayer`
+        """
+
+        if num_partitions:
+            return RasterLayer(self.layer_type, self.srdd.repartition(num_partitions))
+        else:
+            return self
+
+    def partitionBy(self, partition_strategy=None):
+        """Repartitions the layer using the given partitioning strategy.
+
+        Args:
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+                Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
+                Default is, ``None``.
+
+                If ``None``, then the output layer will be the same as the source layer.
+
+                If ``partition_strategy`` is set but has no ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` specified in the strategy with the with same number of
+                partitions the source layer had.
+
+                If ``partition_strategy`` is set and has a ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` and number of partitions specified in the strategy.
+
+        Returns:
+            :class:`~geopyspark.RasterLayer`
+        """
+
+        if partition_strategy:
+            return RasterLayer(self.layer_type, self.srdd.partitionBy(partition_strategy))
+        else:
+            return self
+
     def bands(self, band):
         """Select a subsection of bands from the ``Tile``\s within the layer.
 
@@ -478,7 +551,7 @@ class RasterLayer(CachableLayer, TileLayer):
 
         Args:
             band (int or tuple or list or range): The band(s) to be selected from the ``Tile``\s.
-                Can either be a single int, or a collection of int\s.
+                Can either be a single int, or a collection of ints.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.RasterLayer` with the selected bands.
@@ -588,7 +661,7 @@ class RasterLayer(CachableLayer, TileLayer):
         else:
             return [temporal_projected_extent_decoder(key) for key in self.srdd.collectKeys()]
 
-    def merge(self, num_partitions=None, partitioner=Partitioner.HASH_PARTITIONER):
+    def merge(self, partition_strategy=None):
         """Merges the ``Tile`` of each ``K`` together to produce a single ``Tile``.
 
         This method will reduce each value by its key within the layer to produce a single
@@ -605,16 +678,25 @@ class RasterLayer(CachableLayer, TileLayer):
             num_partitions (int, optional): The number of partitions that the resulting
                 layer should be partitioned with. If ``None``, then the ``num_partitions``
                 will the number of partitions the layer curretly has.
-            partitioner (str or :class:`~geopyspark.geotrellis.constants.Partitioner`, optional):
-                The partitioner that should be used to repartition the data. The default is
-                ``Partitioner.HASH_PARTITIONER``.
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+                Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
+                Default is, ``None``.
+
+                If ``None``, then the output layer will be the same ``Partitioner`` and number of
+                partitions as the source layer.
+
+                If ``partition_strategy`` is set but has no ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` specified in the strategy with the with same number of
+                partitions the source layer had.
+
+                If ``partition_strategy`` is set and has a ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` and number of partitions specified in the strategy.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.RasterLayer`
         """
 
-        partitioner = Partitioner(partitioner).value
-        result = self.srdd.merge(num_partitions, partitioner)
+        result = self.srdd.merge(partition_strategy)
 
         return RasterLayer(self.layer_type, result)
 
@@ -660,21 +742,34 @@ class RasterLayer(CachableLayer, TileLayer):
 
         return RasterLayer(self.layer_type, srdd)
 
-    def tile_to_layout(self, layout=LocalLayout(), target_crs=None, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
+    def tile_to_layout(self,
+                       layout=LocalLayout(),
+                       target_crs=None,
+                       resample_method=ResampleMethod.NEAREST_NEIGHBOR,
+                       partition_strategy=None):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layout (:class:`~geopyspark.geotrellis.Metadata` or
-                :class:`~geopyspark.geotrellis.TiledRasterLayer` or
-                :obj:`~geopyspark.geotrellis.LayoutDefinition` or
-                :obj:`~geopyspark.geotrellis.GlobalLayout` or
-                :class:`~geopyspark.geotrellis.LocalLayout`, optional):
-                    Target raster layout for the tiling operation.
+            layout (:class:`~geopyspark.geotrellis.Metadata` or :class:`~geopyspark.geotrellis.TiledRasterLayer` or :obj:`~geopyspark.geotrellis.LayoutDefinition` or :obj:`~geopyspark.geotrellis.GlobalLayout` or :class:`~geopyspark.geotrellis.LocalLayout`):
+                Target raster layout for the tiling operation.
             target_crs (str or int, optional): Target CRS of reprojection. Either EPSG code,
                 well-known name, or a PROJ.4 string. If ``None``, no reproject will be perfomed.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The cell resample method to used during the tiling operation.
                 Default is``ResampleMethods.NEAREST_NEIGHBOR``.
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+                Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
+                Default is, ``None``.
+
+                If ``None``, then the output layer will be the same ``Partitioner`` and number of
+                partitions as the source layer.
+
+                If ``partition_strategy`` is set but has no ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` specified in the strategy with the with same number of
+                partitions the source layer had.
+
+                If ``partition_strategy`` is set and has a ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` and number of partitions specified in the strategy.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
@@ -684,18 +779,18 @@ class RasterLayer(CachableLayer, TileLayer):
 
         if target_crs:
             target_crs = crs_to_proj4(target_crs)
-            return _reproject(target_crs, layout, resample_method, self)
+            return _reproject(target_crs, layout, resample_method, partition_strategy, self)
 
         if isinstance(layout, Metadata):
             layer_metadata = layout.to_dict()
-            srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method)
+            srdd = self.srdd.tileToLayout(json.dumps(layer_metadata), resample_method, partition_strategy)
         elif isinstance(layout, TiledRasterLayer):
             layer_metadata = layout.layer_metadata
-            srdd = self.srdd.tileToLayout(json.dumps(layer_metadata.to_dict()), resample_method)
+            srdd = self.srdd.tileToLayout(json.dumps(layer_metadata.to_dict()), resample_method, partition_strategy)
         elif isinstance(layout, LayoutDefinition):
-            srdd = self.srdd.tileToLayout(layout, resample_method)
+            srdd = self.srdd.tileToLayout(layout, resample_method, partition_strategy)
         elif isinstance(layout, (LocalLayout, GlobalLayout)):
-            srdd = self.srdd.tileToLayout(layout, resample_method)
+            srdd = self.srdd.tileToLayout(layout, resample_method, partition_strategy)
         else:
             raise TypeError("%s can not be converted to raster layout." % layout)
 
@@ -937,7 +1032,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         else:
             return [space_time_key_decoder(key) for key in self.srdd.collectKeys()]
 
-    def merge(self, num_partitions=None, partitioner=Partitioner.HASH_PARTITIONER):
+    def merge(self, partition_strategy=None):
         """Merges the ``Tile`` of each ``K`` together to produce a single ``Tile``.
 
         This method will reduce each value by its key within the layer to produce a single
@@ -954,16 +1049,25 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             num_partitions (int, optional): The number of partitions that the resulting
                 layer should be partitioned with. If ``None``, then the ``num_partitions``
                 will the number of partitions the layer curretly has.
-            partitioner (str or :class:`~geopyspark.geotrellis.constants.Partitioner`, optional):
-                The partitioner that should be used to repartition the data. The default is
-                ``Partitioner.HASH_PARTITIONER``.
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+                Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
+                Default is, ``None``.
+
+                If ``None``, then the output layer will be the same ``Partitioner`` and number of
+                partitions as the source layer.
+
+                If ``partition_strategy`` is set but has no ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` specified in the strategy with the with same number of
+                partitions the source layer had.
+
+                If ``partition_strategy`` is set and has a ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` and number of partitions specified in the strategy.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        partitioner = Partitioner(partitioner).value
-        result = self.srdd.merge(num_partitions, partitioner)
+        result = self.srdd.merge(partition_strategy)
 
         return TiledRasterLayer(self.layer_type, result)
 
@@ -1199,24 +1303,47 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         return TiledRasterLayer(self.layer_type, srdd)
 
-    def repartition(self, num_partitions=None, partitioner=Partitioner.HASH_PARTITIONER):
-        """Repartition underlying RDD using the given partitioner.
+    def repartition(self, num_partitions=None):
+        """Repartitions the layer to have a different number of partitions.
 
         Args:
-            num_partitions(int, optional): Desired number of partitions. If ``None``,
-                then the exisiting number of partitions will be used.
-            partitioner (str or :class:`~geopyspark.geotrellis.constants.Partitioner`, optional):
-                The partitioner that should be used to repartition the data. The default is
-                ``Partitioner.HASH_PARTITIONER``.
+            num_partitions(int, optional): Desired number of partitions. Default is, ``None``
+                .If ``None``, then the exisiting number of partitions will be used.
 
         Returns:
-            :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
+            :class:`~geopyspark.TiledRasterLayer`
         """
 
-        num_partitions = num_partitions or self.getNumPartitions()
-        partitioner = Partitioner(partitioner).value
+        if num_partitions:
+            return TiledRasterLayer(self.layer_type, self.srdd.repartition(num_partitions))
+        else:
+            return self
 
-        return TiledRasterLayer(self.layer_type, self.srdd.repartition(num_partitions, partitioner))
+    def partitionBy(self, partition_strategy=None):
+        """Repartitions the layer using the given partitioning strategy.
+
+        Args:
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+                Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
+                Default is, ``None``.
+
+                If ``None``, then the output layer will be the same as the source layer.
+
+                If ``partition_strategy`` is set but has no ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` specified in the strategy with the with same number of
+                partitions the source layer had.
+
+                If ``partition_strategy`` is set and has a ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` and number of partitions specified in the strategy.
+
+        Returns:
+            :class:`~geopyspark.TiledRasterLayer`
+        """
+
+        if partition_strategy:
+            return TiledRasterLayer(self.layer_type, self.srdd.partitionBy(partition_strategy))
+        else:
+            return self
 
     def lookup(self, col, row):
         """Return the value(s) in the image of a particular ``SpatialKey`` (given by col and row).
@@ -1251,21 +1378,34 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         return [multibandtile_decoder(tile) for tile in array_of_tiles]
 
-    def tile_to_layout(self, layout, target_crs=None, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
+    def tile_to_layout(self,
+                       layout,
+                       target_crs=None,
+                       resample_method=ResampleMethod.NEAREST_NEIGHBOR,
+                       partition_strategy=None):
         """Cut tiles to a given layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layout (:obj:`~geopyspark.geotrellis.LayoutDefinition` or
-                :class:`~geopyspark.geotrellis.Metadata` or
-                :class:`~geopyspark.geotrellis.TiledRasterLayer` or
-                :obj:`~geopyspark.geotrellis.GlobalLayout` or
-                :class:`~geopyspark.geotrellis.LocalLayout`):
-                    Target raster layout for the tiling operation.
+            layout (:obj:`~geopyspark.geotrellis.LayoutDefinition` or :class:`~geopyspark.geotrellis.Metadata` or :class:`~geopyspark.geotrellis.TiledRasterLayer` or :obj:`~geopyspark.geotrellis.GlobalLayout` or :class:`~geopyspark.geotrellis.LocalLayout`):
+                Target raster layout for the tiling operation.
             target_crs (str or int, optional): Target CRS of reprojection. Either EPSG code,
                 well-known name, or a PROJ.4 string. If ``None``, no reproject will be perfomed.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use for the reprojection. If none is specified, then
                 ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+                Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
+                Default is, ``None``.
+
+                If ``None``, then the output layer will be the same ``Partitioner`` and number of
+                partitions as the source layer.
+
+                If ``partition_strategy`` is set but has no ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` specified in the strategy with the with same number of
+                partitions the source layer had.
+
+                If ``partition_strategy`` is set and has a ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` and number of partitions specified in the strategy.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
@@ -1275,42 +1415,52 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         if target_crs:
             target_crs = crs_to_proj4(target_crs)
-            return _reproject(target_crs, layout, resample_method, self)
+            return _reproject(target_crs, layout, resample_method, partition_strategy, self)
 
         if isinstance(layout, LayoutDefinition):
-            srdd = self.srdd.tileToLayout(layout, resample_method)
+            srdd = self.srdd.tileToLayout(layout, resample_method, partition_strategy)
 
         elif isinstance(layout, Metadata):
             if self.layer_metadata.crs != layout.crs:
                 raise ValueError("The layout needs to have the same crs as the TiledRasterLayer")
 
-            srdd = self.srdd.tileToLayout(layout.layout_definition, resample_method)
+            srdd = self.srdd.tileToLayout(layout.layout_definition, resample_method, partition_strategy)
 
         elif isinstance(layout, TiledRasterLayer):
             if self.layer_metadata.crs != layout.layer_metadata.crs:
                 raise ValueError("The layout needs to have the same crs as the TiledRasterLayer")
 
             metadata = layout.layer_metadata
-            srdd = self.srdd.tileToLayout(metadata.layout_definition, resample_method)
+            srdd = self.srdd.tileToLayout(metadata.layout_definition, resample_method, partition_strategy)
 
         elif isinstance(layout, (LocalLayout, GlobalLayout)):
-            srdd = self.srdd.tileToLayout(layout, resample_method)
+            srdd = self.srdd.tileToLayout(layout, resample_method, partition_strategy)
 
         else:
             raise TypeError("Could not retile from the given layout", layout)
 
         return TiledRasterLayer(self.layer_type, srdd)
 
-    def pyramid(self, resample_method=ResampleMethod.NEAREST_NEIGHBOR, partitioner=Partitioner.HASH_PARTITIONER):
+    def pyramid(self, resample_method=ResampleMethod.NEAREST_NEIGHBOR, partition_strategy=None):
         """Creates a layer ``Pyramid`` where the resolution is halved per level.
 
         Args:
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use when building the pyramid.
                 Default is ``ResampleMethods.NEAREST_NEIGHBOR``.
-            partitioner (str or :class:`~geopyspark.geotrellis.constants.Partitioner`, optional):
-                The partitioner that should be used to repartition the data. The default is
-                ``Partitioner.HASH_PARTITIONER``.
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+                Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
+                Default is, ``None``.
+
+                If ``None``, then the output layer will be the same ``Partitioner`` and number of
+                partitions as the source layer.
+
+                If ``partition_strategy`` is set but has no ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` specified in the strategy with the with same number of
+                partitions the source layer had.
+
+                If ``partition_strategy`` is set and has a ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` and number of partitions specified in the strategy.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.Pyramid`.
@@ -1320,11 +1470,16 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         """
 
         resample_method = ResampleMethod(resample_method)
-        partitioner = Partitioner(partitioner).value
-        result = self.srdd.pyramid(resample_method, partitioner)
+        result = self.srdd.pyramid(resample_method, partition_strategy)
         return Pyramid([TiledRasterLayer(self.layer_type, srdd) for srdd in result])
 
-    def focal(self, operation, neighborhood=None, param_1=None, param_2=None, param_3=None):
+    def focal(self,
+              operation,
+              neighborhood=None,
+              param_1=None,
+              param_2=None,
+              param_3=None,
+              partition_strategy=None):
         """Performs the given focal operation on the layers contained in the Layer.
 
         Args:
@@ -1336,6 +1491,19 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             param_1 (int or float, optional): The first argument of ``neighborhood``.
             param_2 (int or float, optional): The second argument of the ``neighborhood``.
             param_3 (int or float, optional): The third argument of the ``neighborhood``.
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+                Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
+                Default is, ``None``.
+
+                If ``None``, then the output layer will be the same ``Partitioner`` and number of
+                partitions as the source layer.
+
+                If ``partition_strategy`` is set but has no ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` specified in the strategy with the with same number of
+                partitions the source layer had.
+
+                If ``partition_strategy`` is set and has a ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` and number of partitions specified in the strategy.
 
         Note:
             ``param`` only need to be set if ``neighborhood`` is not an instance of
@@ -1360,7 +1528,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         if isinstance(neighborhood, Neighborhood):
             srdd = self.srdd.focal(operation, neighborhood.name, neighborhood.param_1,
-                                   neighborhood.param_2, neighborhood.param_3)
+                                   neighborhood.param_2, neighborhood.param_3, partition_strategy)
 
         elif isinstance(neighborhood, (str, nb)):
             param_1 = param_1 or 0.0
@@ -1368,11 +1536,11 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             param_3 = param_3 or 0.0
 
             srdd = self.srdd.focal(operation, nb(neighborhood).value,
-                                   float(param_1), float(param_2), float(param_3))
+                                   float(param_1), float(param_2), float(param_3), partition_strategy)
 
         elif not neighborhood and operation == Operation.ASPECT.value:
             z_factor = float(param_1 or 1.0)
-            srdd = self.srdd.focal(operation, nb.SQUARE.value, z_factor, 0.0, 0.0)
+            srdd = self.srdd.focal(operation, nb.SQUARE.value, z_factor, 0.0, 0.0, partition_strategy)
 
         else:
             raise ValueError("neighborhood must be set or the operation must be ASPECT")

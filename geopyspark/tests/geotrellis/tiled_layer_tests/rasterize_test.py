@@ -5,10 +5,9 @@ import math
 
 import pytest
 
-from geopyspark.geotrellis.constants import Partitioner
 from shapely.geometry import Polygon
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis import rasterize
+from geopyspark.geotrellis import rasterize, SpatialPartitionStrategy
 
 
 class RasterizeTest(BaseTestClass):
@@ -50,7 +49,7 @@ class RasterizeTest(BaseTestClass):
                                "EPSG:3857",
                                11,
                                1,
-                               partitioner=Partitioner.SPATIAL_PARTITIONER)
+                               partition_strategy=SpatialPartitionStrategy())
 
         cells = raster_rdd.to_numpy_rdd().first()[1].cells
 

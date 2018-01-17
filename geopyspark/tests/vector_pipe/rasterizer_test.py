@@ -1,7 +1,7 @@
 import unittest
 import pytest
 
-from geopyspark.geotrellis import CellType, Partitioner
+from geopyspark.geotrellis import CellType, SpatialPartitionStrategy
 from geopyspark.vector_pipe import osm_reader, Feature, CellValue
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.tests.python_test_utils import file_path
@@ -67,7 +67,7 @@ class RasterizationTest(BaseTestClass):
                                     4326,
                                     12,
                                     cell_type=CellType.INT8,
-                                    partitioner=Partitioner.SPATIAL_PARTITIONER)
+                                    partition_strategy=SpatialPartitionStrategy())
 
         self.assertEqual(result.get_min_max(), (1, 4))
         self.assertEqual(result.count(), 1)
