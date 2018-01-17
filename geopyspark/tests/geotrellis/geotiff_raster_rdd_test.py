@@ -4,7 +4,7 @@ import rasterio
 import pytest
 import numpy as np
 
-from geopyspark.geotrellis.constants import LayerType, CellType, Partitioner
+from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.tests.python_test_utils import file_path
 from geopyspark.geotrellis import Extent, ProjectedExtent, Tile, SpatialPartitionStrategy
 from geopyspark.geotrellis.geotiff import get

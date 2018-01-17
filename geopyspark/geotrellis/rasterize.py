@@ -1,6 +1,6 @@
 from shapely.wkb import dumps
 from geopyspark import get_spark_context
-from geopyspark.geotrellis.constants import LayerType, CellType, Partitioner
+from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 

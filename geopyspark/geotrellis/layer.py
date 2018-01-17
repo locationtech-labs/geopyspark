@@ -38,9 +38,7 @@ from geopyspark.geotrellis.constants import (Operation,
                                              StorageMethod,
                                              ColorSpace,
                                              Compression,
-                                             NO_DATA_INT,
-                                             Partitioner
-                                            )
+                                             NO_DATA_INT)
 from geopyspark.geotrellis.neighborhood import Neighborhood
 
 

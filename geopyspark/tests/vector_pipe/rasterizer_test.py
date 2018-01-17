@@ -1,7 +1,7 @@
 import unittest
 import pytest
 
-from geopyspark.geotrellis import CellType, Partitioner, SpatialPartitionStrategy
+from geopyspark.geotrellis import CellType, SpatialPartitionStrategy
 from geopyspark.vector_pipe import osm_reader, Feature, CellValue
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.tests.python_test_utils import file_path
