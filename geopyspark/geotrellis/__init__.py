@@ -511,7 +511,7 @@ class HashPartitionStrategy(namedtuple("HashPartitionStrategy", "num_partitions"
     __slots__ = []
 
     def __new__(cls, num_partitions=None):
-        return super(HashPartitionStrategy, cls).__new__(cls, num_partitions)
+        return super(cls, HashPartitionStrategy).__new__(cls, num_partitions)
 
 class SpatialPartitionStrategy(namedtuple("SpatialPartitionStrategy", "num_partitions bits")):
     """Represents a partitioning strategy for a layer that uses GeoPySpark's ``SpatialPartitioner``
@@ -536,7 +536,7 @@ class SpatialPartitionStrategy(namedtuple("SpatialPartitionStrategy", "num_parti
     __slots__ = []
 
     def __new__(cls, num_partitions=None, bits=8):
-        return super(SpatialPartitionStrategy, cls).__new__(cls, num_partitions, bits)
+        return super(cls, SpatialPartitionStrategy).__new__(cls, num_partitions, bits)
 
 
 class Metadata(object):
