@@ -6,6 +6,7 @@ when performing operations.
 import json
 import datetime
 import shapely.wkb
+from dateutil import parser
 import pytz
 from shapely.geometry import Polygon, MultiPolygon, Point
 from geopyspark.geotrellis.protobufcodecs import (multibandtile_decoder,
@@ -1798,18 +1799,19 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 [(shapely.geometry.Point, [float])]
 
             If ``points`` is a ``list`` and the ``layer_type`` is ``SPACETIME``:
-                [(shapely.geometry.Point, datetime.datetime, [float])]
+                [(shapely.geometry.Point, [(datetime.datetime, [float])])]
 
             If ``points`` is a ``dict`` and the ``layer_type`` is ``SPATIAL``:
                 {k: (shapely.geometry.Point, [float])}
 
             If ``points`` is a ``dict`` and the ``layer_type`` is ``SPACETIME``:
-                {k: (shapely.geometry.Point, datetime.datetime, [float])}
+                {k: (shapely.geometry.Point, [(datetime.datetime, [float])])}
 
             The ``shapely.geometry.Point`` in all of these returns is the original sampled point
             given. The ``[float]`` are the sampled values, one for each band. If the ``layer_type``
             was ``SPACETIME``, then the timestamp will also be included in the results represented
-            by a ``datetime.datetime`` instance.
+            by a ``datetime.datetime`` instance. These times and their associated values will be
+            given as a list of tuples for each point.
 
             Note:
                 The sampled values will always be returned as ``float``\s. Regardless of the
@@ -1835,9 +1837,6 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         ided_points = {}
         ided_bytes = {}
 
-        def to_datetime(instant):
-            return datetime.datetime.utcfromtimestamp(instant / 1000)
-
         if isinstance(points, list):
             list_result = []
 
@@ -1858,13 +1857,14 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 for key, value in scala_result.items():
                     list_result.append((ided_points[key], list(value) if value else None))
             else:
-                for key, value in scala_result.items():
-                    list_result.append(
-                        (ided_points[key],
-                         to_datetime(value._1()) if value else None,
-                         list(value._2()) if value else None
-                        )
-                    )
+                for key, value_map in scala_result.items():
+                    converted_values = [(parser.parse(k), list(v)) for k, v in value_map.items()]
+                    list_result.append((ided_points[key], converted_values))
+
+                # Due to how the values sent over for temporal layers, non-intersecting keys
+                # need to be added in Python.
+                for remaining_id in set(ided_points.keys()).difference(set(scala_result.keys())):
+                    list_result.append((ided_points[remaining_id], [(None, None)]))
 
             return list_result
 
@@ -1890,12 +1890,12 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 for key, value in scala_result.items():
                     dict_result[ided_labels[key]] = (ided_points[key], list(value) if value else None)
             else:
-                for key, value in scala_result.items():
-                    dict_result[ided_labels[key]] = (
-                        ided_points[key],
-                        to_datetime(value._1()) if value else None,
-                        list(value._2()) if value else None
-                    )
+                for key, value_map in scala_result.items():
+                    converted_values = [(parser.parse(k), list(v)) for k, v in value_map.items()]
+                    dict_result[ided_labels[key]] = (ided_points[key], converted_values)
+
+                for remaining_id in set(ided_points.keys()).difference(set(scala_result.keys())):
+                    dict_result[ided_labels[remaining_id]] = (ided_points[remaining_id], [(None, None)])
 
             return dict_result
         else:

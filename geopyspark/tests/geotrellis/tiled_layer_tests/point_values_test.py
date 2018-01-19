@@ -1,7 +1,7 @@
-import datetime
 import numpy as np
 import pytest
 import unittest
+from dateutil import parser
 
 from shapely.geometry import Point
 
@@ -22,7 +22,8 @@ class PointValuesTest(BaseTestClass):
     extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 4.0, 'ymax': 4.0}
     layout = {'layoutCols': 1, 'layoutRows': 1, 'tileCols': 4, 'tileRows': 4}
 
-    now = datetime.datetime.strptime("2017-09-25T11:37:00Z", '%Y-%m-%dT%H:%M:%SZ')
+    now = parser.parse("2017-09-25T11:37:00Z")
+    then = parser.parse("2018-01-17T13:53:00Z")
 
     points = [
         Point(1.0, -3.0),
@@ -49,11 +50,11 @@ class PointValuesTest(BaseTestClass):
     ]
 
     expected_spacetime_points_list = [
-        (Point(1.0, -3.0), now, [1, 2]),
-        (Point(2.0, 4.0), now, [1, 2]),
-        (Point(3.0, 3.0), now, [1, 2]),
-        (Point(1.0, -2.0), now, [1, 2]),
-        (Point(-10.0, 15.0), None, None)
+        (Point(1.0, -3.0), [(now, [1, 2]), (then, [2, 3])]),
+        (Point(2.0, 4.0), [(now, [1, 2]), (then, [2, 3])]),
+        (Point(3.0, 3.0), [(now, [1, 2]), (then, [2, 3])]),
+        (Point(1.0, -2.0), [(now, [1, 2]), (then, [2, 3])]),
+        (Point(-10.0, 15.0), [(None, None)]),
     ]
 
     expected_spatial_points_dict = {
@@ -100,11 +101,16 @@ class PointValuesTest(BaseTestClass):
     def create_spacetime_layer(self):
         cells = np.array([self.first, self.second], dtype='int')
         tile = Tile.from_numpy_array(cells, -1)
+        tile2 = Tile.from_numpy_array(cells + 1, -1)
 
         layer = [(SpaceTimeKey(0, 0, self.now), tile),
                  (SpaceTimeKey(1, 0, self.now), tile),
                  (SpaceTimeKey(0, 1, self.now), tile),
-                 (SpaceTimeKey(1, 1, self.now), tile)]
+                 (SpaceTimeKey(1, 1, self.now), tile),
+                 (SpaceTimeKey(0, 0, self.then), tile2),
+                 (SpaceTimeKey(1, 0, self.then), tile2),
+                 (SpaceTimeKey(0, 1, self.then), tile2),
+                 (SpaceTimeKey(1, 1, self.then), tile2)]
 
         rdd = BaseTestClass.pysc.parallelize(layer)
 
@@ -196,7 +202,6 @@ class PointValuesTest(BaseTestClass):
     def test_spacetime_dict_with_resample(self):
         result = self.create_spacetime_layer().get_point_values(self.labeled_points,
                                                                 ResampleMethod.NEAREST_NEIGHBOR)
-
         self.assertEqual(len(result), len(self.expected_spacetime_points_dict))
 
         keys = self.expected_spacetime_points_dict.keys()
