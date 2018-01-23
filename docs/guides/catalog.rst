@@ -533,15 +533,3 @@ When writing a workflow that places heavy demand on :class:`~geopyspark.geotrell
           layer_name='spatial-layer',
           tiled_raster_layer=spatial_tiled_layer,
           store=store)
-
-   gps.query(uri="file:///tmp/spatial-catalog-2",
-          layer_name="spatial-layer",
-          layer_zoom=11,
-          store=store)
-
-   gps.read_value(uri="file:///tmp/spatial-catalog-2",
-          layer_name="spatial-layer",
-          layer_zoom=11,
-          col=min_key.col,
-          row=min_key.row,
-          store=store)

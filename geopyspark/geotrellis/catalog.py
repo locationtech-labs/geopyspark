@@ -44,8 +44,7 @@ def read_value(uri,
                layer_zoom,
                col,
                row,
-               zdt=None,
-               store=None):
+               zdt=None):
     """Reads a single ``Tile`` from a GeoTrellis catalog.
     Unlike other functions in this module, this will not return a ``TiledRasterLayer``, but rather a
     GeoPySpark formatted raster.
@@ -63,19 +62,12 @@ def read_value(uri,
         zdt (``datetime.datetime``): The time stamp of the tile if the data is spatial-temporal.
             This is represented as a ``datetime.datetime.`` instance.  The default value is,
             ``None``. If ``None``, then only the spatial area will be queried.
-        store (str or :class:`~geopyspark.geotrellis.catalog.AttributeStore`, optional):
-            ``AttributeStore`` instance or URI for layer metadata lookup.
 
     Returns:
         :class:`~geopyspark.geotrellis.Tile`
     """
 
-    if store:
-        store = AttributeStore.build(store)
-    else:
-        store = AttributeStore.cached(uri)
-
-    reader = ValueReader(uri, layer_name, layer_zoom, store)
+    reader = ValueReader(uri, layer_name, layer_zoom)
     return reader.read(col, row, zdt)
 
 
@@ -84,25 +76,19 @@ class ValueReader(object):
     Suitable for use in TMS service because it does not have Spark overhead.
     """
 
-    def __init__(self, uri, layer_name, zoom=None, store=None):
-        if store:
-            self.store = AttributeStore.build(store)
-        else:
-            self.store = AttributeStore.cached(uri)
+    def __init__(self, uri, layer_name, zoom=None):
 
         self.layer_name = layer_name
         self.zoom = zoom
         pysc = get_spark_context()
-        scala_store = self.store.wrapper.attributeStore()
         ValueReaderWrapper = pysc._gateway.jvm.geopyspark.geotrellis.io.ValueReaderWrapper
-        self.wrapper = ValueReaderWrapper(scala_store, uri)
+        self.wrapper = ValueReaderWrapper(uri)
 
     def read(self, col, row, zdt=None, zoom=None):
         """Reads a single ``Tile`` from a GeoTrellis catalog.
            When requesting a tile that does not exist, ``None`` will be returned.
 
         Args:
-
             col (int): The col number of the tile within the layout. Cols run east to west.
             row (int): The row number of the tile within the layout. Row run north to south.
             zdt (``datetime.datetime``): The time stamp of the tile if the data is spatial-temporal.
@@ -134,8 +120,7 @@ def query(uri,
           query_geom=None,
           time_intervals=None,
           query_proj=None,
-          num_partitions=None,
-          store=None):
+          num_partitions=None):
     """Queries a single, zoom layer from a GeoTrellis catalog given spatial and/or time parameters.
 
     Note:
@@ -179,16 +164,10 @@ def query(uri,
             then the returned ``TiledRasterLayer`` could contain incorrect values. If ``None``,
             then the geometry and layer are assumed to be in the same projection.
         num_partitions (int, optional): Sets RDD partition count when reading from catalog.
-        store (str or :class:`~geopyspark.geotrellis.catalog.AttributeStore`, optional):
-            ``AttributeStore`` instance or URI for layer metadata lookup.
 
     Returns:
         :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
     """
-    if store:
-        store = AttributeStore.build(store)
-    else:
-        store = AttributeStore.cached(uri)
 
     pysc = get_spark_context()
     layer_zoom = layer_zoom or 0
@@ -218,8 +197,7 @@ def query(uri,
         time_intervals = []
 
     reader = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerReaderWrapper(pysc._jsc.sc())
-    scala_store = store.wrapper.attributeStore()
-    srdd = reader.query(scala_store, uri,
+    srdd = reader.query(uri,
                         layer_name, layer_zoom,
                         query_geom, time_intervals, query_proj,
                         num_partitions)

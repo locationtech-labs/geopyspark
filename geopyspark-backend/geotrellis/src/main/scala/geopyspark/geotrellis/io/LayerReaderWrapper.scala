@@ -32,7 +32,6 @@ import scala.collection.mutable
 class LayerReaderWrapper(sc: SparkContext) {
 
   def query(
-    attributeStore: AttributeStore,
     catalogUri: String,
     layerName: String,
     zoom: Int,
@@ -42,10 +41,12 @@ class LayerReaderWrapper(sc: SparkContext) {
     numPartitions: Integer
   ): TiledRasterLayer[_] = {
     val id = LayerId(layerName, zoom)
+    val attributeStore = AttributeStore(catalogUri)
+
     val spatialQuery: Option[Geometry] = Option(queryGeometryBytes).map(WKB.read)
     val queryCRS: Option[CRS] = TileLayer.getCRS(projQuery)
-    val header = attributeStore.readHeader[LayerHeader](id)
-    val layerReader: FilteringLayerReader[LayerId] = LayerReader(attributeStore, catalogUri)(sc)
+    val header: LayerHeader = attributeStore.readHeader[LayerHeader](id)
+    val layerReader: FilteringLayerReader[LayerId] = LayerReader(catalogUri)(sc)
 
     //val pyZoom: Option[Int] = ??? // is this top level zoom or zoom with None ?
 
