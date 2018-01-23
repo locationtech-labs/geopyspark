@@ -643,9 +643,9 @@ Getting the Point Values From a SPACETIME Layer
 '''''''''''''''''''''''''''''''''''''''''''''''
 
 When using ``get_point_values`` on a layer with a ``LayerType`` of
-``SPACETIME``, the results will be paired as ``(shapely.geometry.Point, datetime.datetime, [float])``.
-Where each given ``Point`` will be paired with the values it intersects and those
-values' corresponding timestamps.
+``SPACETIME``, the results will be paired as ``(shapely.geometry.Point, [(datetime.datetime, [float])])``.
+Where each given ``Point`` will be paired with a list of tuples that contain the values it
+intersects and those values' corresponding timestamps.
 
 .. code:: python3
 
@@ -658,7 +658,7 @@ Giving a [shapely.geometry.Point] to get_point_values
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 When ``points`` is given as a ``[shapely.geometry.Point]``,
-then the ouput will be a ``[(shapely.geometry.Point, datetime.datetime, [float])]``.
+then the ouput will be a ``[(shapely.geometry.Point, [(datetime.datetime, [float])])]``.
 
 .. code:: python3
 
@@ -668,7 +668,7 @@ Giving a {k: shapely.geometry.Point} to get_point_values
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 When ``points`` is given as a ``{k: shapely.geometry.Point}``,
-then the ouput will be a ``{k: (shapely.geometry.Point, datetime.datetime, [float])}``.
+then the ouput will be a ``{k: (shapely.geometry.Point, [(datetime.datetime, [float])])}``.
 
 .. code:: python3
 

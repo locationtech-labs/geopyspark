@@ -424,7 +424,7 @@ class TemporalTiledRasterLayer(
   def getPointValues(
     points: java.util.Map[Long, Array[Byte]],
     resampleMethod: PointResampleMethod
-  ): java.util.Map[Long, (Long, Array[Double])] = {
+  ): java.util.Map[Long, java.util.Map[String, Array[Double]]] = {
     val mapTrans = rdd.metadata.layout.mapTransform
 
     val idedKeys: Map[Long, Point] =
@@ -451,24 +451,16 @@ class TemporalTiledRasterLayer(
         case _ => _getPointValues(pointKeys, mapTrans)
       }
 
-    val remainingKeys = idedKeys.keySet diff matchedKeys.keySet
-
-    if (remainingKeys.isEmpty)
-      matchedKeys.asJava
-    else
-      remainingKeys.foldLeft(matchedKeys){ case (acc, elem) =>
-        acc + (elem -> null)
-      }.asJava
+    matchedKeys.mapValues { _.asJava }.asJava
   }
 
   def _getPointValues(
     pointKeys: Map[SpatialKey, Array[(Long, Point)]],
     mapTrans: MapKeyTransform,
     resampleMethod: PointResampleMethod
-  ): Map[Long, (Long, Array[Double])] = {
-    val resamplePoint = (tile: Tile, extent: Extent, point: Point) => {
+  ): Map[Long, Map[String, Array[Double]]] = {
+    val resamplePoint = (tile: Tile, extent: Extent, point: Point) =>
       Resample(resampleMethod, tile, extent).resampleDouble(point)
-    }
 
     rdd.flatMap { case (k, v) =>
       pointKeys.get(k.getComponent[SpatialKey]) match {
@@ -477,17 +469,17 @@ class TemporalTiledRasterLayer(
           val rasterExtent = RasterExtent(keyExtent, v.cols, v.rows)
 
           arr.map { case (id, point) =>
-            (id -> (k.instant, v.bands.map { resamplePoint(_, keyExtent, point) } toArray))
+            (id -> Map(k.time.toString -> v.bands.map { resamplePoint(_, keyExtent, point) }.toArray ))
           }
         case None => Seq()
       }
-    }.collect().toMap
+    }.reduceByKey { case (m1, m2) => m1 ++ m2 }.collect().toMap
   }
 
   def _getPointValues(
     pointKeys: Map[SpatialKey, Array[(Long, Point)]],
     mapTrans: MapKeyTransform
-  ): Map[Long, (Long, Array[Double])] =
+  ): Map[Long, Map[String, Array[Double]]] =
     rdd.flatMap { case (k, v) =>
       pointKeys.get(k.getComponent[SpatialKey]) match {
         case Some(arr) =>
@@ -503,11 +495,11 @@ class TemporalTiledRasterLayer(
               values(index) = v.band(index).getDouble(gridCol, gridRow)
             }
 
-            (id -> (k.instant, values))
+            (id -> Map(k.time.toString -> values))
           }
         case None => Seq()
       }
-    }.collect().toMap
+    }.reduceByKey { case (m1, m2) => m1 ++ m2 }.collect().toMap
 
   def filterByTimes(
     times: java.util.ArrayList[String]
