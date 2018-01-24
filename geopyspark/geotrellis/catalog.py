@@ -209,8 +209,7 @@ def query(uri,
         query_proj = str(query_proj)
 
     if time_intervals:
-        for x in enumerate(time_intervals):
-            time = time_intervals[x]
+        for x, time in enumerate(time_intervals):
             if time.tzinfo:
                 time_intervals[x] = time.astimezone(pytz.utc).isoformat()
             else:
