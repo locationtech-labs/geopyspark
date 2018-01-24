@@ -30,8 +30,9 @@ import geopyspark.util.PythonTranslator
 /**
   * General interface for reading.
   */
-class ValueReaderWrapper(attributeStore: AttributeStore, uri: String) {
-  val valueReader: ValueReader[LayerId] = ValueReader(attributeStore, uri)
+class ValueReaderWrapper(uri: String) {
+  val attributeStore = AttributeStore(uri)
+  val valueReader: ValueReader[LayerId] = ValueReader(uri)
 
   def getValueClass(id: LayerId): String =
     attributeStore.readHeader[LayerHeader](id).valueClass
