@@ -80,7 +80,7 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
 
     conf.set(key='spark.ui.enabled', value='false')
     conf.set(key='spark.serializer', value='org.apache.spark.serializer.KryoSerializer')
-    conf.set(key='spark.kryo.registrator', value='geotrellis.spark.io.kryo.KryoRegistrator')
+    conf.set(key='spark.kryo.registrator', value='geopyspark.geotools.kryo.ExpandedKryoRegistrator')
 
     current_location = os.path.dirname(os.path.realpath(__file__))
     cwd = os.getcwd()
