@@ -127,7 +127,6 @@ class TMS(object):
         self.bound = False
         self._host = None
         self._port = None
-        self.pysc._gateway.start_callback_server()
 
     def set_handshake(self, handshake):
         self.server.setHandshake(handshake)
