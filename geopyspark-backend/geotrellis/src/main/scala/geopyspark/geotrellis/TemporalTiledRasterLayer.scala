@@ -87,6 +87,33 @@ class TemporalTiledRasterLayer(
   def mask(geometries: Seq[MultiPolygon]): TiledRasterLayer[SpaceTimeKey] =
     TemporalTiledRasterLayer(zoomLevel, Mask(rdd, geometries, Mask.Options.DEFAULT))
 
+  def mask(
+    groupedRDD: RDD[(SpatialKey, Iterable[Geometry])],
+    options: Rasterizer.Options
+  ): TiledRasterLayer[SpaceTimeKey] = {
+    val mapTrans = rdd.metadata.layout.mapTransform
+
+    val rekeyedRDD: RDD[(SpatialKey, (SpaceTimeKey, MultibandTile))] =
+      rdd.map { case (k, v) => (k.getComponent[SpatialKey], (k, v)) }
+
+    val joinedRDD: RDD[(SpatialKey, ((SpaceTimeKey, MultibandTile), Iterable[Geometry]))] =
+      groupedRDD.partitioner match {
+        case Some(p) =>
+          rekeyedRDD.join(groupedRDD, p)
+        case None =>
+          rekeyedRDD.join(groupedRDD)
+      }
+
+    val maskedRDD: RDD[(SpaceTimeKey, MultibandTile)] =
+      joinedRDD.mapPartitions ({ partition =>
+        partition.map { case (k, ((tk, v), geoms)) =>
+          (tk, v.mask(mapTrans(k), geoms, options))
+        }
+      }, preservesPartitioning = true)
+
+    TemporalTiledRasterLayer(zoomLevel, ContextRDD(maskedRDD, rdd.metadata))
+  }
+
   private def wkbsToMultiPolygons(wkbs: java.util.ArrayList[Array[Byte]]) = {
     wkbs
       .asScala.map({ wkb => WKB.read(wkb) })

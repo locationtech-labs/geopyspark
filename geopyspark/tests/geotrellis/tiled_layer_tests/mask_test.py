@@ -4,8 +4,8 @@ import pytest
 import rasterio
 import numpy as np
 
-from geopyspark.geotrellis import SpatialKey, Tile
-from shapely.geometry import Polygon
+from geopyspark.geotrellis import SpatialKey, Tile, SpatialPartitionStrategy, RasterizerOptions
+from shapely.geometry import Polygon, box
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.geotrellis.constants import LayerType
@@ -13,13 +13,8 @@ from geopyspark.geotrellis.constants import LayerType
 
 class MaskTest(BaseTestClass):
     pysc = BaseTestClass.pysc
-
-    cells = np.array([[
-        [1.0, 1.0, 1.0, 1.0, 1.0],
-        [1.0, 1.0, 1.0, 1.0, 1.0],
-        [1.0, 1.0, 1.0, 1.0, 1.0],
-        [1.0, 1.0, 1.0, 1.0, 1.0],
-        [1.0, 1.0, 1.0, 1.0, 1.0]]])
+    cells = np.zeros((1, 2, 2))
+    cells.fill(1)
 
     layer = [(SpatialKey(0, 0), Tile(cells, 'FLOAT', -1.0)),
              (SpatialKey(1, 0), Tile(cells, 'FLOAT', -1.0,)),
@@ -28,8 +23,8 @@ class MaskTest(BaseTestClass):
 
     rdd = pysc.parallelize(layer)
 
-    extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 33.0, 'ymax': 33.0}
-    layout = {'layoutCols': 2, 'layoutRows': 2, 'tileCols': 5, 'tileRows': 5}
+    extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 4.0, 'ymax': 4.0}
+    layout = {'layoutCols': 2, 'layoutRows': 2, 'tileCols': 2, 'tileRows': 2}
     metadata = {'cellType': 'float32ud-1.0',
                 'extent': extent,
                 'crs': '+proj=longlat +datum=WGS84 +no_defs ',
@@ -40,7 +35,7 @@ class MaskTest(BaseTestClass):
                     'extent': extent,
                     'tileLayout': layout}}
 
-    geometries = Polygon([(17, 17), (42, 17), (42, 42), (17, 42)])
+    geoms = [box(0.0, 0.0, 2.0, 2.0), box(3.0, 3.0, 4.0, 4.0)]
     raster_rdd = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, metadata)
 
     @pytest.fixture(autouse=True)
@@ -49,9 +44,26 @@ class MaskTest(BaseTestClass):
         BaseTestClass.pysc._gateway.close()
 
     def test_geotrellis_mask(self):
-        result = self.raster_rdd.mask(geometries=self.geometries).to_numpy_rdd()
-        n = result.map(lambda kv: np.sum(kv[1].cells)).reduce(lambda a,b: a + b)
-        self.assertEqual(n, 25.0)
+        result = self.raster_rdd.mask(geometries=self.geoms).to_numpy_rdd()
+        n = result.map(lambda kv: np.sum(kv[1].cells)).reduce(lambda a, b: a + b)
+
+        self.assertEqual(n, 2.0)
+
+    def test_rdd_mask_no_partition_strategy(self):
+        rdd = BaseTestClass.pysc.parallelize(self.geoms)
+
+        result = self.raster_rdd.mask(rdd, options=RasterizerOptions(True, 'PixelIsArea')).to_numpy_rdd()
+        n = result.map(lambda kv: np.sum(kv[1].cells)).reduce(lambda a, b: a + b)
+
+        self.assertEqual(n, 2.0)
+
+    def test_rdd_mask_with_partition_strategy(self):
+        rdd = BaseTestClass.pysc.parallelize(self.geoms)
+
+        result = self.raster_rdd.mask(rdd, partition_strategy=SpatialPartitionStrategy()).to_numpy_rdd()
+        n = result.map(lambda kv: np.sum(kv[1].cells)).reduce(lambda a, b: a + b)
+
+        self.assertEqual(n, 2.0)
 
 if __name__ == "__main__":
     unittest.main()

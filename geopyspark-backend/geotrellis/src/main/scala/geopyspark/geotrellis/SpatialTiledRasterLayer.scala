@@ -210,6 +210,30 @@ class SpatialTiledRasterLayer(
   def mask(geometries: Seq[MultiPolygon]): TiledRasterLayer[SpatialKey] =
     SpatialTiledRasterLayer(zoomLevel, Mask(rdd, geometries, Mask.Options.DEFAULT))
 
+  def mask(
+    groupedRDD: RDD[(SpatialKey, Iterable[Geometry])],
+    options: Rasterizer.Options
+  ): TiledRasterLayer[SpatialKey] = {
+    val mapTrans = rdd.metadata.layout.mapTransform
+
+    val joinedRDD: RDD[(SpatialKey, (MultibandTile, Iterable[Geometry]))] =
+      groupedRDD.partitioner match {
+        case Some(p) =>
+          rdd.join(groupedRDD, p)
+        case None =>
+          rdd.join(groupedRDD)
+      }
+
+    val maskedRDD: RDD[(SpatialKey, MultibandTile)] =
+      joinedRDD.mapPartitions ({ partition =>
+        partition.map { case (k, (v, geoms)) =>
+          (k, v.mask(mapTrans(k), geoms, options))
+        }
+      }, preservesPartitioning = true)
+
+    SpatialTiledRasterLayer(zoomLevel, ContextRDD(maskedRDD, rdd.metadata))
+  }
+
   def stitch: Array[Byte] =
     PythonTranslator.toPython[MultibandTile, ProtoMultibandTile](ContextRDD(rdd, rdd.metadata).stitch.tile)
 

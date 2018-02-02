@@ -93,6 +93,35 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
     mask(geometries)
   }
 
+  def mask(
+    wkbRDD: RDD[Array[Byte]],
+    partitionStrategy: PartitionStrategy,
+    options: Rasterizer.Options
+  ): TiledRasterLayer[K] = {
+    val geometryRDD: RDD[Geometry] = wkbRDD.map { WKB.read }
+    val clipped: RDD[(SpatialKey, Geometry)] = geometryRDD.clipToGrid(rdd.metadata.layout)
+
+    val partitioner: Option[Partitioner] =
+      partitionStrategy match {
+        case ps: PartitionStrategy => ps.producePartitioner(rdd.getNumPartitions)
+        case null => None
+      }
+
+    val groupedRDD: RDD[(SpatialKey, Iterable[Geometry])] =
+      (partitioner, rdd.partitioner) match {
+        case (Some(p), _) => clipped.groupByKey(p)
+        case (None, Some(p)) => clipped.groupByKey(p)
+        case (None, None) => clipped.groupByKey()
+      }
+
+    mask(groupedRDD, options)
+  }
+
+  def mask(
+    groupedRDD: RDD[(SpatialKey, Iterable[Geometry])],
+    options: Rasterizer.Options
+  ): TiledRasterLayer[K]
+
   protected def mask(geometries: Seq[MultiPolygon]): TiledRasterLayer[K]
 
   protected def reproject(target_crs: String, resampleMethod: ResampleMethod): TiledRasterLayer[K]
