@@ -5,9 +5,9 @@ when performing operations.
 '''
 import json
 import datetime
-import shapely.wkb
 from dateutil import parser
 import pytz
+from  shapely import wkb
 from shapely.geometry import Polygon, MultiPolygon, Point
 from geopyspark.geotrellis.protobufcodecs import (multibandtile_decoder,
                                                   projected_extent_decoder,
@@ -19,6 +19,7 @@ from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
 from pyspark.storagelevel import StorageLevel
+from pyspark.rdd import RDD
 from geopyspark import get_spark_context, create_python_rdd
 from geopyspark.geotrellis import (Metadata,
                                    Tile,
@@ -28,7 +29,8 @@ from geopyspark.geotrellis import (Metadata,
                                    crs_to_proj4,
                                    _convert_to_unix_time,
                                    HashPartitionStrategy,
-                                   SpatialPartitionStrategy)
+                                   SpatialPartitionStrategy,
+                                   RasterizerOptions)
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
                                              Neighborhood as nb,
@@ -1627,7 +1629,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         if not isinstance(geometries, list):
             geometries = [geometries]
-        wkbs = [shapely.wkb.dumps(g) for g in geometries]
+        wkbs = [wkb.dumps(g) for g in geometries]
 
         return [(datetime.datetime.utcfromtimestamp(t._1() / 1000), t._2()) for t in list(fn(wkbs))]
 
@@ -1651,25 +1653,63 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         fn = self.srdd.sumSeries
         return self.star_series(geometries, fn)
 
-    def mask(self, geometries):
+    def mask(self,
+             geometries,
+             partition_strategy=None,
+             options=RasterizerOptions()):
         """Masks the ``TiledRasterLayer`` so that only values that intersect the geometries will
         be available.
 
         Args:
-            geometries (shapely.geometry or [shapely.geometry]): Either a list of, or a single
-                shapely geometry/ies to use for the mask/s.
+            geometries (shapely.geometry or [shapely.geometry] or pyspark.RDD[shapely.geometry]): Either
+                a single, list, or Python ``RDD`` of shapely geometry/ies to mask the layer.
 
                 Note:
                     All geometries must be in the same CRS as the TileLayer.
+
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+                Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
+                Default is, ``None``.
+
+                If ``None``, then the output layer will be the same as the source layer.
+
+                If ``partition_strategy`` is set but has no ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` specified in the strategy with the with same number of
+                partitions the source layer had.
+
+                If ``partition_strategy`` is set and has a ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` and number of partitions specified in the strategy.
+
+                Note:
+                    This parameter will only be used if ``geometries`` is a ``pyspark.RDD``.
+
+            options (:class:`~geopyspark.geotrellis.RasterizerOptions`, optional): During the mask
+                operation, rasterization occurs. These options will change the pixel rasterization
+                behavior. Default behavior is to include partial pixel intersection and to treat
+                pixels as points.
+
+                Note:
+                    This parameter will only be used if ``geometries`` is a ``pyspark.RDD``.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        if not isinstance(geometries, list):
+        if not isinstance(geometries, (list, RDD)):
             geometries = [geometries]
-        wkbs = [shapely.wkb.dumps(g) for g in geometries]
-        srdd = self.srdd.mask(wkbs)
+
+        if isinstance(geometries, list):
+            wkbs = [wkb.dumps(g) for g in geometries]
+            srdd = self.srdd.mask(wkbs)
+
+        else:
+            wkb_rdd = geometries.map(lambda geom: wkb.dumps(geom))
+
+            # If this is False then the WKBs will be serialized
+            # when going to Scala resulting in garbage
+            wkb_rdd._bypass_serializer = True
+
+            srdd = self.srdd.mask(wkb_rdd._jrdd.rdd(), partition_strategy, options)
 
         return TiledRasterLayer(self.layer_type, srdd)
 
@@ -1848,7 +1888,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             for point in points:
                 point_id = id(point)
 
-                ided_bytes[point_id] = shapely.wkb.dumps(point)
+                ided_bytes[point_id] = wkb.dumps(point)
                 ided_points[point_id] = point
 
             scala_result = self.srdd.getPointValues(ided_bytes, resample_method)
@@ -1881,7 +1921,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 point_id = id(value)
 
                 ided_points[point_id] = value
-                ided_bytes[point_id] = shapely.wkb.dumps(value)
+                ided_bytes[point_id] = wkb.dumps(value)
                 ided_labels[point_id] = key
 
             scala_result = self.srdd.getPointValues(ided_bytes, resample_method)
@@ -1904,7 +1944,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
     @staticmethod
     def _process_polygonal_summary(geometry, operation):
         if isinstance(geometry, (Polygon, MultiPolygon)):
-            geometry = shapely.wkb.dumps(geometry)
+            geometry = wkb.dumps(geometry)
         if not isinstance(geometry, bytes):
             raise TypeError("Expected geometry to be bytes but given this instead", type(geometry))
 
