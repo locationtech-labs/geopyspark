@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package protos;
+
+message ProtoSimpleFeature {
+  bytes geom = 1;
+  map<string, string> metadata = 2;
+}

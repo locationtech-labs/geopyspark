@@ -80,7 +80,7 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
 
     conf.set(key='spark.ui.enabled', value='false')
     conf.set(key='spark.serializer', value='org.apache.spark.serializer.KryoSerializer')
-    conf.set(key='spark.kryo.registrator', value='geotrellis.spark.io.kryo.KryoRegistrator')
+    conf.set(key='spark.kryo.registrator', value='geopyspark.geotools.kryo.ExpandedKryoRegistrator')
 
     current_location = os.path.dirname(os.path.realpath(__file__))
     cwd = os.getcwd()
@@ -152,6 +152,9 @@ from . import geotrellis
 from .geotrellis import *
 from . import vector_pipe
 from .vector_pipe import *
+from . import geotools
+from .geotools import *
 
 __all__.extend(geotrellis.__all__)
 __all__.extend(vector_pipe.__all__)
+__all__.extend(geotools.__all__)
