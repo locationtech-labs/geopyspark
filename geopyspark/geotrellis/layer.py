@@ -48,7 +48,14 @@ from geopyspark.geotrellis.neighborhood import Neighborhood
 __all__ = ["RasterLayer", "TiledRasterLayer", "Pyramid"]
 
 
-def _reclassify(srdd, value_map, data_type, classification_strategy, replace_nodata_with):
+def _reclassify(srdd,
+                value_map,
+                data_type,
+                classification_strategy,
+                replace_nodata_with,
+                fallback_value,
+                strict):
+
     new_dict = {}
 
     for key, value in value_map.items():
@@ -62,19 +69,17 @@ def _reclassify(srdd, value_map, data_type, classification_strategy, replace_nod
             raise TypeError("Expected", data_type, "list, or tuple for the key, but the type was", type(key))
 
     if data_type is int:
-        if not replace_nodata_with:
-            return srdd.reclassify(new_dict, ClassificationStrategy(classification_strategy).value,
-                                   NO_DATA_INT)
-        else:
-            return srdd.reclassify(new_dict, ClassificationStrategy(classification_strategy).value,
-                                   replace_nodata_with)
+        return srdd.reclassify(new_dict,
+                               ClassificationStrategy(classification_strategy).value,
+                               replace_nodata_with,
+                               fallback_value,
+                               strict)
     else:
-        if not replace_nodata_with:
-            return srdd.reclassifyDouble(new_dict, ClassificationStrategy(classification_strategy).value,
-                                         float('nan'))
-        else:
-            return srdd.reclassifyDouble(new_dict, ClassificationStrategy(classification_strategy).value,
-                                         replace_nodata_with)
+        return srdd.reclassifyDouble(new_dict,
+                                     ClassificationStrategy(classification_strategy).value,
+                                     replace_nodata_with,
+                                     fallback_value,
+                                     strict)
 
 
 def _to_geotiff_rdd(pysc, srdd, storage_method, rows_per_strip, tile_dimensions, compression,
@@ -799,10 +804,14 @@ class RasterLayer(CachableLayer, TileLayer):
 
         return TiledRasterLayer(self.layer_type, srdd)
 
-    def reclassify(self, value_map, data_type,
+    def reclassify(self,
+                   value_map,
+                   data_type,
                    classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO,
-                   replace_nodata_with=None):
-        """Changes the cell values of a raster based on how the data is broken up.
+                   replace_nodata_with=None,
+                   fallback_value=None,
+                   strict=False):
+        """Changes the cell values of a raster based on how the data is broken up in the given ``value_map``.
 
         Args:
             value_map (dict): A ``dict`` whose keys represent values where a break should occur and
@@ -812,22 +821,32 @@ class RasterLayer(CachableLayer, TileLayer):
             classification_strategy (str or :class:`~geopyspark.geotrellis.constants.ClassificationStrategy`, optional):
                 How the cells should be classified along the breaks. If unspecified, then
                 ``ClassificationStrategy.LESS_THAN_OR_EQUAL_TO`` will be used.
-            replace_nodata_with (data_type, optional): When remapping values, nodata values must be
-                treated separately.  If nodata values are intended to be replaced during the
-                reclassify, this variable should be set to the intended value.  If unspecified,
-                nodata values will be preserved.
+            replace_nodata_with (int or float, optional): When remapping values, ``NoData``
+                values must be treated separately.  If ``NoData`` values are intended to be
+                replaced during the reclassify, this variable should be set to the intended value.
+                If unspecified, ``NoData`` values will be preserved.
 
-        NOTE:
-            NoData symbolizes a different value depending on if ``data_type`` is int or
-            float. For int, the constant ``NO_DATA_INT`` can be used which represents the
-            NoData value for int in GeoTrellis. For float, ``float('nan')`` is used to
-            represent NoData.
+                Note:
+                    Specifying ``replace_nodata_with`` will change the value of given cells,
+                    but the ``NoData`` value of the layer will remain unchanged.
+            fallback_value (int or float, optional): Represents the value that should be used
+                when a cell's value does not fall within the ``classification_strategy``. Default
+                is to use the layer's ``NoData`` value.
+            strict (bool, optional): Determines whether or not an error should be thrown if
+                a cell's value does not fall within the ``classification_strategy``. Default is,
+                ``False``.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.RasterLayer`
         """
 
-        srdd = _reclassify(self.srdd, value_map, data_type, classification_strategy, replace_nodata_with)
+        srdd = _reclassify(self.srdd,
+                           value_map,
+                           data_type,
+                           classification_strategy,
+                           replace_nodata_with,
+                           fallback_value,
+                           strict)
 
         return RasterLayer(self.layer_type, srdd)
 
@@ -1713,10 +1732,14 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         return TiledRasterLayer(self.layer_type, srdd)
 
-    def reclassify(self, value_map, data_type,
+    def reclassify(self,
+                   value_map,
+                   data_type,
                    classification_strategy=ClassificationStrategy.LESS_THAN_OR_EQUAL_TO,
-                   replace_nodata_with=None):
-        """Changes the cell values of a raster based on how the data is broken up.
+                   replace_nodata_with=None,
+                   fallback_value=None,
+                   strict=False):
+        """Changes the cell values of a raster based on how the data is broken up in the given ``value_map``.
 
         Args:
             value_map (dict): A ``dict`` whose keys represent values where a break should occur and
@@ -1726,23 +1749,32 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             classification_strategy (str or :class:`~geopyspark.geotrellis.constants.ClassificationStrategy`, optional):
                 How the cells should be classified along the breaks. If unspecified, then
                 ``ClassificationStrategy.LESS_THAN_OR_EQUAL_TO`` will be used.
-            replace_nodata_with (data_type, optional): When remapping values, nodata values must be
-                treated separately.  If nodata values are intended to be replaced during the
-                reclassify, this variable should be set to the intended value.  If unspecified,
-                nodata values will be preserved.
+            replace_nodata_with (int or float, optional): When remapping values, ``NoData``
+                values must be treated separately.  If ``NoData`` values are intended to be
+                replaced during the reclassify, this variable should be set to the intended value.
+                If unspecified, ``NoData`` values will be preserved.
 
-        NOTE:
-            NoData symbolizes a different value depending on if ``data_type`` is int or
-            float. For int, the constant ``NO_DATA_INT`` can be used which represents the
-            NoData value for int in GeoTrellis. For float, ``float('nan')`` is used to
-            represent NoData.
+                Note:
+                    Specifying ``replace_nodata_with`` will change the value of given cells,
+                    but the ``NoData`` value of the layer will remain unchanged.
+            fallback_value (int or float, optional): Represents the value that should be used
+                when a cell's value does not fall within the ``classification_strategy``. Default
+                is to use the layer's ``NoData`` value.
+            strict (bool, optional): Determines whether or not an error should be thrown if
+                a cell's value does not fall within the ``classification_strategy``. Default is,
+                ``False``.
 
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        srdd = _reclassify(self.srdd, value_map, data_type,
-                           ClassificationStrategy(classification_strategy).value, replace_nodata_with)
+        srdd = _reclassify(self.srdd,
+                           value_map,
+                           data_type,
+                           classification_strategy,
+                           replace_nodata_with,
+                           fallback_value,
+                           strict)
 
         return TiledRasterLayer(self.layer_type, srdd)
 
