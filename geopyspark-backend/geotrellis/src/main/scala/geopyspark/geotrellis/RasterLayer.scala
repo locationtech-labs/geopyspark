@@ -59,8 +59,11 @@ abstract class RasterLayer[K](implicit ev0: ClassTag[K], ev1: Component[K, Proje
   def collectMetadata(layoutType: LayoutType): String
   def collectMetadata(layoutDefinition: LayoutDefinition): String
 
-  def convertDataType(newType: String): RasterLayer[_] =
-    withRDD(rdd.map { x => (x._1, x._2.convert(CellType.fromName(newType))) })
+  def convertDataType(newType: String): RasterLayer[K] =
+    withRDD(rdd.mapValues { _.convert(CellType.fromName(newType)) })
+
+  def withNoData(newNoData: Double): RasterLayer[K] =
+    withRDD(rdd.mapValues { _.withNoData(Some(newNoData)) })
 
   def tileToLayout(
     tileLayerMetadata: String,

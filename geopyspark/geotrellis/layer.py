@@ -647,6 +647,30 @@ class RasterLayer(CachableLayer, TileLayer):
         else:
             return RasterLayer(self.layer_type, self.srdd.convertDataType(new_type))
 
+    def with_no_data(self, no_data_value):
+        """Changes the ``NoData`` value of the layer with the new given value.
+
+        It is possible to specify a ``NoData`` value for layers with raw values.
+        The resulting layer will be of the same ``CellType`` but with a user
+        defined ``NoData`` value. For example, if a layer has a ``CellType``
+        of ``float32raw`` and a ``no_data_value`` of ``-10`` is given,
+        then the produced layer will have a ``CellType`` of ``float32ud-10.0``.
+
+        If the target layer has a ``bool`` ``CellType``, then the ``no_data_value``
+        will be ignored and the result layer will be the same as the origin. In
+        order to assign a ``NoData`` value to a ``bool`` layer, the
+        :meth:`~geopyspark.geotrellis.layer.RasterLayer.convert_data_type` method
+        must be used.
+
+        Args:
+            no_data_value (int or float): The new ``NoData`` value of the layer.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.RasterLayer`
+        """
+
+        return RasterLayer(self.layer_type, self.srdd.withNoData(float(no_data_value)))
+
     def collect_keys(self):
         """Returns a list of all of the keys in the layer.
 
@@ -1281,6 +1305,30 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         else:
             return TiledRasterLayer(self.layer_type,
                                     self.srdd.convertDataType(new_type))
+
+    def with_no_data(self, no_data_value):
+        """Changes the ``NoData`` value of the layer with the new given value.
+
+        It is possible to specify a ``NoData`` value for layers with raw values.
+        The resulting layer will be of the same ``CellType`` but with a user
+        defined ``NoData`` value. For example, if a layer has a ``CellType``
+        of ``float32raw`` and a ``no_data_value`` of ``-10`` is given,
+        then the produced layer will have a ``CellType`` of ``float32ud-10.0``.
+
+        If the target layer has a ``bool`` ``CellType``, then the ``no_data_value``
+        will be ignored and the result layer will be the same as the origin. In
+        order to assign a ``NoData`` value to a ``bool`` layer, the
+        :meth:`~geopyspark.geotrellis.layer.TiledRasterLayer.convert_data_type` method
+        must be used.
+
+        Args:
+            no_data_value (int or float): The new ``NoData`` value of the layer.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
+        """
+
+        return TiledRasterLayer(self.layer_type, self.srdd.withNoData(float(no_data_value)))
 
     def reproject(self, target_crs, resample_method=ResampleMethod.NEAREST_NEIGHBOR):
         """Reproject rasters to ``target_crs``.
