@@ -93,27 +93,67 @@ abstract class TileLayer[K: ClassTag] {
   def reclassify(
     intMap: java.util.Map[Int, Int],
     boundaryType: String,
-    replaceNoDataWith: Int
+    replaceNoDataWith: Integer,
+    fallbackValue: Integer,
+    strict: Boolean
   ): TileLayer[_] = {
     val scalaMap = intMap.asScala.toMap
-
     val boundary = getBoundary(boundaryType)
-    val mapStrategy = new MapStrategy(boundary, replaceNoDataWith, NODATA, false)
+
+    val noDataReplacement =
+      replaceNoDataWith match {
+        case i: Integer => i.toInt
+        case null => NODATA
+      }
+
+    val fallback =
+      fallbackValue match {
+        case i: Integer => i.toInt
+        case null => NODATA
+      }
+
+    val mapStrategy = new MapStrategy(boundary, noDataReplacement, fallback, strict)
     val breakMap = new BreakMap(scalaMap, mapStrategy, { i: Int => isNoData(i) })
 
     val reclassifiedRDD =
-      rdd.mapValues { x =>
-        val count = x.bandCount
-        val tiles = Array.ofDim[Tile](count)
-
-        for (y <- 0 until count) {
-          val band = x.band(y)
-          tiles(y) = band.map(i => breakMap.apply(i))
-        }
-
-        MultibandTile(tiles)
+      rdd.mapValues { tile =>
+        MultibandTile(tile.bands.map { band => band.map { breakMap } })
       }
+
     reclassify(reclassifiedRDD)
+  }
+
+  def reclassifyDouble(
+    doubleMap: java.util.Map[Double, Double],
+    boundaryType: String,
+    replaceNoDataWith: java.lang.Double,
+    fallbackValue: java.lang.Double,
+    strict: Boolean
+  ): TileLayer[_] = {
+    val scalaMap = doubleMap.asScala.toMap
+    val boundary = getBoundary(boundaryType)
+
+    val noDataReplacement =
+      replaceNoDataWith match {
+        case null => doubleNODATA
+        case d: java.lang.Double => d.toDouble
+      }
+
+    val fallback =
+      fallbackValue match {
+        case null => doubleNODATA
+        case d: java.lang.Double => d.toDouble
+      }
+
+    val mapStrategy = new MapStrategy(boundary, noDataReplacement, fallback, strict)
+    val breakMap = new BreakMap(scalaMap, mapStrategy, { d: Double => isNoData(d) })
+
+    val reclassifiedRDD =
+      rdd.mapValues { tile =>
+        MultibandTile(tile.bands.map { band => band.mapDouble { breakMap } })
+      }
+
+    reclassifyDouble(reclassifiedRDD)
   }
 
   def persist(newLevel: StorageLevel): Unit = {
@@ -123,32 +163,6 @@ abstract class TileLayer[K: ClassTag] {
 
   def unpersist(): Unit = {
     rdd.unpersist()
-  }
-
-  def reclassifyDouble(
-    doubleMap: java.util.Map[Double, Double],
-    boundaryType: String,
-    replaceNoDataWith: Double
-  ): TileLayer[_] = {
-    val scalaMap = doubleMap.asScala.toMap
-
-    val boundary = getBoundary(boundaryType)
-    val mapStrategy = new MapStrategy(boundary, replaceNoDataWith, doubleNODATA, false)
-    val breakMap = new BreakMap(scalaMap, mapStrategy, { d: Double => isNoData(d) })
-
-    val reclassifiedRDD =
-      rdd.mapValues { x =>
-        val count = x.bandCount
-        val tiles = Array.ofDim[Tile](count)
-
-        for (y <- 0 until count) {
-          val band = x.band(y)
-          tiles(y) = band.mapDouble(i => breakMap.apply(i))
-        }
-
-        MultibandTile(tiles)
-      }
-    reclassifyDouble(reclassifiedRDD)
   }
 
   def getMinMax: (Double, Double) = {
