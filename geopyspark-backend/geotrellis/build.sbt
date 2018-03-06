@@ -1,11 +1,5 @@
 name := "geotrellis-backend"
 
-resolvers ++= Seq(
-  "Location Tech GeoTrellis Snapshots" at "https://repo.locationtech.org/content/repositories/geotrellis-snapshots",
-  "Location Tech GeoTrellis resleases" at "https://repo.locationtech.org/content/groups/releases",
-  Resolver.mavenLocal
-)
-
 libraryDependencies ++= Seq(
   "org.typelevel"               %% "cats"                  % "0.9.0",
   "com.typesafe.akka"           %% "akka-http"             % "10.0.10",
@@ -17,6 +11,14 @@ libraryDependencies ++= Seq(
   "org.locationtech.geotrellis" %% "geotrellis-s3-testkit" % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-spark"      % Version.geotrellis
 )
+
+assemblyShadeRules in assembly := {
+  val shadePackage = "org.locationtech.geopyspark.shaded"
+  Seq(
+    ShadeRule.rename("org.apache.avro.**" -> s"$shadePackage.org.apache.avro.@1")
+      .inLibrary("org.locationtech.geotrellis" %% "geotrellis-spark" % Version.geotrellis).inAll
+  )
+}
 
 assemblyMergeStrategy in assembly := {
   case "reference.conf" => MergeStrategy.concat

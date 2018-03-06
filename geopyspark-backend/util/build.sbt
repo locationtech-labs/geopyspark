@@ -1,11 +1,5 @@
 name := "util"
 
-resolvers ++= Seq(
-  "Location Tech GeoTrellis Snapshots" at "https://repo.locationtech.org/content/repositories/geotrellis-snapshots",
-  "Location Tech GeoTrellis resleases" at "https://repo.locationtech.org/content/groups/releases",
-  Resolver.mavenLocal
-)
-
 libraryDependencies ++= Seq(
   "org.apache.spark"            %% "spark-core"            % "2.0.0" % "provided",
   "org.locationtech.geotrellis" %% "geotrellis-s3"         % Version.geotrellis,

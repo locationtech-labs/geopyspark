@@ -1,7 +1,6 @@
 lazy val commonSettings = Seq(
   version := Version.geopyspark + scala.util.Properties.envOrElse("GEOPYSPARK_VERSION_SUFFIX", ""),
   scalaVersion := Version.scala,
-  crossScalaVersions := Version.crossScala,
   description := "GeoPySpark",
   organization := "org.locationtech.geotrellis",
   licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.html")),
@@ -18,7 +17,15 @@ lazy val commonSettings = Seq(
 
   shellPrompt := { s => Project.extract(s).currentProject.id + " > " },
 
-  resolvers += Resolver.sonatypeRepo("releases"),
+  externalResolvers := Seq(
+    "Geotoolkit Repo" at "http://maven.geotoolkit.org",
+    "OSGeo GeoTools" at "http://download.osgeo.org/webdav/geotools/",
+    "geosolutions" at "http://maven.geo-solutions.it/",
+    "LocationTech Snapshots" at "https://repo.locationtech.org/content/groups/snapshots",
+    "LocationTech Releases" at "https://repo.locationtech.org/content/groups/releases",
+    Resolver.bintrayRepo("azavea", "maven"),
+    DefaultMavenRepository
+  ),
 
   addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.3" cross CrossVersion.binary),
   addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
@@ -27,7 +34,7 @@ lazy val commonSettings = Seq(
 lazy val publishSettings =
   Seq(
     bintrayOrganization := Some("azavea"),
-    bintrayRepository := "geopyspark",
+    bintrayRepository := "maven",
     bintrayVcsUrl := Some("https://github.com/locationtech-labs/geopyspark.git"),
     publishMavenStyle := true,
     publishArtifact in Test := false,
@@ -35,12 +42,10 @@ lazy val publishSettings =
     homepage := Some(url("https://github.com/locationtech-labs/geopyspark"))
   )
 
-resolvers ++= Seq(
-  "Location Tech GeoTrellis Snapshots" at "https://repo.locationtech.org/content/repositories/geotrellis-snapshots",
-  Resolver.mavenLocal
-)
+
 
 scalaVersion := Version.scala
+scalaVersion in ThisBuild := Version.scala
 
 lazy val root = Project("root", file("."))
 
