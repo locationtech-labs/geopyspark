@@ -4,18 +4,14 @@ import geopyspark.geotrellis._
 
 import geotrellis.spark._
 import geotrellis.spark.io._
-import geotrellis.spark.io.accumulo._
-import geotrellis.spark.io.cassandra._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
-import geotrellis.spark.io.hbase._
 import geotrellis.spark.io.json._
 import geotrellis.spark.io.s3._
 
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 
-import org.apache.accumulo.core.client.security.tokens.PasswordToken
 import org.apache.spark._
 
 import scala.collection.JavaConverters._

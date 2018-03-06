@@ -5,7 +5,7 @@ import geopyspark.geotrellis.Constants.{METERS, FEET, METERSATEQUATOR, FEETATEQU
 import geotrellis.proj4._
 import geotrellis.vector._
 
-import org.apache.commons.math.analysis.interpolation._
+import org.apache.commons.math3.analysis.interpolation._
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 
