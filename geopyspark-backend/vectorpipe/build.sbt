@@ -1,12 +1,5 @@
 name := "vectorpipe"
 
-resolvers ++= Seq(
-  "Location Tech GeoTrellis Snapshots" at "https://repo.locationtech.org/content/repositories/geotrellis-snapshots",
-  "Location Tech GeoTrellis resleases" at "https://repo.locationtech.org/content/groups/releases",
-  Resolver.bintrayRepo("azavea", "maven"),
-  Resolver.mavenLocal
-)
-
 libraryDependencies ++= Seq(
   "org.apache.spark"            %% "spark-hive"            % "2.2.0" % "provided",
   "org.locationtech.geotrellis" %% "geotrellis-s3"         % Version.geotrellis,
