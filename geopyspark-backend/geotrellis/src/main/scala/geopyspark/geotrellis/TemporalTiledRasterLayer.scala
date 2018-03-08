@@ -191,34 +191,53 @@ class TemporalTiledRasterLayer(
       .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
   }
 
-  def reproject(targetCRS: String, resampleMethod: ResampleMethod): TemporalTiledRasterLayer = {
+  def reproject(
+    targetCRS: String,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
+  ): TemporalTiledRasterLayer = {
+    val partitioner = TileLayer.getPartitioner(partitionStrategy, rdd.getNumPartitions)
     val crs = TileLayer.getCRS(targetCRS).get
     val targetLayout = FloatingLayoutScheme(rdd.metadata.layout.tileCols, rdd.metadata.layout.tileRows)
-    val (zoom, reprojected) = rdd.reproject(crs, targetLayout, resampleMethod)
+    val (zoom, reprojected) = rdd.reproject(crs, targetLayout, resampleMethod, partitioner)
     TemporalTiledRasterLayer(Some(zoom), reprojected)
   }
 
-  def reproject(targetCRS: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TemporalTiledRasterLayer = {
+  def reproject(
+    targetCRS: String,
+    layoutType: LayoutType,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
+  ): TemporalTiledRasterLayer = {
+    val partitioner = TileLayer.getPartitioner(partitionStrategy, rdd.getNumPartitions)
     val crs = TileLayer.getCRS(targetCRS).get
+
     layoutType match {
       case GlobalLayout(tileSize, null, threshold) =>
         val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
-        val (zoom, reprojected) = rdd.reproject(crs, scheme, resampleMethod)
+        val (zoom, reprojected) = rdd.reproject(crs, scheme, resampleMethod, partitioner)
         TemporalTiledRasterLayer(Some(zoom), reprojected)
 
       case GlobalLayout(tileSize, zoom, threshold) =>
         val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
-        val (_, reprojected) = rdd.reproject(crs, scheme.levelForZoom(zoom).layout, resampleMethod)
+        val (_, reprojected) = TileRDDReproject(rdd, crs, Right(scheme.levelForZoom(zoom).layout), resampleMethod, partitioner)
         TemporalTiledRasterLayer(Some(zoom), reprojected)
 
       case LocalLayout(tileCols, tileRows) =>
-        val (_, reprojected) = rdd.reproject(crs, FloatingLayoutScheme(tileCols, tileRows), resampleMethod)
+        val (_, reprojected) = rdd.reproject(crs, FloatingLayoutScheme(tileCols, tileRows), resampleMethod, partitioner)
         TemporalTiledRasterLayer(None, reprojected)
     }
   }
 
-  def reproject(targetCRS: String, layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TemporalTiledRasterLayer = {
-    val (zoom, reprojected) = TileRDDReproject(rdd, TileLayer.getCRS(targetCRS).get, Right(layoutDefinition), resampleMethod)
+  def reproject(
+    targetCRS: String,
+    layoutDefinition: LayoutDefinition,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
+  ): TemporalTiledRasterLayer = {
+    val partitioner = TileLayer.getPartitioner(partitionStrategy, rdd.getNumPartitions)
+
+    val (zoom, reprojected) = TileRDDReproject(rdd, TileLayer.getCRS(targetCRS).get, Right(layoutDefinition), resampleMethod, partitioner)
     TemporalTiledRasterLayer(Some(zoom), reprojected)
   }
 

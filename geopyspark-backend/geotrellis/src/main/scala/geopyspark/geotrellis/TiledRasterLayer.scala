@@ -124,9 +124,25 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
 
   protected def mask(geometries: Seq[MultiPolygon]): TiledRasterLayer[K]
 
-  protected def reproject(target_crs: String, resampleMethod: ResampleMethod): TiledRasterLayer[K]
-  protected def reproject(target_crs: String, layoutType: LayoutType, resampleMethod: ResampleMethod): TiledRasterLayer[K]
-  def reproject(targetCRS: String, layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterLayer[K]
+  def reproject(
+    targetCRS: String,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
+  ): TiledRasterLayer[K]
+
+  def reproject(
+    targetCRS: String,
+    layoutType: LayoutType,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
+  ): TiledRasterLayer[K]
+
+  def reproject(
+    targetCRS: String,
+    layoutDefinition: LayoutDefinition,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy
+  ): TiledRasterLayer[K]
 
   def tileToLayout(
     layoutDefinition: LayoutDefinition,
