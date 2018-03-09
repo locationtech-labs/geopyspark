@@ -121,7 +121,7 @@ def _reproject(target_crs, layout, resample_method, partition_strategy, layer):
         return layer.srdd.reproject(target_crs, source, resample_method, partition_strategy)
 
     def tiledrasterlayer_reproject(source):
-        return layer.srdd.reproject(target_crs, source, resample_method)
+        return layer.srdd.reproject(target_crs, source, resample_method, partition_strategy)
 
     if isinstance(layer, RasterLayer):
         reproject_method = rasterlayer_reproject

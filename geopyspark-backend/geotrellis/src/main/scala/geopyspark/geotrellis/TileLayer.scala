@@ -249,6 +249,12 @@ object TileLayer {
     }
   }
 
+  def getPartitioner(partitionStrategy: PartitionStrategy, defaultNumPartitions: Int): Option[Partitioner] =
+    partitionStrategy match {
+      case ps: PartitionStrategy => ps.producePartitioner(defaultNumPartitions)
+      case null => None
+    }
+
   def getCRS(crs: String): Option[CRS] = {
     Option(crs).flatMap { crs =>
       Try(CRS.fromName(crs))
