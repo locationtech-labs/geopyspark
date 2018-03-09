@@ -242,8 +242,8 @@ object TileReaders {
     val valueReader = ValueReader(uri)
     val attributeStore = valueReader.attributeStore
 
-    val ids = attributeStore.layerIds
-    val zoomLevels = for { LayerId(name, zoom) <- ids if name == layerName } yield zoom
+    val ids = attributeStore.layerIds.filter { id => id.name == layerName }
+    val zoomLevels = ids.map { _.zoom }
     val maxZoom = zoomLevels.max
 
     val valueClass = attributeStore.readHeader[LayerHeader](ids.head).valueClass
