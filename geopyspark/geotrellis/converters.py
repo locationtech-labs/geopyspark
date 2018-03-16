@@ -8,7 +8,9 @@ from geopyspark.geotrellis import (RasterizerOptions,
                                    CellType,
                                    LayoutDefinition,
                                    HashPartitionStrategy,
-                                   SpatialPartitionStrategy)
+                                   SpatialPartitionStrategy,
+                                   SpaceTimePartitionStrategy)
+
 
 from geopyspark.geotrellis.constants import ResampleMethod
 
@@ -128,6 +130,23 @@ class SpatialPartitionStrategyConverter:
 
         return ScalaSpatialStrategy.apply(obj.num_partitions, obj.bits)
 
+class SpaceTimePartitionStrategyConverter:
+    def can_convert(self, object):
+        return isinstance(object, SpaceTimePartitionStrategy)
+
+    def convert(self, obj, gateway_client):
+
+        ScalaTemporalStrategy = JavaClass("geopyspark.geotrellis.SpaceTimePartitionStrategy", gateway_client)
+
+        scala_time_unit = obj.time_unit.value
+
+        if obj.time_resolution:
+            scala_time_resolution = str(obj.time_resolution)
+        else:
+            scala_time_resolution = None
+
+        return ScalaTemporalStrategy.apply(obj.num_partitions, obj.bits, scala_time_unit, scala_time_resolution)
+
 
 register_input_converter(CellTypeConverter(), prepend=True)
 register_input_converter(RasterizerOptionsConverter(), prepend=True)
@@ -136,3 +155,4 @@ register_input_converter(ResampleMethodConverter(), prepend=True)
 register_input_converter(LayoutDefinitionConverter(), prepend=True)
 register_input_converter(HashPartitionStrategyConverter(), prepend=True)
 register_input_converter(SpatialPartitionStrategyConverter(), prepend=True)
+register_input_converter(SpaceTimePartitionStrategyConverter(), prepend=True)
