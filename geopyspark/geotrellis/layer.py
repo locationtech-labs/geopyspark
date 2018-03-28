@@ -30,6 +30,7 @@ from geopyspark.geotrellis import (Metadata,
                                    _convert_to_unix_time,
                                    HashPartitionStrategy,
                                    SpatialPartitionStrategy,
+                                   SpaceTimePartitionStrategy,
                                    RasterizerOptions)
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (Operation,
@@ -41,6 +42,7 @@ from geopyspark.geotrellis.constants import (Operation,
                                              StorageMethod,
                                              ColorSpace,
                                              Compression,
+                                             TimeUnit,
                                              NO_DATA_INT)
 from geopyspark.geotrellis.neighborhood import Neighborhood
 
@@ -231,6 +233,10 @@ class TileLayer(object):
         """
         return list(self.srdd.quantileBreaksExactInt(num_breaks))
 
+    def _check_partition_strategy(self, partition_strategy):
+        if isinstance(partition_strategy, SpaceTimePartitionStrategy) and self.layer_type != LayerType.SPACETIME:
+            raise TypeError("SpaceTimePartitionStrategy cannot be used on SPATIAL layers.")
+
 
 class CachableLayer(object):
     """
@@ -318,7 +324,7 @@ class CachableLayer(object):
         """Returns the partitioning strategy if the layer has one.
 
         Returns:
-            :class:`~geopyspark.HashPartitioner` or :class:`~geopyspark.SpatialPartitioner` or ``None``
+            :class:`~geopyspark.HashPartitioner` or :class:`~geopyspark.SpatialPartitioner` or :class:`~geopyspark.SpaceTimePartitionStrategy` or ``None``
         """
 
         partition_name = self.srdd.getPartitionStrategyName()
@@ -326,6 +332,14 @@ class CachableLayer(object):
         if partition_name:
             if partition_name == "HashPartitioner":
                 return HashPartitionStrategy(self.getNumPartitions())
+            elif partition_name == "SpaceTimePartitioner":
+                scala_partitioner = self.srdd.rdd().partitioner().get()
+
+                return SpaceTimePartitionStrategy(TimeUnit(scala_partitioner.getTimeUnit()),
+                                                  self.getNumPartitions(),
+                                                  scala_partitioner.getBits(),
+                                                  scala_partitioner.getTimeResolution())
+
             else:
                 scala_partitioner = self.srdd.rdd().partitioner().get()
 
@@ -523,7 +537,7 @@ class RasterLayer(CachableLayer, TileLayer):
         """Repartitions the layer using the given partitioning strategy.
 
         Args:
-            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy` or :class:`~geopyspark.SpaceTimePartitionStrategy`, optional):
                 Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
                 Default is, ``None``.
 
@@ -541,6 +555,8 @@ class RasterLayer(CachableLayer, TileLayer):
         """
 
         if partition_strategy:
+            self._check_partition_strategy(partition_strategy)
+
             return RasterLayer(self.layer_type, self.srdd.partitionBy(partition_strategy))
         else:
             return self
@@ -710,7 +726,7 @@ class RasterLayer(CachableLayer, TileLayer):
             num_partitions (int, optional): The number of partitions that the resulting
                 layer should be partitioned with. If ``None``, then the ``num_partitions``
                 will the number of partitions the layer curretly has.
-            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy` or :class:`~geopyspark.SpaceTimePartitionStrategy`, optional):
                 Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
                 Default is, ``None``.
 
@@ -728,6 +744,7 @@ class RasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.RasterLayer`
         """
 
+        self._check_partition_strategy(partition_strategy)
         result = self.srdd.merge(partition_strategy)
 
         return RasterLayer(self.layer_type, result)
@@ -789,7 +806,7 @@ class RasterLayer(CachableLayer, TileLayer):
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The cell resample method to used during the tiling operation.
                 Default is``ResampleMethods.NEAREST_NEIGHBOR``.
-            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy` or :class:`~geopyspark.SpaceTimePartitionStrategy`, optional):
                 Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
                 Default is, ``None``.
 
@@ -807,6 +824,7 @@ class RasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
+        self._check_partition_strategy(partition_strategy)
         resample_method = ResampleMethod(resample_method)
 
         if target_crs:
@@ -1095,7 +1113,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             num_partitions (int, optional): The number of partitions that the resulting
                 layer should be partitioned with. If ``None``, then the ``num_partitions``
                 will the number of partitions the layer curretly has.
-            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy` or :class:`~geopyspark.SpaceTimePartitionStrategy`, optional):
                 Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
                 Default is, ``None``.
 
@@ -1113,6 +1131,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
+        self._check_partition_strategy(partition_strategy)
         result = self.srdd.merge(partition_strategy)
 
         return TiledRasterLayer(self.layer_type, result)
@@ -1393,7 +1412,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         """Repartitions the layer using the given partitioning strategy.
 
         Args:
-            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy` or :class:`~geopyspark.SpaceTimePartitionStrategy`, optional):
                 Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
                 Default is, ``None``.
 
@@ -1411,6 +1430,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         """
 
         if partition_strategy:
+            self._check_partition_strategy(partition_strategy)
             return TiledRasterLayer(self.layer_type, self.srdd.partitionBy(partition_strategy))
         else:
             return self
@@ -1463,7 +1483,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use for the reprojection. If none is specified, then
                 ``ResampleMethods.NEAREST_NEIGHBOR`` is used.
-            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy` or :class:`~geopyspark.SpaceTimePartitionStrategy`, optional):
                 Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
                 Default is, ``None``.
 
@@ -1481,6 +1501,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
+        self._check_partition_strategy(partition_strategy)
         resample_method = ResampleMethod(resample_method)
 
         if target_crs:
@@ -1518,7 +1539,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use when building the pyramid.
                 Default is ``ResampleMethods.NEAREST_NEIGHBOR``.
-            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy` or :class:`~geopyspark.SpaceTimePartitionStrategy`, optional):
                 Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
                 Default is, ``None``.
 
@@ -1539,8 +1560,10 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             ValueError: If this layer layout is not of ``GlobalLayout`` type.
         """
 
+        self._check_partition_strategy(partition_strategy)
         resample_method = ResampleMethod(resample_method)
         result = self.srdd.pyramid(resample_method, partition_strategy)
+
         return Pyramid([TiledRasterLayer(self.layer_type, srdd) for srdd in result])
 
     def focal(self,
@@ -1561,7 +1584,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             param_1 (int or float, optional): The first argument of ``neighborhood``.
             param_2 (int or float, optional): The second argument of the ``neighborhood``.
             param_3 (int or float, optional): The third argument of the ``neighborhood``.
-            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy` or :class:`~geopyspark.SpaceTimePartitionStrategy`, optional):
                 Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
                 Default is, ``None``.
 
@@ -1594,6 +1617,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 ``Operation.ASPECT``.
         """
 
+        self._check_partition_strategy(partition_strategy)
         operation = Operation(operation).value
 
         if isinstance(neighborhood, Neighborhood):
@@ -1734,7 +1758,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 Note:
                     All geometries must be in the same CRS as the TileLayer.
 
-            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy`, optional):
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy` or :class:`~geopyspark.SpaceTimePartitionStrategy`, optional):
                 Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
                 Default is, ``None``.
 
@@ -1761,6 +1785,8 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         Returns:
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
+
+        self._check_partition_strategy(partition_strategy)
 
         if not isinstance(geometries, (list, RDD)):
             geometries = [geometries]

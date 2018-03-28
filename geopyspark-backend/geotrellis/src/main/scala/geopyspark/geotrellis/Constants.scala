@@ -63,4 +63,5 @@ object Constants {
 
   final val HASH = "HashPartitioner"
   final val SPATIAL = "SpatialPartitioner"
+  final val SPACETIME = "SpaceTimePartitioner"
 }

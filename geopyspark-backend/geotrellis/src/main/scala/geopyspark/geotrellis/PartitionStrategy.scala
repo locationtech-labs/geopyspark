@@ -40,3 +40,30 @@ object SpatialPartitionStrategy {
       case null => new SpatialPartitionStrategy(None, bits)
     }
 }
+
+
+class SpaceTimePartitionStrategy(
+  val numPartitions: Option[Int],
+  val bits: Int,
+  val temporalType: String,
+  val temporalResolution: String
+) extends PartitionStrategy(numPartitions) {
+  def producePartitioner(partitions: Int): Option[Partitioner] =
+    numPartitions match {
+      case None => Some(SpaceTimePartitioner(partitions, bits, temporalType, temporalResolution))
+      case Some(num) => Some(SpaceTimePartitioner(num, bits, temporalType, temporalResolution))
+    }
+}
+
+object SpaceTimePartitionStrategy {
+  def apply(
+    numPartitions: Integer,
+    bits: Int,
+    temporalType: String,
+    temporalResolution: String
+  ): SpaceTimePartitionStrategy =
+    numPartitions match {
+      case i: Integer => new SpaceTimePartitionStrategy(Some(i.toInt), bits, temporalType, temporalResolution)
+      case null => new SpaceTimePartitionStrategy(None, bits, temporalType, temporalResolution)
+    }
+}

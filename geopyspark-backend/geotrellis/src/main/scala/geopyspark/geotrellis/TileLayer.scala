@@ -224,6 +224,7 @@ abstract class TileLayer[K: ClassTag] {
         p match {
           case _: HashPartitioner => "HashPartitioner"
           case _: SpatialPartitioner[K] => "SpatialPartitioner"
+          case _: SpaceTimePartitioner[K] => "SpaceTimePartitioner"
           case _ => throw new Exception(s"$p has no partition strategy")
         }
     }
@@ -253,6 +254,12 @@ object TileLayer {
     partitionStrategy match {
       case ps: PartitionStrategy => ps.producePartitioner(defaultNumPartitions)
       case null => None
+    }
+
+  def getPartitioner(partitions: Int, partitioner: String): Partitioner =
+    partitioner match {
+      case HASH => new HashPartitioner(partitions)
+      case SPATIAL => SpatialPartitioner(partitions)
     }
 
   def getCRS(crs: String): Option[CRS] = {
@@ -288,11 +295,6 @@ object TileLayer {
       case NODATACELLS => TargetCell.NoData
     }
 
-  def getPartitioner(partitions: Int, partitioner: String): Partitioner =
-    partitioner match {
-      case HASH => new HashPartitioner(partitions)
-      case SPATIAL => SpatialPartitioner(partitions)
-    }
 
   def combineBands[K: ClassTag, L <: TileLayer[K]: ClassTag](
     sc: SparkContext,

@@ -526,8 +526,15 @@ class SpatialPartitionStrategy(namedtuple("SpatialPartitionStrategy", "num_parti
             partitioning. Default is, ``None``. If ``None`` the resulting layer will have
             a ``HashPartitioner`` with the number of partitions being either the same
             as the input layer's, or a number computed by the method.
-        bits (int, optional): How many bits the resulting ``Key Index`` of a ``Tile`` should
-            be shifted to the right. Default is, ``8``.
+        bits (int, optional): Helps determine how much data should be placed in each
+            partition. Default is, ``8``.
+
+            GeoPySpark uses a Z-order curve to determine how values within the layer should
+            be grouped. This is done by first finding the ``Key Index`` of a value and then performing a
+            bitwise right shift on the resulting index. From the remaining bits, a partition is selected
+            such that those indexes with the same remaining bits will be in the same partition.
+            Therefore, as the number of bits shifted to the right increases, so then too does the
+            group sizes.
 
     Returns:
         :class:`~geopyspark.geotrellis.SpatialPartitionStrategy`
@@ -537,6 +544,55 @@ class SpatialPartitionStrategy(namedtuple("SpatialPartitionStrategy", "num_parti
 
     def __new__(cls, num_partitions=None, bits=8):
         return super(cls, SpatialPartitionStrategy).__new__(cls, num_partitions, bits)
+
+
+class SpaceTimePartitionStrategy(namedtuple("SpaceTimePartitionStrategy", "time_unit num_partitions bits time_resolution")):
+    """Represents a partitioning strategy for a layer that uses GeoPySpark's ``SpaceTimePartitioner``
+    with a set number of partitions, units of time, and temporal resolution.
+
+    This partitioner will try and group ``Tile``\s together that are spatially and temproally near each other
+    in the same partition. In order to do this, each ``Tile`` has their ``Key Index`` calculated
+    using the space filling curve index, ``Z-Curve``.
+
+    Note:
+        This partitiong strategy will only work on ``SPACETIME`` layers, and will fail if given a ``SPATIAL``
+        one. For ``SPATIAL`` layers, please see :class:`~geopyspark.geotrellis.SpatialPartitionStrategy`.
+
+    Args:
+        time_unit (str or :class:`~geopyspark.geotrellis.constants.TimeUnit`): Which time
+            unit should be used when saving spatial-temporal data. This controls the resolution of
+            each index. Meaning, what time intervals are used to seperate each record.
+        num_partitions (int, optional): The number of partitions that should be used during
+            partitioning. Default is, ``None``. If ``None`` the resulting layer will have
+            a ``HashPartitioner`` with the number of partitions being either the same
+            as the input layer's, or a number computed by the method.
+        bits (int, optional): Helps determine how much data should be placed in each
+            partition. Default is, ``8``.
+
+            GeoPySpark uses a Z-order curve to determine how values within the layer should
+            be grouped. This is done by first finding the ``Key Index`` of a value and then performing a
+            bitwise right shift on the resulting index. From the remaining bits, a partition is selected
+            such that those indexes with the same remaining bits will be in the same partition.
+            Therefore, as the number of bits shifted to the right increases, so then too does the
+            group sizes.
+        time_resolution (str or int, optional): Determines how data for each ``time_unit`` should be
+            grouped together. By default, no grouping will occur.
+
+            As an example, having a ``time_unit`` of ``WEEKS`` and a ``time_resolution`` of 5 will
+            cause the data to be grouped and stored together in units of 5 weeks. If however
+            ``time_resolution`` is not specified, then the data will be grouped and stored in units
+            of single weeks.
+
+            This value can either be an ``int`` or a string representation of an ``int``.
+
+    Returns:
+        :class:`~geopyspark.geotrellis.SpaceTimePartitionStrategy`
+    """
+
+    __slots__ = []
+
+    def __new__(cls, time_unit, num_partitions=None, bits=8, time_resolution=None):
+        return super(cls, SpaceTimePartitionStrategy).__new__(cls, time_unit, num_partitions, bits, time_resolution)
 
 
 class Metadata(object):
