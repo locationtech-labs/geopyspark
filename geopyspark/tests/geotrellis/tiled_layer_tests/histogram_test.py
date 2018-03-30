@@ -77,7 +77,7 @@ class HistogramTest(BaseTestClass):
         self.assertEqual(self.hist.values(), [1.0, 2.0, 3.0, 4.0])
 
     def test_item_count(self):
-        self.assertEqual(self.hist.item_count(3.0), 5)
+        self.assertEqual(self.hist.item_count(3.0), 4)
 
     def test_bin_counts(self):
         metadata2 = {'cellType': 'int32ud-500',

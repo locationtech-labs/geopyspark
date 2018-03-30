@@ -741,7 +741,8 @@ class Metadata(object):
 
 __all__ = ["Tile", "Extent", "ProjectedExtent", "TemporalProjectedExtent", "SpatialKey", "SpaceTimeKey",
            "Metadata", "TileLayout", "GlobalLayout", "LocalLayout", "LayoutDefinition", "Bounds", "RasterizerOptions",
-           "zfactor_lat_lng_calculator", "zfactor_calculator", "HashPartitionStrategy", "SpatialPartitionStrategy"]
+           "zfactor_lat_lng_calculator", "zfactor_calculator", "HashPartitionStrategy", "SpatialPartitionStrategy",
+           "SpaceTimePartitionStrategy"]
 
 from . import catalog
 from . import color
