@@ -25,8 +25,8 @@ for you:
 
 .. code:: console
 
-   curl -o /tmp/NLCD2011_LC_Pennsylvannia.zip https://s3-us-west-2.amazonaws.com/prd-tnm/StagedProducts/NLCD/data/2011/landcover/states/NLCD2011_LC_Pennsylvania.zip?ORIG=513_SBDDG
-   unzip -d /tmp /tmp/NLCD2011_LC_Pennsylvannia.zip
+   curl -o /tmp/NLCD2011_LC_Pennsylvania.zip https://s3-us-west-2.amazonaws.com/prd-tnm/StagedProducts/NLCD/data/2011/landcover/states/NLCD2011_LC_Pennsylvania.zip?ORIG=513_SBDDG
+   unzip -d /tmp /tmp/NLCD2011_LC_Pennsylvania.zip
 
 .. code:: python
 
