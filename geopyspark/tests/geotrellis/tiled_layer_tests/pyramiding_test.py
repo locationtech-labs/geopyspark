@@ -93,7 +93,7 @@ class PyramidingTest(BaseTestClass):
     '''
 
     def test_local_pyramid(self):
-        arr = np.zeros((1, 250, 250))
+        arr = np.zeros((1, 256, 256))
         epsg_code = 3857
         extent = Extent(0.0, 0.0, 10.0, 10.0)
 
@@ -103,19 +103,19 @@ class PyramidingTest(BaseTestClass):
         rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
 
         raster_rdd = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd)
-        laid_out = raster_rdd.tile_to_layout(LocalLayout(250))
+        laid_out = raster_rdd.tile_to_layout(LocalLayout(256))
 
         # Single tile is at level 0
         result = laid_out.pyramid()
         assert result.max_zoom == 0
 
-        laid_out = raster_rdd.tile_to_layout(LocalLayout(25))
+        laid_out = raster_rdd.tile_to_layout(LocalLayout(16))
         result = laid_out.pyramid()
 
         assert result.max_zoom == 4
-        assert result.levels[4].layer_metadata.tile_layout.layoutCols == 10
-        assert result.levels[3].layer_metadata.tile_layout.layoutCols == 5
-        assert result.levels[2].layer_metadata.tile_layout.layoutCols == 3
+        assert result.levels[4].layer_metadata.tile_layout.layoutCols == 16
+        assert result.levels[3].layer_metadata.tile_layout.layoutCols == 8
+        assert result.levels[2].layer_metadata.tile_layout.layoutCols == 4
         assert result.levels[1].layer_metadata.tile_layout.layoutCols == 2
         assert result.levels[0].layer_metadata.tile_layout.layoutCols == 1
 
