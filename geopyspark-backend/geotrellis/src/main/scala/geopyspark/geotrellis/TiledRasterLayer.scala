@@ -198,13 +198,6 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
     maxDistance: Double
   ): TiledRasterLayer[K]
 
-  def hillshade(sc: SparkContext,
-    azimuth: Double,
-    altitude: Double,
-    zFactor: Double,
-    band: Int
-  ): TiledRasterLayer[K]
-
   def localMax(i: Int): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { x => MultibandTile(x.bands.map(_.localMax(i))) })
 
@@ -401,6 +394,13 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
       }
     }
   }
+
+  def hillshade(
+    azimuth: Double,
+    altitude: Double,
+    zFactorCalculator: ZFactorCalculator,
+    band: Int
+  ): TiledRasterLayer[K]
 
   def aggregateByCell(operation: String): TiledRasterLayer[K] = {
     val bands: RDD[(K, Array[ArrayBuffer[Tile]])] =

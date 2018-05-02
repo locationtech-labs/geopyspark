@@ -5,11 +5,11 @@ import numpy as np
 import pytest
 
 from shapely.geometry import Point
-from geopyspark.geotrellis import SpatialKey, Tile
+from geopyspark.geotrellis import SpatialKey, Tile, zfactor_lat_lng_calculator
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis import hillshade
 from geopyspark.geotrellis.layer import TiledRasterLayer
-from geopyspark.geotrellis.constants import LayerType
+from geopyspark.geotrellis.constants import LayerType, Unit
 
 
 class HillshadeTest(BaseTestClass):
@@ -45,7 +45,8 @@ class HillshadeTest(BaseTestClass):
         BaseTestClass.pysc._gateway.close()
 
     def test_hillshade(self):
-        result = hillshade(self.raster_rdd, band=0, azimuth=99.0, altitude=33.0, z_factor=0.0)
+        calc = zfactor_lat_lng_calculator(Unit.METERS)
+        result = hillshade(self.raster_rdd, calc, band=0, azimuth=99.0, altitude=33.0)
 
         data = result.to_numpy_rdd().first()[1].cells[0][0][0]
         self.assertEqual(data, 63)

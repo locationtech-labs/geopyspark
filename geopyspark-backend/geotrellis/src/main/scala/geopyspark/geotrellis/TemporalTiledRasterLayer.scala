@@ -15,6 +15,7 @@ import geotrellis.raster.histogram._
 import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
 import geotrellis.raster.mapalgebra.focal.{Square, Slope}
+import geotrellis.raster.mapalgebra.focal.hillshade._
 import geotrellis.raster.rasterize._
 import geotrellis.raster.render._
 import geotrellis.raster.resample.{ResampleMethod, PointResampleMethod, Resample}
@@ -351,6 +352,35 @@ class TemporalTiledRasterLayer(
     )
   }
 
+  def hillshade(
+    azimuth: Double,
+    altitude: Double,
+    zFactorCalculator: ZFactorCalculator,
+    band: Int
+  ): TemporalTiledRasterLayer = {
+    val mt = rdd.metadata.mapTransform
+    val cellSize = rdd.metadata.cellSize
+    val neighborhood = Square(1)
+    val gridBounds = rdd.metadata.gridBounds
+    val partitioner = rdd.partitioner
+
+    TemporalTiledRasterLayer(
+      zoomLevel,
+      rdd.withContext { rdd =>
+        rdd.bufferTiles(neighborhood.extent, gridBounds, partitioner).mapPartitions[(SpaceTimeKey, MultibandTile)](
+        { iter =>
+          iter.map { case (key, BufferedTile(tile, bounds)) =>
+            val zfactor = zFactorCalculator.deriveZFactor(mt.keyToExtent(key))
+            val hillshadeTile = Hillshade(tile.bands(band), neighborhood, Some(bounds), cellSize, azimuth, altitude, zfactor)
+
+            key -> MultibandTile(hillshadeTile)
+          }
+        }, preservesPartitioning = true
+        )
+      }.mapContext(_.copy(cellType = ShortConstantNoDataCellType))
+    )
+  }
+
   def costDistance(
     sc: SparkContext,
     geometries: Seq[Geometry],
@@ -371,25 +401,6 @@ class TemporalTiledRasterLayer(
 
     val multibandRDD: MultibandTileLayerRDD[SpaceTimeKey] =
       MultibandTileLayerRDD(result.mapValues{ x => MultibandTile(x) }, result.metadata)
-
-    TemporalTiledRasterLayer(None, multibandRDD)
-  }
-
-  def hillshade(
-    sc: SparkContext,
-    azimuth: Double,
-    altitude: Double,
-    zFactor: Double,
-    band: Int
-  ): TiledRasterLayer[SpaceTimeKey] = {
-    val tileLayer = TileLayerRDD(rdd.mapValues(_.band(band)), rdd.metadata)
-
-    implicit val _sc = sc
-
-    val result = tileLayer.hillshade(azimuth, altitude, zFactor)
-
-    val multibandRDD: MultibandTileLayerRDD[SpaceTimeKey] =
-      MultibandTileLayerRDD(result.mapValues(MultibandTile(_)), result.metadata)
 
     TemporalTiledRasterLayer(None, multibandRDD)
   }
