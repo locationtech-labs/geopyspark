@@ -341,28 +341,39 @@ class TemporalProjectedExtent(namedtuple("TemporalProjectedExtent", 'extent inst
                     'proj4': self.proj4}
 
 
-GlobalLayout = namedtuple("GlobalLayout", 'tile_size zoom threshold')
-"""TileLayout type that spans global CRS extent.
+class GlobalLayout(namedtuple("GlobalLayout", 'tile_size zoom threshold')):
+    """TileLayout type that spans global CRS extent.
 
-When passed in place of LayoutDefinition it signifies that a LayoutDefinition instance should be
-constructed such that it fits the global CRS extent. The cell resolution of resulting layout will
-be one of resolutions implied by power of 2 pyramid for that CRS. Tiling to this layout will
-likely result in either up-sampling or down-sampling the source raster.
+    When passed in place of LayoutDefinition it signifies that a LayoutDefinition instance should be
+    constructed such that it fits the global CRS extent. The cell resolution of resulting layout will
+    be one of resolutions implied by power of 2 pyramid for that CRS. Tiling to this layout will
+    likely result in either up-sampling or down-sampling the source raster.
 
-Args:
-    tile_size (int): The number of columns and row pixels in each tile.
-    zoom (int, optional): Override the zoom level in power of 2 pyramid.
-    threshold(float, optional): The percentage difference between a cell size and a zoom level and
-        the resolution difference between that zoom level and the next that is tolerated to snap to
-        the lower-resolution zoom level. For example, if this paramter is 0.1, that means we're
-        willing to downsample rasters with a higher resolution in order to fit them to some zoom
-        level Z, if the difference is resolution is less than or equal to 10% the difference between
-        the resolutions of zoom level Z and zoom level Z+1.
+    Args:
+        tile_size (int): The number of columns and row pixels in each tile.
+        zoom (int, optional): Override the zoom level in power of 2 pyramid.
+        threshold(float, optional): The percentage difference between a cell size and a zoom level and
+            the resolution difference between that zoom level and the next that is tolerated to snap to
+            the lower-resolution zoom level. For example, if this paramter is 0.1, that means we're
+            willing to downsample rasters with a higher resolution in order to fit them to some zoom
+            level Z, if the difference is resolution is less than or equal to 10% the difference between
+            the resolutions of zoom level Z and zoom level Z+1.
 
-Returns:
-    :obj:`~geopyspark.geotrellis.GlobalLayout`
-"""
-GlobalLayout.__new__.__defaults__ = (256, None, 0.1)
+    Attributes:
+        tile_size (int): The number of columns and row pixels in each tile.
+        zoom (int): The desired zoom level of the layout.
+        threshold(float, optional): The percentage difference between a cell size and a zoom level and
+            the resolution difference between that zoom level and the next that is tolerated to snap to
+            the lower-resolution zoom level.
+    """
+
+    __slots__ = []
+
+    def __new__(cls, tile_size=None, zoom=None, threshold=None):
+        tile_size = tile_size or 256
+        threshold = threshold or 0.1
+
+        return super(cls, GlobalLayout).__new__(cls, tile_size, zoom, threshold)
 
 
 class LocalLayout(namedtuple("LocalLayout", 'tile_cols tile_rows')):
@@ -399,72 +410,97 @@ class LocalLayout(namedtuple("LocalLayout", 'tile_cols tile_rows')):
         return super(cls, LocalLayout).__new__(cls, tile_cols, tile_rows)
 
 
-TileLayout = namedtuple("TileLayout", 'layoutCols layoutRows tileCols tileRows')
-"""
-Describes the grid in which the rasters within a Layer should be laid out.
+class TileLayout(namedtuple("TileLayout", 'layoutCols layoutRows tileCols tileRows')):
+    """
+    Describes the grid in which the rasters within a Layer should be laid out.
 
-Args:
-    layoutCols (int): The number of columns of rasters that runs east to west.
-    layoutRows (int): The number of rows of rasters that runs north to south.
-    tileCols (int): The number of columns of pixels in each raster that runs east to west.
-    tileRows (int): The number of rows of pixels in each raster that runs north to south.
+    Args:
+        layoutCols (int): The number of columns of rasters that runs east to west.
+        layoutRows (int): The number of rows of rasters that runs north to south.
+        tileCols (int): The number of columns of pixels in each raster that runs east to west.
+        tileRows (int): The number of rows of pixels in each raster that runs north to south.
 
-Returns:
-    :obj:`~geopyspark.geotrellis.TileLayout`
-"""
+    Attributes:
+        layoutCols (int): The number of columns of rasters that runs east to west.
+        layoutRows (int): The number of rows of rasters that runs north to south.
+        tileCols (int): The number of columns of pixels in each raster that runs east to west.
+        tileRows (int): The number of rows of pixels in each raster that runs north to south.
+    """
 
-
-LayoutDefinition = namedtuple("LayoutDefinition", 'extent tileLayout')
-"""
-Describes the layout of the rasters within a Layer and how they are projected.
-
-Args:
-    extent (:class:`~geopyspark.geotrellis.Extent`): The ``Extent`` of the layout.
-    tileLayout (:obj:`~geopyspark.geotrellis.TileLayout`): The ``TileLayout`` of
-        how the rasters within the Layer.
-
-Returns:
-    :obj:`~geopyspark.geotrellis.LayoutDefinition`
-"""
+    __slots__ = []
 
 
-SpatialKey = namedtuple("SpatialKey", 'col row')
-"""
-Represents the position of a raster within a grid.
-This grid is a 2D plane where raster positions are represented by a pair of coordinates.
+class LayoutDefinition(namedtuple("LayoutDefinition", 'extent tileLayout')):
+    """
+    Describes the layout of the rasters within a Layer and how they are projected.
 
-Args:
-    col (int): The column of the grid, the numbers run east to west.
-    row (int): The row of the grid, the numbers run north to south.
+    Args:
+        extent (:class:`~geopyspark.geotrellis.Extent`): The ``Extent`` of the layout.
+        tileLayout (:class:`~geopyspark.geotrellis.TileLayout`): The ``TileLayout`` of
+            how the rasters within the Layer.
 
-Returns:
-    :obj:`~geopyspark.geotrellis.SpatialKey`
-"""
+    Attributes:
+        extent (:class:`~geopyspark.geotrellis.Extent`): The ``Extent`` of the layout.
+        tileLayout (:class:`~geopyspark.geotrellis.TileLayout`): The ``TileLayout`` of
+            how the rasters within the Layer.
+    """
+
+    __slots__ = []
 
 
-SpaceTimeKey = namedtuple("SpaceTimeKey", 'col row instant')
-"""
-Represents the position of a raster within a grid.
-This grid is a 3D plane where raster positions are represented by a pair of coordinates as well
-as a z value that represents time.
+class SpatialKey(namedtuple("SpatialKey", 'col row')):
+    """
+    Represents the position of a raster within a grid.
+    This grid is a 2D plane where raster positions are represented by a pair of coordinates.
 
-Args:
-    col (int): The column of the grid, the numbers run east to west.
-    row (int): The row of the grid, the numbers run north to south.
-    instant (``datetime.datetime``): The time stamp of the raster.
+    Args:
+        col (int): The column of the grid, the numbers run east to west.
+        row (int): The row of the grid, the numbers run north to south.
 
-Returns:
-    :obj:`~geopyspark.geotrellis.SpaceTimeKey`
-"""
+    Attributes:
+        col (int): The column of the grid, the numbers run east to west.
+        row (int): The row of the grid, the numbers run north to south.
+    """
 
-RasterizerOptions = namedtuple("RasterizeOption", 'includePartial sampleType')
-"""Represents options available to geometry rasterizer
+    __slots__ = []
 
-Args:
-    includePartial (bool): Include partial pixel intersection (default: True)
-    sampleType (str): 'PixelIsArea' or 'PixelIsPoint' (default: 'PixelIsPoint')
-"""
-RasterizerOptions.__new__.__defaults__ = (True, 'PixelIsPoint')
+
+class SpaceTimeKey(namedtuple("SpaceTimeKey", 'col row instant')):
+    """
+    Represents the position of a raster within a grid.
+    This grid is a 3D plane where raster positions are represented by a pair of coordinates as well
+    as a z value that represents time.
+
+    Args:
+        col (int): The column of the grid, the numbers run east to west.
+        row (int): The row of the grid, the numbers run north to south.
+        instant (``datetime.datetime``): The time stamp of the raster.
+
+    Attributes:
+        col (int): The column of the grid, the numbers run east to west.
+        row (int): The row of the grid, the numbers run north to south.
+        instant (``datetime.datetime``): The time stamp of the raster.
+    """
+
+    __slots__ = []
+
+
+class RasterizerOptions(namedtuple("RasterizerOption", 'includePartial sampleType')):
+    """Represents options available to geometry rasterizer
+
+    Args:
+        includePartial (bool, optional): Include partial pixel intersection (default: True)
+        sampleType (str, optional): 'PixelIsArea' or 'PixelIsPoint' (default: 'PixelIsPoint')
+
+    Attributes:
+        includePartial (bool): Include partial pixel intersection.
+        sampleType (str): How the sampling should be performed during rasterization.
+    """
+
+    __slots__ = []
+
+    def __new__(cls, includePartial=True, sampleType='PixelIsPoint'):
+        return super(cls, RasterizerOptions).__new__(cls, includePartial, sampleType)
 
 
 class Bounds(namedtuple("Bounds", 'minKey maxKey')):
@@ -472,13 +508,16 @@ class Bounds(namedtuple("Bounds", 'minKey maxKey')):
     Represents the grid that covers the area of the rasters in a Layer on a grid.
 
     Args:
-        minKey (:obj:`~geopyspark.geotrellis.SpatialKey` or :obj:`~geopyspark.geotrellis.SpaceTimeKey`):
+        minKey (:class:`~geopyspark.geotrellis.SpatialKey` or :class:`~geopyspark.geotrellis.SpaceTimeKey`):
             The smallest ``SpatialKey`` or ``SpaceTimeKey``.
-        minKey (:obj:`~geopyspark.geotrellis.SpatialKey` or :obj:`~geopyspark.geotrellis.SpaceTimeKey`):
+        minKey (:class:`~geopyspark.geotrellis.SpatialKey` or :class:`~geopyspark.geotrellis.SpaceTimeKey`):
             The largest ``SpatialKey`` or ``SpaceTimeKey``.
 
-    Returns:
-        :class:`~geopyspark.geotrellis.Bounds`
+    Attributes:
+        minKey (:class:`~geopyspark.geotrellis.SpatialKey` or :class:`~geopyspark.geotrellis.SpaceTimeKey`):
+            The smallest ``SpatialKey`` or ``SpaceTimeKey``.
+        minKey (:class:`~geopyspark.geotrellis.SpatialKey` or :class:`~geopyspark.geotrellis.SpaceTimeKey`):
+            The largest ``SpatialKey`` or ``SpaceTimeKey``.
     """
 
     __slots__ = []
@@ -503,15 +542,13 @@ class HashPartitionStrategy(namedtuple("HashPartitionStrategy", "num_partitions"
             partitioning. Default is, ``None``. If ``None`` the resulting layer will have
             a ``HashPartitioner`` with the number of partitions being either the same
             as the input layer's, or a number computed by the method.
-
-    Returns:
-        :class:`~geopyspark.geotrellis.HashPartitionStrategy`
     """
 
     __slots__ = []
 
     def __new__(cls, num_partitions=None):
         return super(cls, HashPartitionStrategy).__new__(cls, num_partitions)
+
 
 class SpatialPartitionStrategy(namedtuple("SpatialPartitionStrategy", "num_partitions bits")):
     """Represents a partitioning strategy for a layer that uses GeoPySpark's ``SpatialPartitioner``
@@ -536,8 +573,10 @@ class SpatialPartitionStrategy(namedtuple("SpatialPartitionStrategy", "num_parti
             Therefore, as the number of bits shifted to the right increases, so then too does the
             group sizes.
 
-    Returns:
-        :class:`~geopyspark.geotrellis.SpatialPartitionStrategy`
+    Attributes:
+        num_partitions (int): The number of partitions that should be used during
+            partitioning.
+        bits (int): Determine how much data should be placed in each partition.
     """
 
     __slots__ = []
@@ -585,8 +624,15 @@ class SpaceTimePartitionStrategy(namedtuple("SpaceTimePartitionStrategy", "time_
 
             This value can either be an ``int`` or a string representation of an ``int``.
 
-    Returns:
-        :class:`~geopyspark.geotrellis.SpaceTimePartitionStrategy`
+    Attributes:
+        time_unit (str or :class:`~geopyspark.geotrellis.constants.TimeUnit`): Which time
+            unit should be used when saving spatial-temporal data.
+        num_partitions (int): The number of partitions that should be used during
+            partitioning.
+        bits (int): Helps determine how much data should be placed in each
+            partition.
+        time_resolution (str or int): Determines how data for each ``time_unit`` should be
+            grouped together.
     """
 
     __slots__ = []
@@ -600,7 +646,7 @@ class Metadata(object):
     This data pertains to the layout and other attributes of the data within the classes.
 
     Args:
-        bounds (:obj:`~geopyspark.geotrellis.Bounds`): The ``Bounds`` of the
+        bounds (:class:`~geopyspark.geotrellis.Bounds`): The ``Bounds`` of the
             values in the class.
         crs (str or int): The ``CRS`` of the data. Can either be the EPSG code, well-known name, or
             a PROJ.4 projection string.
@@ -608,11 +654,11 @@ class Metadata(object):
             cells of the rasters.
         extent (:class:`~geopyspark.geotrellis.Extent`): The ``Extent`` that covers
             the all of the rasters.
-        layout_definition (:obj:`~geopyspark.geotrellis.LayoutDefinition`): The
+        layout_definition (:class:`~geopyspark.geotrellis.LayoutDefinition`): The
             ``LayoutDefinition`` of all rasters.
 
     Attributes:
-        bounds (:obj:`~geopyspark.geotrellis.Bounds`): The ``Bounds`` of the values in the class.
+        bounds (:class:`~geopyspark.geotrellis.Bounds`): The ``Bounds`` of the values in the class.
         crs (str or int): The CRS of the data. Can either be the EPSG code, well-known name, or
             a PROJ.4 projection string.
         cell_type (str): The data type of the cells of the rasters.
@@ -620,9 +666,9 @@ class Metadata(object):
             This can either be ``None``, an ``int``, or a ``float`` depending on the ``cell_type``.
         extent (:class:`~geopyspark.geotrellis.Extent`): The ``Extent`` that covers
             the all of the rasters.
-        tile_layout (:obj:`~geopyspark.geotrellis.TileLayout`): The ``TileLayout``
+        tile_layout (:class:`~geopyspark.geotrellis.TileLayout`): The ``TileLayout``
             that describes how the rasters are orginized.
-        layout_definition (:obj:`~geopyspark.geotrellis.LayoutDefinition`): The
+        layout_definition (:class:`~geopyspark.geotrellis.LayoutDefinition`): The
             ``LayoutDefinition`` of all rasters.
     """
 
