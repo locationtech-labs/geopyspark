@@ -2,6 +2,142 @@ Changelog
 ==========
 
 
+0.4.0
+------
+
+New Features
+^^^^^^^^^^^^
+
+Rasterizing an RDD[Geometry]
+*****************************
+
+Users can now rasterize an ``RDD[shapely.geometry]`` via the
+``rasterize`` method.
+
+.. code:: python3
+
+  # A Python RDD that contains shapely geomtries
+  geometry_rdd = ...
+
+  gps.rasterize(geoms=geometry_rdd, crs="EPSG:3857", zoom=11, fill_value=1)
+
+ZFactor Calculator
+*******************
+
+``zfactor_lat_lng_caculator`` and ``zfactor_caclulator`` are two
+new functions that will caculate the the the ``zfactor`` for each
+``Tile`` in a layer during the ``slope`` or ``hillshade`` operations.
+This is better than using a single ``zfactor`` for all ``Tile``\s as
+``Tile``\s at different lattitdues require different ``zfactor``\s.
+
+As mentioned above, there are two different forms of the calculator:
+``zfactor_lat_lng_calculator`` and ``zfactor_calculator``. The former
+being used for layers that are in the LatLng projection while the
+latter for layers in all other projections.
+
+.. code:: python3
+
+  # Using the zfactor_lat_lng_calculator
+
+  # Create a zfactor_lat_lng_calculator which uses METERS for its calcualtions
+  calculator = gps.zfactor_lat_lng_calculator(gps.METERS)
+
+  # A TiledRasterLayer which contains elevation data
+  tiled_layer = ...
+
+  # Calcualte slope of the layer using the calcualtor
+  tiled_layer.slope(calculator)
+
+  # Using the zfactor_calculator
+
+  # We must provide a dict that maps lattitude to zfactor for our
+  # given projection. Linear interpolation will be used on these
+  # values to produce the correct zfactor for each Tile in the
+  # layer.
+
+  mapped_factors = {
+    0.0: 0.1,
+    10.0: 1.5,
+    15.0: 2.0,
+    20.0, 2.5
+  }
+
+  # Create a zfactor_calculator using the given mapped factors
+  calculator = gps.zfactor_calculator(mapped_factors)
+
+PartitionStragies
+*****************
+
+With this release of GeoPySpark comes three different parition
+strategies: ``HashPartitionStrategy``, ``SpatialPartitionStrategy``,
+and ``SpaceTimePartitionStrategy``. All three of these are used
+to partition a layer given their specified inputs.
+
+HashPartitionStrategy
+######################
+
+``HashPartitionStrategy`` is a partition strategy that uses
+Spark's ``HashPartitioner`` to partition a layer. This can
+be used on either ``SPATIAL`` or ``SPACETIME`` layers.
+
+.. code:: python3
+
+  # Creates a HashPartitionStrategy with 128 partitions
+  gps.HashPartitionStrategy(num_partitions=128)
+
+SpatialPartitionStrategy
+#########################
+
+``SpatialPartitionStrategy`` uses GeoPySpark's ``SpatialPartitioner``
+during partitioning of the layer. This strategy will try and
+partition the ``Tile``\s of a layer so that those which are near each
+other spatially will be in the same partition. This will
+only work on ``SPATIAL`` layers.
+
+.. code:: python3
+
+  # Creates a SpatialPartitionStrategy with 128 partitions
+  gps.SpatialPartitionStrategy(num_partitions=128)
+
+SpaceTimePartitionStrategy
+###########################
+
+``SpaceTimePartitionStrategy`` uses GeoPySpark's ``SpaceTimePartitioner``
+during partitioning of the layer. This strategy will try and
+partition the ``Tile``\s of a layer so that those which are near each
+other spatially and temporally will be in the same partition. This will
+only work on ``SPACETIME`` layers.
+
+.. code:: python3
+
+  # Creates a SpaceTimePartitionStrategy with 128 partitions
+  # and temporal resolution of 5 weeks. This means that
+  # it will try and group the data in units of 5 weeks.
+  gps.SpaceTimePartitionStrategy(time_unit=gps.WEEKS, num_partitions=128, time_resolution=5)
+
+Other New Features
+*******************
+
+ - `tobler method for TiledRasterLayer <https://github.com/locationtech-labs/geopyspark/pull/567>`__
+ - `slope method for TiledRasterLayer <https://github.com/locationtech-labs/geopyspark/pull/595>`__
+ - `local_max method for TiledRasterLayer <https://github.com/locationtech-labs/geopyspark/pull/602>`__
+ - `mask layers by RDD[Geometry] <https://github.com/locationtech-labs/geopyspark/pull/629>`__
+ - `with_no_data method for RasterLayer and TiledRasterLayer <https://github.com/locationtech-labs/geopyspark/pull/631>`__
+ - ``partitionBy`` method for ``RasterLayer`` and ``TiledRasterLayer``
+ - ``get_partition_strategy`` method for ``CachableLayer``
+
+Bug Fixes
+^^^^^^^^^
+
+ - `TiledRasterLayer reproject bug fix <https://github.com/locationtech-labs/geopyspark/pull/581>`__
+ - `TMS display fix <https://github.com/locationtech-labs/geopyspark/pull/589>`__
+ - `CellType representation and conversion fixes <https://github.com/locationtech-labs/geopyspark/pull/606>`__
+ - `get_point_values will now return the correct number of results for temporal layers <https://github.com/locationtech-labs/geopyspark/pull/620>`__
+ - `Reading layers and values from Accumulo fix <https://github.com/locationtech-labs/geopyspark/pull/621>`__
+ - `time_intervals will now enumerate correctly in catalog.query <https://github.com/locationtech-labs/geopyspark/pull/623>`__
+ - `TileReader will now read the correct attribures file <https://github.com/locationtech-labs/geopyspark/pull/637>`__
+
+
 0.3.0
 ------
 

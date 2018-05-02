@@ -10,7 +10,7 @@ import argparse
 from geopyspark.geopyspark_constants import JAR, CWD
 
 
-JAR_URL = 'https://github.com/locationtech-labs/geopyspark/releases/download/v0.3.0/' + JAR
+JAR_URL = 'https://github.com/locationtech-labs/geopyspark/releases/download/v0.4.0/' + JAR
 DEFAULT_JAR_PATH = path.join(CWD, 'jars')
 CONF = path.join(CWD, 'command', 'geopyspark.conf')
 
