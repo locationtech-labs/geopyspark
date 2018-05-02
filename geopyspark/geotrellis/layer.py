@@ -700,7 +700,7 @@ class RasterLayer(CachableLayer, TileLayer):
             number could cause memory issues.
 
         Returns:
-            ``[:obj:`~geopyspark.geotrellis.SpatialKey`]`` or
+            ``[:class:`~geopyspark.geotrellis.SpatialKey`]`` or
             ``[:ob:`~geopyspark.geotrellis.SpaceTimeKey`]``
         """
 
@@ -754,8 +754,8 @@ class RasterLayer(CachableLayer, TileLayer):
         rasters.
 
         Args:
-            layout (:obj:`~geopyspark.geotrellis.LayoutDefinition` or
-                :obj:`~geopyspark.geotrellis.GlobalLayout` or
+            layout (:class:`~geopyspark.geotrellis.LayoutDefinition` or
+                :class:`~geopyspark.geotrellis.GlobalLayout` or
                 :class:`~geopyspark.geotrellis.LocalLayout`, optional):
                     Target raster layout for the tiling operation.
 
@@ -799,7 +799,7 @@ class RasterLayer(CachableLayer, TileLayer):
         """Cut tiles to layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layout (:class:`~geopyspark.geotrellis.Metadata` or :class:`~geopyspark.geotrellis.TiledRasterLayer` or :obj:`~geopyspark.geotrellis.LayoutDefinition` or :obj:`~geopyspark.geotrellis.GlobalLayout` or :class:`~geopyspark.geotrellis.LocalLayout`):
+            layout (:class:`~geopyspark.geotrellis.Metadata` or :class:`~geopyspark.geotrellis.TiledRasterLayer` or :class:`~geopyspark.geotrellis.LayoutDefinition` or :class:`~geopyspark.geotrellis.GlobalLayout` or :class:`~geopyspark.geotrellis.LocalLayout`):
                 Target raster layout for the tiling operation.
             target_crs (str or int, optional): Target CRS of reprojection. Either EPSG code,
                 well-known name, or a PROJ.4 string. If ``None``, no reproject will be perfomed.
@@ -936,7 +936,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
     """Wraps a RDD of tiled, GeoTrellis rasters.
 
     Represents a RDD that contains ``(K, V)``. Where ``K`` is either
-    :class:`~geopyspark.geotrellis.SpatialKey` or :obj:`~geopyspark.geotrellis.SpaceTimeKey`
+    :class:`~geopyspark.geotrellis.SpatialKey` or :class:`~geopyspark.geotrellis.SpaceTimeKey`
     depending on the ``layer_type`` of the RDD, and ``V`` being a
     :class:`~geopyspark.geotrellis.Tile`.
 
@@ -985,7 +985,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 a string.
             numpy_rdd (pyspark.RDD): A PySpark RDD that contains tuples of either
                 :class:`~geopyspark.geotrellis.SpatialKey` or
-                :obj:`~geopyspark.geotrellis.SpaceTimeKey` and rasters that are represented by a
+                :class:`~geopyspark.geotrellis.SpaceTimeKey` and rasters that are represented by a
                 numpy array.
             metadata (:class:`~geopyspark.geotrellis.Metadata`): The ``Metadata`` of
                 the ``TiledRasterLayer`` instance.
@@ -1476,7 +1476,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         """Cut tiles to a given layout and merge overlapping tiles. This will produce unique keys.
 
         Args:
-            layout (:obj:`~geopyspark.geotrellis.LayoutDefinition` or :class:`~geopyspark.geotrellis.Metadata` or :class:`~geopyspark.geotrellis.TiledRasterLayer` or :obj:`~geopyspark.geotrellis.GlobalLayout` or :class:`~geopyspark.geotrellis.LocalLayout`):
+            layout (:class:`~geopyspark.geotrellis.LayoutDefinition` or :class:`~geopyspark.geotrellis.Metadata` or :class:`~geopyspark.geotrellis.TiledRasterLayer` or :class:`~geopyspark.geotrellis.GlobalLayout` or :class:`~geopyspark.geotrellis.LocalLayout`):
                 Target raster layout for the tiling operation.
             target_crs (str or int, optional): Target CRS of reprojection. Either EPSG code,
                 well-known name, or a PROJ.4 string. If ``None``, no reproject will be perfomed.
