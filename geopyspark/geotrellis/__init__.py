@@ -799,6 +799,7 @@ from . import rasterio
 from . import histogram
 from . import layer
 from . import neighborhood
+from . import s3
 from . import tms
 
 from .catalog import *
@@ -812,6 +813,7 @@ from .histogram import *
 from .layer import *
 from .neighborhood import *
 from .rasterize import *
+from .s3 import *
 from .tms import *
 from .union import *
 from .combine_bands import *
@@ -828,6 +830,7 @@ __all__ += histogram.__all__
 __all__ += layer.__all__
 __all__ += neighborhood.__all__
 __all__ += ['rasterize', 'rasterize_features']
+__all__ += s3.__all__
 __all__ += tms.__all__
 __all__ += ['union']
 __all__ += ['combine_bands']

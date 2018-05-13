@@ -9,6 +9,7 @@ from geopyspark.geotrellis.constants import (LayerType,
                                              DEFAULT_GEOTIFF_TIME_FORMAT,
                                              DEFAULT_S3_CLIENT)
 from geopyspark.geotrellis.layer import RasterLayer
+from geopyspark.geotrellis.s3 import Credentials, is_s3_uri, set_s3_credentials
 
 
 __all__ = ['get']
@@ -24,7 +25,8 @@ def get(layer_type,
         time_tag=DEFAULT_GEOTIFF_TIME_TAG,
         time_format=DEFAULT_GEOTIFF_TIME_FORMAT,
         delimiter=None,
-        s3_client=DEFAULT_S3_CLIENT):
+        s3_client=DEFAULT_S3_CLIENT,
+        s3_credentials=None):
     """Creates a ``RasterLayer`` from GeoTiffs that are located on the local file system, ``HDFS``,
     or ``S3``.
 
@@ -68,17 +70,22 @@ def get(layer_type,
             Note:
                 This parameter will only be used when reading from S3.
 
-        s3_client (str, optional): Which ``S3Cleint`` to use when reading
+        s3_client (str, optional): Which ``S3Client`` to use when reading
             GeoTiffs from S3. There are currently two options: ``default`` and
             ``mock``. Defaults to :const:`~geopyspark.geotrellis.constants.DEFAULT_S3_CLIENT`.
 
             Note:
                 ``mock`` should only be used in unit tests and debugging.
 
+        s3_credentials(:class:`~geopyspark.geotrellis.s3.Credentials`, optional): Alternative Amazon S3
+            credentials to use when accessing the tile(s).
+
     Returns:
         :class:`~geopyspark.geotrellis.layer.RasterLayer`
-    """
 
+    Raises:
+        RuntimeError: ``s3_credentials`` were specified but the specified ``uri`` was not S3-based.
+    """
     inputs = {k:v for k, v in locals().items() if v is not None}
 
     pysc = get_spark_context()
@@ -87,17 +94,33 @@ def get(layer_type,
     key = LayerType(inputs.pop('layer_type'))._key_name(False)
     partition_bytes = str(inputs.pop('partition_bytes'))
 
-    if isinstance(uri, list):
-        srdd = geotiff_rdd.get(pysc._jsc.sc(),
-                               key,
-                               inputs.pop('uri'),
-                               inputs,
-                               partition_bytes)
+    uri = inputs.pop('uri')
+    uris = (uri if isinstance(uri, list) else [uri])
+
+    try:
+        s3_credentials = inputs.pop('s3_credentials')
+    except KeyError:
+        s3_credentials = None
     else:
-        srdd = geotiff_rdd.get(pysc._jsc.sc(),
-                               key,
-                               [inputs.pop('uri')],
-                               inputs,
-                               partition_bytes)
+        _validate_s3_credentials(uri, s3_credentials)
+
+    uri_type = uri[:3]
+
+    with set_s3_credentials(s3_credentials, uri_type):
+        srdd = geotiff_rdd.get(
+            pysc._jsc.sc(),
+            key,
+            uris,
+            inputs,
+            partition_bytes
+        )
 
     return RasterLayer(layer_type, srdd)
+
+
+def _validate_s3_credentials(uri, credentials):
+    if credentials and not is_s3_uri(uri):
+        raise RuntimeError(
+            'S3 credentials were provided to geotiff.get, but an AWS S3 URI '
+            'was not specified (URI: {})'.format(uri)
+        )
