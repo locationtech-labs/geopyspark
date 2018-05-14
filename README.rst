@@ -1,19 +1,28 @@
 GeoPySpark
-***********
+**********
+
 .. image:: https://travis-ci.org/locationtech-labs/geopyspark.svg?branch=master
    :target: https://travis-ci.org/locationtech-labs/geopyspark
 
 .. image:: https://readthedocs.org/projects/geopyspark/badge/?version=latest
    :target: https://geopyspark.readthedocs.io/en/latest/?badge=latest
 
+.. image:: https://badges.gitter.im/locationtech-labs/geopyspark.png
+   :target: https://gitter.im/geotrellis/geotrellis
 
 GeoPySpark is a Python bindings library for `GeoTrellis <http://geotrellis.io>`_, a Scala
 library for working with geospatial data in a distributed environment.
 By using `PySpark <http://spark.apache.org/docs/latest/api/python/pyspark.html>`_, GeoPySpark is
-able to provide na interface into the GeoTrellis framework.
+able to provide an interface into the GeoTrellis framework.
+
+Links
+-----
+
+ * `Documentation <https://geopyspark.readthedocs.io>`_
+ * `Gitter <https://gitter.im/geotrellis/geotrellis>`_
 
 A Quick Example
-----------------
+---------------
 
 Here is a quick example of GeoPySpark. In the following code, we take NLCD data
 of the state of Pennsylvania from 2011, and do a masking operation on it with
@@ -65,27 +74,10 @@ for you:
                 layer_name='north-west-philly',
                 tiled_raster_layer=pyramid)
 
+For additional examples, check out the `Jupyter notebook demos <./notebook-demos>`_.
 
-Contact and Support
---------------------
-
-If you need help, have questions, or like to talk to the developers (let us
-know what you're working on!) you contact us at:
-
- * `Gitter <https://gitter.im/geotrellis/geotrellis>`_
- * `Mailing list <https://locationtech.org/mailman/listinfo/geotrellis-user>`_
-
-As you may have noticed from the above links, those are links to the GeoTrellis
-gitter channel and mailing list. This is because this project is currently an
-offshoot of GeoTrellis, and we will be using their mailing list and gitter
-channel as a means of contact. However, we will form our own if there is a need
-for it.
-
-Setup
-------
-
-GeoPySpark Requirements
-^^^^^^^^^^^^^^^^^^^^^^^^
+Requirements
+------------
 
 ============ ============
 Requirement  Version
@@ -96,9 +88,9 @@ Python       3.3 - 3.6
 Spark        >=2.1.1
 ============ ============
 
-Java 8 and Scala 2.11 are needed for GeoPySpark to work; as they are required by
+Java 8 and Scala 2.11 are needed for GeoPySpark to work, as they are required by
 GeoTrellis. In addition, Spark needs to be installed and configured with the
-environment variable, ``SPARK_HOME`` set.
+environment variable ``SPARK_HOME`` set.
 
 You can test to see if Spark is installed properly by running the following in
 the terminal:
@@ -109,47 +101,39 @@ the terminal:
    /usr/local/bin/spark
 
 If the return is a path leading to your Spark folder, then it means that Spark
-has been configured correctly.
+has been configured correctly. If ``SPARK_HOME`` is unset or empty, you'll need to add it
+to your ``PATH`` after noting where Spark is installed on your system. For example,
+a MacOS installation of Spark 2.3.0 via HomeBrew would set ``SPARK_HOME`` as follows:
 
-How to Install
-^^^^^^^^^^^^^^^
+.. code:: bash
 
-Before installing, check the above table to make sure that the
+   # In ~/.bash_profile
+   export SPARK_HOME=/usr/local/Cellar/apache-spark/2.3.0/libexec/
+
+Installation
+------------
+
+Before installing, check the above `Requirements`_ table to make sure that the
 requirements are met.
 
 Installing From Pip
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 To install via ``pip`` open the terminal and run the following:
 
 .. code:: console
 
    pip install geopyspark
-   geopyspark install-jar -p [path/to/install/jar]
+   geopyspark install-jar
 
-Where the first command installs the python code from PyPi and the second
-downloads the backend, jar file. If no path is given when downloading the jar,
-then it will be downloaded to wherever GeoPySpark was installed at.
-
-What's With That Weird Pip Install?
-====================================
-
-"What's with that weird pip install?", you may be asking yourself. The reason
-for its unusualness is due to how GeoPySpark functions. Because this library
-is a python binding for a Scala project, we need to be able to access the
-Scala backend. To do this, we plug into PySpark which acts as a bridge between
-Python and Scala. However, in order to achieve this the Scala code needs to be
-assembled into a jar file. This poses a problem due to its size (117.7 MB at
-v0.1.0-RC!). To get around the size constraints of PyPi, we thus utilized this
-method of distribution where the jar must be downloaded in a separate command
-when using ``pip install``.
-
-Note:
-  Installing from source or for development does not require the separate
-  download of the jar.
+The first command installs the python code and the `geopyspark` command
+from PyPi. The second downloads the backend jar file, which is too large
+to be included in the pip package, and installs it to the GeoPySpark
+installation directory. For more information about the ``geopyspark``
+command, see the `GeoPySpark CLI`_ section.
 
 Installing From Source
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 If you would rather install from source, clone the GeoPySpark repo and enter it.
 
@@ -157,12 +141,6 @@ If you would rather install from source, clone the GeoPySpark repo and enter it.
 
    git clone https://github.com/locationtech-labs/geopyspark.git
    cd geopyspark
-
-Installing For Users
-=====================
-
-.. code:: console
-
    make install
 
 This will assemble the backend-end ``jar`` that contains the Scala code,
@@ -172,8 +150,68 @@ Note:
   If you have altered the global behavior of ``sbt`` this install may
   not work the way it was intended.
 
-Installing For Developers
-===========================
+Uninstalling
+~~~~~~~~~~~~
+
+To uninstall GeoPySpark, run the following in the terminal:
+
+.. code:: console
+
+   pip uninstall geopyspark
+   rm .local/bin/geopyspark
+
+Contact and Support
+-------------------
+
+If you need help, have questions, or like to talk to the developers (let us
+know what you're working on!) you can contact us at:
+
+ * `Gitter <https://gitter.im/geotrellis/geotrellis>`_
+ * `Mailing list <https://locationtech.org/mailman/listinfo/geotrellis-user>`_
+
+As you may have noticed from the above links, those are links to the GeoTrellis
+gitter channel and mailing list. This is because this project is currently an
+offshoot of GeoTrellis, and we will be using their mailing list and gitter
+channel as a means of contact. However, we will form our own if there is a need
+for it.
+
+GeoPySpark CLI
+--------------
+
+When GeoPySpark is installed, it comes with a script which can be accessed
+from anywhere on you computer. This script is used to facilitate management
+of the GeoPySpark jar file that must be installed in order for GeoPySpark to
+work correctly. Here are the available commands:
+
+.. code:: console
+
+   geopyspark -h, --help // return help string and exit
+   geopyspark install-jar // downloads jar file to default location, which is geopyspark install dir
+   geopyspark install-jar -p, --path [download/path] //downloads the jar file to location specified
+   geopyspark jar-path //returns the relative path of the jar file
+   geopyspark jar-path -a, --absolute //returns the absolute path of the jar file
+
+``geopyspark install-jar`` is only needed when installing GeoPySpark through
+``pip``; and it **must** be ran before using GeoPySpark. If no path is selected,
+then the jar will be installed wherever GeoPySpark was installed.
+
+The second and third commands are for getting the location of the jar file.
+These can be used regardless of installation method. However, if installed
+through ``pip``, then the jar must be downloaded first or these commands
+will not work.
+
+Developing GeoPySpark
+---------------------
+
+Contributing
+~~~~~~~~~~~~
+
+Feedback and contributions to GeoPySpark are always welcomed.
+A CLA is required for contribution, see `Contributing <docs/contributing.rst>`_ for more
+information.
+
+Installing for Developers
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: console
 
@@ -185,41 +223,54 @@ sub-package. The second command will install GeoPySpark in "editable" mode.
 Meaning any changes to the source files will also appear in your system
 installation.
 
-Installing to a Virtual Environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Within a virtualenv
+===================
 
-A third option is to install GeoPySpark in a virtual environment. To get things
-started, enter the environment and run the following:
+It's possible that you may run into issues when performing the ``pip install -e .``
+described above with a Python virtualenv active. If you're having trouble with
+Python finding installed libraries within the virtualenv, try adding the virtualenv
+site-packages directory to your PYTHONPATH:
 
 .. code:: console
 
-   git clone https://github.com/locationtech-labs/geopyspark.git
-   cd geopyspark
+   workon <your-geopyspark-virtualenv-name>
    export PYTHONPATH=$VIRTUAL_ENV/lib/<your python version>/site-packages
 
 Replace ``<your python version`` with whatever Python version
-``virtualenvwrapper`` is set to. Installation in a virtual environment can be
-a bit weird with GeoPySpark. This is why you need to export the
-``PYTHONPATH`` before installing to ensure that it performs correctly.
+``virtualenvwrapper`` is set to. Once you've set PYTHONPATH, re-install
+GeoPySpark using the instructions in "Installing for Developers" above.
 
-Installing For Users
-=====================
+Running GeoPySpark Tests
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code:: console
-
-   make virtual-install
-
-Installing For Developers
-===========================
+GeoPySpark uses the `pytest <https://docs.pytest.org/en/latest/>`_ testing
+framework to run its unittests. If you wish to run GeoPySpark's unittests,
+then you must first clone this repository to your machine. Once complete,
+go to the root of the library and run the following command:
 
 .. code:: console
 
-   make build
-   pip install -e .
+   pytest
 
+This will then run all of the tests present in the GeoPySpark library.
+
+**Note**: The unittests require additional dependencies in order to pass fully.
+`pyproj <https://pypi.python.org/pypi/pyproj?>`_, `colortools <https://pypi.python.org/pypi/colortools/0.1.2>`_,
+and `matplotlib <https://pypi.python.org/pypi/matplotlib/2.0.2>`_  (only for >=Python3.4) are needed to
+ensure that all of the tests pass.
+
+Make Targets
+============
+
+ - **install** - install GeoPySpark python package locally
+ - **wheel** - build python GeoPySpark wheel for distribution
+ - **pyspark** - start pyspark shell with project jars
+ - **build** - builds the backend jar and moves it to the jars sub-package
+ - **clean** - remove the wheel, the backend jar file, and clean the
+   geotrellis-backend directory
 
 Developing GeoPySpark With GeoNotebook
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Note**: Before begining this section, it should be noted that python-mapnik,
 a dependency for GeoNotebook, has been found to be difficult to install. If
@@ -278,7 +329,7 @@ GeoNotebook/GeoTrellis integration in currently in active development and not pa
 The latest development is on a ``feature/geotrellis`` branch at ``<https://github.com/geotrellis/geonotebook>``.
 
 Side Note For Developers
-~~~~~~~~~~~~~~~~~~~~~~~~~
+========================
 
 An optional (but recommended!) step for developers is to place these
 two lines of code at the top of your notebooks.
@@ -296,72 +347,3 @@ read `here <http://ipython.readthedocs.io/en/stable/config/extensions/autoreload
 Using ``pip install -e`` in conjunction with ``autoreload`` should cover any
 changes made, though, and will make the development experience much less
 painful.
-
-GeoPySpark Script
------------------
-
-When GeoPySpark is installed, it comes with a script which can be accessed
-from anywhere on you computer. These are the commands that can be ran via the
-script:
-
-.. code:: console
-
-   geopyspark install-jar -p, --path [download/path] //downloads the jar file
-   geopyspark jar-path //returns the relative path of the jar file
-   geopyspark jar-path -a, --absolute //returns the absolute path of the jar file
-
-The first command is only needed when installing GeoPySpark through ``pip``;
-and it **must** be ran before using GeoPySpark. If no path is selected, then
-the jar will be installed wherever GeoPySpark was installed.
-
-The second and third commands are for getting the location of the jar file.
-These can be used regardless of installation method. However, if installed
-through ``pip``, then the jar must be downloaded first or these commands
-will not work.
-
-
-Running GeoPySpark Tests
--------------------------
-
-GeoPySpark uses the `pytest <https://docs.pytest.org/en/latest/>`_ testing
-framework to run its unittests. If you wish to run GeoPySpark's unittests,
-then you must first clone this repository to your machine. Once complete,
-go to the root of the library and run the following command:
-
-.. code:: console
-
-   pytest
-
-This will then run all of the tests present in the GeoPySpark library.
-
-**Note**: The unittests require additional dependencies in order to pass fully.
-`pyrproj <https://pypi.python.org/pypi/pyproj?>`_, `colortools <https://pypi.python.org/pypi/colortools/0.1.2>`_,
-and `matplotlib <https://pypi.python.org/pypi/matplotlib/2.0.2>`_  (only for >=Python3.4) are needed to
-ensure that all of the tests pass.
-
-Make Targets
-^^^^^^^^^^^^
-
- - **install** - install GeoPySpark python package locally
- - **wheel** - build python GeoPySpark wheel for distribution
- - **pyspark** - start pyspark shell with project jars
- - **build** - builds the backend jar and moves it to the jars sub-package
- - **clean** - remove the wheel, the backend jar file, and clean the
-   geotrellis-backend directory
-
-Uninstalling
-------------
-
-To uninstall GeoPySpark, run the following in the terminal:
-
-.. code:: console
-
-   pip uninstall geopyspark
-   rm .local/bin/geopyspark
-
-Contributing
-------------
-
-Any kind of feedback and contributions to GeoPySpark is always welcomed.
-A CLA is required for contribution, see `Contributing <docs/contributing.rst>`_ for more
-information.
