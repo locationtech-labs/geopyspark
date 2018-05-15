@@ -17,10 +17,13 @@ features or other patches this page gives you more info on how to do it.
 Building GeoPySpark
 -------------------
 
-1. Install and setup Hadoop (the master branch is currently built with 2.0.1).
-2. Check out `this <https://github.com/locationtech-labs/geopyspark>`__. repository.
-3. Pick the branch corresponding to the version you are targeting
-4. Run ``make install`` to build GeoPySpark.
+Ensure you have the
+`project dependencies<https://github.com/locationtech-labs/geopyspark/blob/master/README.rst#requirements>`_
+installed on your machine.
+
+Then follow the
+`Installing for Developers<https://github.com/locationtech-labs/geopyspark/blob/master/README.rst#installing-for-developers>`_
+instructions in the project README.
 
 Style Guide
 -----------
