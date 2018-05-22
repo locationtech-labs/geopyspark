@@ -31,20 +31,19 @@ object ShapefileRDD {
   ): JavaRDD[Array[Byte]] = {
     val uris: Array[URI] = paths.asScala.map { path => new URI(path) }.toArray
 
-    val client =
-      s3Client match {
-        case null => S3Client.DEFAULT
-        case s: String =>
-          s match {
-            case "default" => S3Client.DEFAULT
-            case "mock" => new MockS3Client()
-            case _ => throw new Exception(s"Unkown S3Client specified, ${s}")
-          }
-      }
-
     val simpleFeaturesRDD: RDD[SimpleFeature] =
       uris.head.getScheme match {
         case "s3" =>
+          val client =
+            s3Client match {
+              case null => S3Client.DEFAULT
+              case s: String =>
+                s match {
+                  case "default" => S3Client.DEFAULT
+                  case "mock" => new MockS3Client()
+                  case _ => throw new Exception(s"Unkown S3Client specified, ${s}")
+                }
+            }
           S3ShapefileRDD.createSimpleFeaturesRDD(sc, uris, extensions.asScala, client, numPartitions)
         case _ =>
           HadoopShapefileRDD.createSimpleFeaturesRDD(sc, uris, extensions.asScala, numPartitions)
