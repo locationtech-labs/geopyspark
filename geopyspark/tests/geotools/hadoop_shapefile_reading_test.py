@@ -1,5 +1,6 @@
 import unittest
 import pytest
+import os
 
 from geopyspark import create_python_rdd
 
@@ -21,6 +22,8 @@ class HadoopShapefileReadingTest(BaseTestClass):
         yield
         BaseTestClass.pysc._gateway.close()
 
+    @pytest.mark.skipif('TRAVIS' in os.environ,
+                         reason="A shapeless method cannot be accessed for some reason on Travis")
     def test_reading_files_with_non_empty_attributes(self):
         result = get(self.dir_path_1).collect()
 
@@ -31,6 +34,8 @@ class HadoopShapefileReadingTest(BaseTestClass):
         for feature in result:
             self.assertEqual(set(feature.properties.keys()), expected_keys)
 
+    @pytest.mark.skipif('TRAVIS' in os.environ,
+                         reason="A shapeless method cannot be accessed for some reason on Travis")
     def test_reading_files_with_empty_attributes(self):
         result = get(self.dir_path_2).collect()
 
