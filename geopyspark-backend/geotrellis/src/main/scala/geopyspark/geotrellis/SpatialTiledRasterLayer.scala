@@ -589,7 +589,7 @@ object SpatialTiledRasterLayer {
 
     val partitioner =
       partitionStrategy match {
-        case ps: PartitionStrategy => ps.producePartitioner(math.max(gb.size / 512, 1))
+        case ps: PartitionStrategy => ps.producePartitioner(math.max(gb.size.toInt / 512, 1))
         case null => None
       }
 
@@ -633,7 +633,7 @@ object SpatialTiledRasterLayer {
 
     val partitioner =
       partitionStrategy match {
-        case ps: PartitionStrategy => ps.producePartitioner(math.max(gb.size / 512, 1))
+        case ps: PartitionStrategy => ps.producePartitioner(math.max(gb.size.toInt / 512, 1))
         case null => None
       }
 
