@@ -2,6 +2,18 @@ Changelog
 ==========
 
 
+0.4.1
+------
+
+Bug Fixes
+^^^^^^^^^
+
+There was a bug in the Scala backend in 0.4.0 that caused certain layers
+on S3 to not be read. This has since been resolved and 0.4.1 will have this
+fixed Scala backend. No other notable changes/fixes have been done between
+0.4.0 and 0.4.1.
+
+
 0.4.0
 ------
 
