@@ -795,6 +795,7 @@ from . import color
 from . import constants
 from . import converters
 from . import geotiff
+from . import rasterio
 from . import histogram
 from . import layer
 from . import neighborhood
@@ -821,6 +822,7 @@ __all__ += constants.__all__
 __all__ += ['cost_distance']
 __all__ += ['euclidean_distance']
 __all__ += ['geotiff']
+__all__ += ['rasterio']
 __all__ += ['hillshade']
 __all__ += histogram.__all__
 __all__ += layer.__all__

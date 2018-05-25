@@ -154,8 +154,6 @@ from . import vector_pipe
 from .vector_pipe import *
 from . import geotools
 from .geotools import *
-from . import rasterio
-from .rasterio import *
 
 __all__.extend(geotrellis.__all__)
 __all__.extend(vector_pipe.__all__)
