@@ -31,7 +31,7 @@ def crs_to_proj4(crs):
     proj4 = srs.ExportToProj4()
     return proj4
 
-def read_windows(uri, xcols=512, ycols=512, bands=[1], crs_to_proj4=crs_to_proj4):
+def read_windows(uri, xcols=256, ycols=256, bands=[1], crs_to_proj4=crs_to_proj4):
     """Given a URI, this method uses rasterio to generate series of windows of the desired dimensions.
 
     Args:
