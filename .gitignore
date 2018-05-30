@@ -109,3 +109,6 @@ prof/
 \#*#
 *~
 .#*
+
+# Visual Studio Code
+.vscode
