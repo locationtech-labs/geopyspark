@@ -78,14 +78,17 @@ def get(uri):
     """Creates a ``RDD`` of windows from URIs using rasterio.
 
     Args:
-        uri (str or [str]): The path or list of paths to the desired tile(s)/directory(ies).
+        uri (str or [str] or pyspark.RDD[str]): The path or list of paths to the desired tile(s)/directory(ies).
 
     Returns:
         RDD
     """
     pysc = gps.get_spark_context()
 
-    if isinstance(uri, str):
-        uri = [uri]
+    if isinstance(uri, (list, str)):
+        if isinstance(uri, str):
+            uri = [uri]
 
-    return pysc.parallelize(uri, len(uri)).flatMap(read_windows)
+        return pysc.parallelize(uri, len(uri)).flatMap(read_windows)
+    else:
+        return uri.flatMap(read_windows)
