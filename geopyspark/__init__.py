@@ -114,9 +114,8 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
     if not jars:
         raise IOError("Failed to find any jars. Looked at these paths {}".format(possible_jars))
 
-    jar_string = ",".join(jars)
+    jar_string = ",".join(set(jars))
     conf.set(key='spark.jars', value=jar_string)
-
     conf.set(key='spark.driver.memory', value='8G')
     conf.set(key='spark.executor.memory', value='8G')
 
