@@ -1,7 +1,7 @@
 name := "geotools-backend"
 
 libraryDependencies ++= Seq(
-  "org.apache.spark"            %% "spark-core"            % "2.2.0" % "provided",
+  "org.apache.spark"            %% "spark-core"            % "2.3.0" % "provided",
   "org.locationtech.geotrellis" %% "geotrellis-s3"         % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-s3-testkit" % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-spark"      % Version.geotrellis,
