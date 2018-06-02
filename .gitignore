@@ -112,3 +112,5 @@ prof/
 
 # Visual Studio Code
 .vscode
+
+.pytest_cache
