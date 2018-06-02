@@ -1,6 +1,31 @@
 Changelog
 ==========
 
+0.4.2
+------
+
+Experimental New Features
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Creating a RasterLayer From URIs Using rasterio
+************************************************
+
+While the ability to create a ``RasterLayer``
+from ``URI``\s already exists with the ``geopyspark.geotrellis.geotiff.get``
+function, it is limited to just working with GeoTiffs. However, with the
+new ``geopyspark.geotrellis.rasterio`` module, it is now possible to
+create ``RasterLayer``\s from different file types.
+
+.. code:: python3
+
+  uris = ["file://images/image_1.jp2", "file://images/image_2.jp2"]
+
+  raster_layer = gps.rasterio.get(uris)
+
+
+**Note:** This feature is experimental, and will most likely be improved
+and/or changed in the future releases of GeoPySpark.
+
 
 0.4.1
 ------

@@ -2,7 +2,7 @@
 from os import path
 
 """GeoPySpark version."""
-VERSION = '0.4.1'
+VERSION = '0.4.2'
 
 """Backend jar name."""
 JAR = 'geotrellis-backend-assembly-' + VERSION + '.jar'
