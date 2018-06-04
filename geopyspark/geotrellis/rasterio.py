@@ -1,26 +1,30 @@
 import os
 import math
+
 import geopyspark as gps
+from geopyspark.geotrellis.constants import DEFAULT_MAX_TILE_SIZE
+
 try:
     import rasterio
 except ImportError:
     raise ImportError("rasterio must be installed in order to use the features in the geopyspark.geotrellis.rasterio package")
 
 
-__all__ = ['read_windows', 'get']
+__all__ = ['get']
 
 # On driver
 _GDAL_DATA = os.environ.get("GDAL_DATA")
 
 def crs_to_proj4(crs):
-    """Converts RasterIO CRS to proj4 string using osgeo library.
+    """Converts a ``rasterio.crsCRS`` to a proj4 str using osgeo library.
 
     Args:
-        crs: :class:`rasterio.crs.CRS`
+        crs (``rasterio.crs.CRS``): The target ``CRS`` to be converted to a proj4 str.
 
     Returns:
-        Proj4 string of CRS.
+        Proj4 str of the ``CRS``.
     """
+
     try:
         from osgeo import osr
     except ImportError:
@@ -31,19 +35,7 @@ def crs_to_proj4(crs):
     proj4 = srs.ExportToProj4()
     return proj4
 
-def read_windows(uri, xcols=256, ycols=256, bands=None, crs_to_proj4=crs_to_proj4):
-    """Given a URI, this method uses rasterio to generate series of windows of the desired dimensions.
-
-    Args:
-        uri: The URI where the source data can be found.
-        xcols: The desired tile width.
-        ycols: The desired tile height.
-        bands: The bands from which windows should be produced.  An array of integers.
-        crs_to_proj4: A that takes a :class:`rasterio.crs.CRS` and returns a Proj4 string.
-
-    Returns:
-        Generator of (:class:`~geopyspark.geotrellis.ProjectedExtent`, :class:`~geopyspark.geotrellis.Tile`)
-    """
+def _read_windows(uri, xcols, ycols, bands, crs_to_proj4):
 
     if ("GDAL_DATA" not in os.environ) and (_GDAL_DATA != None):
         os.environ["GDAL_DATA"] = _GDAL_DATA
@@ -57,8 +49,8 @@ def read_windows(uri, xcols=256, ycols=256, bands=None, crs_to_proj4=crs_to_proj
         tile_cols = (int)(math.ceil(width/xcols)) * xcols
         tile_rows = (int)(math.ceil(height/ycols)) * ycols
         windows = [((x, min(width-1, x + xcols)), (y, min(height-1, y + ycols)))
-            for x in range(0, tile_cols, xcols)
-            for y in range(0, tile_rows, ycols)]
+                   for x in range(0, tile_cols, xcols)
+                   for y in range(0, tile_rows, ycols)]
 
         for window in windows:
             ((row_start, row_stop), (col_start, col_stop)) = window
@@ -74,21 +66,41 @@ def read_windows(uri, xcols=256, ycols=256, bands=None, crs_to_proj4=crs_to_proj
             tile = gps.Tile.from_numpy_array(data, no_data_value=nodata)
             yield (projected_extent, tile)
 
-def get(uri):
-    """Creates a ``RDD`` of windows from URIs using rasterio.
+def get(data_source,
+        xcols=DEFAULT_MAX_TILE_SIZE,
+        ycols=DEFAULT_MAX_TILE_SIZE,
+        bands=None,
+        crs_to_proj4=crs_to_proj4):
+    """Creates an ``RDD`` of windows represented as the key value pair: ``(ProjectedExtent, Tile)``
+    from URIs using rasterio.
 
     Args:
-        uri (str or [str] or pyspark.RDD[str]): The path or list of paths to the desired tile(s)/directory(ies).
+        data_source (str or [str] or RDD): The source of the data to be windowed.
+            Can either be URI or list of URIs which point to where the source data can be found;
+            or it can be an ``RDD`` that contains the URIs.
+        xcols (int, optional): The desired tile width. If the size is smaller than
+            the width of the read in tile, then that tile will be broken into smaller sections
+            of the given size. Defaults to :const:`~geopyspark.geotrellis.constants.DEFAULT_MAX_TILE_SIZE`.
+        ycols (int, optional): The desired tile height. If the size is smaller than
+            the height of the read in tile, then that tile will be broken into smaller sections
+            of the given size. Defaults to :const:`~geopyspark.geotrellis.constants.DEFAULT_MAX_TILE_SIZE`.
+        bands ([int], opitonal): The bands from which windows should be produced given as a list
+            of ``int``\s. Defaults to ``None`` which causes all bands to be read.
+        crs_to_proj4 (``rasterio.crs.CRS`` => str, optional) A funtion that takes a :class:`rasterio.crs.CRS`
+            and returns a Proj4 string. Default is :func:`geopyspark.geotrellis.rasterio.crs_to_proj4`.
 
     Returns:
         RDD
     """
+
     pysc = gps.get_spark_context()
 
-    if isinstance(uri, (list, str)):
-        if isinstance(uri, str):
-            uri = [uri]
+    if isinstance(data_source, (list, str)):
+        if isinstance(data_source, str):
+            data_source = [data_source]
 
-        return pysc.parallelize(uri, len(uri)).flatMap(read_windows)
+        return pysc.\
+                parallelize(data_source, len(data_source)).\
+                flatMap(lambda ds: _read_windows(ds, xcols, ycols, bands, crs_to_proj4))
     else:
-        return uri.flatMap(read_windows)
+        return data_source.flatMap(lambda ds: _read_windows(ds, xcols, ycols, bands, crs_to_proj4))
