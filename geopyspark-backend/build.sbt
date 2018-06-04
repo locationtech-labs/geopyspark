@@ -1,3 +1,4 @@
+
 lazy val commonSettings = Seq(
   version := Version.geopyspark + scala.util.Properties.envOrElse("GEOPYSPARK_VERSION_SUFFIX", ""),
   scalaVersion := Version.scala,
@@ -24,7 +25,8 @@ lazy val commonSettings = Seq(
     "LocationTech Snapshots" at "https://repo.locationtech.org/content/groups/snapshots",
     "LocationTech Releases" at "https://repo.locationtech.org/content/groups/releases",
     Resolver.bintrayRepo("azavea", "maven"),
-    DefaultMavenRepository
+    DefaultMavenRepository,
+    Resolver.file("local", file(Path.userHome.absolutePath + "/.ivy2/local"))(Resolver.ivyStylePatterns)
   ),
 
   addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.3" cross CrossVersion.binary),

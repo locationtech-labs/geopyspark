@@ -4,8 +4,8 @@ libraryDependencies ++= Seq(
   "org.typelevel"               %% "cats"                  % "0.9.0",
   "com.typesafe.akka"           %% "akka-http"             % "10.0.10",
   "com.typesafe.akka"           %% "akka-http-spray-json"  % "10.0.10",
-  "net.sf.py4j"                 %  "py4j"                  % "0.10.5",
-  "org.apache.spark"            %% "spark-core"            % "2.2.0" % "provided",
+  "net.sf.py4j"                 %  "py4j"                  % "0.10.6",
+  "org.apache.spark"            %% "spark-core"            % "2.3.0" % "provided",
   "org.apache.commons"          % "commons-math3"          % "3.6.1",
   "org.locationtech.geotrellis" %% "geotrellis-s3"         % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-s3-testkit" % Version.geotrellis,
@@ -24,13 +24,12 @@ assemblyShadeRules in assembly := {
 }
 
 assemblyMergeStrategy in assembly := {
-  case "reference.conf" => MergeStrategy.concat
-  case "application.conf" => MergeStrategy.concat
-  case "META-INF/MANIFEST.MF" => MergeStrategy.discard
-  case "META-INF\\MANIFEST.MF" => MergeStrategy.discard
-  case "META-INF/ECLIPSEF.RSA" => MergeStrategy.discard
-  case "META-INF/ECLIPSEF.SF" => MergeStrategy.discard
-  case x if x.startsWith("META-INF/services") => MergeStrategy.concat
+  case s if s.startsWith("META-INF/services") => MergeStrategy.concat
+  case "reference.conf" | "application.conf"  => MergeStrategy.concat
+  case "META-INF/ECLIPSE.RSA" | "META-INF/ECLIPSE.SF" => MergeStrategy.discard
+  case "META-INF/ECLIPSEF.RSA" | "META-INF/ECLIPSEF.SF" => MergeStrategy.discard
+  case "META-INF/ECLIPSE_.RSA" | "META-INF/ECLIPSE_.SF" => MergeStrategy.discard
+  case "META-INF/MANIFEST.MF" | "META-INF\\MANIFEST.MF" => MergeStrategy.discard
   case _ => MergeStrategy.first
 }
 

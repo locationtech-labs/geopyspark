@@ -65,7 +65,7 @@ script:
 
 before_deploy:
   - export GEOPYSPARK_VERSION_SUFFIX="-${TRAVIS_COMMIT:0:7}"
-  - aws s3 rm s3://geopyspark-dependency-jars/geotrellis-backend-assembly-0.4.1.jar
+  - aws s3 rm s3://geopyspark-dependency-jars/geotrellis-backend-assembly-0.4.2.jar
 
 deploy:
   - provider: script
