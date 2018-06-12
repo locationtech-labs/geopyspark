@@ -3,28 +3,64 @@ package geopyspark.vectorpipe.io
 import geopyspark.util._
 import geopyspark.vectorpipe._
 
+import geotrellis.vector.Extent
+
 import vectorpipe._
-import vectorpipe.osm._
+import vectorpipe.osm.{OSMReader => OSM}
 
 import org.apache.spark._
 import org.apache.spark.sql._
-
-import scala.util.{Failure, Success => S}
 
 
 object OSMReader {
   def fromORC(
     ss: SparkSession,
-    source: String
+    sourcePath: String,
+    targetExtent: java.util.Map[String, Double]
   ): FeaturesCollection = {
-    val (ns, ws, rs) = osm.fromORC(source)(ss).get
-    FeaturesCollection(osm.features(ns, ws, rs))
+    val reader =
+      targetExtent match {
+        case null => OSM(sourcePath)(ss)
+        case _ =>
+          OSM(
+            sourcePath,
+            Extent(targetExtent.get("xmin"), targetExtent.get("ymin"), targetExtent.get("xmax"), targetExtent.get("ymax"))
+          )(ss)
+      }
+
+    FeaturesCollection(
+      reader.nodeFeaturesRDD,
+      reader.wayFeaturesRDD,
+      reader.relationFeaturesRDD
+    )
   }
 
   def fromDataFrame(
-    elements: Dataset[Row]
+    elements: Dataset[Row],
+    cachePath: String,
+    targetExtent: java.util.Map[String, Double]
   ): FeaturesCollection = {
-    val (ns, ws, rs) = osm.fromDataFrame(elements)
-    FeaturesCollection(osm.features(ns, ws, rs))
+    val reader =
+      targetExtent match {
+        case null => new OSM(elements, None)(elements.sparkSession)
+        case _ =>
+          new OSM(
+            elements,
+            Some(
+              Extent(
+                targetExtent.get("xmin"),
+                targetExtent.get("ymin"),
+                targetExtent.get("xmax"),
+                targetExtent.get("ymax")
+              )
+            )
+          )(elements.sparkSession)
+      }
+
+    FeaturesCollection(
+      reader.nodeFeaturesRDD,
+      reader.wayFeaturesRDD,
+      reader.relationFeaturesRDD
+    )
   }
 }

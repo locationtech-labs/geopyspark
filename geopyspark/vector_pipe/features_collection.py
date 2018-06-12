@@ -7,13 +7,15 @@ from geopyspark.vector_pipe.vector_pipe_protobufcodecs import feature_decoder, f
 class FeaturesCollection(object):
     """Represents a collection of features from OSM data. A ``feature`` is
     a geometry that is derived from an OSM Element with that Element's associated metadata.
-    These ``feature``\s are grouped together by their geometry type.
+    These ``feature``\s are grouped together by their representation in OSM.
 
-    There are 4 different types of geometries that a ``feature`` can contain:
-        - ``Point``\s
-        - ``Line``\s
-        - ``Polygon``\s
-        - ``MultiPolygon``\s
+    There are 3 different types of feature geometries:
+        - ``Node``\s
+        - ``Way``\s
+        - ``Relation``\s
+
+    While ``Nodes``\s will always contain ``Point``\s, ``Way``\s and ``Relation``\s can contain
+    any number of different geometries.
 
     Args:
         scala_features (py4j.JavaObject): The Scala representation of ``FeaturesCollection``.
@@ -25,53 +27,46 @@ class FeaturesCollection(object):
     def __init__(self, scala_features):
         self.scala_features = scala_features
 
-    def get_point_features_rdd(self):
-        """Returns each ``Point`` ``feature`` in the ``FeaturesCollection``
-        as a :class:`~geopyspark.vector_pipe.Feature` in a Python RDD.
+    def get_node_features_rdd(self):
+        """Returns the geometrical feature of each ``Node`` in
+        the ``FeaturesCollection`` as a :class:`~geopyspark.vector_pipe.Feature`
+        in a Python RDD.
 
         Returns:
             ``RDD[Feature]``
         """
 
-        return self._get_rdd(self.scala_features.toProtoPoints())
+        return self._get_rdd(self.scala_features.toProtoNodes())
 
-    def get_line_features_rdd(self):
-        """Returns each ``Line`` ``feature`` in the ``FeaturesCollection``
-        as a :class:`~geopyspark.vector_pipe.Feature` in a Python RDD.
-
-        Returns:
-            ``RDD[Feature]``
-        """
-
-        return self._get_rdd(self.scala_features.toProtoLines())
-
-    def get_polygon_features_rdd(self):
-        """Returns each ``Polygon`` ``feature`` in the ``FeaturesCollection``
-        as a :class:`~geopyspark.vector_pipe.Feature` in a Python RDD.
+    def get_way_features_rdd(self):
+        """Returns the geometrical feature of each ``Way`` in
+        the ``FeaturesCollection`` as a :class:`~geopyspark.vector_pipe.Feature`
+        in a Python RDD.
 
         Returns:
             ``RDD[Feature]``
         """
 
-        return self._get_rdd(self.scala_features.toProtoPolygons())
+        return self._get_rdd(self.scala_features.toProtoWays())
 
-    def get_multipolygon_features_rdd(self):
-        """Returns each ``MultiPolygon`` ``feature`` in the ``FeaturesCollection``
-        as a :class:`~geopyspark.vector_pipe.Feature` in a Python RDD.
+    def get_relation_features_rdd(self):
+        """Returns the geometrical feature of each ``Relation`` in
+        the ``FeaturesCollection`` as a :class:`~geopyspark.vector_pipe.Feature`
+        in a Python RDD.
 
         Returns:
             ``RDD[Feature]``
         """
 
-        return self._get_rdd(self.scala_features.toProtoMultiPolygons())
+        return self._get_rdd(self.scala_features.toProtoRelations())
 
     def _get_rdd(self, jrdd):
         ser = ProtoBufSerializer(feature_decoder, feature_encoder)
 
         return create_python_rdd(jrdd, ser)
 
-    def get_point_tags(self):
-        """Returns all of the unique tags for all of the ``Point``\s in the
+    def get_node_tags(self):
+        """Returns all of the unique tags for all of the ``Node``\s in the
         ``FeaturesCollection`` as a ``dict``. Both the keys and values of the
         ``dict`` will be ``str``\s.
 
@@ -79,10 +74,10 @@ class FeaturesCollection(object):
             dict
         """
 
-        return loads(self.scala_features.getPointTags())
+        return loads(self.scala_features.getNodeTags())
 
-    def get_line_tags(self):
-        """Returns all of the unique tags for all of the ``Line``\s in the
+    def get_way_tags(self):
+        """Returns all of the unique tags for all of the ``Way``\s in the
         ``FeaturesCollection`` as a ``dict``. Both the keys and values of the
         ``dict`` will be ``str``\s.
 
@@ -90,10 +85,10 @@ class FeaturesCollection(object):
             dict
         """
 
-        return loads(self.scala_features.getLineTags())
+        return loads(self.scala_features.getWayTags())
 
-    def get_polygon_tags(self):
-        """Returns all of the unique tags for all of the ``Polygon``\s in the
+    def get_relation_tags(self):
+        """Returns all of the unique tags for all of the ``Relation``\s in the
         ``FeaturesCollection`` as a ``dict``. Both the keys and values of the
         ``dict`` will be ``str``\s.
 
@@ -101,15 +96,4 @@ class FeaturesCollection(object):
             dict
         """
 
-        return loads(self.scala_features.getPolygonTags())
-
-    def get_multipolygon_tags(self):
-        """Returns all of the unique tags for all of the ``MultiPolygon``\s in the
-        ``FeaturesCollection`` as a ``dict``. Both the keys and values of the
-        ``dict`` will be ``str``\s.
-
-        Returns:
-            dict
-        """
-
-        return loads(self.scala_features.getMultiPolygonTags())
+        return loads(self.scala_features.getRelationTags())
