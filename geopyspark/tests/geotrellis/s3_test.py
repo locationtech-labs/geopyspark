@@ -80,15 +80,19 @@ def test_set_s3_credentials_with_bad_protocol():
     'geopyspark.geotrellis.s3.get_spark_context',
     return_value=FakeConfiguration()
 )
-def test_set_empty_credentials(*_args):
+@pytest.mark.parametrize('s3_uri_type', ['s3', 's3a', 's3n'])
+def test_set_empty_credentials(_fake_config, s3_uri_type):
     fake_config = FakeConfiguration()
 
-    fake_config.set(s3.S3N_ACCESS_KEY_PATH, 'access')
-    fake_config.set(s3.S3N_SECRET_KEY_PATH, 'secret')
+    access_key_path = 'spark.hadoop.fs.' + s3_uri_type + '.access.key'
+    secret_key_path = 'spark.hadoop.fs.' + s3_uri_type + '.secret.key'
 
-    with s3.set_s3_credentials(None, 's3n'):
-        assert fake_config.get(s3.S3N_ACCESS_KEY_PATH) == 'access'
-        assert fake_config.get(s3.S3N_SECRET_KEY_PATH) == 'secret'
+    fake_config.set(access_key_path, 'access')
+    fake_config.set(secret_key_path, 'secret')
+
+    with s3.set_s3_credentials(None, s3_uri_type):
+        assert fake_config.get(access_key_path) == 'access'
+        assert fake_config.get(secret_key_path) == 'secret'
 
 
 @pytest.mark.parametrize('uri, expected_result', [
