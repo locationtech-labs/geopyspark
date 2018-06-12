@@ -14,7 +14,7 @@ S3A_IMPL_PATH = 'spark.hadoop.fs.s3a.impl'
 
 _S3_ACCESS_KEY_PATH_TEMPLATE = 'spark.hadoop.fs.{prefix}.access.key'
 _S3_SECRET_KEY_PATH_TEMPLATE = 'spark.hadoop.fs.{prefix}.secret.key'
-_S3_URI_PREFIXES = ['s3', 's3a', 's3n']
+_S3_URI_PREFIXES = frozenset(['s3', 's3a', 's3n'])
 
 
 Credentials = namedtuple(
