@@ -31,12 +31,12 @@ install:
     ./sbt "project geotrellis-backend" assembly &&
     cp geotrellis/target/scala-2.11/geotrellis-backend-assembly-*.jar ../geopyspark/jars &&
     popd
-  - if [ ! -f archives/spark-2.1.1-bin-hadoop2.7.tgz ]; then
+  - if [ ! -f archives/spark-2.3.1-bin-hadoop2.7.tgz ]; then
     pushd archives;
-    wget http://d3kbcqa49mib13.cloudfront.net/spark-2.1.1-bin-hadoop2.7.tgz;
+    wget http://apache.cs.utah.edu/spark/spark-2.3.1/spark-2.3.1-bin-hadoop2.7.tgz;
     popd;
     fi
-  - tar -xvf archives/spark-2.1.1-bin-hadoop2.7.tgz
+  - tar -xvf archives/spark-2.3.1-bin-hadoop2.7.tgz
   - pip3 install -r requirements.txt
   - pip3 install pyproj
   - pip3 install pylint
@@ -58,7 +58,7 @@ cache:
   - $HOME/.cache/pip
 
 script:
-  - export SPARK_HOME=./spark-2.1.1-bin-hadoop2.7/
+  - export SPARK_HOME=./spark-2.3.1-bin-hadoop2.7/
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
   - ./test_script.sh
   - pylint geopyspark

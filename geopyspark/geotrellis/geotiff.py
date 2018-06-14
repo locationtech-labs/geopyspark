@@ -104,7 +104,7 @@ def get(layer_type,
     else:
         _validate_s3_credentials(uri, s3_credentials)
 
-    uri_type = uri[:3]
+    uri_type = uri.split(":")[0]
 
     with set_s3_credentials(s3_credentials, uri_type):
         srdd = geotiff_rdd.get(

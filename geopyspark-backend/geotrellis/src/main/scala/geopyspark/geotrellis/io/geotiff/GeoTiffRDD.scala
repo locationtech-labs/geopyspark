@@ -13,6 +13,8 @@ import scala.collection.JavaConversions._
 import java.net.URI
 import scala.reflect._
 
+import com.amazonaws.auth.BasicAWSCredentials
+
 import org.apache.spark._
 import org.apache.hadoop.fs.Path
 
@@ -50,6 +52,8 @@ object GeoTiffRDD {
     def default = S3GeoTiffRDD.Options.DEFAULT
 
     def setValues(
+      conf: SparkConf,
+      scheme: String,
       intMap: Map[String, Int],
       stringMap: Map[String, String],
       partitionBytes: Option[Long]
@@ -60,17 +64,19 @@ object GeoTiffRDD {
         else
           None
 
-      val getS3Client: () => S3Client =
-        stringMap.get("s3_client") match {
-          case Some(client) =>
-            if (client == "default")
-              default.getS3Client
-            else if (client == "mock")
-              () => new MockS3Client()
-            else
-              throw new Error(s"Could not find the given S3Client, $client")
-          case None => default.getS3Client
+      val getS3Client: () => S3Client = {
+        val accessKey = conf.get(s"spark.hadoop.fs.${scheme}.access.key", "")
+        val secretKey = conf.get(s"spark.hadoop.fs.${scheme}.secret.key", "")
+
+        stringMap.getOrElse("s3_client", DEFAULT) match {
+          case DEFAULT if accessKey.isEmpty => default.getS3Client
+          case DEFAULT =>
+            () => AmazonS3Client(new BasicAWSCredentials(accessKey, secretKey), S3Client.defaultConfiguration)
+          case MOCK =>
+            () => new MockS3Client()
+          case client: String => throw new Error(s"Could not find the given S3Client, $client")
         }
+      }
 
       S3GeoTiffRDD.Options(
         crs = crs,
@@ -96,16 +102,17 @@ object GeoTiffRDD {
     val uris = paths.map{ path => new URI(path) }
     val (stringMap, intMap) = GeoTrellisUtils.convertToScalaMap(options)
     val bytes = Some(partitionBytes.toLong)
+    lazy val conf = sc.getConf
 
     uris
       .map { uri =>
         uri.getScheme match {
-          case S3 =>
+          case (S3 | S3A | S3N) =>
             getS3GeoTiffRDD(
               sc,
               keyType,
               uri,
-              S3GeoTiffRDDOptions.setValues(intMap, stringMap, bytes)
+              S3GeoTiffRDDOptions.setValues(conf, uri.getScheme, intMap, stringMap, bytes)
             )
           case _ =>
               getHadoopGeoTiffRDD(

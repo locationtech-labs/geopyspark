@@ -19,10 +19,7 @@ class RasterizationTest(BaseTestClass):
     def test_rasterization(self):
         features = osm_reader.from_orc(file_path("zerns.orc"))
 
-        lines = features.get_line_features_rdd()
-        polys = features.get_polygon_features_rdd()
-
-        mapped_lines = lines.map(lambda feature: Feature(feature.geometry, CellValue(1, 1)))
+        lines = features.get_way_features_rdd()
 
         def assign_cellvalues(feature):
             tags = feature.properties.tags.values()
@@ -32,12 +29,11 @@ class RasterizationTest(BaseTestClass):
             elif "en:Zern's Farmer's Market" in tags:
                 return Feature(feature.geometry, CellValue(3, 3))
             else:
-                return Feature(feature.geometry, CellValue(2, 2))
+                return Feature(feature.geometry, CellValue(1, 1))
 
-        mapped_polys = polys.map(lambda feature: assign_cellvalues(feature))
+        mapped_lines = lines.map(lambda feature: assign_cellvalues(feature))
 
-        unioned = BaseTestClass.pysc.union((mapped_lines, mapped_polys))
-        result = rasterize_features(unioned, 4326, 12, cell_type=CellType.INT8)
+        result = rasterize_features(mapped_lines, 4326, 12, cell_type=CellType.INT8)
 
         self.assertEqual(result.get_min_max(), (1, 4))
         self.assertEqual(result.count(), 1)
@@ -45,10 +41,7 @@ class RasterizationTest(BaseTestClass):
     def test_rasterization_with_partitioner(self):
         features = osm_reader.from_orc(file_path("zerns.orc"))
 
-        lines = features.get_line_features_rdd()
-        polys = features.get_polygon_features_rdd()
-
-        mapped_lines = lines.map(lambda feature: Feature(feature.geometry, CellValue(1, 1)))
+        lines = features.get_way_features_rdd()
 
         def assign_cellvalues(feature):
             tags = feature.properties.tags.values()
@@ -58,12 +51,11 @@ class RasterizationTest(BaseTestClass):
             elif "en:Zern's Farmer's Market" in tags:
                 return Feature(feature.geometry, CellValue(3, 3))
             else:
-                return Feature(feature.geometry, CellValue(2, 2))
+                return Feature(feature.geometry, CellValue(1, 1))
 
-        mapped_polys = polys.map(lambda feature: assign_cellvalues(feature))
+        mapped_lines = lines.map(lambda feature: assign_cellvalues(feature))
 
-        unioned = BaseTestClass.pysc.union((mapped_lines, mapped_polys))
-        result = rasterize_features(unioned,
+        result = rasterize_features(mapped_lines,
                                     4326,
                                     12,
                                     cell_type=CellType.INT8,

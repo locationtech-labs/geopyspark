@@ -17,59 +17,45 @@ import DefaultJsonProtocol._
 
 
 class FeaturesCollection(
-  val points: RDD[Feature[Point, ElementMeta]],
-  val lines: RDD[Feature[Line, ElementMeta]],
-  val polygons: RDD[Feature[Polygon, ElementMeta]],
-  val multiPolygons: RDD[Feature[MultiPolygon, ElementMeta]]
+  val nodes: RDD[Feature[Geometry, ElementMeta]],
+  val ways: RDD[Feature[Geometry, ElementMeta]],
+  val relations: RDD[Feature[Geometry, ElementMeta]]
 ) {
 
-  def toProtoPoints: JavaRDD[Array[Byte]] =
-    PythonTranslator.toPython[Feature[Geometry, ElementMeta], ProtoFeature](points.asInstanceOf[RDD[Feature[Geometry, ElementMeta]]])
+  def toProtoNodes: JavaRDD[Array[Byte]] =
+    PythonTranslator.toPython[Feature[Geometry, ElementMeta], ProtoFeature](nodes)
 
-  def toProtoLines: JavaRDD[Array[Byte]] =
-    PythonTranslator.toPython[Feature[Geometry, ElementMeta], ProtoFeature](lines.asInstanceOf[RDD[Feature[Geometry, ElementMeta]]])
+  def toProtoWays: JavaRDD[Array[Byte]] =
+    PythonTranslator.toPython[Feature[Geometry, ElementMeta], ProtoFeature](ways)
 
-  def toProtoPolygons: JavaRDD[Array[Byte]] =
-    PythonTranslator.toPython[Feature[Geometry, ElementMeta], ProtoFeature](polygons.asInstanceOf[RDD[Feature[Geometry, ElementMeta]]])
+  def toProtoRelations: JavaRDD[Array[Byte]] =
+    PythonTranslator.toPython[Feature[Geometry, ElementMeta], ProtoFeature](relations)
 
-  def toProtoMultiPolygons: JavaRDD[Array[Byte]] =
-    PythonTranslator.toPython[Feature[Geometry, ElementMeta], ProtoFeature](multiPolygons.asInstanceOf[RDD[Feature[Geometry, ElementMeta]]])
-
-  def getPointTags: String =
-    if (points.isEmpty)
+  def getNodeTags: String =
+    if (nodes.isEmpty)
       Map[String, String]().toJson.compactPrint
     else
-      points
+      nodes
         .map { _.data.tags }
         .reduce { _ ++: _ }
         .toJson
         .compactPrint
 
-  def getLineTags: String =
-    if (lines.isEmpty)
+  def getWayTags: String =
+    if (ways.isEmpty)
       Map[String, String]().toJson.compactPrint
     else
-      lines
+      ways
         .map { _.data.tags }
         .reduce { _ ++: _ }
         .toJson
         .compactPrint
 
-  def getPolygonTags: String =
-    if (polygons.isEmpty)
+  def getRelationTags: String =
+    if (relations.isEmpty)
       Map[String, String]().toJson.compactPrint
     else
-      polygons
-        .map { _.data.tags }
-        .reduce { _ ++: _ }
-        .toJson
-        .compactPrint
-
-  def getMultiPolygonTags: String =
-    if (multiPolygons.isEmpty)
-      Map[String, String]().toJson.compactPrint
-    else
-      multiPolygons
+      relations
         .map { _.data.tags }
         .reduce { _ ++: _ }
         .toJson
@@ -78,14 +64,10 @@ class FeaturesCollection(
 
 
 object FeaturesCollection {
-  def apply(features: Features): FeaturesCollection =
-    new FeaturesCollection(features.points, features.lines, features.polygons, features.multiPolys)
-
   def apply(
-    points: RDD[Feature[Point, ElementMeta]],
-    lines: RDD[Feature[Line, ElementMeta]],
-    polygons: RDD[Feature[Polygon, ElementMeta]],
-    multiPolygons: RDD[Feature[MultiPolygon, ElementMeta]]
+    nodes: RDD[Feature[Geometry, ElementMeta]],
+    ways: RDD[Feature[Geometry, ElementMeta]],
+    relations: RDD[Feature[Geometry, ElementMeta]]
   ): FeaturesCollection =
-    new FeaturesCollection(points, lines, polygons, multiPolygons)
+    new FeaturesCollection(nodes, ways, relations)
 }
