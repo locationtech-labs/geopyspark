@@ -8,6 +8,8 @@ object Constants {
   final val TEMPORALPROJECTEDEXTENT = "TemporalProjectedExtent"
 
   final val S3 = "s3"
+  final val S3A = "s3a"
+  final val S3N = "s3n"
 
   final val FLOAT = "float"
   final val ZOOM = "zoom"
@@ -64,4 +66,7 @@ object Constants {
   final val HASH = "HashPartitioner"
   final val SPATIAL = "SpatialPartitioner"
   final val SPACETIME = "SpaceTimePartitioner"
+
+  final val DEFAULT = "default"
+  final val MOCK = "mock"
 }
