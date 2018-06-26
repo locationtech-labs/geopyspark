@@ -1028,6 +1028,68 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         return cls(layer_type, srdd)
 
+    @classmethod
+    def from_rasterframe(cls, rasterframe, zoom_level=None):
+        """Creates a ``TiledRasterLayer from a ``pyrasterframes.RasterFrame``.
+
+        Note:
+            ``pyrasterframes`` needs to initialized via the ``.withRasterFrames()``
+            extension method on the active ``SparkSession`` object in order to
+            use this method.
+
+        Args:
+            rasterframe (pyrasterframes.RasterFrame): The target ``RasterFrame`` that
+                will be converted into a ``TiledRasterLayer``.
+            zoom_level(int, optional): The ``zoom_level`` the resulting `TiledRasterLayer` should
+                have. If ``None``, then the returned layer's ``zoom_level`` will be ``None``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
+        """
+
+        pysc = get_spark_context()
+
+        spatial_tiled_raster_layer = pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterLayer
+        temporal_tiled_raster_layer = pysc._gateway.jvm.geopyspark.geotrellis.TemporalTiledRasterLayer
+
+        jrfctx = rasterframe._jrfctx
+
+        if rasterframe.temporalKeyColumn():
+            srdd = temporal_tiled_raster_layer.apply(zoom_level, jrfctx.toTemporalMultibandTileLayerRDD(rasterframe._jdf))
+            layer_type = LayerType.SPACETIME
+        else:
+            srdd = spatial_tiled_raster_layer.apply(zoom_level, jrfctx.toSpatialMultibandTileLayerRDD(rasterframe._jdf))
+            layer_type = LayerType.SPATIAL
+
+        return cls(layer_type, srdd)
+
+    def to_rasterframe(self, num_bands):
+        """Converts a ``TiledRasterLayer`` to a ``pyrasterframes.RasterFrame``.
+
+        Note:
+            ``pyrasterframes`` needs to initialized via the ``.withRasterFrames()``
+            extension method on the active ``SparkSession`` object in order to
+            use this method.
+
+        Args:
+            num_bands (int): The number of bands the ``TiledRasterLayer`` has.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
+        """
+
+        try:
+            from pyrasterframes import RasterFrame
+        except ImportError:
+            raise ImportError("pyrasterframes must be installed in order to use the to_rasterframe method")
+
+        rf_context = get_spark_context()._rf_context
+
+        if rf_context:
+            return RasterFrame(rf_context._jrfctx.asRF(self.srdd.rdd(), num_bands), rf_context._spark_session)
+        else:
+            raise AttributeError("RasterFrames has not been enabled in the active SparkSession")
+
     def to_numpy_rdd(self):
         """Converts a ``TiledRasterLayer`` to a numpy RDD.
 
