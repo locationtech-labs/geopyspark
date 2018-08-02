@@ -72,17 +72,20 @@ class LayerWriterWrapper(attributeStore: AttributeStore, uri: String) {
       case _ => throw new Exception
     }
 
+  private def getLayerId(layerName: String, layer: TiledRasterLayer[_]): LayerId =
+    layer.zoomLevel match {
+        case Some(zoom) => LayerId(layerName, zoom)
+        case None => LayerId(layerName, 0)
+      }
+
   def writeSpatial(
     layerName: String,
     spatialRDD: TiledRasterLayer[SpatialKey],
     indexStrategy: String
   ): Unit = {
-    val id =
-      spatialRDD.zoomLevel match {
-        case Some(zoom) => LayerId(layerName, zoom)
-        case None => LayerId(layerName, 0)
-      }
+    val id = getLayerId(layerName, spatialRDD)
     val indexMethod = getSpatialIndexMethod(indexStrategy)
+
     layerWriter.write(id, spatialRDD.rdd, indexMethod)
   }
 
@@ -93,12 +96,21 @@ class LayerWriterWrapper(attributeStore: AttributeStore, uri: String) {
     timeResolution: String,
     indexStrategy: String
   ): Unit = {
-    val id =
-      temporalRDD.zoomLevel match {
-        case Some(zoom) => LayerId(layerName, zoom)
-        case None => LayerId(layerName, 0)
-      }
+    val id = getLayerId(layerName, temporalRDD)
     val indexMethod = getTemporalIndexMethod(timeString, timeResolution, indexStrategy)
+
     layerWriter.write(id, temporalRDD.rdd, indexMethod)
   }
+
+  def updateSpatial(
+    layerName: String,
+    spatialRDD: TiledRasterLayer[SpatialKey]
+  ): Unit =
+    layerWriter.update(getLayerId(layerName, spatialRDD), spatialRDD.rdd)
+
+  def updateTemporal(
+    layerName: String,
+    temporalRDD: TiledRasterLayer[SpaceTimeKey]
+  ): Unit =
+    layerWriter.update(getLayerId(layerName, temporalRDD), temporalRDD.rdd)
 }

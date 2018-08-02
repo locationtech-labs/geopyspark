@@ -14,7 +14,7 @@ from geopyspark.geotrellis import Metadata, Extent, deprecated, Log
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
-__all__ = ["read_layer_metadata", "read_value", "query", "write", "AttributeStore"]
+__all__ = ["read_layer_metadata", "read_value", "query", "write", "update_layer", "AttributeStore"]
 
 """Instances of previously used AttributeStore keyed by their URI """
 _cached_stores = {}
@@ -220,10 +220,9 @@ def write(uri,
         uri (str): The Uniform Resource Identifier used to point towards the desired location for
             the tile layer to written to. The shape of this string varies depending on backend.
         layer_name (str): The name of the new, tile layer.
-        layer_zoom (int): The zoom level the layer should be saved at.
         tiled_raster_layer (:class:`~geopyspark.geotrellis.layer.TiledRasterLayer`): The
             ``TiledRasterLayer`` to be saved.
-        index_strategy (str or :class:`~geopyspark.geotrellis.constants.IndexingMethod`): The
+        index_strategy (str or :class:`~geopyspark.geotrellis.constants.IndexingMethod`, optional): The
             method used to orginize the saved data. Depending on the type of data within the layer,
             only certain methods are available. Can either be a string or a ``IndexingMethod``
             attribute.  The default method used is, ``IndexingMethod.ZORDER``.
@@ -275,6 +274,51 @@ def write(uri,
                              IndexingMethod(index_strategy).value)
     else:
         raise ValueError("Cannot write {} layer".format(tiled_raster_layer.layer_type))
+
+
+def update_layer(uri,
+                 layer_name,
+                 tiled_raster_layer,
+                 store=None):
+    """Updates a pre-existing layer with a new one by merging the values of the two
+    layers together.
+
+    Note: This function will throw an error if one of the following conditions are met:
+        - The specified layer does not exist
+        - The two layers have differnt types (cell type, layer type, etc.)
+        - The two layers :class:`~geopyspark.geotrellis.Bounds` do not intersect
+
+    Args:
+        uri (str): The Uniform Resource Identifier used to point towards the desired location for
+            the tile layer to written to. The shape of this string varies depending on backend.
+        layer_name (str): The name of the new, tile layer.
+        tiled_raster_layer (:class:`~geopyspark.geotrellis.layer.TiledRasterLayer`): The
+            ``TiledRasterLayer`` to be saved.
+        store (str or :class:`~geopyspark.geotrellis.catalog.AttributeStore`, optional):
+            ``AttributeStore`` instance or URI for layer metadata lookup.
+    """
+
+    if tiled_raster_layer.zoom_level is None:
+        Log.warn(tiled_raster_layer.pysc, "The given layer doesn't not have a zoom_level. Writing to zoom 0.")
+
+    if store:
+        store = AttributeStore.build(store)
+    else:
+        store = AttributeStore.cached(uri)
+
+    pysc = tiled_raster_layer.pysc
+
+    writer = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterWrapper(
+        store.wrapper.attributeStore(), uri)
+
+    if tiled_raster_layer.layer_type == LayerType.SPATIAL:
+        writer.updateSpatial(layer_name, tiled_raster_layer.srdd)
+
+    elif tiled_raster_layer.layer_type == LayerType.SPACETIME:
+        writer.updateTemporal(layer_name, tiled_raster_layer.srdd)
+
+    else:
+        raise ValueError("Cannot use {} layer for overwrite".format(tiled_raster_layer.layer_type))
 
 
 class AttributeStore(object):
