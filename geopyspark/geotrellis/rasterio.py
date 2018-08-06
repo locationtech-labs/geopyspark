@@ -37,7 +37,7 @@ def crs_to_proj4(crs):
 
 def _read_windows(uri, xcols, ycols, bands, crs_to_proj4):
 
-    if ("GDAL_DATA" not in os.environ) and (_GDAL_DATA != None):
+    if ("GDAL_DATA" not in os.environ) and (_GDAL_DATA is not None):
         os.environ["GDAL_DATA"] = _GDAL_DATA
 
     with rasterio.open(uri) as dataset:
