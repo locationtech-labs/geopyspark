@@ -43,7 +43,7 @@ def get_colors_from_matplotlib(ramp_name, num_colors=1<<8):
         import colortools
         import matplotlib.cm as mpc
     except:
-       raise Exception('matplotlib>=2.0.0 and colortools>=0.1.2 required')
+       raise ImportError('matplotlib>=2.0.0 and colortools>=0.1.2 required')
 
     ramp = mpc.get_cmap(ramp_name)
     return  [struct.unpack('>L', bytes(map(lambda x: int(x*255), ramp(x / (num_colors - 1)))))[0] for x in range(0, num_colors)]

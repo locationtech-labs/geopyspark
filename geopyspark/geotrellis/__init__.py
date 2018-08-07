@@ -801,6 +801,7 @@ from . import layer
 from . import neighborhood
 from . import s3
 from . import tms
+from . import key_conversion
 
 from .catalog import *
 from .color import *
