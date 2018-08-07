@@ -801,6 +801,7 @@ from . import layer
 from . import neighborhood
 from . import s3
 from . import tms
+from . import key_conversion
 
 from .catalog import *
 from .color import *
@@ -817,6 +818,7 @@ from .s3 import *
 from .tms import *
 from .union import *
 from .combine_bands import *
+from .key_conversion import *
 
 __all__ += catalog.__all__
 __all__ += color.__all__
@@ -834,3 +836,4 @@ __all__ += s3.__all__
 __all__ += tms.__all__
 __all__ += ['union']
 __all__ += ['combine_bands']
+__all__ += key_conversion.__all__

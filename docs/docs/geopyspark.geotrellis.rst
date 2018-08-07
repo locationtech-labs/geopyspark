@@ -73,6 +73,7 @@ geopyspark.geotrellis package
   geopyspark.geotrellis.geotiff
   geopyspark.geotrellis.hillshade
   geopyspark.geotrellis.histogram
+  geopyspark.geotrellis.key_conversion
   geopyspark.geotrellis.layer
   geopyspark.geotrellis.neighborhood
   geopyspark.geotrellis.protobufcodecs
