@@ -9,6 +9,7 @@ from dateutil import parser
 import pytz
 from  shapely import wkb
 from shapely.geometry import Polygon, MultiPolygon, Point
+from shapely.geometry.base import BaseGeometry
 from geopyspark.geotrellis.protobufcodecs import (multibandtile_decoder,
                                                   projected_extent_decoder,
                                                   temporal_projected_extent_decoder,
@@ -23,6 +24,7 @@ from pyspark.rdd import RDD
 from geopyspark import get_spark_context, create_python_rdd
 from geopyspark.geotrellis import (Metadata,
                                    Tile,
+                                   Extent,
                                    LocalLayout,
                                    GlobalLayout,
                                    LayoutDefinition,
@@ -2046,6 +2048,42 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             return dict_result
         else:
             raise TypeError("Expected a list or dict. Instead got", type(points))
+
+    def get_cell_value_counts(self, area_of_interest=None, target_band=0):
+        """Returns a dictionary that contains the cell values and their respective counts in the
+        given ``area_of_interest``.
+
+        Note:
+            This method will always return the cell values has ``int``\s regardless of the cell type
+            of the source layer. If the values are not ``int``\s, then they will be converted to an
+            instance of one.
+
+        Args:
+            area_of_interest (:class:`~geopyspark.geotrellis.Extent` or `shapely.geometry`, optional): The
+                area where the counting should be done. Default is, ``None``. If ``None``, then the whole layer
+                will be used.
+            target_band (int, optional): Which band should be used to produce the counts. Default is, ``0``.
+
+        Returns:
+            Dict that contains the cell values and their counts
+        """
+
+        if area_of_interest:
+            if  isinstance(area_of_interest, BaseGeometry):
+                area_of_interest = wkb.dumps(area_of_interest)
+            elif isinstance(area_of_interest, Extent):
+                area_of_interest = wkb.dumps(area_of_interest.to_polygon)
+            else:
+                raise ValueError("Could not create the area_of_interest from", area_of_interest)
+
+        value_counts = json.loads(self.srdd.getCellValueCounts(area_of_interest, target_band))
+        values = {}
+
+        for k, v in value_counts.items():
+            values[int(k)] = int(v)
+
+        return values
+
 
     @staticmethod
     def _process_polygonal_summary(geometry, operation):

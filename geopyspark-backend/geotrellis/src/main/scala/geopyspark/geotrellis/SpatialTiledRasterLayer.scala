@@ -284,6 +284,37 @@ class SpatialTiledRasterLayer(
     SpatialTiledRasterLayer(zoomLevel, ContextRDD(maskedRDD, rdd.metadata))
   }
 
+  def getCellValueCounts(areaOfInterest: Array[Byte], targetBand: Int): String = {
+    val acc = new CountingAccumulator()
+    rdd.sparkContext.register(acc)
+
+    val geom =
+      areaOfInterest match {
+        case arr: Array[Byte] => Some(WKB.read(arr))
+        case _ => None
+      }
+
+    val md = rdd.metadata
+
+    val singleBandLayer = rdd.withContext { _.mapValues { _.band(targetBand) } }
+
+    singleBandLayer.foreach { case (k, v) =>
+      def extent = md.mapTransform(k.getComponent[SpatialKey])
+      val rasterExtent = RasterExtent(extent, md.tileCols, md.tileRows)
+
+      Rasterizer.foreachCellByGeometry(geom.getOrElse(extent), rasterExtent) { case (col, row) =>
+        acc.add(v.get(col, row).toInt)
+      }
+    }
+
+    acc
+      .value
+      .groupBy(_._1)
+      .map { case (k, vs) => k.toString -> vs.map { case (_, v) => v }.sum.toString }
+      .toJson
+      .compactPrint
+  }
+
   def stitch: Array[Byte] =
     PythonTranslator.toPython[MultibandTile, ProtoMultibandTile](ContextRDD(rdd, rdd.metadata).stitch.tile)
 
