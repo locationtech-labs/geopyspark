@@ -222,7 +222,7 @@ class TemporalTiledRasterLayer(
       case GlobalLayout(tileSize, zoom, threshold) =>
         val scheme = new ZoomedLayoutScheme(crs, tileSize, threshold)
         val (_, reprojected) = TileRDDReproject(rdd, crs, Right(scheme.levelForZoom(zoom).layout), resampleMethod, partitioner)
-        TemporalTiledRasterLayer(Some(zoom), reprojected)
+        TemporalTiledRasterLayer(zoom, reprojected)
 
       case LocalLayout(tileCols, tileRows) =>
         val (_, reprojected) = rdd.reproject(crs, FloatingLayoutScheme(tileCols, tileRows), resampleMethod, partitioner)
@@ -644,6 +644,15 @@ object TemporalTiledRasterLayer {
 
     TemporalTiledRasterLayer(Some(zoomLevel), tileLayer)
   }
+
+  def apply(
+    zoomLevel: Integer,
+    rdd: RDD[(SpaceTimeKey, MultibandTile)] with Metadata[TileLayerMetadata[SpaceTimeKey]]
+  ): TemporalTiledRasterLayer =
+    zoomLevel match {
+      case i: Integer => apply(Some(i.toInt), rdd)
+      case null => apply(None, rdd)
+    }
 
   def apply(
     zoomLevel: Option[Int],
