@@ -23,6 +23,10 @@ assemblyShadeRules in assembly := {
   )
 }
 
+fork in Test := true
+
+javaOptions ++= Seq("-Xms1024m", "-Xmx6144m")
+
 assemblyMergeStrategy in assembly := {
   case s if s.startsWith("META-INF/services") => MergeStrategy.concat
   case "reference.conf" | "application.conf"  => MergeStrategy.concat
