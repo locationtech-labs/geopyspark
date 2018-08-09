@@ -4,7 +4,7 @@ import pytest
 import rasterio
 import numpy as np
 
-from geopyspark.geotrellis import SpatialKey, Tile, SpatialPartitionStrategy, RasterizerOptions
+from geopyspark.geotrellis import SpatialKey, Tile, SpatialPartitionStrategy, RasterizerOptions, Metadata
 from shapely.geometry import Polygon, box
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.layer import TiledRasterLayer
@@ -27,7 +27,7 @@ class MaskTest(BaseTestClass):
     layout = {'layoutCols': 2, 'layoutRows': 2, 'tileCols': 2, 'tileRows': 2}
     metadata = {'cellType': 'float32ud-1.0',
                 'extent': extent,
-                'crs': '+proj=longlat +datum=WGS84 +no_defs ',
+                'crs': 4326,
                 'bounds': {
                     'minKey': {'col': 0, 'row': 0},
                     'maxKey': {'col': 1, 'row': 1}},
@@ -36,7 +36,7 @@ class MaskTest(BaseTestClass):
                     'tileLayout': layout}}
 
     geoms = [box(0.0, 0.0, 2.0, 2.0), box(3.0, 3.0, 4.0, 4.0)]
-    raster_rdd = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, metadata)
+    raster_rdd = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, Metadata.from_dict(metadata))
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
