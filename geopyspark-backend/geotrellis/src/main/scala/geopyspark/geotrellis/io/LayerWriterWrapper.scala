@@ -5,6 +5,7 @@ import geopyspark.geotrellis._
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
+import geotrellis.spark.io.cog._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.index._
@@ -25,8 +26,12 @@ import java.time.ZonedDateTime
   * Base wrapper class for all backends that provide a
   * LayerWriter[LayerId].
   */
-class LayerWriterWrapper(attributeStore: AttributeStore, uri: String) {
-  val layerWriter: LayerWriter[LayerId] = LayerWriter(attributeStore, uri)
+class LayerWriterWrapper(attributeStore: AttributeStore, uri: String, useCOGs: Boolean = false) {
+  val layerWriter: Either[COGLayerWriter, LayerWriter[LayerId]] =
+    if (useCOGs)
+      Left(COGLayerWriter(attributeStore, uri))
+    else
+      Right(LayerWriter(attributeStore, uri))
 
   private def getSpatialIndexMethod(indexStrategy: String): KeyIndexMethod[SpatialKey] =
     indexStrategy match {
@@ -74,19 +79,28 @@ class LayerWriterWrapper(attributeStore: AttributeStore, uri: String) {
 
   private def getLayerId(layerName: String, layer: TiledRasterLayer[_]): LayerId =
     layer.zoomLevel match {
-        case Some(zoom) => LayerId(layerName, zoom)
-        case None => LayerId(layerName, 0)
-      }
+      case Some(zoom) => LayerId(layerName, zoom)
+      case None => LayerId(layerName, 0)
+    }
 
   def writeSpatial(
     layerName: String,
     spatialRDD: TiledRasterLayer[SpatialKey],
     indexStrategy: String
   ): Unit = {
-    val id = getLayerId(layerName, spatialRDD)
     val indexMethod = getSpatialIndexMethod(indexStrategy)
-
-    layerWriter.write(id, spatialRDD.rdd, indexMethod)
+    layerWriter match {
+      case Left(cogWriter) =>
+        val zoom = spatialRDD.zoomLevel.getOrElse(0)
+        cogWriter.write(layerName, spatialRDD.rdd, zoom, indexMethod)
+      case Right(avroWriter) =>
+        val id =
+          spatialRDD.zoomLevel match {
+            case Some(zoom) => LayerId(layerName, zoom)
+            case None => LayerId(layerName, 0)
+          }
+        avroWriter.write(id, spatialRDD.rdd, indexMethod)
+    }
   }
 
   def writeTemporal(
@@ -96,21 +110,40 @@ class LayerWriterWrapper(attributeStore: AttributeStore, uri: String) {
     timeResolution: String,
     indexStrategy: String
   ): Unit = {
-    val id = getLayerId(layerName, temporalRDD)
     val indexMethod = getTemporalIndexMethod(timeString, timeResolution, indexStrategy)
-
-    layerWriter.write(id, temporalRDD.rdd, indexMethod)
+    layerWriter match {
+      case Left(cogWriter) =>
+        val zoom = temporalRDD.zoomLevel.getOrElse(0)
+        cogWriter.write(layerName, temporalRDD.rdd, zoom, indexMethod)
+      case Right(avroWriter) =>
+        val id =
+          temporalRDD.zoomLevel match {
+            case Some(zoom) => LayerId(layerName, zoom)
+            case None => LayerId(layerName, 0)
+          }
+        avroWriter.write(id, temporalRDD.rdd, indexMethod)
+    }
   }
 
   def updateSpatial(
     layerName: String,
     spatialRDD: TiledRasterLayer[SpatialKey]
   ): Unit =
-    layerWriter.update(getLayerId(layerName, spatialRDD), spatialRDD.rdd)
+    layerWriter match {
+      case Left(cogWriter) =>
+        val id = getLayerId(layerName, spatialRDD)
+        cogWriter.update[SpatialKey, MultibandTile](id.name, spatialRDD.rdd, id.zoom, None)
+      case Right(avroWriter) => avroWriter.update(getLayerId(layerName, spatialRDD), spatialRDD.rdd)
+    }
 
   def updateTemporal(
     layerName: String,
     temporalRDD: TiledRasterLayer[SpaceTimeKey]
   ): Unit =
-    layerWriter.update(getLayerId(layerName, temporalRDD), temporalRDD.rdd)
+    layerWriter match {
+      case Left(cogWriter) =>
+        val id = getLayerId(layerName, temporalRDD)
+        cogWriter.update[SpaceTimeKey, MultibandTile](id.name, temporalRDD.rdd, id.zoom, None)
+      case Right(avroWriter) => avroWriter.update(getLayerId(layerName, temporalRDD), temporalRDD.rdd)
+    }
 }

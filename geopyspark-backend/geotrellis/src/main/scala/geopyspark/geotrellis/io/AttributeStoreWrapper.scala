@@ -4,6 +4,7 @@ import geopyspark.geotrellis._
 
 import geotrellis.spark._
 import geotrellis.spark.io._
+import geotrellis.spark.io.cog._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.json._
@@ -26,8 +27,27 @@ class AttributeStoreWrapper(uri: String) {
 
   def readMetadata(name: String, zoom: Int): String = {
     val id = LayerId(name, zoom)
-    val header = attributeStore.readHeader[LayerHeader](id)
-    val json = attributeStore.readMetadata[JsObject](id)
+    val header = produceHeader(attributeStore, id)
+
+    val json =
+      header.layerType match {
+        case COGLayerType =>
+          header.keyClass match {
+            case "geotrellis.spark.SpatialKey" =>
+              attributeStore
+                .readMetadata[COGLayerStorageMetadata[SpatialKey]](LayerId(id.name, 0))
+                .metadata
+                .tileLayerMetadata(id.zoom)
+                .toJson
+            case "geotrellis.spark.SpaceTimeKey" =>
+              attributeStore
+                .readMetadata[COGLayerStorageMetadata[SpaceTimeKey]](LayerId(id.name, 0))
+                .metadata
+                .tileLayerMetadata(id.zoom)
+                .toJson
+          }
+        case _ => attributeStore.readMetadata[JsObject](id)
+      }
     json.compactPrint
   }
 

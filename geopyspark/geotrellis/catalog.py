@@ -213,7 +213,8 @@ def write(uri,
           index_strategy=IndexingMethod.ZORDER,
           time_unit=None,
           time_resolution=None,
-          store=None):
+          store=None,
+          use_cogs=False):
     """Writes a tile layer to a specified destination.
 
     Args:
@@ -242,6 +243,13 @@ def write(uri,
             This value can either be an ``int`` or a string representation of an ``int``.
         store (str or :class:`~geopyspark.geotrellis.catalog.AttributeStore`, optional):
             ``AttributeStore`` instance or URI for layer metadata lookup.
+        use_cogs (bool, optional): Should the layer be written as a GeoTrellis Avro or COG layer.
+            By default, an Avro layer will be written.
+
+            Note:
+                While a GeoTrellis COG layer will be saved as a series of COGs, they still have
+                an associated file structure and metadata that must be preserved in order to
+                access a given layer.
     """
 
     if tiled_raster_layer.zoom_level is None:
@@ -256,7 +264,7 @@ def write(uri,
     time_unit = time_unit or ""
 
     writer = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterWrapper(
-        store.wrapper.attributeStore(), uri)
+        store.wrapper.attributeStore(), uri, use_cogs)
 
     if tiled_raster_layer.layer_type == LayerType.SPATIAL:
         writer.writeSpatial(layer_name,

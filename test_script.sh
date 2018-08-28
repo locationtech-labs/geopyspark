@@ -5,5 +5,5 @@ testpattern="*_test.py"
 
 for f in $testpath/**/$testpattern $testpath/**/**/$testpattern;
 do
-  pytest $f || { exit 1; }
+  pytest -v $f || { exit 1; }
 done
