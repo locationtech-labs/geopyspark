@@ -4,6 +4,7 @@ import rasterio
 import numpy as np
 import pytest
 
+from geopyspark import geotiff
 from geopyspark.geotrellis import (Extent,
                                    ProjectedExtent,
                                    TileLayout,
@@ -11,10 +12,12 @@ from geopyspark.geotrellis import (Extent,
                                    LayoutDefinition,
                                    GlobalLayout,
                                    LocalLayout,
-                                   SpatialPartitionStrategy)
+                                   SpatialPartitionStrategy,
+                                   catalog)
 from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.layer import Pyramid, RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
+from geopyspark.tests.python_test_utils import file_path
 
 
 class PyramidingTest(BaseTestClass):
@@ -161,6 +164,20 @@ class PyramidingTest(BaseTestClass):
             previous_layout_cols = layout_cols
             previous_layout_rows = layout_rows
 
+    def test_write_pyramid_layers(self):
+        max_zoom = 5
+        tif = file_path('srtm_52_11.tif')
+        raster_layer = geotiff.get(layer_type=LayerType.SPATIAL, uri=tif)
+        tiled_raster_layer = raster_layer.tile_to_layout(GlobalLayout(zoom=max_zoom), target_crs=3857)
+        pyramided_layer = tiled_raster_layer.pyramid()
+
+        layer_name = 'pyramid-test-layer'
+        uri = 'file:///' + file_path('pyramid-test-catalog')
+
+        pyramided_layer.write(uri, layer_name)
+
+        self.assertTrue(catalog.read_layer_metadata(uri, layer_name, 0))
+        self.assertTrue(catalog.read_layer_metadata(uri, layer_name, max_zoom))
 
 if __name__ == "__main__":
     unittest.main()

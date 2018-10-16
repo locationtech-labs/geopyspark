@@ -35,7 +35,8 @@ from geopyspark.geotrellis import (Metadata,
                                    SpaceTimePartitionStrategy,
                                    RasterizerOptions)
 from geopyspark.geotrellis.histogram import Histogram
-from geopyspark.geotrellis.constants import (Operation,
+from geopyspark.geotrellis.constants import (IndexingMethod,
+                                             Operation,
                                              Neighborhood as nb,
                                              ResampleMethod,
                                              ClassificationStrategy,
@@ -2417,6 +2418,45 @@ class Pyramid(CachableLayer):
         return self.histogram
 
     # Keep it in non rendered form so we can do map algebra operations to it
+
+    def write(self, uri, layer_name, index_strategy=IndexingMethod.ZORDER, time_unit=None, time_resolution=None,
+              store=None):
+        """Writes each tiled layer of the pyramid to a specified destination.
+
+        Args:
+            uri (str): The Uniform Resource Identifier used to point towards the desired location for
+                the tile layer to written to. The shape of this string varies depending on backend.
+            layer_name (str): The name of the new, tile layer.
+            index_strategy (str or :class:`~geopyspark.geotrellis.constants.IndexingMethod`): The
+                method used to organize the saved data. Depending on the type of data within the layer,
+                only certain methods are available. Can either be a string or a ``IndexingMethod``
+                attribute.  The default method used is, ``IndexingMethod.ZORDER``.
+            time_unit (str or :class:`~geopyspark.geotrellis.constants.TimeUnit`, optional): Which time
+                unit should be used when saving spatial-temporal data. This controls the resolution of
+                each index. Meaning, what time intervals are used to separate each record. While this is
+                set to ``None`` as default, it must be set if saving spatial-temporal data.
+                Depending on the indexing method chosen, different time units are used.
+            time_resolution (str or int, optional): Determines how data for each ``time_unit`` should be
+                grouped together. By default, no grouping will occur.
+
+                As an example, having a ``time_unit`` of ``WEEKS`` and a ``time_resolution`` of 5 will
+                cause the data to be grouped and stored together in units of 5 weeks. If however
+                ``time_resolution`` is not specified, then the data will be grouped and stored in units
+                of single weeks.
+
+                This value can either be an ``int`` or a string representation of an ``int``.
+            store (str or :class:`~geopyspark.geotrellis.catalog.AttributeStore`, optional):
+                ``AttributeStore`` instance or URI for layer metadata lookup.
+        """
+        from geopyspark import write
+        for layer in self.levels.values():
+            write(uri=uri,
+                  layer_name=layer_name,
+                  tiled_raster_layer=layer,
+                  index_strategy=index_strategy,
+                  time_unit=time_unit,
+                  time_resolution=time_resolution,
+                  store=store)
 
     def __add__(self, value):
         if isinstance(value, Pyramid):
