@@ -44,7 +44,10 @@ def _read_windows(uri, xcols, ycols, bands, crs_to_proj4):
         bounds = dataset.bounds
         height = dataset.height
         width = dataset.width
-        proj4 = crs_to_proj4(dataset.get_crs())
+        if rasterio.__version__ >= '1.0':
+            proj4 = crs_to_proj4(dataset.crs)
+        else:
+            proj4 = crs_to_proj4(dataset.get_crs())
         nodata = dataset.nodata
         tile_cols = (int)(math.ceil(width/xcols)) * xcols
         tile_rows = (int)(math.ceil(height/ycols)) * ycols
