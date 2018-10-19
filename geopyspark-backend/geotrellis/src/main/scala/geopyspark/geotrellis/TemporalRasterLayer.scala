@@ -164,11 +164,18 @@ class TemporalRasterLayer(val rdd: RDD[(TemporalProjectedExtent, MultibandTile)]
 
   def toGeoTiffRDD(
     tags: Tags,
-    geotiffOptions: GeoTiffOptions
+    resampleMethod: ResampleMethod,
+    decimations: List[Int],
+    geoTiffOptions: GeoTiffOptions
   ): JavaRDD[Array[Byte]] = {
-    val geotiffRDD = rdd.map { x =>
-      (x._1, MultibandGeoTiff(x._2, x._1.extent, x._1.crs, tags, geotiffOptions).toByteArray)
-    }
+    val geotiffRDD =
+      rdd.map { case (k, v) =>
+        val geoTiff =
+          MultibandGeoTiff(v, k.extent, k.crs, tags, geoTiffOptions)
+            .withOverviews(resampleMethod, decimations)
+
+        (k, geoTiff.toByteArray)
+      }
 
     PythonTranslator.toPython[(TemporalProjectedExtent, Array[Byte]), ProtoTuple](geotiffRDD)
   }

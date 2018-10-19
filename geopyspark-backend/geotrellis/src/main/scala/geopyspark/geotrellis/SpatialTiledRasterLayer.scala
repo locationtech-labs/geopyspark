@@ -411,20 +411,29 @@ class SpatialTiledRasterLayer(
 
   def toGeoTiffRDD(
     tags: Tags,
-    geotiffOptions: GeoTiffOptions
+    resampleMethod: ResampleMethod,
+    decimations: List[Int],
+    geoTiffOptions: GeoTiffOptions
   ): JavaRDD[Array[Byte]] = {
-    val mapTransform = MapKeyTransform(
-      rdd.metadata.layout.extent,
-      rdd.metadata.layout.layoutCols,
-      rdd.metadata.layout.layoutRows)
+    val mapTransform =
+      MapKeyTransform(
+        rdd.metadata.layout.extent,
+        rdd.metadata.layout.layoutCols,
+        rdd.metadata.layout.layoutRows
+      )
 
     val crs = rdd.metadata.crs
 
-    val geotiffRDD = rdd.map { x =>
-      val transKey = ProjectedExtent(mapTransform(x._1), crs)
+    val geotiffRDD =
+      rdd.map { case (k, v) =>
+        val transKey = ProjectedExtent(mapTransform(k), crs)
 
-      (x._1, MultibandGeoTiff(x._2, transKey.extent, transKey.crs, tags, geotiffOptions).toByteArray)
-    }
+        val geoTiff =
+          MultibandGeoTiff(v, transKey.extent, transKey.crs, tags, geoTiffOptions)
+            .withOverviews(resampleMethod, decimations)
+
+        (k, geoTiff.toByteArray)
+      }
 
     PythonTranslator.toPython[(SpatialKey, Array[Byte]), ProtoTuple](geotiffRDD)
   }
