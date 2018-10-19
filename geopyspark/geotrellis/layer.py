@@ -87,12 +87,23 @@ def _reclassify(srdd,
                                      strict)
 
 
-def _to_geotiff_rdd(pysc, srdd, storage_method, rows_per_strip, tile_dimensions, compression,
-                    color_space, color_map, head_tags, band_tags):
+def _to_geotiff_rdd(pysc,
+                    srdd,
+                    storage_method,
+                    rows_per_strip,
+                    tile_dimensions,
+                    resample_method,
+                    decimations,
+                    compression,
+                    color_space,
+                    color_map,
+                    head_tags,
+                    band_tags):
 
     storage_method = StorageMethod(storage_method).value
     compression = Compression(compression).value
     color_space = ColorSpace(color_space).value
+    resample_method = ResampleMethod(resample_method).value
 
     if storage_method == StorageMethod.STRIPED:
         if rows_per_strip:
@@ -106,6 +117,8 @@ def _to_geotiff_rdd(pysc, srdd, storage_method, rows_per_strip, tile_dimensions,
 
     if color_map:
         return srdd.toGeoTiffRDD(scala_storage,
+                                 resample_method,
+                                 decimations,
                                  compression,
                                  color_space,
                                  color_map.cmap,
@@ -113,6 +126,8 @@ def _to_geotiff_rdd(pysc, srdd, storage_method, rows_per_strip, tile_dimensions,
                                  band_tags or [])
     else:
         return srdd.toGeoTiffRDD(scala_storage,
+                                 resample_method,
+                                 decimations,
                                  compression,
                                  color_space,
                                  head_tags or {},
@@ -454,9 +469,11 @@ class RasterLayer(CachableLayer, TileLayer):
         return create_python_rdd(result, ser)
 
     def to_geotiff_rdd(self,
-                       storage_method=StorageMethod.STRIPED,
+                       storage_method=StorageMethod.TILED,
                        rows_per_strip=None,
                        tile_dimensions=(256, 256),
+                       resample_method=ResampleMethod.NEAREST_NEIGHBOR,
+                       decimations=[],
                        compression=Compression.NO_COMPRESSION,
                        color_space=ColorSpace.BLACK_IS_ZERO,
                        color_map=None,
@@ -476,6 +493,11 @@ class RasterLayer(CachableLayer, TileLayer):
             tile_dimensions ((int, int), optional): The length and width for each tile segment of the GeoTiff
                 if ``storage_method`` is ``StorageMethod.TILED``. If ``None`` then the default size
                 is ``(256, 256)``.
+            resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
+                The resample method to use when building internal overviews. Default is,
+                ``ResampleMethods.NEAREST_NEIGHBOR``.
+            decimations ([int], optional): The decimation factors to use when building the internal overviews
+                of the GeoTiff. By default, ``[]`` no factors used.
             compression (str or :class:`~geopyspark.geotrellis.constants.Compression`, optional): How the
                 data should be compressed. Defaults to ``Compression.NO_COMPRESSION``.
             color_space (str or :class:`~geopyspark.geotrellis.constants.ColorSpace`, optional): How the
@@ -494,8 +516,18 @@ class RasterLayer(CachableLayer, TileLayer):
             RDD[(K, bytes)]
         """
 
-        result = _to_geotiff_rdd(self.pysc, self.srdd, storage_method, rows_per_strip, tile_dimensions,
-                                 compression, color_space, color_map, head_tags, band_tags)
+        result = _to_geotiff_rdd(self.pysc,
+                                 self.srdd,
+                                 storage_method,
+                                 rows_per_strip,
+                                 tile_dimensions,
+                                 resample_method,
+                                 decimations,
+                                 compression,
+                                 color_space,
+                                 color_map,
+                                 head_tags,
+                                 band_tags)
 
         key = LayerType(self.layer_type)._key_name(False)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)
@@ -1329,9 +1361,11 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         return TiledRasterLayer(self.layer_type, result)
 
     def to_geotiff_rdd(self,
-                       storage_method=StorageMethod.STRIPED,
+                       storage_method=StorageMethod.TILED,
                        rows_per_strip=None,
                        tile_dimensions=(256, 256),
+                       resample_method=ResampleMethod.NEAREST_NEIGHBOR,
+                       decimations=[],
                        compression=Compression.NO_COMPRESSION,
                        color_space=ColorSpace.BLACK_IS_ZERO,
                        color_map=None,
@@ -1351,6 +1385,11 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             tile_dimensions ((int, int), optional): The length and width for each tile segment of the GeoTiff
                 if ``storage_method`` is ``StorageMethod.TILED``. If ``None`` then the default size
                 is ``(256, 256)``.
+            resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
+                The resample method to use when building internal overviews. Default is,
+                ``ResampleMethods.NEAREST_NEIGHBOR``.
+            decimations ([int], optional): The decimation factors to use when building the internal overviews
+                of the GeoTiff. By default, ``[]`` no factors used.
             compression (str or :class:`~geopyspark.geotrellis.constants.Compression`, optional): How the
                 data should be compressed. Defaults to ``Compression.NO_COMPRESSION``.
             color_space (str or :class:`~geopyspark.geotrellis.constants.ColorSpace`, optional): How the
@@ -1369,8 +1408,18 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             RDD[(K, bytes)]
         """
 
-        result = _to_geotiff_rdd(self.pysc, self.srdd, storage_method, rows_per_strip, tile_dimensions,
-                                 compression, color_space, color_map, head_tags, band_tags)
+        result = _to_geotiff_rdd(self.pysc,
+                                 self.srdd,
+                                 storage_method,
+                                 rows_per_strip,
+                                 tile_dimensions,
+                                 resample_method,
+                                 decimations,
+                                 compression,
+                                 color_space,
+                                 color_map,
+                                 head_tags,
+                                 band_tags)
 
         key = LayerType(self.layer_type)._key_name(True)
         ser = ProtoBufSerializer.create_image_rdd_serializer(key_type=key)

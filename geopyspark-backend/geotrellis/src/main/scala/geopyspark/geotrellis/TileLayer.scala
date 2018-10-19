@@ -43,6 +43,8 @@ abstract class TileLayer[K: ClassTag] {
 
   def toGeoTiffRDD(
     storageMethod: StorageMethod,
+    resampleString: String,
+    decimations: java.util.ArrayList[Int],
     compression: String,
     colorSpace: Int,
     headTags: java.util.Map[String, String],
@@ -52,20 +54,29 @@ abstract class TileLayer[K: ClassTag] {
       if (headTags.isEmpty || bandTags.isEmpty)
         Tags.empty
       else
-        Tags(headTags.asScala.toMap,
-          bandTags.toArray.map(_.asInstanceOf[scala.collection.immutable.Map[String, String]]).toList)
+        Tags(
+          headTags.asScala.toMap,
+          bandTags
+            .toArray
+            .map(_.asInstanceOf[scala.collection.immutable.Map[String, String]])
+            .toList
+          )
 
-    val options = GeoTiffOptions(
-      storageMethod,
-      TileLayer.getCompression(compression),
-      colorSpace,
-      None)
+    val options =
+      GeoTiffOptions(
+        storageMethod,
+        TileLayer.getCompression(compression),
+        colorSpace,
+        None
+      )
 
-    toGeoTiffRDD(tags, options)
+    toGeoTiffRDD(tags, TileLayer.getResampleMethod(resampleString), decimations.asScala.toList, options)
   }
 
   def toGeoTiffRDD(
     storageMethod: StorageMethod,
+    resampleString: String,
+    decimations: java.util.ArrayList[Int],
     compression: String,
     colorSpace: Int,
     colorMap: ColorMap,
@@ -76,19 +87,31 @@ abstract class TileLayer[K: ClassTag] {
       if (headTags.isEmpty || bandTags.isEmpty)
         Tags.empty
       else
-        Tags(headTags.asScala.toMap,
-          bandTags.toArray.map(_.asInstanceOf[scala.collection.immutable.Map[String, String]]).toList)
+        Tags(
+          headTags.asScala.toMap,
+          bandTags
+            .toArray
+            .map(_.asInstanceOf[scala.collection.immutable.Map[String, String]])
+            .toList
+          )
 
-    val options = GeoTiffOptions(
-      storageMethod,
-      TileLayer.getCompression(compression),
-      colorSpace,
-      Some(IndexedColorMap.fromColorMap(colorMap)))
+    val options =
+      GeoTiffOptions(
+        storageMethod,
+        TileLayer.getCompression(compression),
+        colorSpace,
+        Some(IndexedColorMap.fromColorMap(colorMap))
+      )
 
-    toGeoTiffRDD(tags, options)
+    toGeoTiffRDD(tags, TileLayer.getResampleMethod(resampleString), decimations.asScala.toList, options)
   }
 
-  def toGeoTiffRDD(tags: Tags, geotiffOptions: GeoTiffOptions): JavaRDD[Array[Byte]]
+  def toGeoTiffRDD(
+    tags: Tags,
+    resampleMethod: ResampleMethod,
+    decimations: List[Int],
+    geoTiffOptions: GeoTiffOptions
+  ): JavaRDD[Array[Byte]]
 
   def reclassify(
     intMap: java.util.Map[Int, Int],

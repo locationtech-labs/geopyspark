@@ -4,7 +4,7 @@ import rasterio
 import unittest
 import pytest
 
-from geopyspark.geotrellis import Tile
+from geopyspark.geotrellis import Tile, LocalLayout
 from geopyspark.geotrellis.constants import LayerType
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.tests.python_test_utils import file_path
@@ -33,7 +33,7 @@ class ToGeoTiffTest(BaseTestClass):
         BaseTestClass.pysc._gateway.close()
 
     def test_to_geotiff_rdd_rasterlayer(self):
-        geotiff_rdd = self.rdd.to_geotiff_rdd(storage_method="Tiled",
+        geotiff_rdd = self.rdd.to_geotiff_rdd(decimations=[2, 4, 8, 16],
                                               compression="DeflateCompression",
                                               color_space=0,
                                               head_tags={'INTERLEAVE': 'BAND'})
@@ -49,13 +49,14 @@ class ToGeoTiffTest(BaseTestClass):
 
                 profile = src.profile
 
+                self.assertEqual(src.overviews(1), [2, 4, 8, 16])
                 self.assertEqual(profile['blockxsize'], 256)
                 self.assertEqual(profile['blockysize'], 256)
                 self.assertEqual(profile['interleave'], 'band')
                 self.assertEqual(src.compression, rasterio.enums.Compression.deflate)
 
     def test_to_geotiff_rdd_tiledrasterlayer(self):
-        tiled_rdd = self.rdd.tile_to_layout()
+        tiled_rdd = self.rdd.tile_to_layout(LocalLayout(tile_size=128))
         tiled_collected = tiled_rdd.to_numpy_rdd().first()[1]
 
         geotiff_rdd = tiled_rdd.to_geotiff_rdd()
@@ -67,7 +68,7 @@ class ToGeoTiffTest(BaseTestClass):
                 temp_path = pathlib.Path(temp.name)
 
                 with rasterio.open(str(temp_path)) as src:
-                    self.assertFalse(src.is_tiled)
+                    self.assertTrue(src.is_tiled)
                     data = src.read()
                     return Tile(data, self.mapped_types[str(data.dtype)], src.nodata)
 
