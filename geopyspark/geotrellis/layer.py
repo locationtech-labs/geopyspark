@@ -33,7 +33,8 @@ from geopyspark.geotrellis import (Metadata,
                                    HashPartitionStrategy,
                                    SpatialPartitionStrategy,
                                    SpaceTimePartitionStrategy,
-                                   RasterizerOptions)
+                                   RasterizerOptions,
+                                   check_partition_strategy)
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (IndexingMethod,
                                              Operation,
@@ -250,10 +251,6 @@ class TileLayer(object):
             ``[int]``
         """
         return list(self.srdd.quantileBreaksExactInt(num_breaks))
-
-    def _check_partition_strategy(self, partition_strategy):
-        if isinstance(partition_strategy, SpaceTimePartitionStrategy) and self.layer_type != LayerType.SPACETIME:
-            raise TypeError("SpaceTimePartitionStrategy cannot be used on SPATIAL layers.")
 
 
 class CachableLayer(object):
@@ -590,7 +587,7 @@ class RasterLayer(CachableLayer, TileLayer):
         """
 
         if partition_strategy:
-            self._check_partition_strategy(partition_strategy)
+            check_partition_strategy(partition_strategy, self.layer_type)
 
             return RasterLayer(self.layer_type, self.srdd.partitionBy(partition_strategy))
         else:
@@ -779,7 +776,7 @@ class RasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.RasterLayer`
         """
 
-        self._check_partition_strategy(partition_strategy)
+        check_partition_strategy(partition_strategy, self.layer_type)
         result = self.srdd.merge(partition_strategy)
 
         return RasterLayer(self.layer_type, result)
@@ -859,7 +856,7 @@ class RasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        self._check_partition_strategy(partition_strategy)
+        check_partition_strategy(partition_strategy, self.layer_type)
         resample_method = ResampleMethod(resample_method)
 
         if target_crs:
@@ -1228,7 +1225,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        self._check_partition_strategy(partition_strategy)
+        check_partition_strategy(partition_strategy, self.layer_type)
         result = self.srdd.merge(partition_strategy)
 
         return TiledRasterLayer(self.layer_type, result)
@@ -1544,7 +1541,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         """
 
         if partition_strategy:
-            self._check_partition_strategy(partition_strategy)
+            check_partition_strategy(partition_strategy, self.layer_type)
             return TiledRasterLayer(self.layer_type, self.srdd.partitionBy(partition_strategy))
         else:
             return self
@@ -1615,7 +1612,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        self._check_partition_strategy(partition_strategy)
+        check_partition_strategy(partition_strategy, self.layer_type)
         resample_method = ResampleMethod(resample_method)
 
         if target_crs:
@@ -1674,7 +1671,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             ValueError: If this layer layout is not of ``GlobalLayout`` type.
         """
 
-        self._check_partition_strategy(partition_strategy)
+        check_partition_strategy(partition_strategy, self.layer_type)
         resample_method = ResampleMethod(resample_method)
         result = self.srdd.pyramid(resample_method, partition_strategy)
 
@@ -1731,7 +1728,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 ``Operation.ASPECT``.
         """
 
-        self._check_partition_strategy(partition_strategy)
+        check_partition_strategy(partition_strategy, self.layer_type)
         operation = Operation(operation).value
 
         if isinstance(neighborhood, Neighborhood):
@@ -1900,7 +1897,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        self._check_partition_strategy(partition_strategy)
+        check_partition_strategy(partition_strategy, self.layer_type)
 
         if not isinstance(geometries, (list, RDD)):
             geometries = [geometries]
