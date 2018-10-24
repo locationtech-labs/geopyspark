@@ -291,3 +291,9 @@ class Unit(Enum):
 
     METERS = "Meters"
     FEET = "Feet"
+
+
+class ReadMethod(Enum):
+
+    GEOTRELLIS = "GeoTrellis"
+    GDAL = "GDAL"
