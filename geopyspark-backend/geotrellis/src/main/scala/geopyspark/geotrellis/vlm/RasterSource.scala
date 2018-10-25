@@ -93,7 +93,7 @@ object RasterSource {
       }
 
     reprojectedSourcesRDD.unpersist()
-    cachedSourcesRDD.unpersist()
+    rasterSourceRDD.unpersist()
 
     val contextRDD: MultibandTileLayerRDD[SpatialKey] =
       ContextRDD(tiledRDD, tileLayerMetadata)
