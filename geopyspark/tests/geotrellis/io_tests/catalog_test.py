@@ -13,12 +13,6 @@ from geopyspark.tests.python_test_utils import file_path
 
 
 class CatalogTest(BaseTestClass):
-    rdd = get(LayerType.SPATIAL, file_path("srtm_52_11.tif"), max_tile_size=6001)
-
-    metadata = rdd.collect_metadata()
-    reprojected = rdd.tile_to_layout(layout=GlobalLayout(zoom=11), target_crs=3857)
-    result = reprojected.pyramid()
-
     dir_path = file_path("catalog/")
     uri = "file://{}".format(dir_path)
     layer_name = "catalog-test"
@@ -27,19 +21,6 @@ class CatalogTest(BaseTestClass):
     def tearDown(self):
         yield
         BaseTestClass.pysc._gateway.close()
-
-    @pytest.mark.skip
-    def test_read(self):
-        for x in range(11, 0, -1):
-            actual_layer = query(self.uri, self.layer_name, x).tile_to_layout(LocalLayout(), self.metadata.crs)
-            expected_layer = self.result.levels[x].tile_to_layout(LocalLayout(), self.metadata.crs)
-
-            actual_md = actual_layer.layer_metadata
-            expected_md = expected_layer.layer_metadata
-
-            self.assertEqual(actual_md.tile_layout, expected_md.tile_layout)
-            self.assertEqual(actual_md.layout_definition, expected_md.layout_definition)
-            self.assertEqual(actual_md.bounds, expected_md.bounds)
 
     def test_read_value(self):
         tiled = read_value(self.uri,
@@ -123,7 +104,7 @@ class CatalogTest(BaseTestClass):
 
     def test_layer_ids(self):
         ids = AttributeStore(self.uri).layers()
-        self.assertTrue(len(ids) == 11)
+        self.assertTrue(len(ids) == 12)
 
     def test_attributestore(self):
         store = AttributeStore(self.uri)

@@ -6,6 +6,7 @@ import protos.tileMessages._
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
+import geotrellis.spark.io.cog._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.s3._
@@ -24,34 +25,18 @@ import scala.collection.mutable
 import geopyspark.util.PythonTranslator
 
 
+
 /**
   * General interface for reading.
   */
 class ValueReaderWrapper(uri: String) {
   val attributeStore = AttributeStore(uri)
-  val valueReader: ValueReader[LayerId] = ValueReader(uri)
+
+  lazy val cogReader: COGValueReader[LayerId] = COGValueReader(uri)
+  lazy val avroReader: ValueReader[LayerId] = ValueReader(uri)
 
   def getValueClass(id: LayerId): String =
     attributeStore.readHeader[LayerHeader](id).valueClass
-
-  def inBounds(
-    layerName: String,
-    zoom: Int,
-    col: Int,
-    row: Int,
-    zdt: String
-  ): Boolean = {
-    val id = LayerId(layerName, zoom)
-    val header = attributeStore.readHeader[LayerHeader](id)
-    header.keyClass match {
-      case "geotrellis.spark.SpatialKey" =>
-        val key = SpatialKey(col, row)
-        attributeStore.readMetadata[TileLayerMetadata[SpatialKey]](id).bounds.includes(key)
-      case "geotrellis.spark.SpaceTimeKey" =>
-        val key = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
-        attributeStore.readMetadata[TileLayerMetadata[SpaceTimeKey]](id).bounds.includes(key)
-    }
-  }
 
   def readTile(
     layerName: String,
@@ -61,28 +46,47 @@ class ValueReaderWrapper(uri: String) {
     zdt: String
   ): Array[Byte] = {
     val id = LayerId(layerName, zoom)
-    val header = attributeStore.readHeader[LayerHeader](id)
+
+    val header = produceHeader(attributeStore, id)
+
+    val valueReader: Either[COGValueReader[LayerId], ValueReader[LayerId]] =
+      header.layerType match {
+        case COGLayerType => Left(cogReader)
+        case _ => Right(avroReader)
+      }
 
     try {
       (header.keyClass, header.valueClass) match {
         case ("geotrellis.spark.SpatialKey", "geotrellis.raster.Tile") => {
           val spatialKey = SpatialKey(col, row)
-          val result = valueReader.reader[SpatialKey, Tile](id).read(spatialKey)
+          val result = valueReader match {
+            case Left(cogReader) => cogReader.reader[SpatialKey, Tile](id).read(spatialKey)
+            case Right(avroReader) => avroReader.reader[SpatialKey, Tile](id).read(spatialKey)
+          }
           PythonTranslator.toPython[MultibandTile, ProtoMultibandTile](MultibandTile(result))
         }
         case ("geotrellis.spark.SpatialKey", "geotrellis.raster.MultibandTile") => {
           val spatialKey = SpatialKey(col, row)
-          val result = valueReader.reader[SpatialKey, MultibandTile](id).read(spatialKey)
+          val result = valueReader match {
+            case Left(cogReader) => cogReader.reader[SpatialKey, MultibandTile](id).read(spatialKey)
+            case Right(avroReader) => avroReader.reader[SpatialKey, MultibandTile](id).read(spatialKey)
+          }
           PythonTranslator.toPython[MultibandTile, ProtoMultibandTile](result)
         }
         case ("geotrellis.spark.SpaceTimeKey", "geotrellis.raster.Tile") => {
           val spaceKey = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
-          val result = valueReader.reader[SpaceTimeKey, Tile](id).read(spaceKey)
+          val result = valueReader match {
+            case Left(cogReader) => cogReader.reader[SpaceTimeKey, Tile](id).read(spaceKey)
+            case Right(avroReader) => avroReader.reader[SpaceTimeKey, Tile](id).read(spaceKey)
+          }
           PythonTranslator.toPython[MultibandTile, ProtoMultibandTile](MultibandTile(result))
         }
         case ("geotrellis.spark.SpaceTimeKey", "geotrellis.raster.MultibandTile") => {
           val spaceKey = SpaceTimeKey(col, row, ZonedDateTime.parse(zdt))
-          val result = valueReader.reader[SpaceTimeKey, MultibandTile](id).read(spaceKey)
+          val result = valueReader match {
+            case Left(cogReader) => cogReader.reader[SpaceTimeKey, MultibandTile](id).read(spaceKey)
+            case Right(avroReader) => avroReader.reader[SpaceTimeKey, MultibandTile](id).read(spaceKey)
+          }
           PythonTranslator.toPython[MultibandTile, ProtoMultibandTile](result)
         }
       }

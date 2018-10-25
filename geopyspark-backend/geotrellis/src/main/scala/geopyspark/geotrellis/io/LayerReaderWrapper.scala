@@ -9,6 +9,7 @@ import geotrellis.raster._
 import geotrellis.proj4._
 import geotrellis.spark._
 import geotrellis.spark.io._
+import geotrellis.spark.io.cog._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.json._
@@ -42,8 +43,14 @@ class LayerReaderWrapper(sc: SparkContext) {
 
     val spatialQuery: Option[Geometry] = Option(queryGeometryBytes).map(WKB.read)
     val queryCRS: Option[CRS] = TileLayer.getCRS(projQuery)
-    val header: LayerHeader = attributeStore.readHeader[LayerHeader](id)
-    val layerReader: FilteringLayerReader[LayerId] = LayerReader(catalogUri)(sc)
+
+    val header = produceHeader(attributeStore, id)
+
+    val layerReader: Either[COGLayerReader[LayerId], FilteringLayerReader[LayerId]] =
+      header.layerType match {
+        case COGLayerType => Left(COGLayerReader(catalogUri)(sc))
+        case _ => Right(LayerReader(catalogUri)(sc))
+      }
 
     //val pyZoom: Option[Int] = ??? // is this top level zoom or zoom with None ?
 
@@ -58,7 +65,7 @@ class LayerReaderWrapper(sc: SparkContext) {
         // Aim for ~16MB per partition
         val tilesPerPartition = (1 << 24) / tileBytes
         // TODO: consider temporal dimension size as well
-        val expectedTileCounts: Seq[Long] = layerQuery(layerMetadata).map(_.toGridBounds.sizeLong)
+        val expectedTileCounts: Seq[Long] = layerQuery(layerMetadata).map(_.toGridBounds.size)
         try {
           math.max(1, (expectedTileCounts.reduce( _ + _) / tilesPerPartition).toInt)
         } catch {
@@ -68,7 +75,16 @@ class LayerReaderWrapper(sc: SparkContext) {
 
     header.keyClass match {
       case "geotrellis.spark.SpatialKey" =>
-        val layerMetadata = attributeStore.readMetadata[TileLayerMetadata[SpatialKey]](id)
+        val layerMetadata =
+          header.layerType match {
+            case COGLayerType =>
+              attributeStore
+                .readMetadata[COGLayerStorageMetadata[SpatialKey]](LayerId(id.name, 0))
+                .metadata
+                .tileLayerMetadata(id.zoom)
+            case _ => attributeStore.readMetadata[TileLayerMetadata[SpatialKey]](id)
+          }
+
         var query = new LayerQuery[SpatialKey, TileLayerMetadata[SpatialKey]]
 
         for (geom <- spatialQuery) {
@@ -80,17 +96,33 @@ class LayerReaderWrapper(sc: SparkContext) {
         val rdd =
           header.valueClass match {
             case "geotrellis.raster.Tile" =>
-              layerReader.read[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](id, query, numPartitions)
+              layerReader match {
+                case Left(cogReader) => cogReader.read[SpatialKey, Tile](id, query, numPartitions)
+                  .withContext(_.mapValues{ MultibandTile(_) })
+                case Right(avroReader) => avroReader.read[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](id, query, numPartitions)
                 .withContext(_.mapValues{ MultibandTile(_) })
+              }
 
             case "geotrellis.raster.MultibandTile" =>
-              layerReader.read[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](id, query, numPartitions)
+              layerReader match {
+                case Left(cogReader) => cogReader.read[SpatialKey, MultibandTile](id, query, numPartitions)
+                case Right(avroReader) => avroReader.read[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](id, query, numPartitions)
+              }
           }
 
         new SpatialTiledRasterLayer(Some(zoom), rdd)
 
       case "geotrellis.spark.SpaceTimeKey" =>
-        val layerMetadata = attributeStore.readMetadata[TileLayerMetadata[SpaceTimeKey]](id)
+        val layerMetadata =
+          header.layerType match {
+            case COGLayerType =>
+              attributeStore
+                .readMetadata[COGLayerStorageMetadata[SpaceTimeKey]](LayerId(id.name, 0))
+                .metadata
+                .tileLayerMetadata(id.zoom)
+            case _ => attributeStore.readMetadata[TileLayerMetadata[SpaceTimeKey]](id)
+          }
+
         var query = new LayerQuery[SpaceTimeKey, TileLayerMetadata[SpaceTimeKey]]
 
         for (geom <- spatialQuery) {
@@ -106,11 +138,18 @@ class LayerReaderWrapper(sc: SparkContext) {
         val rdd =
           header.valueClass match {
             case "geotrellis.raster.Tile" =>
-              layerReader.read[SpaceTimeKey, Tile, TileLayerMetadata[SpaceTimeKey]](id, query, numPartitions)
+              layerReader match {
+                case Left(cogReader) => cogReader.read[SpaceTimeKey, Tile](id, query, numPartitions)
                 .withContext(_.mapValues{ MultibandTile(_) })
+                case Right(avroReader) => avroReader.read[SpaceTimeKey, Tile, TileLayerMetadata[SpaceTimeKey]](id, query, numPartitions)
+                .withContext(_.mapValues{ MultibandTile(_) })
+              }
 
             case "geotrellis.raster.MultibandTile" =>
-              layerReader.read[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id, query, numPartitions)
+              layerReader match {
+                case Left(cogReader) => cogReader.read[SpaceTimeKey, MultibandTile](id, query, numPartitions)
+                case Right(avroReader) => avroReader.read[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id, query, numPartitions)
+              }
           }
 
         new TemporalTiledRasterLayer(Some(zoom), rdd)

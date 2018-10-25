@@ -172,7 +172,12 @@ class PyramidingTest(BaseTestClass):
         pyramided_layer = tiled_raster_layer.pyramid()
 
         layer_name = 'pyramid-test-layer'
-        uri = 'file:///' + file_path('pyramid-test-catalog')
+        path = file_path('pyramid-test-catalog')
+        uri = 'file:///' + path
+
+        if os.path.isdir(path):
+            import shutil
+            shutil.rmtree(path)
 
         pyramided_layer.write(uri, layer_name)
 

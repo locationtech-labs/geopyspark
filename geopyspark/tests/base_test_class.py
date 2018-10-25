@@ -23,8 +23,8 @@ class BaseTestClass(unittest.TestCase):
     conf.set('spark.ui.enabled', True)
 
     if 'TRAVIS' in os.environ:
-        conf.set(key='spark.driver.memory', value='2G')
-        conf.set(key='spark.executor.memory', value='2G')
+        conf.set(key='spark.driver.memory', value='1G')
+        conf.set(key='spark.executor.memory', value='1G')
 
     pysc = SparkContext(conf=conf)
 
