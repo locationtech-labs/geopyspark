@@ -1,6 +1,6 @@
 package geopyspark.geotrellis.vlm
 
-import geopyspark.geotrellis.{PartitionStrategy, SpatialTiledRasterLayer}
+import geopyspark.geotrellis.{PartitionStrategy, ProjectedRasterLayer, SpatialTiledRasterLayer}
 import geopyspark.geotrellis.Constants.{GEOTRELLIS, GDAL}
 
 import geotrellis.contrib.vlm._
@@ -21,6 +21,61 @@ import scala.collection.JavaConverters._
 
 
 object RasterSource {
+  def read(
+    sc: SparkContext,
+    layerType: String,
+    paths: java.util.ArrayList[String],
+    targetCRS: String,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy,
+    readMethod: String
+  ): ProjectedRasterLayer =
+    read(
+      sc,
+      layerType,
+      sc.parallelize(paths.asScala, paths.size),
+      targetCRS,
+      resampleMethod,
+      partitionStrategy,
+      readMethod
+    )
+
+  def read(
+    sc: SparkContext,
+    layerType: String,
+    rdd: RDD[String],
+    targetCRS: String,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy,
+    readMethod: String
+  ): ProjectedRasterLayer = {
+    val rasterSourceRDD: RDD[RasterSource] =
+      (readMethod match {
+        case GEOTRELLIS => rdd.map { new GeoTiffRasterSource(_): RasterSource }
+        case GDAL => rdd.map { GDALRasterSource(_): RasterSource }
+      }).cache()
+
+    val reprojectedSourcesRDD: RDD[RasterSource] =
+      targetCRS match {
+        case crs: String =>
+          rasterSourceRDD.map { _.reproject(CRS.fromString(crs), resampleMethod) }
+        case null =>
+          rasterSourceRDD
+      }
+
+    val projectedRasterRDD: RDD[(ProjectedExtent, MultibandTile)] =
+      reprojectedSourcesRDD.flatMap { source: RasterSource =>
+        source.read(source.extent) match {
+          case Some(raster) => Some((ProjectedExtent(raster.extent, source.crs), raster.tile))
+          case None => None
+        }
+      }
+
+    rasterSourceRDD.unpersist()
+
+    ProjectedRasterLayer(projectedRasterRDD)
+  }
+
   def readToLayout(
     sc: SparkContext,
     layerType: String,
