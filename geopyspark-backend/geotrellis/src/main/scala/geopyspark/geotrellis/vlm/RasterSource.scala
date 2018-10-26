@@ -1,6 +1,8 @@
 package geopyspark.geotrellis.vlm
 
 import geopyspark.geotrellis.{PartitionStrategy, ProjectedRasterLayer, SpatialTiledRasterLayer}
+import geopyspark.geotrellis.{LayoutType => GPSLayoutType, LocalLayout => GPSLocalLayout, GlobalLayout => GPSGlobalLayout}
+
 import geopyspark.geotrellis.Constants.{GEOTRELLIS, GDAL}
 
 import geotrellis.contrib.vlm._
@@ -80,10 +82,10 @@ object RasterSource {
     sc: SparkContext,
     layerType: String,
     paths: java.util.ArrayList[String],
-    layoutType: LayoutType,
-    targetCRS: Option[String],
+    layoutType: GPSLayoutType,
+    targetCRS: String,
     resampleMethod: ResampleMethod,
-    partitionStrategy: Option[PartitionStrategy],
+    partitionStrategy: PartitionStrategy,
     readMethod: String
   ): SpatialTiledRasterLayer =
     readToLayout(
@@ -102,9 +104,9 @@ object RasterSource {
     layerType: String,
     rdd: RDD[String],
     layoutType: LayoutType,
-    targetCRS: Option[String],
+    targetCRS: String,
     resampleMethod: ResampleMethod,
-    partitionStrategy: Option[PartitionStrategy],
+    partitionStrategy: PartitionStrategy,
     readMethod: String
   ): SpatialTiledRasterLayer = {
     // TODO: These are the things that still need to be done:
@@ -119,27 +121,30 @@ object RasterSource {
 
     val reprojectedSourcesRDD: RDD[RasterSource] =
       targetCRS match {
-        case Some(crs) =>
+        case crs: String =>
           rasterSourceRDD.map { _.reproject(CRS.fromString(crs), resampleMethod) }
-        case None =>
+        case null =>
           rasterSourceRDD
       }
 
     val metadata: RasterSummary = RasterSummary.fromRDD(reprojectedSourcesRDD)
 
-    val layoutScheme: LayoutScheme =
+    val LayoutLevel(zoom, layout) =
       layoutType match {
-        case global: GlobalLayout => ZoomedLayoutScheme(metadata.crs, global.tileSize)
-        case local: LocalLayout => FloatingLayoutScheme(local.tileCols, local.tileRows)
+        case global: GlobalLayout =>
+          val scheme = ZoomedLayoutScheme(metadata.crs, global.tileSize)
+          scheme.levelForZoom(global.zoom)
+        case local: LocalLayout =>
+          val scheme = FloatingLayoutScheme(local.tileCols, local.tileRows)
+          metadata.levelFor(scheme)
       }
 
-    val layout: LayoutDefinition = metadata.levelFor(layoutScheme).layout
     val layoutRDD: RDD[LayoutTileSource] = reprojectedSourcesRDD.map { _.tileToLayout(layout, resampleMethod) }
 
     val collectedMetadata: RasterSummary = RasterSummary.fromRDD(layoutRDD.map { _.source })
 
-    val (tileLayerMetadata, zoom): (TileLayerMetadata[SpatialKey], Option[Int]) =
-      collectedMetadata.toTileLayerMetadata(layoutType)
+    val tileLayerMetadata: TileLayerMetadata[SpatialKey] =
+      collectedMetadata.toTileLayerMetadata(layout, zoom)._1
 
     val tiledRDD: RDD[(SpatialKey, MultibandTile)] =
       layoutRDD.flatMap { case source =>
@@ -158,4 +163,10 @@ object RasterSource {
 
     SpatialTiledRasterLayer(zoom, contextRDD)
   }
+
+  implicit def gps2VLM(layoutType: GPSLayoutType): LayoutType =
+    layoutType match {
+      case local: GPSLocalLayout => LocalLayout(local.tileCols, local.tileRows)
+      case global: GPSGlobalLayout => GlobalLayout(global.tileSize, global.zoom, global.threshold)
+    }
 }
