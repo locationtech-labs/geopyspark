@@ -47,7 +47,8 @@ from geopyspark.geotrellis.constants import (IndexingMethod,
                                              ColorSpace,
                                              Compression,
                                              TimeUnit,
-                                             NO_DATA_INT)
+                                             NO_DATA_INT,
+                                             ReadMethod)
 from geopyspark.geotrellis.neighborhood import Neighborhood
 
 
@@ -396,6 +397,42 @@ class RasterLayer(CachableLayer, TileLayer):
         self.pysc = get_spark_context()
         self.layer_type = LayerType(layer_type)
         self.srdd = srdd
+
+    @classmethod
+    def read(cls,
+             paths,
+             layer_type=LayerType.SPATIAL,
+             target_crs=None,
+             resample_method=ResampleMethod.NEAREST_NEIGHBOR,
+             partition_strategy=None,
+             read_method=ReadMethod.GEOTRELLIS):
+
+        layer_type = LayerType(layer_type)
+
+        if layer_type == LayerType.SPACETIME:
+            raise NotImplementedError("The read method does not currently support the SPACETIME LayerType")
+
+        resample_method = ResampleMethod(resample_method)
+        read_method = ReadMethod(read_method)
+
+        check_partition_strategy(partition_strategy, layer_type)
+
+        if target_crs:
+            target_crs = crs_to_proj4(target_crs)
+
+        pysc = get_spark_context()
+
+        rastersource = pysc._gateway.jvm.geopyspark.geotrellis.vlm.RasterSource
+
+        srdd = rastersource.read(pysc._jsc.sc(),
+                                 layer_type.value,
+                                 paths,
+                                 target_crs,
+                                 resample_method,
+                                 partition_strategy,
+                                 read_method.value)
+
+        return cls(layer_type, srdd)
 
     @classmethod
     def from_numpy_rdd(cls, layer_type, numpy_rdd):
