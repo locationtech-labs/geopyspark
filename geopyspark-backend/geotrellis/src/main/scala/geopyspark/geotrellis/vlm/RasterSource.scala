@@ -107,6 +107,10 @@ object RasterSource {
     partitionStrategy: Option[PartitionStrategy],
     readMethod: String
   ): SpatialTiledRasterLayer = {
+    // TODO: These are the things that still need to be done:
+    // 1. Support TemporalTiledRasterLayer (ie. generic K)
+    // 2. Use the partitionStrategy parameter
+
     val rasterSourceRDD: RDD[RasterSource] =
       (readMethod match {
         case GEOTRELLIS => rdd.map { new GeoTiffRasterSource(_): RasterSource }
@@ -116,7 +120,7 @@ object RasterSource {
     val reprojectedSourcesRDD: RDD[RasterSource] =
       targetCRS match {
         case Some(crs) =>
-          rasterSourceRDD.map { _.reproject(CRS.fromString(crs), resampleMethod) }.cache()
+          rasterSourceRDD.map { _.reproject(CRS.fromString(crs), resampleMethod) }
         case None =>
           rasterSourceRDD
       }
@@ -147,7 +151,6 @@ object RasterSource {
         }
       }
 
-    reprojectedSourcesRDD.unpersist()
     rasterSourceRDD.unpersist()
 
     val contextRDD: MultibandTileLayerRDD[SpatialKey] =
