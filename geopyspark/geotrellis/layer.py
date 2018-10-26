@@ -1045,6 +1045,44 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         self.zoom_level = self.srdd.getZoom()
 
     @classmethod
+    def read_to_layout(cls,
+                       paths,
+                       layout_type,
+                       layer_type=LayerType.SPATIAL,
+                       target_crs=None,
+                       resample_method=ResampleMethod.NEAREST_NEIGHBOR,
+                       partition_strategy=None,
+                       read_method=ReadMethod.GEOTRELLIS):
+
+        layer_type = LayerType(layer_type)
+
+        if layer_type == LayerType.SPACETIME:
+            raise NotImplementedError("The read method does not currently support the SPACETIME LayerType")
+
+        resample_method = ResampleMethod(resample_method)
+        read_method = ReadMethod(read_method)
+
+        check_partition_strategy(partition_strategy, layer_type)
+
+        if target_crs:
+            target_crs = crs_to_proj4(target_crs)
+
+        pysc = get_spark_context()
+
+        rastersource = pysc._gateway.jvm.geopyspark.geotrellis.vlm.RasterSource
+
+        srdd = rastersource.readToLayout(pysc._jsc.sc(),
+                                         layer_type.value,
+                                         paths,
+                                         layout_type,
+                                         target_crs,
+                                         resample_method,
+                                         partition_strategy,
+                                         read_method.value)
+
+        return cls(layer_type, srdd)
+
+    @classmethod
     def from_numpy_rdd(cls, layer_type, numpy_rdd, metadata, zoom_level=None):
         """Create a ``TiledRasterLayer`` from a numpy RDD.
 
