@@ -141,10 +141,8 @@ object RasterSource {
 
     val layoutRDD: RDD[LayoutTileSource] = reprojectedSourcesRDD.map { _.tileToLayout(layout, resampleMethod) }
 
-    val collectedMetadata: RasterSummary = RasterSummary.fromRDD(layoutRDD.map { _.source })
-
     val tileLayerMetadata: TileLayerMetadata[SpatialKey] =
-      collectedMetadata.toTileLayerMetadata(layout, zoom)._1
+      metadata.toTileLayerMetadata(layout, zoom)._1
 
     val tiledRDD: RDD[(SpatialKey, MultibandTile)] =
       layoutRDD.flatMap { case source =>
