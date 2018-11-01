@@ -1,6 +1,5 @@
-
 lazy val commonSettings = Seq(
-  version := Version.geopyspark + scala.util.Properties.envOrElse("GEOPYSPARK_VERSION_SUFFIX", ""),
+  version := Version.geopyspark,
   scalaVersion := Version.scala,
   description := "GeoPySpark",
   organization := "org.locationtech.geotrellis",
