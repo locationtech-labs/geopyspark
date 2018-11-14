@@ -21,6 +21,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 
 object RasterSource {
@@ -40,6 +41,41 @@ object RasterSource {
       resampleMethod,
       readMethod
     )
+
+  def readOrdered(
+    sc: SparkContext,
+    layerType: String,
+    paths: java.util.ArrayList[java.util.Map[String, String]],
+    targetCRS: String,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy,
+    readMethod: String
+  ): ProjectedRasterLayer = {
+    val scalaPaths: Seq[Seq[(String, String)]] = paths.asScala.toSeq.map { _.asScala.toSeq }
+
+    val formattedPaths: Seq[((String, String), String)] =
+      scalaPaths.flatMap { mappedPaths =>
+        mappedPaths.map { case (k, v) => ((k, v), v) }
+      }
+
+    val rdd: RDD[((String, String), String)] = sc.parallelize(formattedPaths, formattedPaths.size)
+
+    val rasterSourceRDD: RDD[((String, String), RasterSource)] =
+      (readMethod match {
+        case GEOTRELLIS => rdd.mapValues { new GeoTiffRasterSource(_): RasterSource }
+        case GDAL => rdd.mapValues { GDALRasterSource(_): RasterSource }
+      }).cache()
+
+    val reprojectedSourcesRDD: RDD[((String, String), RasterSource)] =
+      targetCRS match {
+        case crs: String =>
+          rasterSourceRDD.mapValues { _.reproject(CRS.fromString(crs), resampleMethod) }
+        case null =>
+          rasterSourceRDD
+      }
+
+    ???
+  }
 
   def read(
     sc: SparkContext,
