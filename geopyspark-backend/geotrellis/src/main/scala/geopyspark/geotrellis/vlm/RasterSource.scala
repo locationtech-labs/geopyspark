@@ -42,52 +42,18 @@ object RasterSource {
       readMethod
     )
 
-  def readOrdered(
-    sc: SparkContext,
-    layerType: String,
-    paths: java.util.ArrayList[java.util.Map[String, String]],
-    targetCRS: String,
-    resampleMethod: ResampleMethod,
-    partitionStrategy: PartitionStrategy,
-    readMethod: String
-  ): ProjectedRasterLayer = {
-    val scalaPaths: Seq[Seq[(String, String)]] = paths.asScala.toSeq.map { _.asScala.toSeq }
-
-    val formattedPaths: Seq[((String, String), String)] =
-      scalaPaths.flatMap { mappedPaths =>
-        mappedPaths.map { case (k, v) => ((k, v), v) }
-      }
-
-    val rdd: RDD[((String, String), String)] = sc.parallelize(formattedPaths, formattedPaths.size)
-
-    val rasterSourceRDD: RDD[((String, String), RasterSource)] =
-      (readMethod match {
-        case GEOTRELLIS => rdd.mapValues { new GeoTiffRasterSource(_): RasterSource }
-        case GDAL => rdd.mapValues { GDALRasterSource(_): RasterSource }
-      }).cache()
-
-    val reprojectedSourcesRDD: RDD[((String, String), RasterSource)] =
-      targetCRS match {
-        case crs: String =>
-          rasterSourceRDD.mapValues { _.reproject(CRS.fromString(crs), resampleMethod) }
-        case null =>
-          rasterSourceRDD
-      }
-
-    ???
-  }
-
   def read(
     sc: SparkContext,
     layerType: String,
     rdd: RDD[String],
     targetCRS: String,
     resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy,
     readMethod: String
   ): ProjectedRasterLayer = {
     val rasterSourceRDD: RDD[RasterSource] =
       (readMethod match {
-        case GEOTRELLIS => rdd.map { GeoTiffRasterSource(_): RasterSource }
+        case GEOTRELLIS => rdd.map { new GeoTiffRasterSource(_): RasterSource }
         case GDAL => rdd.map { GDALRasterSource(_): RasterSource }
       }).cache()
 
@@ -110,6 +76,215 @@ object RasterSource {
     rasterSourceRDD.unpersist()
 
     ProjectedRasterLayer(projectedRasterRDD)
+  }
+
+  def readOrdered(
+    sc: SparkContext,
+    layerType: String,
+    paths: java.util.ArrayList[java.util.Map[String, String]],
+    targetCRS: String,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy,
+    readMethod: String
+  ): ProjectedRasterLayer = {
+    val scalaPaths: Seq[(String, String)] = paths.asScala.toSeq.flatMap { _.asScala.toSeq }
+
+    readOrdered(
+      sc,
+      layerType,
+      sc.parallelize(scalaPaths, scalaPaths.size),
+      targetCRS,
+      resampleMethod,
+      partitionStrategy,
+      readMethod
+    )
+  }
+
+  def readOrdered(
+    sc: SparkContext,
+    layerType: String,
+    rdd: RDD[(String, String)],
+    targetCRS: String,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy,
+    readMethod: String
+  ): ProjectedRasterLayer = {
+    val rasterSourceRDD: RDD[(String, (String, RasterSource))] =
+      (readMethod match {
+        case GEOTRELLIS =>
+          rdd.mapPartitions { iter =>
+            iter.map { case (k, v) =>
+            (v, (k, new GeoTiffRasterSource(v): RasterSource))
+            }
+          }
+        case GDAL =>
+          rdd.mapPartitions { iter =>
+            iter.map { case (k, v) =>
+              (v, (k, GDALRasterSource(v): RasterSource))
+            }
+          }
+      }).cache()
+
+    val combinedRasterSourcesRDD: RDD[(String, Seq[(String, RasterSource)])] =
+      rasterSourceRDD.combineByKey(
+        (value: (String, RasterSource)) =>
+          Seq(value),
+        (rasterSeq: Seq[(String, RasterSource)], value: (String, RasterSource)) =>
+          value +: rasterSeq,
+        (s1: Seq[(String, RasterSource)], s2: Seq[(String, RasterSource)]) =>
+          s1 ++: s2
+        )
+
+    val orderedRasterSourcesRDD: RDD[Seq[RasterSource]] =
+      combinedRasterSourcesRDD.map { case (_, v) =>
+        v.sortBy { _._1 }.map { case (_, source) => source }
+      }
+
+    val reprojectedSourcesRDD: RDD[Seq[RasterSource]] =
+      targetCRS match {
+        case crs: String =>
+          orderedRasterSourcesRDD.map {
+            _.map { _.reproject(CRS.fromString(crs), resampleMethod) }
+          }
+        case null =>
+          orderedRasterSourcesRDD
+      }
+
+    val projectedRasterRDD: RDD[(ProjectedExtent, MultibandTile)] =
+      reprojectedSourcesRDD.map { sources: Seq[RasterSource] =>
+        val extent: Extent = sources.head.extent
+        val crs: CRS = sources.head.crs
+
+        val tiles: Seq[MultibandTile] =
+          sources.flatMap { source: RasterSource =>
+            source.read(source.extent) match {
+              case Some(raster) => Some(raster.tile)
+              case None => None
+            }
+          }
+
+        (ProjectedExtent(extent, crs), MultibandTile(tiles.map { _.band(0) }))
+      }
+
+    rasterSourceRDD.unpersist()
+
+    ProjectedRasterLayer(projectedRasterRDD)
+  }
+
+  def readOrderedToLayout(
+    sc: SparkContext,
+    layerType: String,
+    paths: java.util.ArrayList[java.util.Map[String, String]],
+    layoutType: LayoutType,
+    targetCRS: String,
+    resampleMethod: ResampleMethod,
+    readMethod: String
+  ): SpatialTiledRasterLayer = {
+    val scalaPaths: Seq[(String, String)] = paths.asScala.toSeq.flatMap { _.asScala.toSeq }
+
+    val rdd: RDD[(String, String)] = sc.parallelize(scalaPaths, scalaPaths.size)
+
+    val rasterSourceRDD: RDD[(String, (String, RasterSource))] =
+      (readMethod match {
+        case GEOTRELLIS =>
+          rdd.mapPartitions { iter =>
+            iter.map { case (k, v) =>
+            (v, (k, new GeoTiffRasterSource(v): RasterSource))
+            }
+          }
+        case GDAL =>
+          rdd.mapPartitions { iter =>
+            iter.map { case (k, v) =>
+              (v, (k, GDALRasterSource(v): RasterSource))
+            }
+          }
+      }).cache()
+
+    val combinedRasterSourcesRDD: RDD[(String, Seq[(String, RasterSource)])] =
+      rasterSourceRDD.combineByKey(
+        (value: (String, RasterSource)) =>
+          Seq(value),
+        (rasterSeq: Seq[(String, RasterSource)], value: (String, RasterSource)) =>
+          value +: rasterSeq,
+        (s1: Seq[(String, RasterSource)], s2: Seq[(String, RasterSource)]) =>
+          s1 ++: s2
+        )
+
+    val orderedRasterSourcesRDD: RDD[Seq[RasterSource]] =
+      combinedRasterSourcesRDD.map { case (_, v) =>
+        v.sortBy { _._1 }.map { case (_, source) => source }
+      }
+
+    val reprojectedSourcesRDD: RDD[Seq[RasterSource]] =
+      targetCRS match {
+        case crs: String =>
+          orderedRasterSourcesRDD.map {
+            _.map { _.reproject(CRS.fromString(crs), resampleMethod) }
+          }
+        case null =>
+          orderedRasterSourcesRDD
+      }
+
+    val rasterSummary: RasterSummary =
+      reprojectedSourcesRDD
+        .map { sources: Seq[RasterSource] =>
+          sources
+            .map { source =>
+              val ProjectedExtent(extent, crs) = source.getComponent[ProjectedExtent]
+              val cellSize = CellSize(extent, source.cols, source.rows)
+              RasterSummary(crs, source.cellType, cellSize, extent, source.size, 1)
+            }.reduce { _ combine _ }
+        }
+        .reduce { _ combine _ }
+
+    val LayoutLevel(zoom, layout) =
+      layoutType match {
+        case global: GlobalLayout =>
+          val scheme = ZoomedLayoutScheme(rasterSummary.crs, global.tileSize)
+          scheme.levelForZoom(global.zoom)
+        case local: LocalLayout =>
+          val scheme = FloatingLayoutScheme(local.tileCols, local.tileRows)
+          rasterSummary.levelFor(scheme)
+      }
+
+    val metadata: TileLayerMetadata[SpatialKey] =
+      rasterSummary.toTileLayerMetadata(layout, zoom)._1
+
+    val layoutsRDD: RDD[Seq[LayoutTileSource]] =
+      reprojectedSourcesRDD.map { _.map { _.tileToLayout(layout, resampleMethod) } }
+
+    val keyedRDD: RDD[(SpatialKey, MultibandTile)] =
+      layoutsRDD.flatMap { layouts: Seq[LayoutTileSource] =>
+        layouts.flatMap { layout: LayoutTileSource =>
+          layout.keys.flatMap { key: SpatialKey =>
+            layout.rasterRef(key).raster match {
+              case Some(raster) => Some((key, raster.tile))
+              case None => None
+            }
+          }
+        }
+      }
+
+    /*
+    val tiledRDD: RDD[(SpatialKey, MultibandTile)] =
+      layoutRDD.flatMap { case source =>
+        source.keys.toIterator.flatMap { key: SpatialKey =>
+          source.rasterRef(key).raster match {
+            case Some(raster) => Some((key, raster.tile))
+            case None => None
+          }
+        }
+      }
+
+    rasterSourceRDD.unpersist()
+
+    val contextRDD: MultibandTileLayerRDD[SpatialKey] =
+      ContextRDD(tiledRDD, tileLayerMetadata)
+
+    SpatialTiledRasterLayer(zoom, contextRDD)
+    */
+
+    ???
   }
 
   def readToLayout(
