@@ -456,12 +456,21 @@ class RasterLayer(CachableLayer, TileLayer):
         if isinstance(paths, str):
             paths = [paths]
 
-        srdd = rastersource.read(pysc._jsc.sc(),
-                                 layer_type.value,
-                                 paths,
-                                 target_crs,
-                                 resample_method,
-                                 read_method.value)
+        if isinstance(paths, dict) or (isinstance(paths, list) and isinstance(paths[0], dict)):
+            srdd = rastersource.readOrdered(pysc._jsc.sc(),
+                                            layer_type.value,
+                                            paths,
+                                            target_crs,
+                                            resample_method,
+                                            partition_strategy,
+                                            read_method.value)
+        else:
+            srdd = rastersource.read(pysc._jsc.sc(),
+                                     layer_type.value,
+                                     paths,
+                                     target_crs,
+                                     resample_method,
+                                     read_method.value)
 
         return cls(layer_type, srdd)
 
@@ -1136,13 +1145,24 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         rastersource = pysc._gateway.jvm.geopyspark.geotrellis.vlm.RasterSource
 
-        srdd = rastersource.readToLayout(pysc._jsc.sc(),
-                                         layer_type.value,
-                                         paths,
-                                         layout_type,
-                                         target_crs,
-                                         resample_method,
-                                         read_method.value)
+        if isinstance(paths, dict) or (isinstance(paths, list) and isinstance(paths[0], dict)):
+            srdd = rastersource.readOrderedToLayout(pysc._jsc.sc(),
+                                                    layer_type.value,
+                                                    paths,
+                                                    layout_type,
+                                                    target_crs,
+                                                    resample_method,
+                                                    partition_strategy,
+                                                    read_method.value)
+
+        else:
+            srdd = rastersource.readToLayout(pysc._jsc.sc(),
+                                             layer_type.value,
+                                             paths,
+                                             layout_type,
+                                             target_crs,
+                                             resample_method,
+                                             read_method.value)
 
         return cls(layer_type, srdd)
 

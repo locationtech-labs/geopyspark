@@ -81,7 +81,7 @@ object RasterSource {
   def readOrdered(
     sc: SparkContext,
     layerType: String,
-    paths: java.util.ArrayList[java.util.Map[String, String]],
+    paths: java.util.ArrayList[java.util.HashMap[String, String]],
     targetCRS: String,
     resampleMethod: ResampleMethod,
     partitionStrategy: PartitionStrategy,
@@ -166,7 +166,7 @@ object RasterSource {
   def readOrderedToLayout(
     sc: SparkContext,
     layerType: String,
-    paths: java.util.ArrayList[java.util.Map[String, String]],
+    paths: java.util.ArrayList[java.util.HashMap[String, String]],
     layoutType: LayoutType,
     targetCRS: String,
     resampleMethod: ResampleMethod,
