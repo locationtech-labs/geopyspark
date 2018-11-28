@@ -404,7 +404,6 @@ class RasterLayer(CachableLayer, TileLayer):
              layer_type=LayerType.SPATIAL,
              target_crs=None,
              resample_method=ResampleMethod.NEAREST_NEIGHBOR,
-             partition_strategy=None,
              read_method=ReadMethod.GEOTRELLIS):
 
         layer_type = LayerType(layer_type)
@@ -414,8 +413,6 @@ class RasterLayer(CachableLayer, TileLayer):
 
         resample_method = ResampleMethod(resample_method)
         read_method = ReadMethod(read_method)
-
-        check_partition_strategy(partition_strategy, layer_type)
 
         if target_crs:
             target_crs = crs_to_proj4(target_crs)
@@ -429,7 +426,6 @@ class RasterLayer(CachableLayer, TileLayer):
                                  paths,
                                  target_crs,
                                  resample_method,
-                                 partition_strategy,
                                  read_method.value)
 
         return cls(layer_type, srdd)
@@ -1051,7 +1047,6 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                        layer_type=LayerType.SPATIAL,
                        target_crs=None,
                        resample_method=ResampleMethod.NEAREST_NEIGHBOR,
-                       partition_strategy=None,
                        read_method=ReadMethod.GEOTRELLIS):
 
         layer_type = LayerType(layer_type)
@@ -1061,8 +1056,6 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         resample_method = ResampleMethod(resample_method)
         read_method = ReadMethod(read_method)
-
-        check_partition_strategy(partition_strategy, layer_type)
 
         if target_crs:
             target_crs = crs_to_proj4(target_crs)
@@ -1077,7 +1070,6 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                                          layout_type,
                                          target_crs,
                                          resample_method,
-                                         partition_strategy,
                                          read_method.value)
 
         return cls(layer_type, srdd)

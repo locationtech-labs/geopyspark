@@ -29,7 +29,6 @@ object RasterSource {
     paths: java.util.ArrayList[String],
     targetCRS: String,
     resampleMethod: ResampleMethod,
-    partitionStrategy: PartitionStrategy,
     readMethod: String
   ): ProjectedRasterLayer =
     read(
@@ -38,7 +37,6 @@ object RasterSource {
       sc.parallelize(paths.asScala, paths.size),
       targetCRS,
       resampleMethod,
-      partitionStrategy,
       readMethod
     )
 
@@ -48,7 +46,6 @@ object RasterSource {
     rdd: RDD[String],
     targetCRS: String,
     resampleMethod: ResampleMethod,
-    partitionStrategy: PartitionStrategy,
     readMethod: String
   ): ProjectedRasterLayer = {
     val rasterSourceRDD: RDD[RasterSource] =
@@ -85,7 +82,6 @@ object RasterSource {
     layoutType: GPSLayoutType,
     targetCRS: String,
     resampleMethod: ResampleMethod,
-    partitionStrategy: PartitionStrategy,
     readMethod: String
   ): SpatialTiledRasterLayer =
     readToLayout(
@@ -95,7 +91,6 @@ object RasterSource {
       layoutType,
       targetCRS,
       resampleMethod,
-      partitionStrategy,
       readMethod
     )
 
@@ -106,7 +101,6 @@ object RasterSource {
     layoutType: LayoutType,
     targetCRS: String,
     resampleMethod: ResampleMethod,
-    partitionStrategy: PartitionStrategy,
     readMethod: String
   ): SpatialTiledRasterLayer = {
     // TODO: These are the things that still need to be done:
@@ -145,14 +139,7 @@ object RasterSource {
       metadata.toTileLayerMetadata(layout, zoom)._1
 
     val tiledRDD: RDD[(SpatialKey, MultibandTile)] =
-      layoutRDD.flatMap { case source =>
-        source.keys.toIterator.flatMap { key: SpatialKey =>
-          source.rasterRef(key).raster match {
-            case Some(raster) => Some((key, raster.tile))
-            case None => None
-          }
-        }
-      }
+      layoutRDD.flatMap { _.readAll() }
 
     rasterSourceRDD.unpersist()
 

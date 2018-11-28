@@ -69,16 +69,14 @@ class RasterLayerTest(BaseTestClass):
     def test_read_no_reproject_geotrellis(self):
         self.read_no_reproject(ReadMethod.GEOTRELLIS)
 
-    @pytest.mark.skipif('TRAVIS' in os.environ,
-                        reason="Travis does not currently support GDAL")
+    @pytest.mark.skip(reason="Travis does not currently support GDAL")
     def test_read_no_reproject_gdal(self):
         self.read_no_reproject(ReadMethod.GDAL)
 
     def test_read_with_reproject_geotrellis(self):
         self.read_with_reproject(ReadMethod.GEOTRELLIS)
 
-    @pytest.mark.skipif('TRAVIS' in os.environ,
-                        reason="Travis does not currently support GDAL")
+    @pytest.mark.skip(reason="Travis does not currently support GDAL")
     def test_read_with_reproject_gdal(self):
         self.read_with_reproject(ReadMethod.GDAL)
 
