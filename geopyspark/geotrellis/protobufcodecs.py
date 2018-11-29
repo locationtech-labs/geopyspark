@@ -2,11 +2,12 @@
 from functools import partial
 import datetime
 import numpy as np
+from shapely.wkb import loads, dumps
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
 from geopyspark.geotrellis import (Extent, ProjectedExtent, TemporalProjectedExtent, SpatialKey,
-                                   SpaceTimeKey, Tile, _convert_to_unix_time)
+                                   SpaceTimeKey, Tile, _convert_to_unix_time, Feature, CellValue)
 
 from geopyspark.geotrellis.protobuf.tileMessages_pb2 import ProtoTile, ProtoMultibandTile, ProtoCellType
 from geopyspark.geotrellis.protobuf import keyMessages_pb2
