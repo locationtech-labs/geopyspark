@@ -3,7 +3,6 @@ package geopyspark.geotrellis
 import geopyspark.util._
 import geopyspark.geotrellis._
 import geopyspark.geotrellis.GeoTrellisUtils._
-import geopyspark.vectorpipe._
 
 import protos.tileMessages._
 import protos.keyMessages._

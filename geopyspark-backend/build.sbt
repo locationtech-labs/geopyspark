@@ -43,8 +43,6 @@ lazy val publishSettings =
     homepage := Some(url("https://github.com/locationtech-labs/geopyspark"))
   )
 
-
-
 scalaVersion := Version.scala
 scalaVersion in ThisBuild := Version.scala
 
@@ -54,11 +52,6 @@ lazy val utilProject = Project("util", file("util"))
   .settings(commonSettings: _*)
   .settings(publishSettings: _*)
 
-lazy val vectorPipeProject = Project("vectorpipe", file("vectorpipe"))
-  .settings(commonSettings: _*)
-  .settings(publishSettings: _*)
-  .dependsOn(utilProject)
-
 lazy val geotoolsProject = Project("geotools", file("geotools"))
   .settings(commonSettings: _*)
   .settings(publishSettings: _*)
@@ -67,4 +60,4 @@ lazy val geotoolsProject = Project("geotools", file("geotools"))
 lazy val geotrellisProject = Project("geotrellis-backend", file("geotrellis"))
   .settings(commonSettings: _*)
   .settings(publishSettings: _*)
-  .dependsOn(utilProject, vectorPipeProject, geotoolsProject)
+  .dependsOn(utilProject, geotoolsProject)

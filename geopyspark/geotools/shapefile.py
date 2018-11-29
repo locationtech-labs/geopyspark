@@ -5,7 +5,7 @@ from geopyspark import get_spark_context, create_python_rdd
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 from geopyspark.geotrellis.constants import DEFAULT_S3_CLIENT
 
-from geopyspark.vector_pipe import Feature
+from geopyspark.geotrellis import Feature
 
 from geopyspark.geotools.geotools_protobufcodecs import feature_decoder
 
@@ -49,7 +49,7 @@ def get(uri,
                 ``mock`` should only be used in unit tests and debugging.
 
     Returns:
-        ``RDD[:class:`~geopyspark.vector_pipe.Feature`]``
+        ``RDD[:class:`~geopyspark.geotrellis.Feature`]``
     """
 
     pysc = get_spark_context()

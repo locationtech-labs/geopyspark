@@ -12,3 +12,4 @@ trait Implicits extends CRSProtoBuf
     with TileProtoBuf
     with MultibandTileProtoBuf
     with TupleProtoBuf
+    with FeatureProtoBuf
