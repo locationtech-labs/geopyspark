@@ -46,11 +46,21 @@ geopyspark.geotrellis package
    :members:
    :inherited-members:
 
-.. autoclass:: geopyspark.geotrellis.RasterizerOptions
+.. autoclass:: geopyspark.geotrellis.Bounds
    :members:
    :inherited-members:
 
-.. autoclass:: geopyspark.geotrellis.Bounds
+.. autoclass:: geopyspark.geotrellis.Feature
+   :members:
+   :inherited-members:
+   :undoc-members:
+
+.. autoclass:: geopyspark.geotrellis.CellValue
+   :members:
+   :inherited-members:
+   :undoc-members:
+
+.. autoclass:: geopyspark.geotrellis.RasterizerOptions
    :members:
    :inherited-members:
 
