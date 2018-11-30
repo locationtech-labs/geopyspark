@@ -42,7 +42,8 @@ import spray.json._
 import spray.json.DefaultJsonProtocol._
 import spire.syntax.cfor._
 
-import com.vividsolutions.jts.geom.Coordinate
+import org.locationtech.jts.geom.Coordinate
+
 import org.apache.spark._
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd._
