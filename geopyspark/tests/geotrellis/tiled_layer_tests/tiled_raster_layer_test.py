@@ -50,7 +50,6 @@ class TiledRasterLayerTest(BaseTestClass):
 
     # Tests with GlobalLayout
 
-    @pytest.mark.skip
     def test_read_no_reproject_global_geotrellis(self):
         self.read(GlobalLayout(tile_size=16, zoom=4), ReadMethod.GEOTRELLIS)
 
@@ -58,7 +57,6 @@ class TiledRasterLayerTest(BaseTestClass):
     def test_read_no_reproject_global_gdal(self):
         self.read(GlobalLayout(tile_size=128, zoom=4), ReadMethod.GDAL)
 
-    @pytest.mark.skip
     def test_read_with_reproject_global_geotrellis(self):
         self.read(GlobalLayout(tile_size=128, zoom=4), ReadMethod.GEOTRELLIS, target_crs=3857)
 
