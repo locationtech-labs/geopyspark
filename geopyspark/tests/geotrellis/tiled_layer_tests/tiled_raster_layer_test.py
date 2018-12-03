@@ -8,6 +8,8 @@ from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
 class TiledRasterLayerTest(BaseTestClass):
+    difference = 0.000001
+
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
@@ -30,7 +32,12 @@ class TiledRasterLayerTest(BaseTestClass):
 
         for expected, actual in zip(expected_collected, actual_collected):
             self.assertEqual(expected[0], actual[0])
-            self.assertTrue((expected[1].cells == actual[1].cells).all())
+            self.assertTrue(expected[1].cells.shape == actual[1].cells.shape)
+
+            diff = abs(expected[1].cells - actual[1].cells)
+            off_values_count = (diff > self.difference).sum()
+
+            self.assertTrue(off_values_count / expected[1].cells.size <= 0.025)
 
     # Tests using LocalLayout
 
