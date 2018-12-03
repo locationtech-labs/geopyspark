@@ -16,9 +16,12 @@ assemblyShadeRules in assembly := {
   Seq(
     ShadeRule.rename("org.apache.avro.**" -> s"$shadePackage.org.apache.avro.@1")
       .inLibrary("org.locationtech.geotrellis" %% "geotrellis-spark" % Version.geotrellis).inAll,
+
     ShadeRule.rename("com.typesafe.scalalogging.**" -> s"$shadePackage.com.typesafe.scalalogging.@1")
       .inLibrary("org.locationtech.geotrellis" %% "geotrellis-spark" % Version.geotrellis).inAll,
-    ShadeRule.rename("shapeless.**" -> s"$shadePackage.shapeless.@1").inAll
+
+    ShadeRule.rename("spire.**" -> s"$shadePackage.spire.@1")
+      .inLibrary("org.locationtech.geotrellis" %% "geotrellis-spark" % Version.geotrellis).inAll
   )
 }
 
