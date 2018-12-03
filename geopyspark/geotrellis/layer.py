@@ -405,6 +405,38 @@ class RasterLayer(CachableLayer, TileLayer):
              target_crs=None,
              resample_method=ResampleMethod.NEAREST_NEIGHBOR,
              read_method=ReadMethod.GEOTRELLIS):
+        """Creates a RasterLayer from a list of data sources.
+
+        Note:
+            This is feature is still a WIP, so not all features are currently
+            supported.
+
+        Args:
+            paths (str or [str]): A path or a list of paths that point to geo-spatial data.
+                These strings can be in either a URI format or a relative path.
+            layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`, optional): What the layer type
+                of the geotiffs are. This is represented by either constants within ``LayerType`` or by
+                a string.
+
+                Note:
+                   Only ``SPATIAL`` layer types are currently supported.
+            target_crs (str or int, optional): The CRS that the output tiles should be
+                in. If ``None``, then the CRS that the tiles were originally in
+                will be used.
+            resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
+                The resample method to use when building internal overviews. Default is,
+                ``ResampleMethods.NEAREST_NEIGHBOR``.
+            read_method(str or :class:`~geopyspark.geotrellis.constants.ReadMethod`, optional): The method
+                that should be used to read in the data. The ``GEOTRELLIS`` method can only read GeoTiffs,
+                but is already setup. While the other method, ``GDAL`` can read other data sources, but
+                it requires that GDAL be setup locally with the required drivers. Default is, ``GeoTrellis``.
+
+                Note:
+                    Only the ``GEOTRELLIS`` method is currently supported.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.RasterLayer`
+        """
 
         layer_type = LayerType(layer_type)
 
@@ -420,6 +452,9 @@ class RasterLayer(CachableLayer, TileLayer):
         pysc = get_spark_context()
 
         rastersource = pysc._gateway.jvm.geopyspark.geotrellis.vlm.RasterSource
+
+        if isinstance(paths, str):
+            paths = [paths]
 
         srdd = rastersource.read(pysc._jsc.sc(),
                                  layer_type.value,
@@ -1048,6 +1083,40 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                        target_crs=None,
                        resample_method=ResampleMethod.NEAREST_NEIGHBOR,
                        read_method=ReadMethod.GEOTRELLIS):
+        """Creates a TiledRasterLayer from a list of data sources.
+
+        Note:
+            This is feature is still a WIP, so not all features are currently
+            supported.
+
+        Args:
+            paths (str or [str]): A path or a list of paths that point to geo-spatial data.
+                These strings can be in either a URI format or a relative path.
+            layout (:class:`~geopyspark.geotrellis.LayoutDefinition` or :class:`~geopyspark.geotrellis.Metadata` or :class:`~geopyspark.geotrellis.TiledRasterLayer` or :class:`~geopyspark.geotrellis.GlobalLayout` or :class:`~geopyspark.geotrellis.LocalLayout`):
+                Target raster layout for the tiling operation.
+            layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`, optional): What the layer type
+                of the geotiffs are. This is represented by either constants within ``LayerType`` or by
+                a string.
+
+                Note:
+                   Only ``SPATIAL`` layer types are currently supported.
+            target_crs (str or int, optional): The CRS that the output tiles should be
+                in. If ``None``, then the CRS that the tiles were originally in
+                will be used.
+            resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
+                The resample method to use when building internal overviews. Default is,
+                ``ResampleMethods.NEAREST_NEIGHBOR``.
+            read_method(str or :class:`~geopyspark.geotrellis.constants.ReadMethod`, optional): The method
+                that should be used to read in the data. The ``GEOTRELLIS`` method can only read GeoTiffs,
+                but is already setup. While the other method, ``GDAL`` can read other data sources, but
+                it requires that GDAL be setup locally with the required drivers. Default is, ``GeoTrellis``.
+
+                Note:
+                    Only the ``GEOTRELLIS`` method is currently supported.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
+        """
 
         layer_type = LayerType(layer_type)
 
@@ -1061,6 +1130,9 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             target_crs = crs_to_proj4(target_crs)
 
         pysc = get_spark_context()
+
+        if isinstance(paths, str):
+            paths = [paths]
 
         rastersource = pysc._gateway.jvm.geopyspark.geotrellis.vlm.RasterSource
 
@@ -1076,7 +1148,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
     @classmethod
     def from_numpy_rdd(cls, layer_type, numpy_rdd, metadata, zoom_level=None):
-        """Create a ``TiledRasterLayer`` from a numpy RDD.
+        """Creates a ``TiledRasterLayer`` from a numpy RDD.
 
         Args:
             layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`): What the layer type
