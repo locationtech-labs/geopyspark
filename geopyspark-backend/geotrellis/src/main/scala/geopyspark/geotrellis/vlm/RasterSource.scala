@@ -6,6 +6,7 @@ import geopyspark.geotrellis.{LayoutType => GPSLayoutType, LocalLayout => GPSLoc
 import geopyspark.geotrellis.Constants.{GEOTRELLIS, GDAL}
 
 import geotrellis.contrib.vlm._
+import geotrellis.contrib.vlm.geotiff.GeoTiffRasterSource
 import geotrellis.contrib.vlm.gdal.GDALRasterSource
 
 import geotrellis.raster._
