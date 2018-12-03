@@ -462,7 +462,6 @@ class RasterLayer(CachableLayer, TileLayer):
                                             paths,
                                             target_crs,
                                             resample_method,
-                                            partition_strategy,
                                             read_method.value)
         else:
             srdd = rastersource.read(pysc._jsc.sc(),
@@ -1152,7 +1151,6 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                                                     layout_type,
                                                     target_crs,
                                                     resample_method,
-                                                    partition_strategy,
                                                     read_method.value)
 
         else:

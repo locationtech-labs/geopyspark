@@ -48,7 +48,6 @@ object RasterSource {
     rdd: RDD[String],
     targetCRS: String,
     resampleMethod: ResampleMethod,
-    partitionStrategy: PartitionStrategy,
     readMethod: String
   ): ProjectedRasterLayer = {
     val rasterSourceRDD: RDD[RasterSource] =
@@ -84,7 +83,6 @@ object RasterSource {
     paths: java.util.ArrayList[java.util.HashMap[String, String]],
     targetCRS: String,
     resampleMethod: ResampleMethod,
-    partitionStrategy: PartitionStrategy,
     readMethod: String
   ): ProjectedRasterLayer = {
     val scalaPaths: Seq[Seq[(String, String)]] = paths.asScala.toSeq.map { _.asScala.toSeq }
@@ -95,7 +93,6 @@ object RasterSource {
       sc.parallelize(scalaPaths, scalaPaths.size),
       targetCRS,
       resampleMethod,
-      partitionStrategy,
       readMethod
     )
   }
@@ -106,7 +103,6 @@ object RasterSource {
     rdd: RDD[Seq[(String, String)]],
     targetCRS: String,
     resampleMethod: ResampleMethod,
-    partitionStrategy: PartitionStrategy,
     readMethod: String
   ): ProjectedRasterLayer = {
     val rasterSourcesRDD: RDD[Seq[(String, RasterSource)]] =
@@ -167,7 +163,7 @@ object RasterSource {
     sc: SparkContext,
     layerType: String,
     paths: java.util.ArrayList[java.util.HashMap[String, String]],
-    layoutType: LayoutType,
+    layoutType: GPSLayoutType,
     targetCRS: String,
     resampleMethod: ResampleMethod,
     readMethod: String
@@ -181,7 +177,6 @@ object RasterSource {
       layoutType,
       targetCRS,
       resampleMethod,
-      partitionStrategy,
       readMethod
     )
   }
@@ -193,7 +188,6 @@ object RasterSource {
     layoutType: LayoutType,
     targetCRS: String,
     resampleMethod: ResampleMethod,
-    partitionStrategy: PartitionStrategy,
     readMethod: String
   ): SpatialTiledRasterLayer = {
     val rasterSourcesRDD: RDD[Seq[(String, RasterSource)]] =
@@ -269,7 +263,7 @@ object RasterSource {
 
         val groupedTiles: Map[SpatialKey, MultibandTile] =
           groupedValues.map { case (k, vs) =>
-            (k, MultibandTile(vs.map { _._2.band(0) }))
+            (k, MultibandTile(vs.flatMap { _._2.bands }))
           }
 
         groupedTiles.toSeq
