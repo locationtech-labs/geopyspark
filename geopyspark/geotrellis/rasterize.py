@@ -4,8 +4,7 @@ from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
 
-from geopyspark.vector_pipe.vector_pipe_protobufcodecs import (feature_cellvalue_decoder,
-                                                               feature_cellvalue_encoder)
+from geopyspark.geotrellis.protobufcodecs import feature_cellvalue_decoder, feature_cellvalue_encoder
 
 
 __all__ = ['rasterize', 'rasterize_features']
@@ -91,15 +90,11 @@ def rasterize_features(features,
                        options=None,
                        zindex_cell_type=CellType.INT8,
                        partition_strategy=None):
-    """Rasterizes a collection of :class:`~geopyspark.vector_pipe.Feature`\s.
+    """Rasterizes a collection of :class:`~geopyspark.geotrellis.Feature`\s.
 
     Args:
         features (pyspark.RDD[Feature]): A Python ``RDD`` that
-            contains :class:`~geopyspark.vector_pipe.Feature`\s.
-
-            Note:
-                The ``properties`` of each ``Feature`` must be an instance of
-                :class:`~geopyspark.vector_pipe.CellValue`.
+            contains :class:`~geopyspark.geotrellis.Feature`\s.
         crs (str or int): The CRS of the input geometry.
         zoom (int): The zoom level of the output raster.
 

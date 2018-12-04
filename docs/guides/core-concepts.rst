@@ -15,6 +15,7 @@ code:
    import datetime
    import numpy as np
    import geopyspark as gps
+   from shapely.geometry import box
 
 Rasters
 -------
@@ -263,3 +264,40 @@ easier means. For ``RasterLayer``, one can call the method,
                  cell_type=gps.CellType.INT16.value,
                  extent=extent,
                  layout_definition=layout_definition)
+
+Features
+--------
+
+:class:`~geopyspark.geotrellis.Feature`\s are shapely geometries with some kind
+of associated metadata. The main purpose of this type is to provide a means
+of rasterizing multiple geometries that have different cell values and who
+may overlap.
+
+CellValue
+~~~~~~~~~
+
+While in practice a ``Feature`` can have any kind of metadata, :class:`~geopyspark.geotrellis.CellValue`
+needs to be used with ``Feature``\s that are to be rasterized.
+``CellValue`` has two parameters: ``value`` and ``zindex``. ``value`` is the
+value of all the cells that intersect the ``Feature``\'s geometry. ``zindex`` of
+a ``Feature`` determines what value a cell will be if more than one geometry
+intersects it. The higher the ``zindex``, the more priority it has.
+
+.. code:: python3
+
+  geom1 = box(0, 0, 15, 15)
+  geom2 = box(100, 26, 109, 208)
+  geom3 = box(610, 215, 1000, 500)
+
+  cell_value1 = gps.CellValue(value=1, zindex=1)
+  cell_value2 = gps.CellValue(value=2, zindex=2)
+  cell_value3 = gps.CellValue(value=3, zindex=3)
+
+  # Will not be selected if feature2 and/or feature3 also intersects target cell
+  feature1 = gps.Feature(geometry=geom1, properties=cell_value1)
+
+  # Will not be selected if feature3 also intersects target cell
+  feature2 = gps.Feature(geometry=geom2, properties=cell_value2)
+
+  # Will always be selected
+  feature3 = gps.Feature(geometry=geom3, properties=cell_value3)

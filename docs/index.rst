@@ -83,4 +83,3 @@ a need for it.
 
   docs/geopyspark
   docs/geopyspark.geotrellis
-  docs/geopyspark.vector_pipe

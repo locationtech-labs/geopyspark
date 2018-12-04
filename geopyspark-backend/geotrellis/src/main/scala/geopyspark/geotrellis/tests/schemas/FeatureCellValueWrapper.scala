@@ -1,12 +1,10 @@
-package geopyspark.vectorpipe.tests.schemas
+package geopyspark.geotrellis.tests.schemas
 
 import geopyspark.util._
-import geopyspark.vectorpipe._
+import geopyspark.geotrellis._
 
 import geotrellis.vector._
 import geotrellis.raster.rasterize._
-
-import vectorpipe.osm._
 
 import protos.featureMessages._
 
@@ -38,3 +36,4 @@ object FeatureCellValueWrapper {
     )
   }
 }
+

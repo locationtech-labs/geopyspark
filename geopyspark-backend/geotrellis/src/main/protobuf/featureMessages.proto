@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package protos;
+
+message ProtoFeatureCellValue {
+  bytes geom = 1;
+  ProtoCellValue cellValue = 2;
+}
+
+message ProtoCellValue {
+  double value = 1;
+  double zindex = 2;
+}

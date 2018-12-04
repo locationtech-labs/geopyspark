@@ -2,16 +2,19 @@
 from functools import partial
 import datetime
 import numpy as np
+from shapely.wkb import loads, dumps
 from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
 from geopyspark.geotrellis import (Extent, ProjectedExtent, TemporalProjectedExtent, SpatialKey,
-                                   SpaceTimeKey, Tile, _convert_to_unix_time)
+                                   SpaceTimeKey, Tile, _convert_to_unix_time, Feature, CellValue)
 
 from geopyspark.geotrellis.protobuf.tileMessages_pb2 import ProtoTile, ProtoMultibandTile, ProtoCellType
 from geopyspark.geotrellis.protobuf import keyMessages_pb2
 from geopyspark.geotrellis.protobuf import extentMessages_pb2
 from geopyspark.geotrellis.protobuf import tupleMessages_pb2
+from geopyspark.geotrellis.protobuf.featureMessages_pb2 import (ProtoFeatureCellValue,
+                                                                ProtoCellValue)
 
 
 _mapped_data_types = {
@@ -329,6 +332,38 @@ def create_partial_image_rdd_decoder(key_type):
     """
 
     return partial(image_rdd_decoder, key_decoder=key_type)
+
+def from_pb_feature_cellvalue(pb_feature_cellvalue):
+    """Creates a ``Feature`` with ``properties`` of ``CellValue``
+    from ``ProtoFeature``.
+
+    Args:
+        pb_feature_cellvalue (ProtoFeatureCellValue): The ``ProtoFeatureCellValue`` instance
+            to be converted.
+
+    Returns:
+        :class:`~geopyspark.geotrellis.Feature`
+    """
+
+    geometry = loads(pb_feature_cellvalue.geom)
+    cellvalue = CellValue(pb_feature_cellvalue.cellValue.value,
+                          pb_feature_cellvalue.cellValue.zindex)
+
+    return Feature(geometry, cellvalue)
+
+def feature_cellvalue_decoder(proto_bytes):
+    """Deserializes the ``ProtoFeatureCellValue`` bytes into Python.
+
+    Args:
+        proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
+
+    Returns:
+        :class:`~geopyspark.geotrellis.Feature`
+    """
+
+    pb_feature_cellvalue = ProtoFeatureCellValue.FromString(proto_bytes)
+
+    return from_pb_feature_cellvalue(pb_feature_cellvalue)
 
 def _get_decoder(name):
     if name == "Tile":
@@ -654,6 +689,49 @@ def tuple_encoder(obj, key_encoder):
         tup.spaceTimeKey.CopyFrom(to_pb_space_time_key(obj[0]))
 
     return tup.SerializeToString()
+
+def to_pb_cellvalue(cv):
+    """Converts an instance of ``CellValue`` to ``ProtoCellValue``.
+
+    Args:
+        obj (:class:`~geopyspark.geotrellis.CellValue`): An instance of ``CellValue``.
+
+    Returns:
+        ProtoCellValue
+    """
+
+    return ProtoCellValue(value=cv.value, zindex=cv.zindex)
+
+def to_pb_feature_cellvalue(feature):
+    """Converts an instance of ``Feature`` with ``properties`` of ``CellValue`` to
+    ``ProtoFeatureCellValue``.
+
+    Args:
+        feature (:class:`~geopyspark.geotrellis.Feature`): An instance of ``Feature`` to be
+            encoded.
+
+    Returns:
+       ProtoFeatureCellValue
+    """
+
+    geom_bytes = dumps(feature[0])
+    cellvalue = to_pb_cellvalue(feature[1])
+
+    return ProtoFeatureCellValue(geom=geom_bytes, cellValue=cellvalue)
+
+def feature_cellvalue_encoder(feature):
+    """Encodes a ``Feature`` with ``properties`` of ``CellValue`` into
+    ``ProtoFeatureCellValue`` bytes.
+
+    Args:
+        feature (:class:`~geopyspark.geotrellis.Feature`): An instance of ``Feature`` to be
+            encoded.
+
+    Returns:
+       bytes
+    """
+
+    return to_pb_feature_cellvalue(feature).SerializeToString()
 
 def create_partial_tuple_encoder(key_type):
     """Creates a partial, tuple encoder function.

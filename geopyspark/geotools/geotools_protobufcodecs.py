@@ -4,7 +4,7 @@ from geopyspark.geopyspark_utils import ensure_pyspark
 ensure_pyspark()
 
 from geopyspark.geotools.protobuf.simpleFeatureMessages_pb2 import ProtoSimpleFeature
-from geopyspark.vector_pipe import Feature
+from geopyspark.geotrellis import Feature
 
 
 # Decoders
@@ -17,7 +17,7 @@ def from_pb_feature(pb_feature):
         pb_feature (ProtoSimpleFeature): The ``ProtoSimpleFeature`` instance to be converted.
 
     Returns:
-        :class:`~geopyspark.vector_pipe.Feature`
+        :class:`~geopyspark.geotrellis.Feature`
     """
 
     metadata = dict(pb_feature.metadata)
@@ -32,7 +32,7 @@ def feature_decoder(proto_bytes):
         proto_bytes (bytes): The ProtoBuf encoded bytes of the ProtoBuf class.
 
     Returns:
-        :class:`~geopyspark.vector_pipe.Feature`
+        :class:`~geopyspark.geotrellis.Feature`
     """
 
     pb_feature = ProtoSimpleFeature.FromString(proto_bytes)

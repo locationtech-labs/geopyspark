@@ -641,6 +641,47 @@ class SpaceTimePartitionStrategy(namedtuple("SpaceTimePartitionStrategy", "time_
         return super(cls, SpaceTimePartitionStrategy).__new__(cls, time_unit, num_partitions, bits, time_resolution)
 
 
+class Feature(namedtuple("Feature", "geometry properties")):
+    """Represents a geometry that is derived from an OSM Element with that Element's associated metadata.
+
+    Args:
+        geometry (shapely.geometry): The geometry of the feature.
+        properties (:class:`~geopyspark.geotrellis.CellValue`):
+            The metadata associated with the paired geometry.
+
+    Attributes:
+        geometry (shapely.geometry): The geometry of the feature.
+        properties (:class:`~geopyspark.geotrellis.CellValue`):
+            The metadata associated with the paired geometry.
+    """
+
+    __slots__ = []
+
+
+class CellValue(namedtuple("CellValue", "value zindex")):
+    """Represents the ``value`` and ``zindex`` of a geometry.
+
+    This object is one of two types that can be used to represent the ``properties`` of a
+    :class:`~geopyspark.geotrellis.Feature`.
+
+    Args:
+        value (int or float): The value of all cells that intersects the associated geometry.
+        zindex (int): The ``Z-Index`` of each cell that intersects the associated geometry.
+            ``Z-Index`` determines which value a cell should be if multiple geometries
+            intersect it. A high ``Z-Index`` will always be in front of a ``Z-Index`` of
+            a lower value.
+
+    Attributes:
+        value (int or float): The value of all cells that intersects the associated geometry.
+        zindex (int): The ``Z-Index`` of each cell that intersects the associated geometry.
+            ``Z-Index`` determines which value a cell should be if multiple geometries
+            intersect it. A high ``Z-Index`` will always be in front of a ``Z-Index`` of
+            a lower value.
+    """
+
+    __slots__ = []
+
+
 class Metadata(object):
     """Information of the values within a ``RasterLayer`` or ``TiledRasterLayer``.
     This data pertains to the layout and other attributes of the data within the classes.
@@ -788,7 +829,7 @@ class Metadata(object):
 __all__ = ["Tile", "Extent", "ProjectedExtent", "TemporalProjectedExtent", "SpatialKey", "SpaceTimeKey",
            "Metadata", "TileLayout", "GlobalLayout", "LocalLayout", "LayoutDefinition", "Bounds", "RasterizerOptions",
            "zfactor_lat_lng_calculator", "zfactor_calculator", "HashPartitionStrategy", "SpatialPartitionStrategy",
-           "SpaceTimePartitionStrategy"]
+           "SpaceTimePartitionStrategy", "Feature", "CellValue"]
 
 from . import catalog
 from . import color
