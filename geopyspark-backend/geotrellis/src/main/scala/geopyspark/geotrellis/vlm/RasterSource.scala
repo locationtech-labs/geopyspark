@@ -35,7 +35,7 @@ object RasterSource {
     read(
       sc,
       layerType,
-      sc.parallelize(paths.asScala, paths.size),
+      sc.parallelize(paths.asScala),
       targetCRS,
       resampleMethod,
       readMethod
@@ -88,7 +88,7 @@ object RasterSource {
     readToLayout(
       sc,
       layerType,
-      sc.parallelize(paths.asScala, paths.size),
+      sc.parallelize(paths.asScala),
       layoutType,
       targetCRS,
       resampleMethod,
