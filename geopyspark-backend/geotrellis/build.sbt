@@ -8,7 +8,8 @@ libraryDependencies ++= Seq(
   "org.apache.commons"          % "commons-math3"          % "3.6.1",
   "org.locationtech.geotrellis" %% "geotrellis-s3"         % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-s3-testkit" % Version.geotrellis,
-  "org.locationtech.geotrellis" %% "geotrellis-spark"      % Version.geotrellis
+  "org.locationtech.geotrellis" %% "geotrellis-spark"      % Version.geotrellis,
+  "com.azavea.geotrellis"       %% "geotrellis-contrib-vlm" % Version.geotrellisContrib
 )
 
 assemblyShadeRules in assembly := {

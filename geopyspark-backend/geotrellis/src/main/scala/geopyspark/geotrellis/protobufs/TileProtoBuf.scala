@@ -4,6 +4,8 @@ import geopyspark.util.ProtoBufCodec
 import protos.tileMessages._
 import geotrellis.raster._
 
+import geotrellis.contrib.vlm.PaddedTile
+
 
 trait TileProtoBuf {
   implicit def tileProtoBufCodec = new ProtoBufCodec[Tile, ProtoTile] {
@@ -105,8 +107,20 @@ trait TileProtoBuf {
       }
     }
 
-    def encode(tile: Tile): ProtoTile = {
-      val protoCellType = cellTypeToMessage(tile.cellType)
+    def encode(targetTile: Tile): ProtoTile = {
+      val protoCellType = cellTypeToMessage(targetTile.cellType)
+
+      val tile =
+        targetTile match {
+          case padded: PaddedTile =>
+            val chunk = padded.chunk
+            if (chunk.cols != padded.cols || chunk.rows != padded.rows)
+              padded.toArrayTile()
+            else
+              chunk
+          case _ => targetTile
+        }
+
       val initialProtoTile =
         ProtoTile(
           cols = tile.cols,

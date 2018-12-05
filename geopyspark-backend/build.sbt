@@ -24,6 +24,7 @@ lazy val commonSettings = Seq(
     "LocationTech Snapshots" at "https://repo.locationtech.org/content/groups/snapshots",
     "LocationTech Releases" at "https://repo.locationtech.org/content/groups/releases",
     Resolver.bintrayRepo("azavea", "maven"),
+    Resolver.bintrayRepo("azavea", "geotrellis"),
     DefaultMavenRepository,
     Resolver.file("local", file(Path.userHome.absolutePath + "/.ivy2/local"))(Resolver.ivyStylePatterns)
   ),

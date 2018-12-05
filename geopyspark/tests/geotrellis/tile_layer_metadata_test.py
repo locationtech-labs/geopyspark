@@ -32,7 +32,7 @@ class TileLayerMetadataTest(BaseTestClass):
     @pytest.mark.skipif('TRAVIS' in os.environ,
                         reason="Test causes memory errors on Travis")
     def test_collection_python_rdd(self):
-        data = rasterio.open(self.dir_path)
+        data = rasterio.open(self.path)
         tile_dict = Tile(data.read(), 'FLOAT', data.nodata)
 
         rasterio_rdd = self.pysc.parallelize([(self.projected_extent, tile_dict)])

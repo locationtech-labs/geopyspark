@@ -69,4 +69,7 @@ object Constants {
 
   final val DEFAULT = "default"
   final val MOCK = "mock"
+
+  final val GEOTRELLIS = "GeoTrellis"
+  final val GDAL = "GDAL"
 }

@@ -33,7 +33,8 @@ from geopyspark.geotrellis import (Metadata,
                                    HashPartitionStrategy,
                                    SpatialPartitionStrategy,
                                    SpaceTimePartitionStrategy,
-                                   RasterizerOptions)
+                                   RasterizerOptions,
+                                   check_partition_strategy)
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (IndexingMethod,
                                              Operation,
@@ -46,7 +47,8 @@ from geopyspark.geotrellis.constants import (IndexingMethod,
                                              ColorSpace,
                                              Compression,
                                              TimeUnit,
-                                             NO_DATA_INT)
+                                             NO_DATA_INT,
+                                             ReadMethod)
 from geopyspark.geotrellis.neighborhood import Neighborhood
 
 
@@ -251,10 +253,6 @@ class TileLayer(object):
         """
         return list(self.srdd.quantileBreaksExactInt(num_breaks))
 
-    def _check_partition_strategy(self, partition_strategy):
-        if isinstance(partition_strategy, SpaceTimePartitionStrategy) and self.layer_type != LayerType.SPACETIME:
-            raise TypeError("SpaceTimePartitionStrategy cannot be used on SPATIAL layers.")
-
 
 class CachableLayer(object):
     """
@@ -399,6 +397,73 @@ class RasterLayer(CachableLayer, TileLayer):
         self.pysc = get_spark_context()
         self.layer_type = LayerType(layer_type)
         self.srdd = srdd
+
+    @classmethod
+    def read(cls,
+             paths,
+             layer_type=LayerType.SPATIAL,
+             target_crs=None,
+             resample_method=ResampleMethod.NEAREST_NEIGHBOR,
+             read_method=ReadMethod.GEOTRELLIS):
+        """Creates a RasterLayer from a list of data sources.
+
+        Note:
+            This is feature is still a WIP, so not all features are currently
+            supported.
+
+        Args:
+            paths (str or [str]): A path or a list of paths that point to geo-spatial data.
+                These strings can be in either a URI format or a relative path.
+            layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`, optional): What the layer type
+                of the geotiffs are. This is represented by either constants within ``LayerType`` or by
+                a string.
+
+                Note:
+                   Only ``SPATIAL`` layer types are currently supported.
+            target_crs (str or int, optional): The CRS that the output tiles should be
+                in. If ``None``, then the CRS that the tiles were originally in
+                will be used.
+            resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
+                The resample method to use when building internal overviews. Default is,
+                ``ResampleMethods.NEAREST_NEIGHBOR``.
+            read_method(str or :class:`~geopyspark.geotrellis.constants.ReadMethod`, optional): The method
+                that should be used to read in the data. The ``GEOTRELLIS`` method can only read GeoTiffs,
+                but is already setup. While the other method, ``GDAL`` can read other data sources, but
+                it requires that GDAL be setup locally with the required drivers. Default is, ``GeoTrellis``.
+
+                Note:
+                    Only the ``GEOTRELLIS`` method is currently supported.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.RasterLayer`
+        """
+
+        layer_type = LayerType(layer_type)
+
+        if layer_type == LayerType.SPACETIME:
+            raise NotImplementedError("The read method does not currently support the SPACETIME LayerType")
+
+        resample_method = ResampleMethod(resample_method)
+        read_method = ReadMethod(read_method)
+
+        if target_crs:
+            target_crs = crs_to_proj4(target_crs)
+
+        pysc = get_spark_context()
+
+        rastersource = pysc._gateway.jvm.geopyspark.geotrellis.vlm.RasterSource
+
+        if isinstance(paths, str):
+            paths = [paths]
+
+        srdd = rastersource.read(pysc._jsc.sc(),
+                                 layer_type.value,
+                                 paths,
+                                 target_crs,
+                                 resample_method,
+                                 read_method.value)
+
+        return cls(layer_type, srdd)
 
     @classmethod
     def from_numpy_rdd(cls, layer_type, numpy_rdd):
@@ -590,7 +655,7 @@ class RasterLayer(CachableLayer, TileLayer):
         """
 
         if partition_strategy:
-            self._check_partition_strategy(partition_strategy)
+            check_partition_strategy(partition_strategy, self.layer_type)
 
             return RasterLayer(self.layer_type, self.srdd.partitionBy(partition_strategy))
         else:
@@ -779,7 +844,7 @@ class RasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.RasterLayer`
         """
 
-        self._check_partition_strategy(partition_strategy)
+        check_partition_strategy(partition_strategy, self.layer_type)
         result = self.srdd.merge(partition_strategy)
 
         return RasterLayer(self.layer_type, result)
@@ -859,7 +924,7 @@ class RasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        self._check_partition_strategy(partition_strategy)
+        check_partition_strategy(partition_strategy, self.layer_type)
         resample_method = ResampleMethod(resample_method)
 
         if target_crs:
@@ -1011,8 +1076,79 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         self.zoom_level = self.srdd.getZoom()
 
     @classmethod
+    def read(cls,
+             paths,
+             layout_type,
+             layer_type=LayerType.SPATIAL,
+             target_crs=None,
+             resample_method=ResampleMethod.NEAREST_NEIGHBOR,
+             read_method=ReadMethod.GEOTRELLIS):
+        """Creates a TiledRasterLayer from a list of data sources.
+
+        Note:
+            This is feature is still a WIP, so not all features are currently
+            supported.
+
+        Args:
+            paths (str or [str]): A path or a list of paths that point to geo-spatial data.
+                These strings can be in either a URI format or a relative path.
+            layout (:class:`~geopyspark.geotrellis.LayoutDefinition` or :class:`~geopyspark.geotrellis.Metadata` or :class:`~geopyspark.geotrellis.TiledRasterLayer` or :class:`~geopyspark.geotrellis.GlobalLayout` or :class:`~geopyspark.geotrellis.LocalLayout`):
+                Target raster layout for the tiling operation.
+            layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`, optional): What the layer type
+                of the geotiffs are. This is represented by either constants within ``LayerType`` or by
+                a string.
+
+                Note:
+                   Only ``SPATIAL`` layer types are currently supported.
+            target_crs (str or int, optional): The CRS that the output tiles should be
+                in. If ``None``, then the CRS that the tiles were originally in
+                will be used.
+            resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
+                The resample method to use when building internal overviews. Default is,
+                ``ResampleMethods.NEAREST_NEIGHBOR``.
+            read_method(str or :class:`~geopyspark.geotrellis.constants.ReadMethod`, optional): The method
+                that should be used to read in the data. The ``GEOTRELLIS`` method can only read GeoTiffs,
+                but is already setup. While the other method, ``GDAL`` can read other data sources, but
+                it requires that GDAL be setup locally with the required drivers. Default is, ``GeoTrellis``.
+
+                Note:
+                    Only the ``GEOTRELLIS`` method is currently supported.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
+        """
+
+        layer_type = LayerType(layer_type)
+
+        if layer_type == LayerType.SPACETIME:
+            raise NotImplementedError("The read method does not currently support the SPACETIME LayerType")
+
+        resample_method = ResampleMethod(resample_method)
+        read_method = ReadMethod(read_method)
+
+        if target_crs:
+            target_crs = crs_to_proj4(target_crs)
+
+        pysc = get_spark_context()
+
+        if isinstance(paths, str):
+            paths = [paths]
+
+        rastersource = pysc._gateway.jvm.geopyspark.geotrellis.vlm.RasterSource
+
+        srdd = rastersource.readToLayout(pysc._jsc.sc(),
+                                         layer_type.value,
+                                         paths,
+                                         layout_type,
+                                         target_crs,
+                                         resample_method,
+                                         read_method.value)
+
+        return cls(layer_type, srdd)
+
+    @classmethod
     def from_numpy_rdd(cls, layer_type, numpy_rdd, metadata, zoom_level=None):
-        """Create a ``TiledRasterLayer`` from a numpy RDD.
+        """Creates a ``TiledRasterLayer`` from a numpy RDD.
 
         Args:
             layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`): What the layer type
@@ -1228,7 +1364,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        self._check_partition_strategy(partition_strategy)
+        check_partition_strategy(partition_strategy, self.layer_type)
         result = self.srdd.merge(partition_strategy)
 
         return TiledRasterLayer(self.layer_type, result)
@@ -1544,7 +1680,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         """
 
         if partition_strategy:
-            self._check_partition_strategy(partition_strategy)
+            check_partition_strategy(partition_strategy, self.layer_type)
             return TiledRasterLayer(self.layer_type, self.srdd.partitionBy(partition_strategy))
         else:
             return self
@@ -1615,7 +1751,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        self._check_partition_strategy(partition_strategy)
+        check_partition_strategy(partition_strategy, self.layer_type)
         resample_method = ResampleMethod(resample_method)
 
         if target_crs:
@@ -1674,7 +1810,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             ValueError: If this layer layout is not of ``GlobalLayout`` type.
         """
 
-        self._check_partition_strategy(partition_strategy)
+        check_partition_strategy(partition_strategy, self.layer_type)
         resample_method = ResampleMethod(resample_method)
         result = self.srdd.pyramid(resample_method, partition_strategy)
 
@@ -1731,7 +1867,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 ``Operation.ASPECT``.
         """
 
-        self._check_partition_strategy(partition_strategy)
+        check_partition_strategy(partition_strategy, self.layer_type)
         operation = Operation(operation).value
 
         if isinstance(neighborhood, Neighborhood):
@@ -1900,7 +2036,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
         """
 
-        self._check_partition_strategy(partition_strategy)
+        check_partition_strategy(partition_strategy, self.layer_type)
 
         if not isinstance(geometries, (list, RDD)):
             geometries = [geometries]

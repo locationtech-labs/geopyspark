@@ -13,10 +13,9 @@ from geopyspark.geotrellis import (SpatialKey,
                                    GlobalLayout,
                                    LayoutDefinition,
                                    SpatialPartitionStrategy)
-from shapely.geometry import Point
 from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis.constants import LayerType, CellType
+from geopyspark.geotrellis.constants import LayerType, CellType, ReadMethod
 
 
 def make_raster(x, y, v, cols=4, rows=4, ct=CellType.FLOAT32, crs=4326):
@@ -34,47 +33,52 @@ class RasterLayerTest(BaseTestClass):
         make_raster(6, 0, v=3)
     ]
 
+    # TODO: Have Travis be able to run the GDAL tests
+
     numpy_rdd = BaseTestClass.pysc.parallelize(layers)
     layer = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, numpy_rdd)
     metadata = layer.collect_metadata(GlobalLayout(5))
 
-    def test_to_to_layout_with_partitioner(self):
-        strategy = SpatialPartitionStrategy(4)
-        tiled = self.layer.tile_to_layout(LocalLayout(5), partition_strategy=strategy)
+    def read_no_reproject(self, read_method):
+        actual_raster_layer = RasterLayer.read([self.path], read_method=read_method)
 
-        self.assertEqual(tiled.get_partition_strategy(), strategy)
+        collected = actual_raster_layer.to_numpy_rdd().first()
 
-    def test_tile_to_local_layout(self):
-        tiled = self.layer.tile_to_layout(LocalLayout(5))
-        assert tiled.layer_metadata.extent == Extent(0,0,10,6)
-        assert tiled.layer_metadata.tile_layout == TileLayout(2,2,5,5)
+        (projected_extent, tile) = collected
 
-    def test_tile_to_global_layout(self):
-        tiled = self.layer.tile_to_layout(GlobalLayout(5))
-        assert tiled.layer_metadata.extent == Extent(0,0,10,6)
-        assert tiled.layer_metadata.tile_layout == TileLayout(128,128,5,5)
-        assert tiled.zoom_level == 7
+        self.assertEqual(projected_extent.extent, self.extent)
+        self.assertEqual(projected_extent.proj4, self.projected_extent.proj4)
 
-    def test_tile_to_metadata_layout(self):
-        tiled = self.layer.tile_to_layout(layout=self.metadata)
+        self.assertTrue((self.expected_tile == tile.cells).all())
 
-        self.assertEqual(tiled.layer_metadata.extent, Extent(0,0,10,6))
-        self.assertDictEqual(tiled.layer_metadata.to_dict(), self.metadata.to_dict())
+    def read_with_reproject(self, read_method):
+        expected_raster_layer = self.rdd.reproject(target_crs=3857)
 
-    def test_tile_to_tiled_layer_layout(self):
-        extent = Extent(0., 0., 10., 6.)
-        tile_layout = TileLayout(2,2,5,5)
-        layout_definition = LayoutDefinition(extent, tile_layout)
+        expected_collected = expected_raster_layer.to_numpy_rdd().first()
+        (expected_projected_extent, expected_tile) = expected_collected
 
-        base = self.layer.tile_to_layout(layout_definition)
-        tiled = self.layer.tile_to_layout(layout=base)
+        actual_raster_layer = RasterLayer.read([self.path], target_crs=3857, read_method=read_method)
 
-        self.assertDictEqual(tiled.layer_metadata.to_dict(), base.layer_metadata.to_dict())
+        actual_collected = actual_raster_layer.to_numpy_rdd().first()
+        (actual_projected_extent, actual_tile) = actual_collected
 
-    def test_tile_to_layout_definition(self):
-        tiled = self.layer.tile_to_layout(layout=self.metadata.layout_definition)
+        self.assertEqual(actual_projected_extent.epsg, expected_projected_extent.epsg)
 
-        self.assertDictEqual(tiled.layer_metadata.to_dict(), self.metadata.to_dict())
+        self.assertTrue((expected_tile.cells == actual_tile.cells).all())
+
+    def test_read_no_reproject_geotrellis(self):
+        self.read_no_reproject(ReadMethod.GEOTRELLIS)
+
+    @pytest.mark.skip(reason="Travis does not currently support GDAL")
+    def test_read_no_reproject_gdal(self):
+        self.read_no_reproject(ReadMethod.GDAL)
+
+    def test_read_with_reproject_geotrellis(self):
+        self.read_with_reproject(ReadMethod.GEOTRELLIS)
+
+    @pytest.mark.skip(reason="Travis does not currently support GDAL")
+    def test_read_with_reproject_gdal(self):
+        self.read_with_reproject(ReadMethod.GDAL)
 
     def test_no_data_of_zero(self):
         no_data_layer = [(t[0], Tile.from_numpy_array(t[1].cells, 1)) for t in self.layers]

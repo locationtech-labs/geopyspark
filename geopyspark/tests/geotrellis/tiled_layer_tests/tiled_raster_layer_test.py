@@ -1,56 +1,76 @@
 import unittest
 import pytest
 
-from geopyspark.geotrellis.constants import LayerType
-from geopyspark.tests.python_test_utils import file_path
-from geopyspark.geotrellis import Extent, LayoutDefinition, GlobalLayout, crs_to_proj4
-from geopyspark.geotrellis.geotiff import get
+from geopyspark.geotrellis.constants import LayerType, ReadMethod
+from geopyspark.geotrellis import Extent, GlobalLayout, LocalLayout
 from geopyspark.tests.base_test_class import BaseTestClass
+from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
 class TiledRasterLayerTest(BaseTestClass):
-    dir_path = file_path("all-ones.tif")
-    result = get(LayerType.SPATIAL, dir_path)
-    tiled_layer = result.tile_to_layout()
+    difference = 0.000001
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
         BaseTestClass.pysc._gateway.close()
 
-    def test_tile_to_layout_layout_definition(self):
-        layout_definition = self.tiled_layer.layer_metadata.layout_definition
-        new_extent = Extent(layout_definition.extent.xmin,
-                            layout_definition.extent.ymin,
-                            layout_definition.extent.xmax + 15.0,
-                            layout_definition.extent.ymax + 15.0)
+    def read(self, layout, read_method, target_crs=None):
+        expected_tiled = self.rdd.tile_to_layout(layout, target_crs=target_crs)
+        expected_collected = expected_tiled.to_numpy_rdd().collect()
 
-        new_layout_definition = LayoutDefinition(extent=new_extent, tileLayout=layout_definition.tileLayout)
+        actual_tiled = TiledRasterLayer.read([self.path],
+                                             layout_type=layout,
+                                             target_crs=target_crs)
 
-        actual = self.tiled_layer.tile_to_layout(new_layout_definition).layer_metadata.layout_definition.extent
+        actual_collected = actual_tiled.to_numpy_rdd().collect()
 
-        self.assertEqual(actual, new_extent)
+        self.assertEqual(len(expected_collected), len(actual_collected))
 
-    def test_tile_to_layout_tiled_layer(self):
-        actual = self.tiled_layer.tile_to_layout(self.tiled_layer).layer_metadata
-        expected = self.tiled_layer.layer_metadata
+        expected_collected.sort(key=lambda tup: (tup[0].col, tup[0].row))
+        actual_collected.sort(key=lambda tup: (tup[0].col, tup[0].row))
 
-        self.assertDictEqual(actual.to_dict(), expected.to_dict())
+        for expected, actual in zip(expected_collected, actual_collected):
+            self.assertEqual(expected[0], actual[0])
+            self.assertTrue(expected[1].cells.shape == actual[1].cells.shape)
 
-    def test_tile_to_layout_global_layout(self):
-        actual = self.tiled_layer.tile_to_layout(layout=GlobalLayout(zoom=5))
+            diff = abs(expected[1].cells - actual[1].cells)
+            off_values_count = (diff > self.difference).sum()
 
-        self.assertEqual(actual.zoom_level, 5)
+            self.assertTrue(off_values_count / expected[1].cells.size <= 0.025)
 
-    def test_tile_to_layout_with_reproject(self):
-        proj4 = crs_to_proj4(3857)
-        actual = self.result.tile_to_layout(layout=GlobalLayout(), target_crs=proj4).layer_metadata.crs
+    # Tests using LocalLayout
 
-        self.assertEqual(proj4, actual)
+    def test_read_no_reproject_local_geotrellis(self):
+        self.read(LocalLayout(256, 256), ReadMethod.GEOTRELLIS)
 
-    def test_tile_to_layout_bad_crs(self):
-        with pytest.raises(ValueError):
-            self.result.tile_to_layout(layout=self.tiled_layer, target_crs=3857)
+    @pytest.mark.skip
+    def test_read_no_reproject_local_gdal(self):
+        self.read(LocalLayout(256, 256), ReadMethod.GDAL)
+
+    def test_read_with_reproject_local_geotrellis(self):
+        self.read(LocalLayout(128, 256), ReadMethod.GEOTRELLIS, target_crs=3857)
+
+    @pytest.mark.skip
+    def test_read_with_reproject_local_gdal(self):
+        self.read(LocalLayout(128, 256), ReadMethod.GDAL, target_crs=3857)
+
+    # Tests with GlobalLayout
+
+    def test_read_no_reproject_global_geotrellis(self):
+        self.read(GlobalLayout(tile_size=16, zoom=4), ReadMethod.GEOTRELLIS)
+
+    @pytest.mark.skip
+    def test_read_no_reproject_global_gdal(self):
+        self.read(GlobalLayout(tile_size=128, zoom=4), ReadMethod.GDAL)
+
+    def test_read_with_reproject_global_geotrellis(self):
+        self.read(GlobalLayout(tile_size=128, zoom=4), ReadMethod.GEOTRELLIS, target_crs=3857)
+
+    @pytest.mark.skip
+    def test_read_with_reproject_global_gdal(self):
+        self.read(GlobalLayout(tile_size=128, zoom=4), ReadMethod.GDAL, target_crs=3857)
+
 
 
 if __name__ == "__main__":

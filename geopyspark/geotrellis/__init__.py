@@ -9,10 +9,15 @@ from shapely.geometry import box
 import pytz
 
 from geopyspark import get_spark_context
-from geopyspark.geotrellis.constants import CellType, NO_DATA_INT, Unit
+from geopyspark.geotrellis.constants import CellType, NO_DATA_INT, Unit, LayerType
 
 
 _EPOCH = datetime.datetime.utcfromtimestamp(0)
+
+
+def check_partition_strategy(partition_strategy, layer_type):
+    if isinstance(partition_strategy, SpaceTimePartitionStrategy) and layer_type != LayerType.SPACETIME:
+        raise TypeError("SpaceTimePartitionStrategy cannot be used on SPATIAL layers.")
 
 
 def _convert_to_unix_time(date_time):
