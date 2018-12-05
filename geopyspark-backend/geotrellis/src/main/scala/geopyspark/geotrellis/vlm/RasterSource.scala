@@ -30,17 +30,25 @@ object RasterSource {
     layerType: String,
     paths: java.util.ArrayList[String],
     targetCRS: String,
+    numPartitions: Integer,
     resampleMethod: ResampleMethod,
     readMethod: String
-  ): ProjectedRasterLayer =
+  ): ProjectedRasterLayer = {
+    val partitions =
+      numPartitions match {
+        case i: Integer => Some(i.toInt)
+        case null => None
+      }
+
     read(
       sc,
       layerType,
-      sc.parallelize(paths.asScala),
+      sc.parallelize(paths.asScala, partitions.getOrElse(sc.defaultParallelism)),
       targetCRS,
       resampleMethod,
       readMethod
     )
+  }
 
   def read(
     sc: SparkContext,
@@ -82,15 +90,22 @@ object RasterSource {
     layerType: String,
     paths: java.util.ArrayList[java.util.HashMap[String, String]],
     targetCRS: String,
+    numPartitions: Integer,
     resampleMethod: ResampleMethod,
     readMethod: String
   ): ProjectedRasterLayer = {
     val scalaPaths: Seq[Seq[(String, String)]] = paths.asScala.toSeq.map { _.asScala.toSeq }
 
+    val partitions =
+      numPartitions match {
+        case i: Integer => Some(i.toInt)
+        case null => None
+      }
+
     readOrdered(
       sc,
       layerType,
-      sc.parallelize(scalaPaths, scalaPaths.size),
+      sc.parallelize(scalaPaths, partitions.getOrElse(sc.defaultParallelism)),
       targetCRS,
       resampleMethod,
       readMethod
@@ -159,21 +174,110 @@ object RasterSource {
     ProjectedRasterLayer(projectedRasterRDD)
   }
 
+  def readToLayout(
+    sc: SparkContext,
+    layerType: String,
+    paths: java.util.ArrayList[String],
+    layoutType: GPSLayoutType,
+    targetCRS: String,
+    numPartitions: Integer,
+    resampleMethod: ResampleMethod,
+    readMethod: String
+  ): SpatialTiledRasterLayer = {
+    val partitions =
+      numPartitions match {
+        case i: Integer => Some(i.toInt)
+        case null => None
+      }
+
+    readToLayout(
+      sc,
+      layerType,
+      sc.parallelize(paths.asScala, partitions.getOrElse(sc.defaultParallelism)),
+      layoutType,
+      targetCRS,
+      resampleMethod,
+      readMethod
+    )
+  }
+
+  def readToLayout(
+    sc: SparkContext,
+    layerType: String,
+    rdd: RDD[String],
+    layoutType: LayoutType,
+    targetCRS: String,
+    resampleMethod: ResampleMethod,
+    readMethod: String
+  ): SpatialTiledRasterLayer = {
+    // TODO: These are the things that still need to be done:
+    // 1. Support TemporalTiledRasterLayer (ie. generic K)
+    // 2. Use the partitionStrategy parameter
+
+    val rasterSourceRDD: RDD[RasterSource] =
+      (readMethod match {
+        case GEOTRELLIS => rdd.map { new GeoTiffRasterSource(_): RasterSource }
+        case GDAL => rdd.map { GDALRasterSource(_): RasterSource }
+      }).cache()
+
+    val reprojectedSourcesRDD: RDD[RasterSource] =
+      targetCRS match {
+        case crs: String =>
+          rasterSourceRDD.map { _.reproject(CRS.fromString(crs), resampleMethod) }
+        case null =>
+          rasterSourceRDD
+      }
+
+    val metadata: RasterSummary = RasterSummary.fromRDD(reprojectedSourcesRDD)
+
+    val LayoutLevel(zoom, layout) =
+      layoutType match {
+        case global: GlobalLayout =>
+          val scheme = ZoomedLayoutScheme(metadata.crs, global.tileSize)
+          scheme.levelForZoom(global.zoom)
+        case local: LocalLayout =>
+          val scheme = FloatingLayoutScheme(local.tileCols, local.tileRows)
+          metadata.levelFor(scheme)
+      }
+
+    val layoutRDD: RDD[LayoutTileSource] = reprojectedSourcesRDD.map { _.tileToLayout(layout, resampleMethod) }
+
+    val tileLayerMetadata: TileLayerMetadata[SpatialKey] =
+      metadata.toTileLayerMetadata(layout, zoom)._1
+
+    val tiledRDD: RDD[(SpatialKey, MultibandTile)] =
+      layoutRDD.flatMap { _.readAll() }
+
+    rasterSourceRDD.unpersist()
+
+    val contextRDD: MultibandTileLayerRDD[SpatialKey] =
+      ContextRDD(tiledRDD, tileLayerMetadata)
+
+    SpatialTiledRasterLayer(zoom, contextRDD)
+  }
+
   def readOrderedToLayout(
     sc: SparkContext,
     layerType: String,
     paths: java.util.ArrayList[java.util.HashMap[String, String]],
     layoutType: GPSLayoutType,
     targetCRS: String,
+    numPartitions: Integer,
     resampleMethod: ResampleMethod,
     readMethod: String
   ): SpatialTiledRasterLayer = {
     val scalaPaths: Seq[Seq[(String, String)]] = paths.asScala.toSeq.map { _.asScala.toSeq }
 
+    val partitions =
+      numPartitions match {
+        case i: Integer => Some(i.toInt)
+        case null => None
+      }
+
     readOrderedToLayout(
       sc,
       layerType,
-      sc.parallelize(scalaPaths, scalaPaths.size),
+      sc.parallelize(scalaPaths, partitions.getOrElse(sc.defaultParallelism)),
       layoutType,
       targetCRS,
       resampleMethod,
@@ -275,80 +379,6 @@ object RasterSource {
       ContextRDD(tiledRDD, tileLayerMetadata)
 
     SpatialTiledRasterLayer(zoom, contextRDD)
-  }
-
-  def readToLayout(
-    sc: SparkContext,
-    layerType: String,
-    paths: java.util.ArrayList[String],
-    layoutType: GPSLayoutType,
-    targetCRS: String,
-    resampleMethod: ResampleMethod,
-    readMethod: String
-  ): SpatialTiledRasterLayer =
-    readToLayout(
-      sc,
-      layerType,
-      sc.parallelize(paths.asScala),
-      layoutType,
-      targetCRS,
-      resampleMethod,
-      readMethod
-    )
-
-  def readToLayout(
-    sc: SparkContext,
-    layerType: String,
-    rdd: RDD[String],
-    layoutType: LayoutType,
-    targetCRS: String,
-    resampleMethod: ResampleMethod,
-    readMethod: String
-  ): SpatialTiledRasterLayer = {
-    // TODO: These are the things that still need to be done:
-    // 1. Support TemporalTiledRasterLayer (ie. generic K)
-    // 2. Use the partitionStrategy parameter
-
-    val rasterSourceRDD: RDD[RasterSource] =
-      (readMethod match {
-        case GEOTRELLIS => rdd.map { new GeoTiffRasterSource(_): RasterSource }
-        case GDAL => rdd.map { GDALRasterSource(_): RasterSource }
-      }).cache()
-
-    val reprojectedSourcesRDD: RDD[RasterSource] =
-      targetCRS match {
-        case crs: String =>
-          rasterSourceRDD.map { _.reproject(CRS.fromString(crs), resampleMethod) }
-        case null =>
-          rasterSourceRDD
-      }
-
-    val metadata: RasterSummary = RasterSummary.fromRDD(reprojectedSourcesRDD)
-
-    val LayoutLevel(zoom, layout) =
-      layoutType match {
-        case global: GlobalLayout =>
-          val scheme = ZoomedLayoutScheme(metadata.crs, global.tileSize)
-          scheme.levelForZoom(global.zoom)
-        case local: LocalLayout =>
-          val scheme = FloatingLayoutScheme(local.tileCols, local.tileRows)
-          metadata.levelFor(scheme)
-      }
-
-    val layoutRDD: RDD[LayoutTileSource] = reprojectedSourcesRDD.map { _.tileToLayout(layout, resampleMethod) }
-
-    val tileLayerMetadata: TileLayerMetadata[SpatialKey] =
-      metadata.toTileLayerMetadata(layout, zoom)._1
-
-    val tiledRDD: RDD[(SpatialKey, MultibandTile)] =
-      layoutRDD.flatMap { _.readAll() }
-
-    rasterSourceRDD.unpersist()
-
-    val contextRDD: MultibandTileLayerRDD[SpatialKey] =
-      ContextRDD(tiledRDD, tileLayerMetadata)
-
-    SpatialTiledRasterLayer(zoom.toInt, contextRDD)
   }
 
   implicit def gps2VLM(layoutType: GPSLayoutType): LayoutType =

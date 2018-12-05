@@ -403,6 +403,7 @@ class RasterLayer(CachableLayer, TileLayer):
              paths,
              layer_type=LayerType.SPATIAL,
              target_crs=None,
+             num_partitions=None,
              resample_method=ResampleMethod.NEAREST_NEIGHBOR,
              read_method=ReadMethod.GEOTRELLIS):
         """Creates a RasterLayer from a list of data sources.
@@ -423,6 +424,9 @@ class RasterLayer(CachableLayer, TileLayer):
             target_crs (str or int, optional): The CRS that the output tiles should be
                 in. If ``None``, then the CRS that the tiles were originally in
                 will be used.
+            num_partitions (int, optional): The number of partitions Spark
+                will make when the data is repartitioned. If ``None``, then the
+                data will be partitioned using the default number of partitions.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use when building internal overviews. Default is,
                 ``ResampleMethods.NEAREST_NEIGHBOR``.
@@ -453,14 +457,15 @@ class RasterLayer(CachableLayer, TileLayer):
 
         rastersource = pysc._gateway.jvm.geopyspark.geotrellis.vlm.RasterSource
 
-        if isinstance(paths, str):
+        if isinstance(paths, (str, dict)):
             paths = [paths]
 
-        if isinstance(paths, dict) or (isinstance(paths, list) and isinstance(paths[0], dict)):
+        if isinstance(paths[0], dict):
             srdd = rastersource.readOrdered(pysc._jsc.sc(),
                                             layer_type.value,
                                             paths,
                                             target_crs,
+                                            num_partitions,
                                             resample_method,
                                             read_method.value)
         else:
@@ -468,6 +473,7 @@ class RasterLayer(CachableLayer, TileLayer):
                                      layer_type.value,
                                      paths,
                                      target_crs,
+                                     num_partitions,
                                      resample_method,
                                      read_method.value)
 
@@ -1089,6 +1095,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
              layout_type,
              layer_type=LayerType.SPATIAL,
              target_crs=None,
+             num_partitions=None,
              resample_method=ResampleMethod.NEAREST_NEIGHBOR,
              read_method=ReadMethod.GEOTRELLIS):
         """Creates a TiledRasterLayer from a list of data sources.
@@ -1111,6 +1118,9 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             target_crs (str or int, optional): The CRS that the output tiles should be
                 in. If ``None``, then the CRS that the tiles were originally in
                 will be used.
+            num_partitions (int, optional): The number of partitions Spark
+                will make when the data is repartitioned. If ``None``, then the
+                data will be partitioned using the default number of partitions.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use when building internal overviews. Default is,
                 ``ResampleMethods.NEAREST_NEIGHBOR``.
@@ -1139,17 +1149,18 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         pysc = get_spark_context()
 
-        if isinstance(paths, str):
+        if isinstance(paths, (str, dict)):
             paths = [paths]
 
         rastersource = pysc._gateway.jvm.geopyspark.geotrellis.vlm.RasterSource
 
-        if isinstance(paths, dict) or (isinstance(paths, list) and isinstance(paths[0], dict)):
+        if isinstance(paths[0], dict):
             srdd = rastersource.readOrderedToLayout(pysc._jsc.sc(),
                                                     layer_type.value,
                                                     paths,
                                                     layout_type,
                                                     target_crs,
+                                                    num_partitions,
                                                     resample_method,
                                                     read_method.value)
 
@@ -1159,6 +1170,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                                              paths,
                                              layout_type,
                                              target_crs,
+                                             num_partitions,
                                              resample_method,
                                              read_method.value)
 
