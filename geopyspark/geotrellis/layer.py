@@ -1076,13 +1076,13 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         self.zoom_level = self.srdd.getZoom()
 
     @classmethod
-    def read_to_layout(cls,
-                       paths,
-                       layout_type,
-                       layer_type=LayerType.SPATIAL,
-                       target_crs=None,
-                       resample_method=ResampleMethod.NEAREST_NEIGHBOR,
-                       read_method=ReadMethod.GEOTRELLIS):
+    def read(cls,
+             paths,
+             layout_type,
+             layer_type=LayerType.SPATIAL,
+             target_crs=None,
+             resample_method=ResampleMethod.NEAREST_NEIGHBOR,
+             read_method=ReadMethod.GEOTRELLIS):
         """Creates a TiledRasterLayer from a list of data sources.
 
         Note:

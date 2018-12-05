@@ -19,9 +19,9 @@ class TiledRasterLayerTest(BaseTestClass):
         expected_tiled = self.rdd.tile_to_layout(layout, target_crs=target_crs)
         expected_collected = expected_tiled.to_numpy_rdd().collect()
 
-        actual_tiled = TiledRasterLayer.read_to_layout([self.path],
-                                                       layout_type=layout,
-                                                       target_crs=target_crs)
+        actual_tiled = TiledRasterLayer.read([self.path],
+                                             layout_type=layout,
+                                             target_crs=target_crs)
 
         actual_collected = actual_tiled.to_numpy_rdd().collect()
 
