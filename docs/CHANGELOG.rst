@@ -1,6 +1,12 @@
 Changelog
 ==========
 
+
+0.4.3
+------
+
+Update to GeoTrellis 2.0.1
+
 0.4.2
 ------
 

@@ -1,10 +1,8 @@
 name := "geotrellis-backend"
 
 libraryDependencies ++= Seq(
-  "org.typelevel"               %% "cats"                  % "0.9.0",
   "com.typesafe.akka"           %% "akka-http"             % "10.0.10",
   "com.typesafe.akka"           %% "akka-http-spray-json"  % "10.0.10",
-  "net.sf.py4j"                 %  "py4j"                  % "0.10.6",
   "org.apache.spark"            %% "spark-core"            % "2.3.0" % "provided",
   "org.apache.commons"          % "commons-math3"          % "3.6.1",
   "org.locationtech.geotrellis" %% "geotrellis-s3"         % Version.geotrellis,
