@@ -413,8 +413,18 @@ class RasterLayer(CachableLayer, TileLayer):
             supported.
 
         Args:
-            paths (str or [str]): A path or a list of paths that point to geo-spatial data.
-                These strings can be in either a URI format or a relative path.
+            paths (str or [str] or {str: str} or [{str: str}]): The geo-spatial data
+                to be read. There are two different formats the paths can be
+                in: either alone or in a ``dict``.
+
+                If passed in as just ``str``\s, then each resulting path will
+                have its own associated ``Tile``\(s) in the layer.
+
+                ``dict``\s passed in need to be formatted as: ``{bandNumber: path}`` where
+                both ``bandNumber`` and ``path`` are ``str``s. For each ``dict``,
+                the data will be read in and combined to form a Multiband reprsentation
+                of the data. With the ordering of the bands determined by their respective
+                ``bandNumber``.
             layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`, optional): What the layer type
                 of the geotiffs are. This is represented by either constants within ``LayerType`` or by
                 a string.
@@ -1105,8 +1115,18 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             supported.
 
         Args:
-            paths (str or [str]): A path or a list of paths that point to geo-spatial data.
-                These strings can be in either a URI format or a relative path.
+            paths (str or [str] or {str: str} or [{str: str}]): The geo-spatial data
+                to be read. There are two different formats the paths can be
+                in: either alone or in a ``dict``.
+
+                If passed in as just ``str``\s, then each resulting path will
+                have its own associated ``Tile``\(s) in the layer.
+
+                ``dict``\s passed in need to be formatted as: ``{bandNumber: path}`` where
+                both ``bandNumber`` and ``path`` are ``str``s. For each ``dict``,
+                the data will be read in and combined to form a Multiband reprsentation
+                of the data. With the ordering of the bands determined by their respective
+                ``bandNumber``.
             layout (:class:`~geopyspark.geotrellis.LayoutDefinition` or :class:`~geopyspark.geotrellis.Metadata` or :class:`~geopyspark.geotrellis.TiledRasterLayer` or :class:`~geopyspark.geotrellis.GlobalLayout` or :class:`~geopyspark.geotrellis.LocalLayout`):
                 Target raster layout for the tiling operation.
             layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`, optional): What the layer type
