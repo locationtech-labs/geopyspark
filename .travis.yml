@@ -12,7 +12,7 @@ branches:
     - master
     - refactor/performance-refactor
     - milestone/mvp
-    - feature/gdal-support
+    - gdal
 
 addons:
   apt:
