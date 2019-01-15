@@ -37,7 +37,8 @@ addons:
       - ant
 
 before_install:
-  - bash ./travis_gdal_setup.sh
+  - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
+  - ./travis_gdal_setup.sh
   - export LD_LIBRARY_PATH=$GDALINST/gdal-$GDAL_VERSION/lib:$LD_LIBRARY_PATH
 
 install:
@@ -74,7 +75,6 @@ cache:
 
 script:
   - export SPARK_HOME=./spark-2.3.1-bin-hadoop2.7/
-  - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
   - ./test_script.sh
   - if [[ $TRAVIS_PYTHON_VERSION != "3.3" ]]; then
     pylint geopyspark;

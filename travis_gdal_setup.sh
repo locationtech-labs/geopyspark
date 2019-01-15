@@ -42,7 +42,6 @@ GDALOPTS="  --with-geos \
             --without-sde \
             --without-perl"
 
-
 # Create build dir if not exists
 if [ ! -d "$GDALBUILD" ]; then
   mkdir $GDALBUILD;
@@ -56,14 +55,14 @@ ls -l $GDALINST
 
 if [ ! -d "$GDALINST/gdal-$GDAL_VERSION" ]; then
   cd $GDALBUILD
-  wget -q http://download.osgeo.org/gdal/$gdalver/gdal-$GDAL_VERSION.tar.gz
+  wget http://download.osgeo.org/gdal/$GDAL_VERSION/gdal-$GDAL_VERSION.tar.gz
   tar -xzf gdal-$GDAL_VERSION.tar.gz
   cd gdal-$GDAL_VERSION
   ./configure --prefix=$GDALINST/gdal-$GDAL_VERSION $GDALOPTS
-  make -s -j 2
+  make -j 2
   make install
-  cd src/gdal-${GDAL_VERSION}/swig/java && make && make install
-  cd $GDALBUILD && cd src/gdal-${GDAL_VERSION}/swig/python \
+  cd swig/java && make && make install
+  cd $GDALBUILD/gdal-${GDAL_VERSION}/swig/python \
     && python3 setup.py build \
     && python3 setup.py install
 fi
