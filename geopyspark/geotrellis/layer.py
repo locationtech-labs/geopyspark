@@ -440,9 +440,6 @@ class RasterLayer(CachableLayer, TileLayer):
 
         layer_type = LayerType(layer_type)
 
-        if layer_type == LayerType.SPACETIME:
-            raise NotImplementedError("The read method does not currently support the SPACETIME LayerType")
-
         resample_method = ResampleMethod(resample_method)
         read_method = ReadMethod(read_method)
 
@@ -1119,9 +1116,6 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         """
 
         layer_type = LayerType(layer_type)
-
-        if layer_type == LayerType.SPACETIME:
-            raise NotImplementedError("The read method does not currently support the SPACETIME LayerType")
 
         resample_method = ResampleMethod(resample_method)
         read_method = ReadMethod(read_method)
