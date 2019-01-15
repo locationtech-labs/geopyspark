@@ -12,6 +12,7 @@ branches:
     - master
     - refactor/performance-refactor
     - milestone/mvp
+    - feature/gdal-support
 
 addons:
   apt:
@@ -25,6 +26,12 @@ addons:
       - libatlas-base-dev
       - gfortran
       - oracle-java8-set-default
+
+before_install:
+  - docker pull daunnc/openjdk-gdal:2.4.0
+
+services:
+  - docker
 
 install:
   - pushd geopyspark-backend &&
@@ -60,7 +67,6 @@ cache:
 script:
   - export SPARK_HOME=./spark-2.3.1-bin-hadoop2.7/
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
-  - ./test_script.sh
   - if [[ $TRAVIS_PYTHON_VERSION != "3.3" ]]; then
     pylint geopyspark;
     fi
