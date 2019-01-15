@@ -1,5 +1,11 @@
 language: python
 
+env:
+  global:
+    - GDALBUILD=$HOME/gdalbuild
+    - GDALINST=$HOME/gdalinstall
+    - GDAL_VERSION="2.4.0"
+
 python:
   - "3.3"
   - "3.4"
@@ -26,12 +32,12 @@ addons:
       - libatlas-base-dev
       - gfortran
       - oracle-java8-set-default
+      - swig
+      - ant
 
 before_install:
-  - docker pull daunnc/openjdk-gdal:2.4.0
-
-services:
-  - docker
+  - ./travis_gdal_setup.sh
+  - export LD_LIBRARY_PATH=$GDALINST/gdal-$GDAL_VERSION/lib:$LD_LIBRARY_PATH
 
 install:
   - pushd geopyspark-backend &&
@@ -63,10 +69,12 @@ cache:
   - ./archives
   - $HOME/.ivy2
   - $HOME/.cache/pip
+  - $HOME/$GDALINST
 
 script:
   - export SPARK_HOME=./spark-2.3.1-bin-hadoop2.7/
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
+  - ./test_script.sh
   - if [[ $TRAVIS_PYTHON_VERSION != "3.3" ]]; then
     pylint geopyspark;
     fi
