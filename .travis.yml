@@ -37,7 +37,7 @@ addons:
       - ant
 
 before_install:
-  - ./travis_gdal_setup.sh
+  - travis_wait 20 bash ./travis_gdal_setup.sh
   - export LD_LIBRARY_PATH=$GDALINST/gdal-$GDAL_VERSION/lib:$LD_LIBRARY_PATH
 
 install:

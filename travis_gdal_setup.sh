@@ -54,7 +54,7 @@ fi
 
 ls -l $GDALINST
 
-if [! -d "$GDALINST/gdal-$GDAL_VERSION"]; then
+if [ ! -d "$GDALINST/gdal-$GDAL_VERSION" ]; then
   cd $GDALBUILD
   wget -q http://download.osgeo.org/gdal/$gdalver/gdal-$GDAL_VERSION.tar.gz
   tar -xzf gdal-$GDAL_VERSION.tar.gz
