@@ -38,7 +38,7 @@ addons:
 
 before_install:
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
-  - ./travis_gdal_setup.sh
+  - bash ./travis_gdal_setup.sh
   - export LD_LIBRARY_PATH=$GDALINST/gdal-$GDAL_VERSION/lib:$LD_LIBRARY_PATH
 
 install:
