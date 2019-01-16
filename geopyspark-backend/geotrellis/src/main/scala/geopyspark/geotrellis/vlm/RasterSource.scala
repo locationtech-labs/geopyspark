@@ -90,16 +90,24 @@ object RasterSource {
     layerType: String,
     paths: java.util.ArrayList[java.util.HashMap[String, String]],
     targetCRS: String,
+    numPartitions: Integer,
     resampleMethod: ResampleMethod,
     readMethod: String
   ): ProjectedRasterLayer = {
     val scalaPaths: Seq[Seq[(String, String)]] = paths.asScala.toSeq.map { _.asScala.toSeq }
 
+    val partitions =
+      numPartitions match {
+        case i: Integer => Some(i.toInt)
+        case null => None
+      }
+
     readOrdered(
       sc,
       layerType,
-      sc.parallelize(scalaPaths, scalaPaths.size),
+      sc.parallelize(scalaPaths, partitions.getOrElse(scalaPaths.size)),
       targetCRS,
+      partitions,
       resampleMethod,
       readMethod
     )
@@ -110,6 +118,7 @@ object RasterSource {
     layerType: String,
     rdd: RDD[Seq[(String, String)]],
     targetCRS: String,
+    numPartitions: Option[Int],
     resampleMethod: ResampleMethod,
     readMethod: String
   ): ProjectedRasterLayer = {
@@ -156,7 +165,7 @@ object RasterSource {
       }
 
     val groupedSourcesRDD: RDD[(Extent, Iterable[(String, RasterSource)])] =
-      keyedSourcesRDD.groupByKey(rasterSummary.estimatePartitionsNumber)
+      keyedSourcesRDD.groupByKey(numPartitions.getOrElse(rasterSummary.estimatePartitionsNumber))
 
     val projectedRDD: RDD[(ProjectedExtent, MultibandTile)] =
       groupedSourcesRDD.map { case (ex, iter) =>
@@ -267,17 +276,25 @@ object RasterSource {
     paths: java.util.ArrayList[java.util.HashMap[String, String]],
     layoutType: GPSLayoutType,
     targetCRS: String,
+    numPartitions: Integer,
     resampleMethod: ResampleMethod,
     readMethod: String
   ): SpatialTiledRasterLayer = {
     val scalaPaths: Seq[Seq[(String, String)]] = paths.asScala.toSeq.map { _.asScala.toSeq }
 
+    val partitions =
+      numPartitions match {
+        case i: Integer => Some(i.toInt)
+        case null => None
+      }
+
     readOrderedToLayout(
       sc,
       layerType,
-      sc.parallelize(scalaPaths, scalaPaths.size),
+      sc.parallelize(scalaPaths, partitions.getOrElse(scalaPaths.size)),
       layoutType,
       targetCRS,
+      partitions,
       resampleMethod,
       readMethod
     )
@@ -289,6 +306,7 @@ object RasterSource {
     rdd: RDD[Seq[(String, String)]],
     layoutType: LayoutType,
     targetCRS: String,
+    numPartitions: Option[Int],
     resampleMethod: ResampleMethod,
     readMethod: String
   ): SpatialTiledRasterLayer = {
@@ -353,7 +371,8 @@ object RasterSource {
       }
 
     val groupedRDD: RDD[(SpatialKey, Iterable[(String, RasterRegion)])] =
-      rasterRegionRDD.groupByKey(SpatialPartitioner(rasterSummary.estimatePartitionsNumber))
+      rasterRegionRDD
+        .groupByKey(SpatialPartitioner(numPartitions.getOrElse(rasterSummary.estimatePartitionsNumber)))
 
     val tiledRDD: RDD[(SpatialKey, MultibandTile)] =
       groupedRDD.mapValues { iter =>
