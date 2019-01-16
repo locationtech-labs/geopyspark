@@ -475,7 +475,6 @@ class RasterLayer(CachableLayer, TileLayer):
                                             layer_type.value,
                                             paths,
                                             target_crs,
-                                            num_partitions,
                                             resample_method,
                                             read_method.value)
         else:

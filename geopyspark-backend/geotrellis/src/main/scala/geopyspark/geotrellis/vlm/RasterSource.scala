@@ -90,22 +90,15 @@ object RasterSource {
     layerType: String,
     paths: java.util.ArrayList[java.util.HashMap[String, String]],
     targetCRS: String,
-    numPartitions: Integer,
     resampleMethod: ResampleMethod,
     readMethod: String
   ): ProjectedRasterLayer = {
     val scalaPaths: Seq[Seq[(String, String)]] = paths.asScala.toSeq.map { _.asScala.toSeq }
 
-    val partitions =
-      numPartitions match {
-        case i: Integer => Some(i.toInt)
-        case null => None
-      }
-
     readOrdered(
       sc,
       layerType,
-      sc.parallelize(scalaPaths, partitions.getOrElse(sc.defaultParallelism)),
+      sc.parallelize(scalaPaths, scalaPaths.size),
       targetCRS,
       resampleMethod,
       readMethod
@@ -138,40 +131,52 @@ object RasterSource {
           }
       }).cache()
 
-    val orderedRasterSourcesRDD: RDD[Seq[RasterSource]] =
-      rasterSourcesRDD.map { keyedSource: Seq[(String, RasterSource)] =>
-        keyedSource.sortBy { _._1 }.map { case (_, source) => source }
-      }
-
-    val reprojectedSourcesRDD: RDD[Seq[RasterSource]] =
+    val reprojectedSourcesRDD: RDD[(String, RasterSource)] =
       targetCRS match {
         case crs: String =>
-          orderedRasterSourcesRDD.map {
-            _.map { _.reproject(CRS.fromString(crs), resampleMethod) }
+          rasterSourcesRDD.flatMap { case sources =>
+            sources.map { case (index, source) =>
+              (index, source.reproject(CRS.fromString(crs), resampleMethod))
+            }
           }
-        case null =>
-          orderedRasterSourcesRDD
+        case null => rasterSourcesRDD.flatMap { sources => sources }
       }
 
-    val projectedRasterRDD: RDD[(ProjectedExtent, MultibandTile)] =
-      reprojectedSourcesRDD.map { sources: Seq[RasterSource] =>
-        val extent: Extent = sources.head.extent
-        val crs: CRS = sources.head.crs
+    val rasterSummary: RasterSummary =
+      reprojectedSourcesRDD
+        .map { case (_, source) =>
+            val ProjectedExtent(extent, crs) = source.getComponent[ProjectedExtent]
+            val cellSize = CellSize(extent, source.cols, source.rows)
+            RasterSummary(crs, source.cellType, cellSize, extent, source.size, 1)
+          }.reduce { _ combine _ }
+
+    val keyedSourcesRDD: RDD[(Extent, (String, RasterSource))] =
+      reprojectedSourcesRDD.map { case (index, source) =>
+        (source.extent, (index, source))
+      }
+
+    val groupedSourcesRDD: RDD[(Extent, Iterable[(String, RasterSource)])] =
+      keyedSourcesRDD.groupByKey(rasterSummary.estimatePartitionsNumber)
+
+    val projectedRDD: RDD[(ProjectedExtent, MultibandTile)] =
+      groupedSourcesRDD.map { case (ex, iter) =>
+        val sorted = iter.toSeq.sortBy { _._1 }
+        val crs = sorted.head._2.crs
 
         val tiles: Seq[MultibandTile] =
-          sources.flatMap { source: RasterSource =>
+          sorted.flatMap { case (_, source) =>
             source.read(source.extent) match {
               case Some(raster) => Some(raster.tile)
               case None => None
             }
           }
 
-        (ProjectedExtent(extent, crs), MultibandTile(tiles.map { _.band(0) }))
+        (ProjectedExtent(ex, crs), MultibandTile(tiles.map { _.band(0) }))
       }
 
     rasterSourcesRDD.unpersist()
 
-    ProjectedRasterLayer(projectedRasterRDD)
+    ProjectedRasterLayer(projectedRDD)
   }
 
   def readToLayout(
