@@ -436,7 +436,7 @@ class RasterLayer(CachableLayer, TileLayer):
                 will be used.
             num_partitions (int, optional): The number of partitions Spark
                 will make when the data is repartitioned. If ``None``, then the
-                data will be partitioned using the default number of partitions.
+                number of partitions will be estimated based on the input data.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use when building internal overviews. Default is,
                 ``ResampleMethods.NEAREST_NEIGHBOR``.
@@ -1140,7 +1140,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
                 will be used.
             num_partitions (int, optional): The number of partitions Spark
                 will make when the data is repartitioned. If ``None``, then the
-                data will be partitioned using the default number of partitions.
+                number of partitions will be estimated based on the input data.
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use when building internal overviews. Default is,
                 ``ResampleMethods.NEAREST_NEIGHBOR``.
