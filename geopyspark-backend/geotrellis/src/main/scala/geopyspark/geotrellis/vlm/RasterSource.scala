@@ -34,6 +34,8 @@ object RasterSource {
     resampleMethod: ResampleMethod,
     readMethod: String
   ): ProjectedRasterLayer = {
+    val scalaPaths: Seq[Seq[(String, String)]] = paths.asScala.toSeq.map { _.asScala.toSeq }
+
     val partitions =
       numPartitions match {
         case i: Integer => Some(i.toInt)
@@ -43,7 +45,7 @@ object RasterSource {
     read(
       sc,
       layerType,
-      sc.parallelize(paths.asScala, partitions.getOrElse(sc.defaultParallelism)),
+      sc.parallelize(scalaPaths, partitions.getOrElse(scalaPaths.size)),
       targetCRS,
       resampleMethod,
       readMethod
@@ -198,6 +200,8 @@ object RasterSource {
     resampleMethod: ResampleMethod,
     readMethod: String
   ): SpatialTiledRasterLayer = {
+    val scalaPaths: Seq[Seq[(String, String)]] = paths.asScala.toSeq.map { _.asScala.toSeq }
+
     val partitions =
       numPartitions match {
         case i: Integer => Some(i.toInt)
@@ -207,7 +211,7 @@ object RasterSource {
     readToLayout(
       sc,
       layerType,
-      sc.parallelize(paths.asScala, partitions.getOrElse(sc.defaultParallelism)),
+      sc.parallelize(scalaPaths, partitions.getOrElse(scalaPaths.size)),
       layoutType,
       targetCRS,
       resampleMethod,
