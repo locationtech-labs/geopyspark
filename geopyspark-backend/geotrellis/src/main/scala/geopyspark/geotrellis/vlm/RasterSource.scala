@@ -34,7 +34,7 @@ object RasterSource {
     resampleMethod: ResampleMethod,
     readMethod: String
   ): ProjectedRasterLayer = {
-    val scalaPaths: Seq[Seq[(String, String)]] = paths.asScala.toSeq.map { _.asScala.toSeq }
+    val scalaPaths: Seq[String] = paths.asScala.toSeq
 
     val partitions =
       numPartitions match {
@@ -200,7 +200,7 @@ object RasterSource {
     resampleMethod: ResampleMethod,
     readMethod: String
   ): SpatialTiledRasterLayer = {
-    val scalaPaths: Seq[Seq[(String, String)]] = paths.asScala.toSeq.map { _.asScala.toSeq }
+    val scalaPaths: Seq[String] = paths.asScala.toSeq
 
     val partitions =
       numPartitions match {
