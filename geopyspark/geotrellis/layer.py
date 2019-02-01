@@ -34,7 +34,8 @@ from geopyspark.geotrellis import (Metadata,
                                    SpatialPartitionStrategy,
                                    SpaceTimePartitionStrategy,
                                    RasterizerOptions,
-                                   check_partition_strategy)
+                                   check_partition_strategy,
+                                   SourceInfo)
 from geopyspark.geotrellis.histogram import Histogram
 from geopyspark.geotrellis.constants import (IndexingMethod,
                                              Operation,
@@ -1088,6 +1089,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
              target_crs=None,
              num_partitions=None,
              resample_method=ResampleMethod.NEAREST_NEIGHBOR,
+             partition_strategy=None
              read_method=ReadMethod.GEOTRELLIS):
         """Creates a TiledRasterLayer from a list of data sources.
 
@@ -1096,18 +1098,16 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             supported.
 
         Args:
-            paths (str or [str] or {str: str} or [{str: str}]): The geo-spatial data
-                to be read. There are two different formats the paths can be
-                in: either alone or in a ``dict``.
+            paths (str or [str] or :class:`~geopyspark.geotrellis.SourceInfo` or [:class:`~geopyspark.geotrellis.SourceInfo`]): The geo-spatial data
+                to be read. There are two different formats these paths can be
+                in: either as a ``str`` or ``SourceInfo``.
 
-                If passed in as just ``str``\s, then each resulting path will
+                If passed in as ``str``\s, then each resulting path will
                 have its own associated ``Tile``\(s) in the layer.
 
-                ``dict``\s passed in need to be formatted as: ``{bandNumber: path}`` where
-                both ``bandNumber`` and ``path`` are ``str``s. For each ``dict``,
-                the data will be read in and combined to form a Multiband reprsentation
-                of the data. With the ordering of the bands determined by their respective
-                ``bandNumber``.
+                When ``SourceInfo`` is passed in, the data will be read in and combined to
+                form a Multiband reprsentation of the data. With the ordering of the bands
+                determined by their respective target index.
             layout (:class:`~geopyspark.geotrellis.LayoutDefinition` or :class:`~geopyspark.geotrellis.Metadata` or :class:`~geopyspark.geotrellis.TiledRasterLayer` or :class:`~geopyspark.geotrellis.GlobalLayout` or :class:`~geopyspark.geotrellis.LocalLayout`):
                 Target raster layout for the tiling operation.
             layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`, optional): What the layer type
@@ -1125,6 +1125,19 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             resample_method (str or :class:`~geopyspark.geotrellis.constants.ResampleMethod`, optional):
                 The resample method to use when building internal overviews. Default is,
                 ``ResampleMethods.NEAREST_NEIGHBOR``.
+            partition_strategy (:class:`~geopyspark.HashPartitionStrategy` or :class:`~geopyspark.SpatialPartitioinStrategy` or :class:`~geopyspark.SpaceTimePartitionStrategy`, optional):
+                Sets the ``Partitioner`` for the resulting layer and how many partitions it has.
+                Default is, ``None``.
+
+                If ``None``, then the output layer will be the same ``Partitioner`` and number of
+                partitions as the source layer.
+
+                If ``partition_strategy`` is set but has no ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` specified in the strategy with the with same number of
+                partitions the source layer had.
+
+                If ``partition_strategy`` is set and has a ``num_partitions``, then the resulting layer
+                will have the ``Partioner`` and number of partitions specified in the strategy.
             read_method(str or :class:`~geopyspark.geotrellis.constants.ReadMethod`, optional): The method
                 that should be used to read in the data. The ``GEOTRELLIS`` method can only read GeoTiffs,
                 but is already setup. While the other method, ``GDAL`` can read other data sources, but
@@ -1142,6 +1155,9 @@ class TiledRasterLayer(CachableLayer, TileLayer):
         if layer_type == LayerType.SPACETIME:
             raise NotImplementedError("The read method does not currently support the SPACETIME LayerType")
 
+        if partition_strategy:
+            check_partition_strategy(partition_strategy, self.layer_type)
+
         resample_method = ResampleMethod(resample_method)
         read_method = ReadMethod(read_method)
 
@@ -1150,19 +1166,19 @@ class TiledRasterLayer(CachableLayer, TileLayer):
 
         pysc = get_spark_context()
 
-        if isinstance(paths, (str, dict)):
+        if isinstance(paths, (str, SourceInfo)):
             paths = [paths]
 
         rastersource = pysc._gateway.jvm.geopyspark.geotrellis.vlm.RasterSource
 
-        if isinstance(paths[0], dict):
+        if isinstance(paths[0], SourceInfo):
             srdd = rastersource.readOrderedToLayout(pysc._jsc.sc(),
-                                                    layer_type.value,
                                                     paths,
                                                     layout_type,
                                                     target_crs,
                                                     num_partitions,
                                                     resample_method,
+                                                    partition_strategy,
                                                     read_method.value)
 
         else:
