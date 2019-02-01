@@ -148,6 +148,16 @@ class SpaceTimePartitionStrategyConverter:
         return ScalaTemporalStrategy.apply(obj.num_partitions, obj.bits, scala_time_unit, scala_time_resolution)
 
 
+class SourceInfoConverter(object):
+    def can_convert(self, object):
+        return isinstance(object, SourceInfo)
+
+    def convert(self, obj, gateway_client):
+        ScalaSourceInfo = JavaClass("geopyspark.geotrellis.vlm.SourceInfo", gateway_client)
+
+        return ScalaSourceInfo.apply(obj.source, obj.source_to_target_band)
+
+
 register_input_converter(CellTypeConverter(), prepend=True)
 register_input_converter(RasterizerOptionsConverter(), prepend=True)
 register_input_converter(LayoutTypeConverter(), prepend=True)
@@ -156,3 +166,4 @@ register_input_converter(LayoutDefinitionConverter(), prepend=True)
 register_input_converter(HashPartitionStrategyConverter(), prepend=True)
 register_input_converter(SpatialPartitionStrategyConverter(), prepend=True)
 register_input_converter(SpaceTimePartitionStrategyConverter(), prepend=True)
+register_input_converter(SourceInfoConverter(), prepend=True)
