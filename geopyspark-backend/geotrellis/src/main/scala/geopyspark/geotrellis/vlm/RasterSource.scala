@@ -90,13 +90,14 @@ object RasterSource {
   def readOrdered(
     sc: SparkContext,
     layerType: String,
-    paths: java.util.ArrayList[java.util.HashMap[String, String]],
+    paths: java.util.ArrayList[String],
+    maxTileSize: Int,
     targetCRS: String,
     numPartitions: Integer,
     resampleMethod: ResampleMethod,
     readMethod: String
   ): ProjectedRasterLayer = {
-    val scalaPaths: Seq[Seq[(String, String)]] = paths.asScala.toSeq.map { _.asScala.toSeq }
+    val scalaPaths: Seq[Seq[(String, String)]] = ??? ///paths.asScala.toSeq.map { ReadingInfo( }
 
     val partitions =
       numPartitions match {
