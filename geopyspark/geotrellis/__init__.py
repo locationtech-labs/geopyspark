@@ -646,6 +646,11 @@ class SpaceTimePartitionStrategy(namedtuple("SpaceTimePartitionStrategy", "time_
         return super(cls, SpaceTimePartitionStrategy).__new__(cls, time_unit, num_partitions, bits, time_resolution)
 
 
+class SourceInfo(namedtuple("SourceInfo", "source source_to_target_band")):
+
+    __slots__ = []
+
+
 class Feature(namedtuple("Feature", "geometry properties")):
     """Represents a geometry that is derived from an OSM Element with that Element's associated metadata.
 
