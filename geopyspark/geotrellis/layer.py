@@ -413,18 +413,8 @@ class RasterLayer(CachableLayer, TileLayer):
             supported.
 
         Args:
-            paths (str or [str] or {str: str} or [{str: str}]): The geo-spatial data
-                to be read. There are two different formats the paths can be
-                in: either alone or in a ``dict``.
-
-                If passed in as just ``str``\s, then each resulting path will
-                have its own associated ``Tile``\(s) in the layer.
-
-                ``dict``\s passed in need to be formatted as: ``{bandNumber: path}`` where
-                both ``bandNumber`` and ``path`` are ``str``s. For each ``dict``,
-                the data will be read in and combined to form a Multiband reprsentation
-                of the data. With the ordering of the bands determined by their respective
-                ``bandNumber``.
+            paths (str or [str]): The geo-spatial data to be read. Each path
+                will have its own associated ``Tile``\s in the resulting layer.
             layer_type (str or :class:`~geopyspark.geotrellis.constants.LayerType`, optional): What the layer type
                 of the geotiffs are. This is represented by either constants within ``LayerType`` or by
                 a string.
@@ -467,25 +457,16 @@ class RasterLayer(CachableLayer, TileLayer):
 
         rastersource = pysc._gateway.jvm.geopyspark.geotrellis.vlm.RasterSource
 
-        if isinstance(paths, (str, dict)):
+        if isinstance(paths, str)):
             paths = [paths]
 
-        if isinstance(paths[0], dict):
-            srdd = rastersource.readOrdered(pysc._jsc.sc(),
-                                            layer_type.value,
-                                            paths,
-                                            target_crs,
-                                            num_partitions,
-                                            resample_method,
-                                            read_method.value)
-        else:
-            srdd = rastersource.read(pysc._jsc.sc(),
-                                     layer_type.value,
-                                     paths,
-                                     target_crs,
-                                     num_partitions,
-                                     resample_method,
-                                     read_method.value)
+        srdd = rastersource.read(pysc._jsc.sc(),
+                                 layer_type.value,
+                                 paths,
+                                 target_crs,
+                                 num_partitions,
+                                 resample_method,
+                                 read_method.value)
 
         return cls(layer_type, srdd)
 
