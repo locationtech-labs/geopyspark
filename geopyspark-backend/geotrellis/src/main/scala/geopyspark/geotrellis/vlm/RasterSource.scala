@@ -17,7 +17,7 @@ import geotrellis.proj4._
 import geotrellis.vector._
 import geotrellis.util._
 
-import org.apache.spark.SparkContext
+import org.apache.spark.{SparkContext, Partitioner}
 import org.apache.spark.rdd.RDD
 
 import scala.collection.JavaConverters._
@@ -276,15 +276,15 @@ object RasterSource {
 
   def readOrderedToLayout(
     sc: SparkContext,
-    layerType: String,
-    paths: java.util.ArrayList[java.util.HashMap[String, String]],
+    paths: java.util.ArrayList[SourceInfo],
     layoutType: GPSLayoutType,
     targetCRS: String,
     numPartitions: Integer,
     resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy,
     readMethod: String
   ): SpatialTiledRasterLayer = {
-    val scalaPaths: Seq[Seq[(String, String)]] = paths.asScala.toSeq.map { _.asScala.toSeq }
+    val scalaSources: Seq[SourceInfo] = paths.asScala.toSeq
 
     val partitions =
       numPartitions match {
@@ -292,64 +292,49 @@ object RasterSource {
         case null => None
       }
 
-    readOrderedToLayout(
-      sc,
-      layerType,
-      sc.parallelize(scalaPaths, partitions.getOrElse(scalaPaths.size)),
-      layoutType,
-      targetCRS,
-      partitions,
-      resampleMethod,
-      readMethod
-    )
-  }
-
-  def readOrderedToLayout(
-    sc: SparkContext,
-    layerType: String,
-    rdd: RDD[Seq[(String, String)]],
-    layoutType: LayoutType,
-    targetCRS: String,
-    numPartitions: Option[Int],
-    resampleMethod: ResampleMethod,
-    readMethod: String
-  ): SpatialTiledRasterLayer = {
-    val rasterSourcesRDD: RDD[Seq[(String, RasterSource)]] =
-      (readMethod match {
-        case GEOTRELLIS =>
-          rdd.mapPartitions { iter =>
-            iter.map { files: Seq[(String, String)] =>
-              files.map { case (k, v) => (k, new GeoTiffRasterSource(v): RasterSource)
-              }
-            }
-          }
-        case GDAL =>
-          rdd.mapPartitions { iter =>
-            iter.map { files: Seq[(String, String)] =>
-              files.map { case (k, v) => (k, GDALRasterSource(v): RasterSource)
-              }
-            }
-          }
-      }).cache()
-
-    val reprojectedSourcesRDD: RDD[(String, RasterSource)] =
-      targetCRS match {
-        case crs: String =>
-          rasterSourcesRDD.flatMap { case sources =>
-            sources.map { case (index, source) =>
-              (index, source.reproject(CRS.fromString(crs), resampleMethod))
-            }
-          }
-        case null => rasterSourcesRDD.flatMap { sources => sources }
+    val partitioner: Option[Partitioner] =
+      partitionStrategy match {
+        case ps: PartitionStrategy => ps.producePartitioner(partitions.getOrElse(scalaSources.size))
+        case null => None
       }
 
-    val rasterSummary: RasterSummary =
-      reprojectedSourcesRDD
-        .map { case (_, source) =>
-            val ProjectedExtent(extent, crs) = source.getComponent[ProjectedExtent]
-            val cellSize = CellSize(extent, source.cols, source.rows)
-            RasterSummary(crs, source.cellType, cellSize, extent, source.size, 1)
-          }.reduce { _ combine _ }
+    val crs: Option[CRS] =
+      targetCRS match {
+        case crs: String => Some(CRS.fromString(crs))
+        case null => None
+      }
+
+    val transformSource: String => RasterSource =
+      readMethod match {
+        case GEOTRELLIS =>
+          crs match {
+            case Some(projection) =>
+              (path: String) => GeoTiffRasterSource(path).reproject(projection, resampleMethod)
+            case None =>
+              (path: String) => GeoTiffRasterSource(path)
+          }
+        case GDAL =>
+          crs match {
+            case Some(projection) =>
+              (path: String) => GDALRasterSource(path).reproject(projection, resampleMethod)
+            case None =>
+              (path: String) => GDALRasterSource(path)
+          }
+      }
+
+    val sourceInfoRDD: RDD[SourceInfo] =
+      sc.parallelize(scalaSources, partitions.getOrElse(scalaSources.size))
+
+    val readingSourcesRDD: RDD[ReadingSource] =
+      sourceInfoRDD.map { source =>
+        val rasterSource = transformSource(source.source)
+
+        ReadingSource(rasterSource, source.sourceToTargetBand)
+      }
+
+    val sourcesRDD: RDD[RasterSource] = readingSourcesRDD.map { _.source }
+
+    val rasterSummary: RasterSummary = geotrellis.contrib.vlm.RasterSummary.fromRDD(sourcesRDD)
 
     val LayoutLevel(zoom, layout) =
       layoutType match {
@@ -361,36 +346,16 @@ object RasterSource {
           rasterSummary.levelFor(scheme)
       }
 
-    val tileLayerMetadata: TileLayerMetadata[SpatialKey] =
-      rasterSummary.toTileLayerMetadata(layout, zoom)._1
+    val resampledSourcesRDD: RDD[ReadingSource] =
+      readingSourcesRDD.map { source =>
+        val resampledSource: RasterSource = source.source.resampleToGrid(layout, resampleMethod)
 
-    val layoutsRDD: RDD[(String, LayoutTileSource)] =
-      reprojectedSourcesRDD.mapValues { _.tileToLayout(layout, resampleMethod) }
-
-    val rasterRegionRDD: RDD[(SpatialKey, (String, RasterRegion))] =
-      layoutsRDD.flatMap { case (index, source) =>
-        source.keyedRasterRegions().map { case (key, region) =>
-          (key, (index, region))
-        }
+        source.copy(source = resampledSource)
       }
 
-    val groupedRDD: RDD[(SpatialKey, Iterable[(String, RasterRegion)])] =
-      rasterRegionRDD
-        .groupByKey(SpatialPartitioner(numPartitions.getOrElse(rasterSummary.estimatePartitionsNumber)))
+    val result = RasterSourceRDD.readFromRDD(resampledSourcesRDD, layout, partitioner)(sc)
 
-    val tiledRDD: RDD[(SpatialKey, MultibandTile)] =
-      groupedRDD.mapValues { iter =>
-        val sorted = iter.toSeq.sortBy { _._1 }
-
-        MultibandTile(sorted.flatMap { case (_, ref) => ref.raster.toSeq.flatMap { _.tile.bands } })
-      }
-
-    rasterSourcesRDD.unpersist()
-
-    val contextRDD: MultibandTileLayerRDD[SpatialKey] =
-      ContextRDD(tiledRDD, tileLayerMetadata)
-
-    SpatialTiledRasterLayer(zoom, contextRDD)
+    SpatialTiledRasterLayer(zoom, result)
   }
 
   implicit def gps2VLM(layoutType: GPSLayoutType): LayoutType =
