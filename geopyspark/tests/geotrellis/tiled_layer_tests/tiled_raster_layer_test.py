@@ -2,7 +2,7 @@ import unittest
 import pytest
 
 from geopyspark.geotrellis.constants import LayerType, ReadMethod
-from geopyspark.geotrellis import Extent, GlobalLayout, LocalLayout
+from geopyspark.geotrellis import Extent, GlobalLayout, LocalLayout, SourceInfo
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
@@ -20,7 +20,8 @@ class TiledRasterLayerTest(BaseTestClass):
         expected_collected = expected_tiled.to_numpy_rdd().collect()
 
         if multiplex:
-            actual_tiled = TiledRasterLayer.read([{'1': self.path, '2': self.path}],
+            sources = [SourceInfo(self.path, {0: 0}), SourceInfo(self.path, {0:1})]
+            actual_tiled = TiledRasterLayer.read(sources,
                                                  layout_type=layout,
                                                  target_crs=target_crs)
         else:
