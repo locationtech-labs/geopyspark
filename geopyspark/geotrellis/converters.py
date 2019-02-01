@@ -9,7 +9,8 @@ from geopyspark.geotrellis import (RasterizerOptions,
                                    LayoutDefinition,
                                    HashPartitionStrategy,
                                    SpatialPartitionStrategy,
-                                   SpaceTimePartitionStrategy)
+                                   SpaceTimePartitionStrategy,
+                                   SourceInfo)
 
 
 from geopyspark.geotrellis.constants import ResampleMethod
