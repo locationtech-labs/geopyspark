@@ -39,11 +39,8 @@ class RasterLayerTest(BaseTestClass):
     layer = RasterLayer.from_numpy_rdd(LayerType.SPATIAL, numpy_rdd)
     metadata = layer.collect_metadata(GlobalLayout(5))
 
-    def read_no_reproject(self, read_method, multiplex=False):
-        if multiplex:
-            actual_raster_layer = RasterLayer.read([{'1': self.path, '2': self.path}], read_method=read_method)
-        else:
-            actual_raster_layer = RasterLayer.read([self.path], read_method=read_method)
+    def read_no_reproject(self, read_method):
+        actual_raster_layer = RasterLayer.read([self.path], read_method=read_method)
 
         collected = actual_raster_layer.to_numpy_rdd().first()
 
@@ -51,38 +48,30 @@ class RasterLayerTest(BaseTestClass):
 
         self.assertEqual(projected_extent.proj4, self.projected_extent.proj4)
 
-        if multiplex:
-            for x in (0, 1):
-                self.assertTrue((self.expected_tile == tile.cells[x,:,:]).all())
-        else:
-            self.assertTrue((self.expected_tile == tile.cells).all())
+        self.assertTrue((self.expected_tile == tile.cells).all())
 
-    def read_with_reproject(self, read_method, multiplex=False):
+    def read_with_reproject(self, read_method):
         expected_raster_layer = self.rdd.reproject(target_crs=3857)
 
         expected_collected = expected_raster_layer.to_numpy_rdd().first()
         (expected_projected_extent, expected_tile) = expected_collected
 
-        if multiplex:
-            actual_raster_layer = RasterLayer.read([{'1': self.path, '2': self.path}], target_crs=3857, read_method=read_method)
-        else:
-            actual_raster_layer = RasterLayer.read([self.path], target_crs=3857, read_method=read_method)
+        actual_raster_layer = RasterLayer.read([self.path], target_crs=3857, read_method=read_method)
 
         actual_collected = actual_raster_layer.to_numpy_rdd().first()
         (actual_projected_extent, tile) = actual_collected
 
         self.assertEqual(actual_projected_extent.epsg, expected_projected_extent.epsg)
 
-        if multiplex:
-            for x in (0, 1):
-                self.assertTrue((expected_tile.cells == tile.cells[x,:,:]).all())
-        else:
-            self.assertTrue((expected_tile.cells == tile.cells).all())
+        self.assertTrue((expected_tile.cells == tile.cells).all())
 
 
     # No reprojection
     def test_read_ordered_no_reproject_geotrellis(self):
         self.read_no_reproject(ReadMethod.GEOTRELLIS, multiplex=True)
+
+    def test_read_no_reproject_geotrellis(self):
+        self.read_no_reproject(ReadMethod.GEOTRELLIS)
 
     def test_read_no_reproject_gdal(self):
         self.read_no_reproject(ReadMethod.GDAL)
