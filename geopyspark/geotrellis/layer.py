@@ -458,7 +458,7 @@ class RasterLayer(CachableLayer, TileLayer):
 
         rastersource = pysc._gateway.jvm.geopyspark.geotrellis.vlm.RasterSource
 
-        if isinstance(paths, str)):
+        if isinstance(paths, str):
             paths = [paths]
 
         srdd = rastersource.read(pysc._jsc.sc(),
@@ -1089,7 +1089,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
              target_crs=None,
              num_partitions=None,
              resample_method=ResampleMethod.NEAREST_NEIGHBOR,
-             partition_strategy=None
+             partition_strategy=None,
              read_method=ReadMethod.GEOTRELLIS):
         """Creates a TiledRasterLayer from a list of data sources.
 
