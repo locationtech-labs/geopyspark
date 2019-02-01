@@ -234,10 +234,10 @@ object RasterSource {
 
     val LayoutLevel(zoom, layout) =
       layoutType match {
-        case global: GlobalLayout =>
+        case global: GPSGlobalLayout =>
           val scheme = ZoomedLayoutScheme(rasterSummary.crs, global.tileSize)
           scheme.levelForZoom(global.zoom)
-        case local: LocalLayout =>
+        case local: GPSLocalLayout =>
           val scheme = FloatingLayoutScheme(local.tileCols, local.tileRows)
           rasterSummary.levelFor(scheme)
       }
