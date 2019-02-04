@@ -647,6 +647,28 @@ class SpaceTimePartitionStrategy(namedtuple("SpaceTimePartitionStrategy", "time_
 
 
 class SourceInfo(namedtuple("SourceInfo", "source source_to_target_band")):
+    """Represents a data source and how its bands should be formatted when being read
+    in.
+
+    When two or more sources of data cover the same area, a single ``Tile`` will be created
+    that contains the bands specified by ``source_to_target_band``.
+
+    Args:
+        source (str): The path to the data source to be read.
+        source_to_target_band ({int: int}): A ``{int: int}`` that maps each band from the
+            source to the target band of the output.
+
+            For example, ``{0: 2}`` specifies that band ``0`` of the source be band ``2``
+            for the ``Tile``\s that were created from that source.
+    Attributes:
+        source (str): The path to the data source to be read.
+        source_to_target_band ({int: int}): A ``{int: int}`` that maps each band from the
+            source to the target band of the output.
+
+            For example, ``{0: 2}`` specifies that band ``0`` of the source be band ``2``
+            for the ``Tile``\s that were created from that source.
+
+    """
 
     __slots__ = []
 

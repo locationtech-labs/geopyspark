@@ -301,3 +301,58 @@ intersects it. The higher the ``zindex``, the more priority it has.
 
   # Will always be selected
   feature3 = gps.Feature(geometry=geom3, properties=cell_value3)
+
+SourceInfo
+-----------
+
+:class:`~geopyspark.geotrellis.SourceInfo` represents a data source and the
+information on how that data should be read in.
+
+Reading from Singleband Data Sources
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For example, suppose that one wants to calculate NDVI for an area, and the bands that
+represent the red and near infrared (NIR) values are in two seperate files: ``red_band.tiff``
+and ``nir_band.tiff``, respectively. To read in these files as a single ``Tile`` (ie. a
+``Tile`` with two bands), we can specify our ``SourceInfo``\s as:
+
+.. code:: python3
+
+  source_1 = gps.SourceInfo("/tmp/red_band.tiff", {0: 0})
+  source_2 = gps.SourceInfo("/tmp/nir_band.tiff" {0: 1})
+
+
+``source_1`` states that ``Tile``\s created from ``red_band.tiff`` will use the
+data from band ``0`` of the source for its band ``0``. Whereas ``Tile``\s created
+from ``source_2`` will have the band ``0`` of the source be band ``1`` of the
+``Tile``. Thus, when ``red_band.tiff`` and ``nir_band.tiff`` intersect the
+same area, the resulting ``Tile``\(s) will have two bands: ``0`` from ``red_band.tiff``
+and ``1`` from ``nir_band.tiff``.
+
+Reading from Multiband Data Sources
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is also possible to read in individual bands from a multiband data source.
+Continuing the example above, suppose one wants to calculate NDVI using
+Landsat 8 data where each file contains all eleven bands. In this case,
+only the red band (band ``3``) and the NIR band (band ``4``) are of interest.
+We can read in just those bands by doing:
+
+.. code:: python3
+
+  source = gps.SourceInfo("/tmp/all-landsat-bands.tiff", {3: 0, 4: 1})
+
+The above source will have just bands ``3`` and ``4`` read in, and the resulting
+``Tile``\s will just have two bands: the first from ``3`` and the second from
+``4``, respectively.
+
+A Note on Missing Data
+~~~~~~~~~~~~~~~~~~~~~~~
+
+In the event that data of a specified band does not exist in a region, the
+resulting ``Tile``\(s) of that area will have that band be composed of ``NoData``
+values.
+
+So if the ``nir_band.tiff`` covers a smaller area than the ``red_band.tiff``,
+the ``Tile``\(s) of those uncovered regions will have their band ``1`` be
+just ``NoData`` values.
