@@ -249,7 +249,7 @@ object RasterSource {
         source.copy(source = resampledSource)
       }
 
-    val result = RasterSourceRDD.readFromRDD(resampledSourcesRDD, layout, partitioner)(sc)
+    val result = RasterSourceRDD.read(resampledSourcesRDD, layout, partitioner)(sc)
 
     SpatialTiledRasterLayer(zoom, result)
   }
