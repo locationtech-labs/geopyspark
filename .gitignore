@@ -1,6 +1,9 @@
 # Vim
 *.swp
 
+# Mac OS
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -116,3 +119,6 @@ prof/
 .vscode
 
 .pytest_cache
+
+# IntelijIDEA
+.idea

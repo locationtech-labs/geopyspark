@@ -1,4 +1,4 @@
-pytest>=3.0.6
+pytest==3.0.6
 numpy>=1.8
 shapely>=1.6.4.post2
 rasterio==1.0a7

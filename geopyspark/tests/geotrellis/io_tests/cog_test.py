@@ -40,7 +40,7 @@ class COGTest(BaseTestClass):
 
         self.assertEqual(tiled, None)
 
-    @pytest.mark.skipif('TRAVIS' in os.environ,
+    @pytest.mark.skipif('TRAVIS_PYTHON_VERSION' in os.environ.keys(),
                         reason="test_query does not pass on Travis")
     def test_query(self):
         intersection = box(74.88280541992188, 9.667967675781256, 75.05858666503909, 10.019530136718743)

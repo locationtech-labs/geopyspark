@@ -13,8 +13,8 @@ lazy val commonSettings = Seq(
     "-language:higherKinds",
     "-language:postfixOps",
     "-language:existentials",
-    "-feature"),
-
+    "-feature"
+  ),
   shellPrompt := { s => Project.extract(s).currentProject.id + " > " },
 
   externalResolvers := Seq(

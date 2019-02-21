@@ -1,10 +1,7 @@
 language: python
 
 python:
-  - "3.3"
-  - "3.4"
   - "3.5"
-  - "3.6"
 
 branches:
   only:
@@ -12,68 +9,35 @@ branches:
     - master
     - refactor/performance-refactor
     - milestone/mvp
+    - gdal
 
 addons:
-  apt:
-    packages:
-      - gdal-bin
-      - libproj-dev
-      - libhdf5-serial-dev
-      - libpng12-dev
-      - libgdal-dev
-      - libatlas-dev
-      - libatlas-base-dev
-      - gfortran
-      - oracle-java8-set-default
+  # Fix OpenJDK builds
+  # https://github.com/travis-ci/travis-ci/issues/5227
+  hostname: localhost
 
-install:
-  - pushd geopyspark-backend &&
-    ./sbt "project geotrellis-backend" assembly &&
-    cp geotrellis/target/scala-2.11/geotrellis-backend-assembly-*.jar ../geopyspark/jars &&
-    popd
-  - if [ ! -f archives/spark-2.3.1-bin-hadoop2.7.tgz ]; then
-    pushd archives;
-    wget http://apache.cs.utah.edu/spark/spark-2.3.1/spark-2.3.1-bin-hadoop2.7.tgz;
-    popd;
-    fi
-  - tar -xvf archives/spark-2.3.1-bin-hadoop2.7.tgz
-  - pip3 install -r requirements.txt
-  - pip3 install pyproj
-  - if [[ $TRAVIS_PYTHON_VERSION == "3.3" ]]; then
-    pip3 install pathlib;
-    fi
-  - if [[ $TRAVIS_PYTHON_VERSION != "3.3" ]]; then
-    pip3 install matplotlib==2.0.0;
-    pip3 install pylint;
-    fi
-  - pip3 install colortools==0.1.2
-  - pip3 install awscli
-  - export PATH=$PATH:$HOME/.local/bin
-  - pip3 install .
+services:
+  - docker
 
 cache:
   directories:
   - ./archives
-  - $HOME/.ivy2
+  - $HOME/.ivy2/cache
+  - $HOME/.sbt/boot/
+  - $HOME/.coursier/cache/v1
   - $HOME/.cache/pip
 
 script:
-  - export SPARK_HOME=./spark-2.3.1-bin-hadoop2.7/
-  - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
-  - ./test_script.sh
-  - if [[ $TRAVIS_PYTHON_VERSION != "3.3" ]]; then
-    pylint geopyspark;
-    fi
+  - ./scripts/build_and_test_docker.sh
 
 before_deploy:
   - export GEOPYSPARK_VERSION_SUFFIX="${TRAVIS_COMMIT:0:7}"
 
 deploy:
   - provider: script
-    script: ./deploy.sh
+    script: ./scripts/deploy.sh
     skip_cleanup: true
     on:
       repo: locationtech-labs/geopyspark
       branch: master
       tags: false
-      condition: "$TRAVIS_PYTHON_VERSION = 3.6"

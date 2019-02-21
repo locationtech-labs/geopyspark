@@ -1,7 +1,7 @@
 package geopyspark.geotrellis.vlm
 
 import geopyspark.geotrellis.{PartitionStrategy, ProjectedRasterLayer, SpatialTiledRasterLayer}
-import geopyspark.geotrellis.{LayoutType => GPSLayoutType, LocalLayout => GPSLocalLayout, GlobalLayout => GPSGlobalLayout}
+import geopyspark.geotrellis.{LayoutType => GPSLayoutType, LocalLayout => GPSLocalLayout, GlobalLayout => GPSGlobalLayout, SpatialTiledRasterLayer}
 
 import geopyspark.geotrellis.Constants.{GEOTRELLIS, GDAL}
 
@@ -51,7 +51,7 @@ object RasterSource {
   ): ProjectedRasterLayer = {
     val rasterSourceRDD: RDD[RasterSource] =
       (readMethod match {
-        case GEOTRELLIS => rdd.map { new GeoTiffRasterSource(_): RasterSource }
+        case GEOTRELLIS => rdd.map { GeoTiffRasterSource(_): RasterSource }
         case GDAL => rdd.map { GDALRasterSource(_): RasterSource }
       }).cache()
 
@@ -147,7 +147,7 @@ object RasterSource {
     val contextRDD: MultibandTileLayerRDD[SpatialKey] =
       ContextRDD(tiledRDD, tileLayerMetadata)
 
-    SpatialTiledRasterLayer(zoom, contextRDD)
+    SpatialTiledRasterLayer(zoom.toInt, contextRDD)
   }
 
   implicit def gps2VLM(layoutType: GPSLayoutType): LayoutType =
