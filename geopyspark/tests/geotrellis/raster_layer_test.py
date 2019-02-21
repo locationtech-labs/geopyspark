@@ -67,9 +67,6 @@ class RasterLayerTest(BaseTestClass):
 
 
     # No reprojection
-    def test_read_ordered_no_reproject_geotrellis(self):
-        self.read_no_reproject(ReadMethod.GEOTRELLIS, multiplex=True)
-
     def test_read_no_reproject_geotrellis(self):
         self.read_no_reproject(ReadMethod.GEOTRELLIS)
 
@@ -79,9 +76,6 @@ class RasterLayerTest(BaseTestClass):
     # With reprojection
     def test_read_with_reproject_geotrellis(self):
         self.read_with_reproject(ReadMethod.GEOTRELLIS)
-
-    def test_read_ordered_with_reproject_geotrellis(self):
-        self.read_with_reproject(ReadMethod.GEOTRELLIS, multiplex=True)
 
     def test_read_with_reproject_gdal(self):
         self.read_with_reproject(ReadMethod.GDAL)
