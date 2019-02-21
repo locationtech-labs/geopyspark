@@ -59,16 +59,21 @@ class RasterLayerTest(BaseTestClass):
         actual_raster_layer = RasterLayer.read([self.path], target_crs=3857, read_method=read_method)
 
         actual_collected = actual_raster_layer.to_numpy_rdd().first()
-        (actual_projected_extent, actual_tile) = actual_collected
+        (actual_projected_extent, tile) = actual_collected
 
-        self.assertTrue((expected_tile.cells == actual_tile.cells).all())
+        self.assertEqual(actual_projected_extent.epsg, expected_projected_extent.epsg)
 
+        self.assertTrue((expected_tile.cells == tile.cells).all())
+
+
+    # No reprojection
     def test_read_no_reproject_geotrellis(self):
         self.read_no_reproject(ReadMethod.GEOTRELLIS)
 
     def test_read_no_reproject_gdal(self):
         self.read_no_reproject(ReadMethod.GDAL)
 
+    # With reprojection
     def test_read_with_reproject_geotrellis(self):
         self.read_with_reproject(ReadMethod.GEOTRELLIS)
 

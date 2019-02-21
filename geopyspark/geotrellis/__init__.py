@@ -646,6 +646,33 @@ class SpaceTimePartitionStrategy(namedtuple("SpaceTimePartitionStrategy", "time_
         return super(cls, SpaceTimePartitionStrategy).__new__(cls, time_unit, num_partitions, bits, time_resolution)
 
 
+class SourceInfo(namedtuple("SourceInfo", "source source_to_target_band")):
+    """Represents a data source and how its bands should be formatted when being read
+    in.
+
+    When two or more sources of data cover the same area, a single ``Tile`` will be created
+    that contains the bands specified by ``source_to_target_band``.
+
+    Args:
+        source (str): The path to the data source to be read.
+        source_to_target_band ({int: int}): A ``{int: int}`` that maps each band from the
+            source to the target band of the output.
+
+            For example, ``{0: 2}`` specifies that band ``0`` of the source be band ``2``
+            for the ``Tile``\s that were created from that source.
+    Attributes:
+        source (str): The path to the data source to be read.
+        source_to_target_band ({int: int}): A ``{int: int}`` that maps each band from the
+            source to the target band of the output.
+
+            For example, ``{0: 2}`` specifies that band ``0`` of the source be band ``2``
+            for the ``Tile``\s that were created from that source.
+
+    """
+
+    __slots__ = []
+
+
 class Feature(namedtuple("Feature", "geometry properties")):
     """Represents a geometry that is derived from an OSM Element with that Element's associated metadata.
 
@@ -834,7 +861,7 @@ class Metadata(object):
 __all__ = ["Tile", "Extent", "ProjectedExtent", "TemporalProjectedExtent", "SpatialKey", "SpaceTimeKey",
            "Metadata", "TileLayout", "GlobalLayout", "LocalLayout", "LayoutDefinition", "Bounds", "RasterizerOptions",
            "zfactor_lat_lng_calculator", "zfactor_calculator", "HashPartitionStrategy", "SpatialPartitionStrategy",
-           "SpaceTimePartitionStrategy", "Feature", "CellValue"]
+           "SpaceTimePartitionStrategy", "Feature", "CellValue", "SourceInfo"]
 
 from . import catalog
 from . import color

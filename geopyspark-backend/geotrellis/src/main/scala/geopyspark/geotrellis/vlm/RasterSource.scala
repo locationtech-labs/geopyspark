@@ -1,7 +1,7 @@
 package geopyspark.geotrellis.vlm
 
-import geopyspark.geotrellis.{PartitionStrategy, ProjectedRasterLayer, SpatialTiledRasterLayer}
-import geopyspark.geotrellis.{LayoutType => GPSLayoutType, LocalLayout => GPSLocalLayout, GlobalLayout => GPSGlobalLayout, SpatialTiledRasterLayer}
+import geopyspark.geotrellis.{PartitionStrategy, ProjectedRasterLayer, SpatialTiledRasterLayer, SpatialPartitioner}
+import geopyspark.geotrellis.{LayoutType => GPSLayoutType, LocalLayout => GPSLocalLayout, GlobalLayout => GPSGlobalLayout}
 
 import geopyspark.geotrellis.Constants.{GEOTRELLIS, GDAL}
 
@@ -17,7 +17,7 @@ import geotrellis.proj4._
 import geotrellis.vector._
 import geotrellis.util._
 
-import org.apache.spark.SparkContext
+import org.apache.spark.{SparkContext, Partitioner}
 import org.apache.spark.rdd.RDD
 
 import scala.collection.JavaConverters._
@@ -29,17 +29,27 @@ object RasterSource {
     layerType: String,
     paths: java.util.ArrayList[String],
     targetCRS: String,
+    numPartitions: Integer,
     resampleMethod: ResampleMethod,
     readMethod: String
-  ): ProjectedRasterLayer =
+  ): ProjectedRasterLayer = {
+    val scalaPaths: Seq[String] = paths.asScala.toSeq
+
+    val partitions =
+      numPartitions match {
+        case i: Integer => Some(i.toInt)
+        case null => None
+      }
+
     read(
       sc,
       layerType,
-      sc.parallelize(paths.asScala),
+      sc.parallelize(scalaPaths, partitions.getOrElse(scalaPaths.size)),
       targetCRS,
       resampleMethod,
       readMethod
     )
+  }
 
   def read(
     sc: SparkContext,
@@ -51,7 +61,7 @@ object RasterSource {
   ): ProjectedRasterLayer = {
     val rasterSourceRDD: RDD[RasterSource] =
       (readMethod match {
-        case GEOTRELLIS => rdd.map { GeoTiffRasterSource(_): RasterSource }
+        case GEOTRELLIS => rdd.map { new GeoTiffRasterSource(_): RasterSource }
         case GDAL => rdd.map { GDALRasterSource(_): RasterSource }
       }).cache()
 
@@ -82,18 +92,28 @@ object RasterSource {
     paths: java.util.ArrayList[String],
     layoutType: GPSLayoutType,
     targetCRS: String,
+    numPartitions: Integer,
     resampleMethod: ResampleMethod,
     readMethod: String
-  ): SpatialTiledRasterLayer =
+  ): SpatialTiledRasterLayer = {
+    val scalaPaths: Seq[String] = paths.asScala.toSeq
+
+    val partitions =
+      numPartitions match {
+        case i: Integer => Some(i.toInt)
+        case null => None
+      }
+
     readToLayout(
       sc,
       layerType,
-      sc.parallelize(paths.asScala),
+      sc.parallelize(scalaPaths, partitions.getOrElse(scalaPaths.size)),
       layoutType,
       targetCRS,
       resampleMethod,
       readMethod
     )
+  }
 
   def readToLayout(
     sc: SparkContext,
@@ -147,7 +167,91 @@ object RasterSource {
     val contextRDD: MultibandTileLayerRDD[SpatialKey] =
       ContextRDD(tiledRDD, tileLayerMetadata)
 
-    SpatialTiledRasterLayer(zoom.toInt, contextRDD)
+    SpatialTiledRasterLayer(zoom, contextRDD)
+  }
+
+  def readOrderedToLayout(
+    sc: SparkContext,
+    paths: java.util.ArrayList[SourceInfo],
+    layoutType: GPSLayoutType,
+    targetCRS: String,
+    numPartitions: Integer,
+    resampleMethod: ResampleMethod,
+    partitionStrategy: PartitionStrategy,
+    readMethod: String
+  ): SpatialTiledRasterLayer = {
+    val scalaSources: Seq[SourceInfo] = paths.asScala.toSeq
+
+    val partitions =
+      numPartitions match {
+        case i: Integer => Some(i.toInt)
+        case null => None
+      }
+
+    val partitioner: Option[Partitioner] =
+      partitionStrategy match {
+        case ps: PartitionStrategy => ps.producePartitioner(partitions.getOrElse(scalaSources.size))
+        case null => None
+      }
+
+    val crs: Option[CRS] =
+      targetCRS match {
+        case crs: String => Some(CRS.fromString(crs))
+        case null => None
+      }
+
+    val transformSource: String => RasterSource =
+      readMethod match {
+        case GEOTRELLIS =>
+          crs match {
+            case Some(projection) =>
+              (path: String) => GeoTiffRasterSource(path).reproject(projection, resampleMethod)
+            case None =>
+              (path: String) => GeoTiffRasterSource(path)
+          }
+        case GDAL =>
+          crs match {
+            case Some(projection) =>
+              (path: String) => GDALRasterSource(path).reproject(projection, resampleMethod)
+            case None =>
+              (path: String) => GDALRasterSource(path)
+          }
+      }
+
+    val sourceInfoRDD: RDD[SourceInfo] =
+      sc.parallelize(scalaSources, partitions.getOrElse(scalaSources.size))
+
+    val readingSourcesRDD: RDD[ReadingSource] =
+      sourceInfoRDD.map { source =>
+        val rasterSource = transformSource(source.source)
+
+        ReadingSource(rasterSource, source.sourceToTargetBand)
+      }
+
+    val sourcesRDD: RDD[RasterSource] = readingSourcesRDD.map { _.source }
+
+    val rasterSummary: RasterSummary = geotrellis.contrib.vlm.RasterSummary.fromRDD(sourcesRDD)
+
+    val LayoutLevel(zoom, layout) =
+      layoutType match {
+        case global: GPSGlobalLayout =>
+          val scheme = ZoomedLayoutScheme(rasterSummary.crs, global.tileSize)
+          scheme.levelForZoom(global.zoom)
+        case local: GPSLocalLayout =>
+          val scheme = FloatingLayoutScheme(local.tileCols, local.tileRows)
+          rasterSummary.levelFor(scheme)
+      }
+
+    val resampledSourcesRDD: RDD[ReadingSource] =
+      readingSourcesRDD.map { source =>
+        val resampledSource: RasterSource = source.source.resampleToGrid(layout, resampleMethod)
+
+        source.copy(source = resampledSource)
+      }
+
+    val result = RasterSourceRDD.read(resampledSourcesRDD, layout, partitioner)(sc)
+
+    SpatialTiledRasterLayer(zoom, result)
   }
 
   implicit def gps2VLM(layoutType: GPSLayoutType): LayoutType =
