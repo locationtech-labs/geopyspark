@@ -1156,7 +1156,7 @@ class TiledRasterLayer(CachableLayer, TileLayer):
             raise NotImplementedError("The read method does not currently support the SPACETIME LayerType")
 
         if partition_strategy:
-            check_partition_strategy(partition_strategy, self.layer_type)
+            check_partition_strategy(partition_strategy, layer_type)
 
         resample_method = ResampleMethod(resample_method)
         read_method = ReadMethod(read_method)
