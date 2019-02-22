@@ -6,6 +6,10 @@ docker run -it --net=host \
   -v $HOME/.coursier:/root/.coursier \
   -v $HOME/.ivy2:/root/.ivy2 \
   -v $HOME/.sbt:/root/.sbt \
+  -e BINTRAY_PASS=$BINTRAY_PASS \
+  -e BINTRAY_USER=$BINTRAY_USER \
+  -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+  -e AWS_SECRET_ACCESS_KEY_ID=$AWS_SECRET_ACCESS_KEY_ID \
   -e TRAVIS_PYTHON_VERSION=$TRAVIS_PYTHON_VERSION \
   -e TRAVIS_COMMIT=$TRAVIS_COMMIT \
   -e COURSIER_PROGRESS=false \
