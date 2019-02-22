@@ -1,4 +1,4 @@
-apt-get update -y && apt-get install -y wget python3-pip && \
+apt-get update -y && apt-get install -y wget python3-pip awscli && \
 pushd geopyspark-backend && ./sbt "project geotrellis-backend" assembly && \
 cp geotrellis/target/scala-2.11/geotrellis-backend-assembly-*.jar ../geopyspark/jars && popd && \
 if [ ! -f archives/spark-2.3.2-bin-hadoop2.7.tgz ]; then
