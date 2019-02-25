@@ -12,6 +12,9 @@ branches:
     - gdal
 
 addons:
+  apt:
+    packages:
+      - awscli
   # Fix OpenJDK builds
   # https://github.com/travis-ci/travis-ci/issues/5227
   hostname: localhost
