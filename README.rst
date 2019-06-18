@@ -9,6 +9,10 @@ GeoPySpark
 
 .. image:: https://badges.gitter.im/locationtech-labs/geopyspark.png
    :target: https://gitter.im/geotrellis/geotrellis
+   
+
+**GeoPySpark is not currently under active development. We will try and address PRs and Issues, but it may take some time as most
+of our resources are devoted to other projects now. There is a chance that this project will be revisted in the future, so it is by no means dead.**
 
 GeoPySpark is a Python bindings library for `GeoTrellis <http://geotrellis.io>`_, a Scala
 library for working with geospatial data in a distributed environment.
