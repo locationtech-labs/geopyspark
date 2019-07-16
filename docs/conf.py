@@ -65,8 +65,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'GeoPySpark'
-copyright = '2017, Jacob Bouffard, James McClean, Eugene Cheipesh'
-author = 'Jacob Bouffard, James McClean, Eugene Cheipesh'
+copyright = '2017, Jacob Bouffard, James McClain, Eugene Cheipesh'
+author = 'Jacob Bouffard, James McClain, Eugene Cheipesh'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
